@@ -1,0 +1,62 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+dist/
+build/
+
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+dist-ssr/
+*.local
+.npm
+.turbo
+
+# Logs & temp
+logs/
+*.log
+tmp/
+temp/
+.cache/
+
+# Databases (local)
+*.db
+*.sqlite
+*.sqlite3
+*.sql.backup
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Docker volumes (if mounted locally)
+postgres_data/
+pgadmin_data/
+
+# Alembic / local dumps
+ase_backend/schema_dump.sql

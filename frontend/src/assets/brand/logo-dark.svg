@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 320" width="1024" height="320" role="img" aria-label="Arce Sabin Engineering (dark)">
+  <title>Arce Sabin Engineering (dark)</title>
+  <defs>
+    <filter id="dark" color-interpolation-filters="sRGB">
+      <!-- Slight contrast + brightness lift for dark backgrounds -->
+      <feComponentTransfer>
+        <feFuncR type="gamma" amplitude="1.05" exponent="0.92" offset="0"/>
+        <feFuncG type="gamma" amplitude="1.05" exponent="0.92" offset="0"/>
+        <feFuncB type="gamma" amplitude="1.05" exponent="0.92" offset="0"/>
+      </feComponentTransfer>
+    </filter>
+  </defs>
+  <image href="./logo-source.png" x="0" y="0" width="1024" height="320" preserveAspectRatio="xMidYMid meet" filter="url(#dark)" />
+</svg>

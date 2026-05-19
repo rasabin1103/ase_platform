@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 320" width="340" height="320" role="img" aria-label="ASE">
+  <title>ASE</title>
+  <defs>
+    <clipPath id="clip">
+      <rect x="0" y="0" width="340" height="320" rx="28" ry="28" />
+    </clipPath>
+  </defs>
+  <!-- Crop the left icon area from the horizontal source -->
+  <g clip-path="url(#clip)">
+    <image href="./logo-source.png" x="0" y="0" width="1024" height="320" preserveAspectRatio="xMinYMid meet" />
+  </g>
+</svg>

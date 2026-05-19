@@ -1,0 +1,73 @@
+export const creatorApplicationEn = {
+  title: 'Apply to become a creator',
+  subtitle: 'ASE reviews every creator application to protect platform quality.',
+  requiresApproval: 'To create content on ASE you need quality approval from our team.',
+  requestCreator: 'Apply to become a creator',
+  requestAuthorization: 'Request authorization',
+  fields: {
+    type: 'What do you want to create?',
+    typeCourses: 'Courses',
+    typeProducts: 'Products',
+    typeBoth: 'Courses and products',
+    experience: 'Previous experience',
+    knowledgeAreas: 'Knowledge areas',
+    portfolioUrl: 'Portfolio or link (optional)',
+    motivation: 'Why do you want to create on ASE?',
+    initialProposal: 'Initial content proposal',
+    qualityAgreement: 'I accept ASE quality and review standards',
+  },
+  actions: {
+    submit: 'Submit application',
+    cancel: 'Cancel',
+  },
+  messages: {
+    requiresApproval: 'Creator approval is required before you can create courses or products.',
+    pending: 'Your application is pending review.',
+    approved: 'Your creator application was approved.',
+    rejected: 'Your creator application was rejected.',
+    submitSuccess: 'Application submitted successfully.',
+    submitError: 'Could not submit application.',
+  },
+  contentCreator: {
+    createDraft: 'Create draft',
+    subjectToReview: 'Content subject to review',
+    cannotPublishDirectly: 'Publishing requires super admin approval.',
+  },
+}
+
+export const creatorApplicationEs = {
+  title: 'Solicitar ser creador',
+  subtitle: 'ASE revisa cada solicitud para proteger la calidad de la plataforma.',
+  requiresApproval: 'Para crear contenido en ASE necesitas aprobación de calidad por nuestro equipo.',
+  requestCreator: 'Solicitar ser creador',
+  requestAuthorization: 'Solicitar autorización',
+  fields: {
+    type: '¿Qué quieres crear?',
+    typeCourses: 'Cursos',
+    typeProducts: 'Productos',
+    typeBoth: 'Cursos y productos',
+    experience: 'Experiencia previa',
+    knowledgeAreas: 'Áreas de conocimiento',
+    portfolioUrl: 'Portfolio o enlace (opcional)',
+    motivation: '¿Por qué quieres crear en ASE?',
+    initialProposal: 'Propuesta inicial de contenido',
+    qualityAgreement: 'Acepto los estándares de calidad y revisión de ASE',
+  },
+  actions: {
+    submit: 'Enviar solicitud',
+    cancel: 'Cancelar',
+  },
+  messages: {
+    requiresApproval: 'Necesitas aprobación como creador antes de crear cursos o productos.',
+    pending: 'Tu solicitud está pendiente de revisión.',
+    approved: 'Tu solicitud de creador fue aprobada.',
+    rejected: 'Tu solicitud de creador fue rechazada.',
+    submitSuccess: 'Solicitud enviada correctamente.',
+    submitError: 'No se pudo enviar la solicitud.',
+  },
+  contentCreator: {
+    createDraft: 'Crear borrador',
+    subjectToReview: 'Contenido sujeto a revisión',
+    cannotPublishDirectly: 'La publicación requiere aprobación del super admin.',
+  },
+}

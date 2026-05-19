@@ -1,0 +1,206 @@
+/**
+ * Private `/products` copy (EN + ES). Merged into `translations.ts` as `productsPage`.
+ */
+
+export const productsPageEn = {
+  common: { na: '—' },
+  title: 'Products',
+  subtitle: 'Manage modules, tools and products available within the ASE ecosystem.',
+  premium: {
+    badge: 'Product Ecosystem Center',
+    context: 'Modular platform operations',
+    create: 'Create product',
+  },
+  stats: {
+    total: { label: 'Total products' },
+    active: { label: 'Active' },
+    categories: { label: 'Categories' },
+    featured: { label: 'Featured' },
+  },
+  preview: {
+    title: 'Product ecosystem preview',
+    subtitle: 'A connected view of platform modules — designed for operators.',
+    hub: 'ASE platform',
+    hubTitle: 'Operations core',
+    hubMeta: 'RBAC · Billing · Audit · Notifications',
+  },
+  categories: {
+    platform: 'Platform',
+    qa: 'QA',
+    training: 'Training',
+    reporting: 'Reporting',
+    ai: 'AI automation',
+    rbac: 'RBAC',
+    billing: 'Billing',
+    audit: 'Audit',
+  },
+  list: {
+    title: 'Product catalog',
+    subtitle: 'Browse and administer products and tools available to organizations and users.',
+    meta: { updating: 'Updating…', total: '{{count}} total' },
+    columns: {
+      product: 'Product',
+      description: 'Description',
+      status: 'Status',
+      createdAt: 'Created',
+      actions: 'Actions',
+    },
+  },
+  create: {
+    title: 'Create new product',
+    subtitle: 'Add a module, platform or tool to be managed from ASE.',
+    fields: {
+      code: 'Product identifier',
+      name: 'Product name',
+      description: 'Description',
+      status: 'Status',
+    },
+    placeholders: {
+      code: 'qa-frameworks',
+      name: 'QA Frameworks',
+      description: 'Automation and reporting ecosystem…',
+    },
+    button: 'Create product',
+    creating: 'Creating…',
+    error: 'Could not create the product. Check the information or duplicated identifier.',
+  },
+  actions: {
+    edit: 'Edit',
+    activate: 'Activate',
+    deactivate: 'Deactivate',
+    delete: 'Delete',
+    close: 'Close',
+  },
+  badges: {
+    active: 'Active',
+    inactive: 'Inactive',
+  },
+  empty: {
+    title: 'No products yet',
+    subtitle: 'Create the first product to start building your ecosystem.',
+    cta: 'Create product',
+  },
+  errors: {
+    loadTitle: 'Could not load products',
+    loadSubtitle: 'Please try again or refresh your session.',
+  },
+  delete: {
+    title: 'Confirm delete',
+    body: 'You are about to delete product {{code}}.',
+    note: 'This action cannot be undone.',
+    deleting: 'Deleting…',
+    delete: 'Delete',
+    cancel: 'Cancel',
+    error: 'Could not delete the product.',
+  },
+  edit: {
+    title: 'Edit product',
+    subtitle: 'Update product identity, description and status.',
+    saving: 'Saving…',
+    save: 'Save',
+    cancel: 'Cancel',
+    error: 'Could not update the product.',
+  },
+} as const
+
+export const productsPageEs = {
+  common: { na: '—' },
+  title: 'Productos',
+  subtitle: 'Gestiona los módulos, herramientas y productos disponibles dentro del ecosistema ASE.',
+  premium: {
+    badge: 'Centro de Ecosistema de Productos',
+    context: 'Operación modular de plataforma',
+    create: 'Crear producto',
+  },
+  stats: {
+    total: { label: 'Total productos' },
+    active: { label: 'Activos' },
+    categories: { label: 'Categorías' },
+    featured: { label: 'Producto destacado' },
+  },
+  preview: {
+    title: 'Product ecosystem preview',
+    subtitle: 'Una vista conectada de módulos de plataforma — pensada para operadores.',
+    hub: 'Plataforma ASE',
+    hubTitle: 'Core de operación',
+    hubMeta: 'RBAC · Billing · Auditoría · Notificaciones',
+  },
+  categories: {
+    platform: 'Plataforma',
+    qa: 'QA',
+    training: 'Formación',
+    reporting: 'Reporting',
+    ai: 'Automatización IA',
+    rbac: 'RBAC',
+    billing: 'Billing',
+    audit: 'Auditoría',
+  },
+  list: {
+    title: 'Catálogo de productos',
+    subtitle: 'Consulta y administra los productos y herramientas disponibles para organizaciones y usuarios.',
+    meta: { updating: 'Actualizando…', total: '{{count}} total' },
+    columns: {
+      product: 'Producto',
+      description: 'Descripción',
+      status: 'Estado',
+      createdAt: 'Creado',
+      actions: 'Acciones',
+    },
+  },
+  create: {
+    title: 'Crear nuevo producto',
+    subtitle: 'Añade un módulo, plataforma o herramienta para ser gestionada desde ASE.',
+    fields: {
+      code: 'Identificador del producto',
+      name: 'Nombre del producto',
+      description: 'Descripción',
+      status: 'Estado',
+    },
+    placeholders: {
+      code: 'qa-frameworks',
+      name: 'QA Frameworks',
+      description: 'Ecosistema de automatización y reporting…',
+    },
+    button: 'Crear producto',
+    creating: 'Creando…',
+    error: 'No se pudo crear el producto. Revisa la información o identificador duplicado.',
+  },
+  actions: {
+    edit: 'Editar',
+    activate: 'Activar',
+    deactivate: 'Desactivar',
+    delete: 'Eliminar',
+    close: 'Cerrar',
+  },
+  badges: {
+    active: 'Activo',
+    inactive: 'Inactivo',
+  },
+  empty: {
+    title: 'Sin productos',
+    subtitle: 'Crea el primer producto para empezar a construir el ecosistema.',
+    cta: 'Crear producto',
+  },
+  errors: {
+    loadTitle: 'No se pudo cargar productos',
+    loadSubtitle: 'Inténtalo de nuevo o refresca tu sesión.',
+  },
+  delete: {
+    title: 'Confirmar eliminación',
+    body: 'Vas a eliminar el producto {{code}}.',
+    note: 'Esta acción no se puede deshacer.',
+    deleting: 'Eliminando…',
+    delete: 'Eliminar',
+    cancel: 'Cancelar',
+    error: 'No se pudo eliminar el producto.',
+  },
+  edit: {
+    title: 'Editar producto',
+    subtitle: 'Actualiza identidad, descripción y estado.',
+    saving: 'Guardando…',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    error: 'No se pudo actualizar el producto.',
+  },
+} as const
+
