@@ -36,16 +36,16 @@ ase/
 ### 1. Environment files
 
 ```powershell
-copy ase_backend\.env.example ase_backend\.env
-copy ase_frontend\.env.example ase_frontend\.env
+copy backend\.env.example backend\.env
+copy frontend\.env.example frontend\.env
 ```
 
-Edit `ase_backend\.env`: set `JWT_SECRET_KEY` and `POSTGRES_PASSWORD` / `DATABASE_URL` if needed.
+Edit `backend\.env`: set `JWT_SECRET_KEY` and `POSTGRES_PASSWORD` / `DATABASE_URL` if needed.
 
 ### 2. Database (Docker + migrations + seed)
 
 ```powershell
-cd ase_backend
+cd backend
 docker compose up -d
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -57,14 +57,14 @@ pip install -r requirements.txt
 Or use the dev script (venv, compose, uvicorn):
 
 ```powershell
-cd ase_backend
+cd backend
 .\dev.ps1
 ```
 
 ### 3. Frontend
 
 ```powershell
-cd ase_frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -104,7 +104,7 @@ Never commit `.env` files. Do not put real `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_
 ### Frontend
 
 ```powershell
-cd ase_frontend
+cd frontend
 npm run dev      # development server
 npm run build    # production build → dist/
 npm run preview  # preview production build
@@ -113,7 +113,7 @@ npm run preview  # preview production build
 ### Backend
 
 ```powershell
-cd ase_backend
+cd backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 .\.venv\Scripts\alembic.exe upgrade head
 .\.venv\Scripts\alembic.exe revision --autogenerate -m "description"
@@ -123,7 +123,7 @@ cd ase_backend
 ### Docker (Postgres + pgAdmin)
 
 ```powershell
-cd ase_backend
+cd backend
 docker compose up -d
 docker compose down
 ```
@@ -132,7 +132,7 @@ pgAdmin: http://localhost:5050 (credentials from `.env`)
 
 ### Database scripts
 
-From `ase_backend`:
+From `backend`:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\database\reset_database.py
