@@ -6,8 +6,8 @@ MVP marketplace platform: **independent users** browse catalog, favorites, purch
 
 ```
 ase/
-├── ase_frontend/          # React + Vite + TypeScript
-├── ase_backend/           # FastAPI + SQLAlchemy + Alembic
+├── frontend/          # React + Vite + TypeScript
+├── backend/           # FastAPI + SQLAlchemy + Alembic
 ├── supabase/
 │   ├── migrations/      # Reference SQL (core tables)
 │   └── seed.sql         # Optional reference seed
