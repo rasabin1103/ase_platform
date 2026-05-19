@@ -82,18 +82,18 @@ npm run dev
 
 ## Environment variables
 
-### Backend (`ase_backend/.env`)
+### Backend (`backend/.env`)
 
-See [ase_backend/.env.example](ase_backend/.env.example):
+See [backend/.env.example](ase_backend/.env.example):
 
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_SECRET_KEY` — **required** strong secret in production
 - `MVP_MODE` — `true` hides legacy multi-tenant routes
 - `DEMO_SEED_PASSWORD` — local demo user password for seed scripts only
 
-### Frontend (`ase_frontend/.env`)
+### Frontend (`frontend/.env`)
 
-See [ase_frontend/.env.example](ase_frontend/.env.example):
+See [frontend/.env.example](ase_frontend/.env.example):
 
 - `VITE_API_URL` — e.g. `http://localhost:8000/api/v1`
 
@@ -142,7 +142,7 @@ From `backend`:
 .\.venv\Scripts\python.exe scripts\database\seed_all.py
 ```
 
-Details: [ase_backend/scripts/database/README.md](ase_backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
+Details: [backend/scripts/database/README.md](ase_backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
 
 ## MVP roles
 
