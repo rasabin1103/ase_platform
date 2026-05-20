@@ -11,6 +11,10 @@ from app.models.catalog_purchase import CatalogPurchase
 from app.models.enums import AccessRequestStatus, CatalogItemType, UserStatus
 from app.models.user import User
 from app.modules.admin_dashboard.analytics import build_admin_analytics
+from app.modules.admin_dashboard.counts import (
+    count_users_excluding_deleted,
+    count_users_inactive_or_suspended,
+)
 from app.modules.admin_dashboard.schemas import (
     AdminAnalyticsRead,
     AdminPurchaseListResponse,
@@ -33,11 +37,18 @@ def admin_stats(db: Session = Depends(get_db)):
             db.execute(select(func.count()).select_from(CatalogItem).where(CatalogItem.type == t)).scalar_one()
         )
         by_type[t.value] = n
-    users_total = int(db.execute(select(func.count()).select_from(User)).scalar_one())
+    users_total = count_users_excluding_deleted(db)
     users_active = int(
         db.execute(select(func.count()).select_from(User).where(User.status == UserStatus.active)).scalar_one()
     )
+    users_inactive = count_users_inactive_or_suspended(db)
     purchases_total = int(db.execute(select(func.count()).select_from(CatalogPurchase)).scalar_one())
+    revenue_raw = db.execute(
+        select(func.coalesce(func.sum(CatalogItem.price), 0))
+        .select_from(CatalogPurchase)
+        .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+    ).scalar_one()
+    revenue_total = float(revenue_raw or 0)
     requests_pending = int(
         db.execute(
             select(func.count()).select_from(AccessRequest).where(AccessRequest.status == AccessRequestStatus.pending)
@@ -48,7 +59,9 @@ def admin_stats(db: Session = Depends(get_db)):
         catalog_by_type=by_type,
         users_total=users_total,
         users_active=users_active,
+        users_inactive=users_inactive,
         purchases_total=purchases_total,
+        revenue_total=revenue_total,
         requests_pending=requests_pending,
     )
 

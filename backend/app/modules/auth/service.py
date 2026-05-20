@@ -39,7 +39,10 @@ class AuthService:
         if user is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if user.status != UserStatus.active:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is not active",
+            )
         if not verify_password(payload.password, user.password_hash):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -60,7 +63,10 @@ class AuthService:
 
         user = self.users.get_by_uuid(user_uuid)
         if user is None or user.status != UserStatus.active:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is not active",
+            )
 
         return TokenPair(
             access_token=create_access_token(user_uuid=user.uuid),

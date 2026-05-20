@@ -9,6 +9,8 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { CapabilitiesPortalSection } from '../../components/capabilities'
+import { CAPABILITY_ICONS } from '../../components/capabilities/capabilityIcons'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
@@ -51,11 +53,6 @@ export function ProfilePage() {
   )
 
   const isIndependent = primaryRole === 'independent_user' && !isSuperuser
-  const canCreate = Boolean(currentUser?.can_create_content)
-  const creatorStatus = currentUser?.creator_status ?? 'none'
-  const showCreatorCta =
-    isIndependent && !canCreate && creatorStatus !== 'pending' && creatorStatus !== 'approved'
-
   const avatarCacheKey = useMemo(
     () => `${currentUser?.updated_at ?? ''}-${avatarRevision}-${currentUser?.has_avatar ? '1' : '0'}`,
     [currentUser?.updated_at, currentUser?.has_avatar, avatarRevision],
@@ -110,29 +107,8 @@ export function ProfilePage() {
         subtitle={t('profilePage.subtitle')}
       />
 
-      {showCreatorCta ? (
-        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-4xl">
-              <h2 className="text-lg font-semibold text-ase-text sm:text-xl">
-                {t('requestsPage.creatorCtaTitle')}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-ase-text2 sm:text-base">
-                {t('requestsPage.creatorCtaDescription')}
-              </p>
-            </div>
-            <Button type="button" className="shrink-0 self-start lg:self-center" onClick={() => setCreatorModalOpen(true)}>
-              {t('requestsPage.creatorCtaButton')}
-            </Button>
-          </div>
-        </Card>
-      ) : null}
-
-      {isIndependent && canCreate ? (
-        <Card className="w-full border-cyan-300/20 bg-cyan-300/5 p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.createContentSection')}</h2>
-          <p className="mt-2 text-sm text-ase-text2">{t('requestsPage.createContentHint')}</p>
-        </Card>
+      {isIndependent ? (
+        <CapabilitiesPortalSection onRequestCreator={() => setCreatorModalOpen(true)} />
       ) : null}
 
       <div className="w-full space-y-6">
@@ -244,6 +220,7 @@ export function ProfilePage() {
         title={t('requestsPage.creatorModalTitle')}
         modalTitle={t('requestsPage.creatorModalTitle')}
         modalDescription={t('requestsPage.creatorCtaDescription')}
+        icon={CAPABILITY_ICONS.content_creator}
       />
     </div>
   )

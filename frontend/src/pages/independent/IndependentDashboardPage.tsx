@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CapabilitiesPortalSection } from '../../components/capabilities'
 import { Card } from '../../components/ui/Card'
 import { CatalogPremiumStrip } from '../../components/catalog/CatalogPremiumStrip'
 import { Badge } from '../../components/ui/Badge'
@@ -17,8 +18,6 @@ export function IndependentDashboardPage() {
   const { t } = useI18n()
   const { currentUser } = useAuth()
   const name = currentUser?.display_name || currentUser?.email || ''
-  const canCreate = Boolean(currentUser?.can_create_content)
-
   return (
     <div className="space-y-10">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-gradient-to-br from-ase-surface/60 via-ase-bg2/80 to-ase-bg/90 p-6 sm:p-10">
@@ -36,12 +35,12 @@ export function IndependentDashboardPage() {
         </div>
       </section>
 
-      {canCreate ? (
-        <Card className="border-cyan-300/20 bg-cyan-300/5 p-6">
-          <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.createContentSection')}</h2>
-          <p className="mt-2 text-sm text-ase-text2">{t('requestsPage.createContentHint')}</p>
-        </Card>
-      ) : null}
+      <CapabilitiesPortalSection variant="compact" />
+      <p className="text-center">
+        <Link to="/requests" className="text-sm font-semibold text-cyan-300 hover:text-cyan-200">
+          {t('capabilities.portal.viewAllRequests')} →
+        </Link>
+      </p>
 
       <CatalogPremiumStrip
         type="product"

@@ -48,6 +48,8 @@ export function assertSessionNotIdleOrThrow(): void {
     throw new Error('SESSION_IDLE_TIMEOUT')
   }
 }
+
+function normalizeStoredToken(raw: string | null | undefined): string | null {
   if (raw == null) return null
   let t = String(raw).trim()
   if (!t || t === 'undefined' || t === 'null') return null

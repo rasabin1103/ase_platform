@@ -2,12 +2,14 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { CAPABILITY_ICONS } from '../../components/capabilities/capabilityIcons'
 import type { AccessTargetType } from '../../api/access_requests.api'
 import {
   getConsumerCatalogItem,
   purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
+import { CatalogPublicPricing } from '../../components/catalog/CatalogPublicPricing'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -103,9 +105,11 @@ export function CatalogDetailPage() {
             {item.duration ? ` · ${t('catalog.duration')}: ${item.duration}` : ''}
             {item.level ? ` · ${t('catalog.level')}: ${t(`catalog.levels.${item.level}`)}` : ''}
           </p>
-          <p className="text-3xl font-bold text-ase-text">
-            {formatPrice(item.price, item.currency, t('catalog.free'))}
-          </p>
+          {!item.pricingPlans?.length ? (
+            <p className="text-3xl font-bold text-ase-text">
+              {formatPrice(item.price, item.currency, t('catalog.free'))}
+            </p>
+          ) : null}
           <p className="text-ase-text2 leading-relaxed">{item.longDescription}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             {item.previewUrl ? (
@@ -152,6 +156,7 @@ export function CatalogDetailPage() {
         targetId={item.slug}
         title={`${t('catalog.requestAccessTitle')}: ${item.title}`}
         modalTitle={t('catalog.requestAccess')}
+        icon={CAPABILITY_ICONS.catalog_access}
       />
       {showDemo ? (
         <AccessRequestModal
@@ -163,8 +168,21 @@ export function CatalogDetailPage() {
           targetId={item.slug}
           title={`${t('catalog.requestDemoTitle')}: ${item.title}`}
           modalTitle={t('catalog.requestDemo')}
+          icon={CAPABILITY_ICONS.private_demos}
         />
       ) : null}
+
+      <CatalogPublicPricing
+        plans={item.pricingPlans ?? []}
+        disabled={buyMutation.isPending || item.isPurchased}
+        onCta={(plan) => {
+          if (plan.planType === 'request_quote') {
+            setAccessModalOpen(true)
+            return
+          }
+          if (!item.isPurchased) buyMutation.mutate()
+        }}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <BulletList title={t('catalog.benefits')} items={benefits} />

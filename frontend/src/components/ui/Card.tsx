@@ -10,10 +10,10 @@ export function Card({ children, className, interactive }: Props) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-ase-border bg-ase-surface p-6 shadow-soft',
+        'rounded-2xl border border-ase-border/80 bg-ase-surface/90 p-6 shadow-soft backdrop-blur-sm',
         'transition duration-200 ease-out',
         interactive &&
-          'hover:-translate-y-0.5 hover:border-white/15 hover:bg-ase-surfaceSoft hover:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_50px_rgba(0,0,0,0.65)]',
+          'hover:-translate-y-0.5 hover:border-ase-border hover:bg-ase-surfaceSoft/90 hover:shadow-ase-lg',
         className,
       )}
     >
@@ -21,4 +21,3 @@ export function Card({ children, className, interactive }: Props) {
     </div>
   )
 }
-

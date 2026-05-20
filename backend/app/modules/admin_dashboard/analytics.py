@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_purchase import CatalogPurchase
-from app.models.enums import CatalogItemType
+from app.models.enums import CatalogItemType, UserStatus
 from app.models.user import User
+from app.modules.admin_dashboard.counts import user_status_is_not_deleted
 
 
 def _month_buckets(months: int = 6) -> list[str]:
@@ -26,46 +27,62 @@ def _series_from_rows(rows: list[tuple], buckets: list[str]) -> list[dict]:
     return [{"month": m, "value": mapping.get(m, 0)} for m in buckets]
 
 
+def _monthly_aggregate_query(
+    created_at_col: ColumnElement,
+    value_expr,
+    *filters: ColumnElement[bool],
+):
+    """Group by month bucket once — avoids PostgreSQL GROUP BY errors."""
+    month_bucket = func.date_trunc("month", created_at_col)
+    stmt = select(
+        func.to_char(month_bucket, "YYYY-MM"),
+        value_expr,
+    ).group_by(month_bucket).order_by(month_bucket)
+    if filters:
+        stmt = stmt.where(*filters)
+    return stmt
+
+
 def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
     buckets = _month_buckets(months)
     since = datetime.now(timezone.utc) - timedelta(days=31 * months)
 
     user_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", User.created_at), "YYYY-MM"),
+        _monthly_aggregate_query(
+            User.created_at,
             func.count(),
+            User.created_at >= since,
+            user_status_is_not_deleted(),
         )
-        .where(User.created_at >= since)
-        .group_by(func.date_trunc("month", User.created_at))
-        .order_by(func.date_trunc("month", User.created_at))
     ).all()
 
     catalog_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", CatalogItem.created_at), "YYYY-MM"),
+        _monthly_aggregate_query(
+            CatalogItem.created_at,
             func.count(),
+            CatalogItem.created_at >= since,
         )
-        .where(CatalogItem.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogItem.created_at))
     ).all()
 
     purchase_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", CatalogPurchase.created_at), "YYYY-MM"),
+        _monthly_aggregate_query(
+            CatalogPurchase.created_at,
             func.count(),
+            CatalogPurchase.created_at >= since,
         )
-        .where(CatalogPurchase.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogPurchase.created_at))
     ).all()
 
+    purchase_month = func.date_trunc("month", CatalogPurchase.created_at)
     revenue_rows = db.execute(
         select(
-            func.to_char(func.date_trunc("month", CatalogPurchase.created_at), "YYYY-MM"),
+            func.to_char(purchase_month, "YYYY-MM"),
             func.coalesce(func.sum(CatalogItem.price), 0),
         )
+        .select_from(CatalogPurchase)
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
         .where(CatalogPurchase.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogPurchase.created_at))
+        .group_by(purchase_month)
+        .order_by(purchase_month)
     ).all()
 
     by_type: dict[str, int] = {}
@@ -85,7 +102,8 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
 
     top_users_rows = db.execute(
         select(User.email, func.count(CatalogPurchase.id).label("cnt"))
-        .join(CatalogPurchase, CatalogPurchase.user_id == User.id)
+        .select_from(CatalogPurchase)
+        .join(User, User.id == CatalogPurchase.user_id)
         .group_by(User.id, User.email)
         .order_by(func.count(CatalogPurchase.id).desc())
         .limit(5)

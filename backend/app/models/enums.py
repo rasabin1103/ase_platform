@@ -5,6 +5,7 @@ from enum import Enum
 
 class UserStatus(str, Enum):
     active = "active"
+    inactive = "inactive"
     invited = "invited"
     suspended = "suspended"
     deleted = "deleted"
@@ -100,6 +101,28 @@ class CatalogItemLevel(str, Enum):
     beginner = "beginner"
     intermediate = "intermediate"
     advanced = "advanced"
+
+
+class PricingPlanType(str, Enum):
+    free = "free"
+    one_time = "one_time"
+    subscription = "subscription"
+    lifetime = "lifetime"
+    request_quote = "request_quote"
+
+
+class PricingBillingInterval(str, Enum):
+    none = "none"
+    monthly = "monthly"
+    quarterly = "quarterly"
+    yearly = "yearly"
+
+
+class PricingSupportLevel(str, Enum):
+    none = "none"
+    basic = "basic"
+    priority = "priority"
+    enterprise = "enterprise"
 
 
 class BillingCycle(str, Enum):

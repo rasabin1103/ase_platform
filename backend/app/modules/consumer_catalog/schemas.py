@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
+from app.modules.pricing.schemas import PublicPricingPlanRead
 
 
 class CatalogItemRead(BaseModel):
@@ -31,6 +32,7 @@ class CatalogItemRead(BaseModel):
     includedItems: list[str] = []
     isFavorite: bool = False
     isPurchased: bool = False
+    pricingPlans: list[PublicPricingPlanRead] = Field(default_factory=list)
     createdAt: datetime
     updatedAt: datetime
 

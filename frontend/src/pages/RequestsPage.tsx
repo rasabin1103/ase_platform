@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import {
   listAdminAccessRequests,
   listMyAccessRequests,
@@ -8,25 +9,28 @@ import {
   type MeAccessRequest,
 } from '../api/access_requests.api'
 import { AccessRequestModal } from '../components/access-requests/AccessRequestModal'
+import {
+  AccessRequestTimelineCard,
+  CapabilitiesPortalSection,
+  EmptyCapabilityState,
+  FeatureStatusBadge,
+  RequestCapabilityCard,
+  resolveCapabilityCta,
+} from '../components/capabilities'
+import { CAPABILITY_ICONS } from '../components/capabilities/capabilityIcons'
+import { useUserCapabilities } from '../components/capabilities/useUserCapabilities'
 import { AuthenticatedImage } from '../components/ui/AuthenticatedImage'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { Textarea } from '../components/ui/Textarea'
 import { PremiumHero } from '../components/admin/premium/PremiumAdminUi'
-import { useI18n } from '../i18n'
+import { useI18n, tStringArray } from '../i18n'
 import { useRbac } from '../rbac/useRbac'
 import { useAuth } from '../hooks/useAuth'
 import { avatarDisplayPath } from '../utils/mediaUrls'
-
-function statusVariant(status: string): 'warning' | 'success' | 'default' {
-  if (status === 'pending') return 'warning'
-  if (status === 'approved') return 'success'
-  return 'default'
-}
 
 function formatDate(iso: string) {
   try {
@@ -44,6 +48,7 @@ export function RequestsPage() {
   const { currentUser, loadCurrentUser } = useAuth()
   const qc = useQueryClient()
   const isAdminReviewer = isSuperuser || primaryRole === 'super_admin'
+  const { canCreate, creatorStatus, showCreatorRequestCta, getStatus } = useUserCapabilities()
 
   const [creatorModalOpen, setCreatorModalOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<AdminAccessRequest | null>(null)
@@ -69,11 +74,6 @@ export function RequestsPage() {
   const items = query.data?.items ?? []
   const pendingCount = items.filter((i) => i.status === 'pending').length
 
-  const creatorStatus = currentUser?.creator_status ?? 'none'
-  const canCreate = Boolean(currentUser?.can_create_content)
-  const showCreatorCta =
-    !isAdminReviewer && !canCreate && creatorStatus !== 'pending' && creatorStatus !== 'approved'
-
   const requestTypeLabel = (type: string) => {
     const key = `requestsPage.requestTypes.${type}` as const
     const label = t(key)
@@ -92,93 +92,148 @@ export function RequestsPage() {
     return label === key ? status : label
   }
 
+  const creatorStatusCapability = getStatus('content_creator')
+  const creatorCta = resolveCapabilityCta(creatorStatusCapability, {
+    request: t('capabilities.items.content_creator.ctaRequest') as string,
+    active: t('capabilities.items.content_creator.ctaActive') as string,
+    pending: t('capabilities.items.content_creator.ctaPending') as string,
+    restricted: t('capabilities.items.content_creator.ctaRestricted') as string,
+  })
+
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-10 pb-16">
       <PremiumHero
         accent={isAdminReviewer ? 'amber' : 'cyan'}
-        badge={isAdminReviewer ? t('adminDashboard.heroBadge') : t('independentDashboard.heroBadge')}
+        badge={isAdminReviewer ? t('adminDashboard.heroBadge') : t('capabilities.portal.badge')}
         title={isAdminReviewer ? t('requestsPage.adminTitle') : t('requestsPage.title')}
         subtitle={isAdminReviewer ? t('requestsPage.adminSubtitle') : t('requestsPage.subtitle')}
         contextChips={
           isAdminReviewer ? (
-            <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-xs font-semibold text-amber-100">
-              {t('requestsPage.pendingReview')}: {pendingCount}
-            </span>
+            <FeatureStatusBadge
+              status="pending"
+              label={`${t('requestsPage.pendingReview')}: ${pendingCount}`}
+            />
           ) : null
         }
       />
 
-      {!isAdminReviewer && canCreate ? (
-        <Card className="border-cyan-300/20 bg-cyan-300/5 p-6">
-          <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.createContentSection')}</h2>
-          <p className="mt-2 text-sm text-ase-text2">{t('requestsPage.createContentHint')}</p>
-        </Card>
-      ) : null}
-
-      {!isAdminReviewer && showCreatorCta ? (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.creatorCtaTitle')}</h2>
-          <p className="mt-2 max-w-2xl text-sm text-ase-text2">{t('requestsPage.creatorCtaDescription')}</p>
-          <Button className="mt-4" onClick={() => setCreatorModalOpen(true)}>
-            {t('requestsPage.creatorCtaButton')}
-          </Button>
-        </Card>
-      ) : null}
-
-      {!isAdminReviewer && creatorStatus === 'pending' ? (
-        <p className="text-sm text-amber-200/90">{t('requestsPage.creatorCtaPending')}</p>
-      ) : null}
-      {!isAdminReviewer && creatorStatus === 'rejected' ? (
-        <p className="text-sm text-ase-muted">{t('requestsPage.creatorCtaRejected')}</p>
-      ) : null}
-
-      {query.isLoading ? (
-        <Card className="p-6">
-          <Skeleton className="h-10 w-full" />
-        </Card>
-      ) : query.isError ? (
-        <EmptyState title={t('private.common.couldNotLoad')} description={t('requestsPage.loadError')} />
-      ) : items.length === 0 ? (
-        <EmptyState
-          title={t('requestsPage.emptyTitle')}
-          description={
-            isAdminReviewer ? t('requestsPage.adminEmptyDescription') : t('requestsPage.emptyDescription')
-          }
-        />
-      ) : isAdminReviewer ? (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 backdrop-blur">
-          {(items as AdminAccessRequest[]).map((item) => (
-            <AdminRequestRow
-              key={item.uuid}
-              item={item}
-              canReview={can('approveRequest') || isSuperuser}
-              onApprove={() => reviewMutation.mutate({ id: item.id, status: 'approved' })}
-              onReject={() => {
-                setRejectTarget(item)
-                setRejectNotes('')
-              }}
-              pending={reviewMutation.isPending}
-              requestTypeLabel={requestTypeLabel(item.request_type)}
-              targetTypeLabel={targetTypeLabel(item.target_type)}
-              statusLabel={statusLabel(item.status)}
-              t={t}
+      {!isAdminReviewer ? (
+        <>
+          {canCreate ? (
+            <RequestCapabilityCard
+              icon={CAPABILITY_ICONS.content_creator}
+              accent="violet"
+              title={t('requestsPage.createContentSection') as string}
+              description={t('requestsPage.createContentHint') as string}
+              benefits={tStringArray(t, 'capabilities.items.content_creator.benefits')}
+              status="active"
+              statusLabel={t('capabilities.status.active') as string}
+              tooltip={t('capabilities.items.content_creator.tooltip') as string}
+              ctaLabel={t('capabilities.items.publish_products.ctaActive') as string}
+              ctaHref="/products"
+              ctaVariant="secondary"
             />
-          ))}
-        </Card>
-      ) : (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 backdrop-blur">
-          {(items as MeAccessRequest[]).map((item) => (
-            <UserRequestRow
-              key={item.uuid}
-              item={item}
-              requestTypeLabel={requestTypeLabel(item.request_type)}
-              targetTypeLabel={targetTypeLabel(item.target_type)}
-              statusLabel={statusLabel(item.status)}
-              t={t}
+          ) : null}
+
+          {showCreatorRequestCta ? (
+            <RequestCapabilityCard
+              icon={CAPABILITY_ICONS.content_creator}
+              accent="violet"
+              title={t('requestsPage.creatorCtaTitle') as string}
+              description={t('requestsPage.creatorCtaDescription') as string}
+              benefits={tStringArray(t, 'capabilities.items.content_creator.benefits')}
+              status={creatorStatusCapability}
+              statusLabel={t(`capabilities.status.${creatorStatusCapability}`) as string}
+              tooltip={t('capabilities.items.content_creator.tooltip') as string}
+              ctaLabel={creatorCta.label}
+              ctaDisabled={creatorCta.disabled}
+              ctaVariant={creatorCta.variant}
+              onCta={() => setCreatorModalOpen(true)}
             />
-          ))}
-        </Card>
-      )}
+          ) : null}
+
+          {creatorStatus === 'pending' && !canCreate ? (
+            <Card className="flex items-center gap-4 rounded-[1.5rem] border-amber-300/20 bg-amber-300/5 p-5">
+              <Sparkles className="h-8 w-8 shrink-0 text-amber-200/90" aria-hidden />
+              <p className="text-sm leading-relaxed text-amber-100/90">{t('requestsPage.creatorCtaPending')}</p>
+            </Card>
+          ) : null}
+          {creatorStatus === 'rejected' && !canCreate ? (
+            <Card className="p-5 text-sm text-ase-text2">{t('requestsPage.creatorCtaRejected')}</Card>
+          ) : null}
+
+          <CapabilitiesPortalSection
+            onRequestCreator={() => setCreatorModalOpen(true)}
+            showEmptyWhenNoActive
+          />
+        </>
+      ) : null}
+
+      <section className="space-y-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-muted">
+          {isAdminReviewer ? t('requestsPage.adminTitle') : t('capabilities.portal.requestsSection')}
+        </h2>
+
+        {query.isLoading ? (
+          <Card className="p-6">
+            <Skeleton className="h-24 w-full rounded-2xl" />
+          </Card>
+        ) : query.isError ? (
+          <EmptyState title={t('private.common.couldNotLoad')} description={t('requestsPage.loadError')} />
+        ) : items.length === 0 ? (
+          isAdminReviewer ? (
+            <EmptyState
+              title={t('requestsPage.emptyTitle')}
+              description={t('requestsPage.adminEmptyDescription')}
+            />
+          ) : (
+            <EmptyCapabilityState
+              title={t('requestsPage.emptyTitle') as string}
+              description={t('requestsPage.emptyDescription') as string}
+            />
+          )
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {isAdminReviewer
+              ? (items as AdminAccessRequest[]).map((item) => (
+                  <AdminRequestCard
+                    key={item.uuid}
+                    item={item}
+                    canReview={can('approveRequest') || isSuperuser}
+                    onApprove={() => reviewMutation.mutate({ id: item.id, status: 'approved' })}
+                    onReject={() => {
+                      setRejectTarget(item)
+                      setRejectNotes('')
+                    }}
+                    pending={reviewMutation.isPending}
+                    requestTypeLabel={requestTypeLabel(item.request_type)}
+                    targetTypeLabel={targetTypeLabel(item.target_type)}
+                    statusLabel={statusLabel(item.status)}
+                    t={t}
+                  />
+                ))
+              : (items as MeAccessRequest[]).map((item) => (
+                  <AccessRequestTimelineCard
+                    key={item.uuid}
+                    title={item.title}
+                    typeLabel={requestTypeLabel(item.request_type)}
+                    targetLabel={targetTypeLabel(item.target_type)}
+                    status={item.status}
+                    statusLabel={statusLabel(item.status)}
+                    submittedAt={formatDate(item.created_at)}
+                    message={item.message}
+                    adminNotes={item.admin_notes}
+                    yourMessageLabel={t('requestsPage.yourMessage') as string}
+                    teamNoteLabel={t('requestsPage.adminNotes') as string}
+                    submittedLabel={t('capabilities.requestCard.submitted') as string}
+                    timelinePending={t('capabilities.requestCard.timelinePending') as string}
+                    timelineApproved={t('capabilities.requestCard.timelineApproved') as string}
+                    timelineRejected={t('capabilities.requestCard.timelineRejected') as string}
+                  />
+                ))}
+          </div>
+        )}
+      </section>
 
       <AccessRequestModal
         open={creatorModalOpen}
@@ -192,6 +247,7 @@ export function RequestsPage() {
         title={t('requestsPage.creatorModalTitle')}
         modalTitle={t('requestsPage.creatorModalTitle')}
         modalDescription={t('requestsPage.creatorCtaDescription')}
+        icon={CAPABILITY_ICONS.content_creator}
       />
 
       <Modal
@@ -234,49 +290,7 @@ export function RequestsPage() {
   )
 }
 
-function UserRequestRow({
-  item,
-  requestTypeLabel,
-  targetTypeLabel,
-  statusLabel,
-  t,
-}: {
-  item: MeAccessRequest
-  requestTypeLabel: string
-  targetTypeLabel: string
-  statusLabel: string
-  t: (key: string) => string
-}) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-3 p-5">
-      <div>
-        <p className="font-semibold text-ase-text">{item.title}</p>
-        <p className="mt-1 text-xs text-ase-muted">
-          {requestTypeLabel} · {targetTypeLabel}
-          {item.target_id && item.target_id !== 'platform' ? ` · ${item.target_id}` : ''}
-        </p>
-        <p className="mt-1 text-xs text-ase-muted">
-          {t('requestsPage.submittedAt')}: {formatDate(item.created_at)}
-        </p>
-        {item.message ? (
-          <p className="mt-2 text-sm text-ase-text2">
-            <span className="font-medium text-ase-muted">{t('requestsPage.yourMessage')}: </span>
-            {item.message}
-          </p>
-        ) : null}
-        {item.admin_notes ? (
-          <p className="mt-2 text-sm text-amber-100/90">
-            <span className="font-medium">{t('requestsPage.adminNotes')}: </span>
-            {item.admin_notes}
-          </p>
-        ) : null}
-      </div>
-      <Badge variant={statusVariant(item.status)}>{statusLabel}</Badge>
-    </div>
-  )
-}
-
-function AdminRequestRow({
+function AdminRequestCard({
   item,
   canReview,
   onApprove,
@@ -301,10 +315,22 @@ function AdminRequestRow({
   const name = r.display_name || [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email
   const avatarSrc = avatarDisplayPath(r.has_avatar, r.avatar_url)
 
+  const footer =
+    item.status === 'pending' && canReview ? (
+      <>
+        <Button size="sm" disabled={pending} onClick={onApprove}>
+          {t('requestsPage.approve')}
+        </Button>
+        <Button size="sm" variant="outline" disabled={pending} onClick={onReject}>
+          {t('requestsPage.reject')}
+        </Button>
+      </>
+    ) : null
+
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 p-5">
-      <div className="flex min-w-0 flex-1 gap-4">
-        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-ase-bg2">
+    <Card className="overflow-hidden rounded-[1.5rem] border-white/[0.08] bg-ase-surface/55 p-5 backdrop-blur sm:p-6">
+      <div className="mb-4 flex gap-4">
+        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-ase-bg2">
           {avatarSrc ? (
             <AuthenticatedImage src={avatarSrc} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -316,35 +342,25 @@ function AdminRequestRow({
         <div className="min-w-0">
           <p className="font-semibold text-ase-text">{name}</p>
           <p className="text-xs text-ase-muted">{r.email}</p>
-          <p className="mt-2 font-medium text-ase-text">{item.title}</p>
-          <p className="mt-1 text-xs text-ase-muted">
-            {requestTypeLabel} · {targetTypeLabel}
-            {item.target_id && item.target_id !== 'platform' ? (
-              <>
-                {' '}
-                · {t('requestsPage.relatedItem')}: {item.target_id}
-              </>
-            ) : null}
-          </p>
-          {item.message ? <p className="mt-2 text-sm text-ase-text2">{item.message}</p> : null}
-          <p className="mt-1 text-xs text-ase-muted">{formatDate(item.created_at)}</p>
         </div>
       </div>
-      <div className="flex flex-col items-end gap-2">
-        <Badge variant={statusVariant(item.status)}>{statusLabel}</Badge>
-        {item.status === 'pending' && canReview ? (
-          <div className="flex gap-2">
-            <Button size="sm" disabled={pending} onClick={onApprove}>
-              {t('requestsPage.approve')}
-            </Button>
-            <Button size="sm" variant="outline" disabled={pending} onClick={onReject}>
-              {t('requestsPage.reject')}
-            </Button>
-          </div>
-        ) : null}
-      </div>
-    </div>
+      <AccessRequestTimelineCard
+        title={item.title}
+        typeLabel={requestTypeLabel}
+        targetLabel={targetTypeLabel}
+        status={item.status}
+        statusLabel={statusLabel}
+        submittedAt={formatDate(item.created_at)}
+        message={item.message}
+        yourMessageLabel={t('requestsPage.yourMessage')}
+        teamNoteLabel={t('requestsPage.adminNotes')}
+        submittedLabel={t('capabilities.requestCard.submitted')}
+        timelinePending={t('capabilities.requestCard.timelinePending')}
+        timelineApproved={t('capabilities.requestCard.timelineApproved')}
+        timelineRejected={t('capabilities.requestCard.timelineRejected')}
+        footer={footer}
+        className="border-0 bg-transparent p-0 shadow-none"
+      />
+    </Card>
   )
 }
-
-

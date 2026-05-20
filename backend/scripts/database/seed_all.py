@@ -16,6 +16,10 @@ def main() -> None:
     from seed_consumer_catalog import main as seed_catalog  # noqa: E402
 
     seed_catalog()
+    print("=== seed_pricing_plans ===")
+    from seed_pricing_plans import main as seed_pricing  # noqa: E402
+
+    seed_pricing()
     print("=== MVP seed_all done ===")
 
 

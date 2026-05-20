@@ -10,7 +10,9 @@ class AdminStatsRead(BaseModel):
     catalog_by_type: dict[str, int]
     users_total: int
     users_active: int
+    users_inactive: int
     purchases_total: int
+    revenue_total: float
     requests_pending: int
 
 
