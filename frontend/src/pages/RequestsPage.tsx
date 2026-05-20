@@ -45,7 +45,7 @@ function formatDate(iso: string) {
 export function RequestsPage() {
   const { t } = useI18n()
   const { isSuperuser, primaryRole, can } = useRbac()
-  const { currentUser, loadCurrentUser } = useAuth()
+  const { loadCurrentUser } = useAuth()
   const qc = useQueryClient()
   const isAdminReviewer = isSuperuser || primaryRole === 'super_admin'
   const { canCreate, creatorStatus, showCreatorRequestCta, getStatus } = useUserCapabilities()
