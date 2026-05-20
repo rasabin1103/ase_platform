@@ -10,6 +10,12 @@ from app.models.catalog_item import CatalogItem
 from app.models.catalog_pricing_plan import CatalogPricingPlan
 from app.models.enums import CatalogItemStatus, PricingBillingInterval, PricingPlanType, PricingSupportLevel
 
+PUBLIC_CATALOG_STATUSES = (
+    CatalogItemStatus.published,
+    CatalogItemStatus.coming_soon,
+    CatalogItemStatus.request_only,
+)
+
 
 def slugify_name(name: str) -> str:
     s = name.lower().strip()
@@ -63,6 +69,30 @@ class PricingPlansRepository:
                     CatalogItem.slug.ilike(q),
                 )
             )
+        total = int(self.db.scalar(select(func.count()).select_from(base.subquery())) or 0)
+        rows = self.db.execute(base.limit(limit).offset(offset)).all()
+        return [(plan, item) for plan, item in rows], total
+
+    def list_public_active(
+        self,
+        *,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[tuple[CatalogPricingPlan, CatalogItem]], int]:
+        base = (
+            select(CatalogPricingPlan, CatalogItem)
+            .join(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
+            .where(
+                CatalogPricingPlan.is_active.is_(True),
+                CatalogItem.status.in_(PUBLIC_CATALOG_STATUSES),
+            )
+            .order_by(
+                CatalogItem.title.asc(),
+                CatalogPricingPlan.is_default.desc(),
+                CatalogPricingPlan.price.asc(),
+                CatalogPricingPlan.created_at.desc(),
+            )
+        )
         total = int(self.db.scalar(select(func.count()).select_from(base.subquery())) or 0)
         rows = self.db.execute(base.limit(limit).offset(offset)).all()
         return [(plan, item) for plan, item in rows], total

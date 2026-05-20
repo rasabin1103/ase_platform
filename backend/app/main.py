@@ -31,6 +31,7 @@ from app.modules.courses.router import router as courses_router
 from app.modules.health.router import router as health_router
 from app.modules.invitations.router import router as invitations_router
 from app.modules.media.router import router as media_router
+from app.modules.pricing.public_router import router as public_pricing_router
 from app.modules.pricing.router import router as pricing_router
 from app.modules.member_roles.router import router as member_roles_router
 from app.modules.mvp_access_requests.router_admin import router as admin_access_requests_router
@@ -72,6 +73,7 @@ _MVP_HIDDEN_ROUTERS: tuple[str, ...] = (
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.PROJECT_NAME)
     app.include_router(health_router)
+    app.include_router(public_pricing_router)
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(services_router)

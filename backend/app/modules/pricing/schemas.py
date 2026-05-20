@@ -128,3 +128,18 @@ class PublicPricingPlanRead(BaseModel):
     supportLevel: PricingSupportLevel
     features: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
+
+
+class PublicCatalogPricingPlanRead(PublicPricingPlanRead):
+    catalogItemId: int
+    catalogItemTitle: str
+    catalogItemSlug: str
+    catalogItemType: CatalogItemType
+    catalogItemCategory: str
+
+
+class PublicCatalogPricingPlanListResponse(BaseModel):
+    items: list[PublicCatalogPricingPlanRead]
+    limit: int
+    offset: int
+    total: int

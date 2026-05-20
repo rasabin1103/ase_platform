@@ -16,6 +16,8 @@ from app.modules.pricing.schemas import (
     PricingPlanStatusPatch,
     PricingPlanUpdate,
     PricingPlanWithCatalogRead,
+    PublicCatalogPricingPlanListResponse,
+    PublicCatalogPricingPlanRead,
     PublicPricingPlanRead,
 )
 from app.modules.pricing.validation import validate_pricing_plan_fields
@@ -108,6 +110,26 @@ class PricingPlansService:
             catalog_item_title=item.title,
             catalog_item_slug=item.slug,
             catalog_item_type=item.type,
+        )
+
+    def _to_public_catalog(self, plan: CatalogPricingPlan, item: CatalogItem) -> PublicCatalogPricingPlanRead:
+        base = self._to_public(plan)
+        return PublicCatalogPricingPlanRead(
+            **base.model_dump(),
+            catalogItemId=item.id,
+            catalogItemTitle=item.title,
+            catalogItemSlug=item.slug,
+            catalogItemType=item.type,
+            catalogItemCategory=item.category,
+        )
+
+    def list_public_active(self, *, limit: int = 100, offset: int = 0) -> PublicCatalogPricingPlanListResponse:
+        rows, total = self.repo.list_public_active(limit=limit, offset=offset)
+        return PublicCatalogPricingPlanListResponse(
+            items=[self._to_public_catalog(plan, item) for plan, item in rows],
+            limit=limit,
+            offset=offset,
+            total=total,
         )
 
     def list_all(
