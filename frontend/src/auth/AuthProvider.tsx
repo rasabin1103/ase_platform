@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { MeResponse } from '../types/auth.types'
 import { me } from '../api/auth.api'
+import { API_BASE_URL } from '../api/client'
+import { authDebugLog, tokenMeta } from '../utils/authDebugLog'
 import {
   clearActiveOrganizationUuid,
   clearTokens,
@@ -8,6 +10,7 @@ import {
   setAccessToken,
   setActiveOrganizationUuid,
   setRefreshToken,
+  touchApiActivity,
 } from './auth.store'
 
 export type AuthContextValue = {
@@ -27,22 +30,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
   const loadCurrentUser = useCallback(async () => {
-    const token = getAccessToken()
-    if (!token) {
+    const tokenAtStart = getAccessToken()
+    if (!tokenAtStart) {
       setCurrentUser(null)
       setIsLoading(false)
       return
     }
     setIsLoading(true)
     try {
+      authDebugLog('fetching_current_user', { apiBase: API_BASE_URL || '(empty)', bootstrap: true })
       const user = await me()
       setCurrentUser(user)
+      authDebugLog('current_user_loaded', {
+        email: user.email,
+        primary_role: user.primary_role,
+        role_codes: user.role_codes,
+      })
       if (user.active_workspace_uuid) {
         setActiveOrganizationUuid(user.active_workspace_uuid)
       }
+      touchApiActivity()
     } catch {
-      clearTokens()
-      setCurrentUser(null)
+      const tokenNow = getAccessToken()
+      if (tokenNow && tokenNow === tokenAtStart) {
+        clearTokens()
+        setCurrentUser(null)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -52,14 +65,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void loadCurrentUser()
   }, [loadCurrentUser])
 
-  const login = useCallback(
-    async (tokens: { access_token: string; refresh_token: string }) => {
-      setAccessToken(tokens.access_token)
-      setRefreshToken(tokens.refresh_token)
-      await loadCurrentUser()
-    },
-    [loadCurrentUser],
-  )
+  const login = useCallback(async (tokens: { access_token: string; refresh_token: string }) => {
+    setAccessToken(tokens.access_token)
+    setRefreshToken(tokens.refresh_token)
+    authDebugLog('token_saved', tokenMeta(tokens.access_token))
+    setIsLoading(true)
+    try {
+      authDebugLog('fetching_current_user', { apiBase: API_BASE_URL || '(empty)', bootstrap: false })
+      const user = await me()
+      setCurrentUser(user)
+      authDebugLog('current_user_loaded', {
+        email: user.email,
+        primary_role: user.primary_role,
+        role_codes: user.role_codes,
+      })
+      if (user.active_workspace_uuid) {
+        setActiveOrganizationUuid(user.active_workspace_uuid)
+      }
+      touchApiActivity()
+    } catch (err) {
+      clearTokens()
+      setCurrentUser(null)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   const applyCurrentUser = useCallback((user: MeResponse) => {
     setCurrentUser(user)

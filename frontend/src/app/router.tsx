@@ -94,8 +94,9 @@ export const router = createBrowserRouter([
 function RoleAwareDashboard() {
   const { isConsumerMode, primaryRole, isSuperuser } = useRbac()
   if (isSuperuser || primaryRole === 'super_admin') return <AdminDashboardPage />
-  if (isConsumerMode) return <IndependentDashboardPage />
-  return <Navigate to="/dashboard" replace />
+  if (isConsumerMode || primaryRole === 'independent_user') return <IndependentDashboardPage />
+  // Avoid infinite <Navigate to="/dashboard" /> when role metadata is missing; send to onboarding.
+  return <Navigate to="/onboarding" replace />
 }
 
 function CatalogProductsPage() {

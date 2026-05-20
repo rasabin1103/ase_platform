@@ -12,7 +12,7 @@ ase/
 │   ├── migrations/      # Reference SQL (core tables)
 │   └── seed.sql         # Optional reference seed
 ├── docs/                # Database & deployment guides
-└── scripts/             # Legacy helpers → prefer ase_backend/scripts/database
+└── scripts/             # Legacy helpers → prefer backend/scripts/database
 ```
 
 ## Tech stack
@@ -40,7 +40,7 @@ copy backend\.env.example backend\.env
 copy frontend\.env.example frontend\.env
 ```
 
-Edit `backend\.env`: set `JWT_SECRET_KEY` and `POSTGRES_PASSWORD` / `DATABASE_URL` if needed.
+Edit `backend\.env`: set `DATABASE_URL` and a strong `JWT_SECRET_KEY`.
 
 ### 2. Database (Docker + migrations + seed)
 
@@ -84,12 +84,12 @@ npm run dev
 
 ### Backend (`backend/.env`)
 
-See [backend/.env.example](ase_backend/.env.example):
+See [backend/.env.example](backend/.env.example):
 
-- `DATABASE_URL` — PostgreSQL connection string
-- `JWT_SECRET_KEY` — **required** strong secret in production
+- `DATABASE_URL` — **required** PostgreSQL URL (`postgresql+psycopg://…`, or `postgresql://` / `postgres://` from Railway/Supabase)
+- `JWT_SECRET_KEY` — strong secret in production
+- `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS`
 - `MVP_MODE` — `true` hides legacy multi-tenant routes
-- `DEMO_SEED_PASSWORD` — local demo user password for seed scripts only
 
 ### Frontend (`frontend/.env`)
 
@@ -142,7 +142,7 @@ From `backend`:
 .\.venv\Scripts\python.exe scripts\database\seed_all.py
 ```
 
-Details: [backend/scripts/database/README.md](ase_backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
+Details: [backend/scripts/database/README.md](backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
 
 ## MVP roles
 

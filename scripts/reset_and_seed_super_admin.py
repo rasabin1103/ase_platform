@@ -14,7 +14,7 @@ The ``users`` table has no ``is_superuser`` column; superuser capability is the
 role is assigned, and ``organization_uuid`` for the first active membership.
 Send ``X-Organization-UUID`` on tenant-scoped routes using that UUID.
 
-Usage (from repository root, with DATABASE_URL or Postgres env vars set):
+Usage (from repository root, with DATABASE_URL set in backend/.env):
 
   python scripts/reset_and_seed_super_admin.py
 """

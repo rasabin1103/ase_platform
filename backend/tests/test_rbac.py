@@ -16,7 +16,7 @@ from app.models.role import Role
 from app.models.role_permission import RolePermission
 from app.models.user import User
 from app.modules.auth.dependencies import require_permission
-from app.modules.auth.security import create_access_token, hash_password
+from app.core.security import create_access_token, hash_password
 
 
 def _make_test_app(*, perm_code: str) -> FastAPI:

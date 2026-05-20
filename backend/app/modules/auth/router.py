@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -41,6 +42,8 @@ from app.modules.auth.schemas import (
 )
 from app.modules.auth.service import AuthService
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
@@ -55,7 +58,9 @@ def register(payload: RegisterRequest, svc: AuthService = Depends(get_service)):
 
 @router.post("/login", response_model=TokenPair)
 def login(payload: LoginRequest, svc: AuthService = Depends(get_service)):
-    return svc.login(payload)
+    tokens = svc.login(payload)
+    logger.info("login_success email=%s token_generated=true", str(payload.email))
+    return tokens
 
 
 @router.post("/refresh", response_model=TokenPair)
@@ -69,6 +74,7 @@ def me(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logger.info("current_user_requested email=%s", user.email)
     profile = MeResponse.model_validate(user)
     organization_uuid = db.execute(
         select(Organization.uuid)
@@ -119,7 +125,7 @@ def me(
 
     is_superuser = user_has_role_assigned(db, user_id=user.id, role_code="super_admin")
     active_workspace_uuid = get_default_organization_uuid(db, user)
-    return profile.model_copy(
+    body = profile.model_copy(
         update={
             "avatar_url": resolve_user_avatar_url(user),
             "has_avatar": user_has_stored_avatar(user),
@@ -131,6 +137,13 @@ def me(
             **rbac,
         }
     )
+    logger.info(
+        "current_user_resolved email=%s primary_role=%s role_codes=%s",
+        str(body.email),
+        body.primary_role,
+        ",".join(body.role_codes) if body.role_codes else "",
+    )
+    return body
 
 
 @router.post(
