@@ -1,4 +1,4 @@
-import type { PublicPricingPlan, PricingPlanType } from '../../types/catalog.types'
+import type { PublicCatalogPricingPlan, PublicPricingPlan, PricingPlanType } from '../../types/catalog.types'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -20,13 +20,20 @@ function intervalSuffix(plan: PublicPricingPlan, t: (k: string) => string) {
   return ''
 }
 
-type Props = {
-  plans: PublicPricingPlan[]
-  onCta?: (plan: PublicPricingPlan) => void
-  disabled?: boolean
+type Plan = PublicPricingPlan | PublicCatalogPricingPlan
+
+function isCatalogPlan(plan: Plan): plan is PublicCatalogPricingPlan {
+  return 'catalogItemTitle' in plan && typeof plan.catalogItemTitle === 'string'
 }
 
-export function CatalogPublicPricing({ plans, onCta, disabled }: Props) {
+type Props = {
+  plans: Plan[]
+  onCta?: (plan: Plan) => void
+  disabled?: boolean
+  showCatalogItem?: boolean
+}
+
+export function CatalogPublicPricing({ plans, onCta, disabled, showCatalogItem = false }: Props) {
   const { t } = useI18n()
 
   if (!plans.length) {
@@ -51,7 +58,13 @@ export function CatalogPublicPricing({ plans, onCta, disabled }: Props) {
                 : 'border-white/10 bg-ase-surface/60',
             )}
           >
-            <div className="flex flex-wrap gap-2">
+            {showCatalogItem && isCatalogPlan(plan) ? (
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/80">
+                {plan.catalogItemTitle}
+                <span className="ml-1 font-normal text-ase-muted">· {plan.catalogItemCategory}</span>
+              </p>
+            ) : null}
+            <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="info">{t(`catalogPricing.planType.${plan.planType}`)}</Badge>
               {plan.isDefault ? <Badge variant="warning">{t('catalogPricing.badge.default')}</Badge> : null}
               {plan.billingInterval !== 'none' ? (

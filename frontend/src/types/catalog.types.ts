@@ -36,6 +36,14 @@ export type PublicPricingPlan = {
   limitations: string[]
 }
 
+export type PublicCatalogPricingPlan = PublicPricingPlan & {
+  catalogItemId: number
+  catalogItemTitle: string
+  catalogItemSlug: string
+  catalogItemType: CatalogItemType
+  catalogItemCategory: string
+}
+
 export type CatalogItem = {
   id: string
   uuid: string
