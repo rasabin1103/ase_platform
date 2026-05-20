@@ -19,7 +19,7 @@ function ctaForStatus(status: CapabilityStatus, labels: {
 }): { label: string; disabled: boolean; variant: 'primary' | 'outline' | 'ghost' } {
   switch (status) {
     case 'active':
-      return { label: labels.active, disabled: false, variant: 'secondary' as const }
+      return { label: labels.active, disabled: false, variant: 'outline' as const }
     case 'pending':
       return { label: labels.pending, disabled: true, variant: 'outline' as const }
     case 'coming_soon':
@@ -46,14 +46,14 @@ export function RequestCapabilityCard({
 
   const footer = ctaHref && !resolved.disabled ? (
     <Link to={ctaHref}>
-      <Button className="w-full sm:w-auto" variant={resolved.variant === 'secondary' ? 'secondary' : 'primary'}>
+      <Button className="w-full sm:w-auto" variant={resolved.variant === 'secondary' ? 'outline' : 'primary'}>
         {resolved.label}
       </Button>
     </Link>
   ) : (
     <Button
       className="w-full sm:w-auto"
-      variant={resolved.variant === 'secondary' ? 'secondary' : resolved.variant}
+      variant={resolved.variant === 'secondary' ? 'outline' : resolved.variant}
       disabled={resolved.disabled}
       onClick={onCta}
     >

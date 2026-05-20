@@ -65,11 +65,14 @@ export function HeroSection() {
   )
 }
 
+const safeText = (value: unknown): string =>
+  typeof value === 'string' || typeof value === 'number' ? String(value) : ''
+
 function TrustPill({ label, value }: { label: unknown; value: unknown }) {
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5 py-4 shadow-soft backdrop-blur-sm transition duration-200 ease-out hover:border-white/[0.12] hover:bg-white/[0.04] sm:px-6 sm:py-5">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-ase-muted">{label}</div>
-      <div className="mt-2.5 text-sm leading-relaxed text-ase-text2">{value}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-ase-muted">{safeText(label)}</div>
+      <div className="mt-2.5 text-sm leading-relaxed text-ase-text2">{safeText(value)}</div>
     </div>
   )
 }

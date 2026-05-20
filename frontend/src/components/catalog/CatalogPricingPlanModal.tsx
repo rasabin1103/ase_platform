@@ -319,7 +319,10 @@ export function CatalogPricingPlanModal({
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || (!isEdit && catalogItems?.length && !catalogItemId)}
+            disabled={
+              isSubmitting ||
+              (!isEdit && (catalogItems?.length ?? 0) > 0 && !catalogItemId)
+            }
           >
             {t('catalogPricing.save')}
           </Button>
