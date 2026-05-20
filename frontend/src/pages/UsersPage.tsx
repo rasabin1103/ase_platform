@@ -1,10 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { invalidateAdminDashboard } from '../api/adminDashboard.invalidate'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
-import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api'
+import {
+  createAdminUser,
+  deleteAdminUser,
+  listAdminUsers,
+  patchAdminUserStatus,
+  updateAdminUser,
+  type AdminUser,
+} from '../api/adminUsers.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
@@ -14,28 +22,36 @@ import { Badge } from '../components/ui/Badge'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
-import type { User, UserStatus } from '../types/user.types'
+import { Toast } from '../components/ui/Toast'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { useAuth } from '../auth/AuthProvider'
 import { Can } from '../rbac/Can'
 
+type UserStatus = 'active' | 'inactive' | 'suspended' | 'deleted' | string
+
+const PLATFORM_ROLES = ['super_admin', 'independent_user'] as const
+
 type CreateValues = {
   email: string
-  plain_password: string
+  password: string
   first_name?: string | ''
   last_name?: string | ''
   display_name?: string | ''
-  status: 'active' | 'suspended' | 'deleted'
+  status: 'active' | 'inactive' | 'suspended'
+  role: (typeof PLATFORM_ROLES)[number]
+  can_create_content: boolean
 }
 
 type EditValues = {
-  email?: string | ''
-  plain_password?: string | ''
   first_name?: string | ''
   last_name?: string | ''
   display_name?: string | ''
-  status?: 'active' | 'suspended' | 'deleted'
+  phone_e164?: string | ''
+  status?: 'active' | 'inactive' | 'suspended'
+  role?: (typeof PLATFORM_ROLES)[number]
+  can_create_content?: boolean
+  creator_status?: 'none' | 'pending' | 'approved' | 'rejected'
 }
 
 type UsersViewMode = 'cards' | 'table'
@@ -48,7 +64,7 @@ function fmtDate(iso: string) {
   }
 }
 
-function displayName(u: User) {
+function displayName(u: AdminUser) {
   return u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email
 }
 
@@ -56,32 +72,45 @@ export function UsersPage() {
   const queryClient = useQueryClient()
   const { t } = useI18n()
   const { currentUser } = useAuth()
-  const [editing, setEditing] = useState<User | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
+  const [editing, setEditing] = useState<AdminUser | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
   const [viewMode, setViewMode] = useState<UsersViewMode>('cards')
-  const isSuperAdmin = Boolean(currentUser?.is_superuser)
+  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null)
+  const isSuperAdmin = Boolean(currentUser?.is_superuser || currentUser?.primary_role === 'super_admin')
 
   const statusOptions = useMemo<Array<{ value: UserStatus; label: string }>>(
     () => [
       { value: 'active', label: t('usersPage.status.active') as string },
+      { value: 'inactive', label: (t('usersPage.status.inactive') as string) || 'Inactive' },
       { value: 'suspended', label: t('usersPage.status.suspended') as string },
-      { value: 'deleted', label: t('usersPage.status.deleted') as string },
     ],
     [t],
+  )
+
+  const roleOptions = useMemo(
+    () =>
+      PLATFORM_ROLES.map((r) => ({
+        value: r,
+        label: r === 'super_admin' ? 'Super Admin' : 'Independent User',
+      })),
+    [],
   )
 
   const createSchema = useMemo(
     () =>
       z.object({
         email: z.string().email(),
-        plain_password: z.string().min(8, t('usersPage.errors.passwordMin') as string),
+        password: z.string().min(8, t('usersPage.errors.passwordMin') as string),
         first_name: z.string().max(100).optional().or(z.literal('')),
         last_name: z.string().max(100).optional().or(z.literal('')),
         display_name: z.string().max(150).optional().or(z.literal('')),
-        status: z.enum(['active', 'suspended', 'deleted']),
+        status: z.enum(['active', 'inactive', 'suspended']),
+        role: z.enum(['super_admin', 'independent_user']),
+        can_create_content: z.boolean(),
       }),
     [t],
   )
@@ -89,81 +118,117 @@ export function UsersPage() {
   const editSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email().optional().or(z.literal('')),
-        plain_password: z.string().min(8, t('usersPage.errors.passwordMin') as string).optional().or(z.literal('')),
         first_name: z.string().max(100).optional().or(z.literal('')),
         last_name: z.string().max(100).optional().or(z.literal('')),
         display_name: z.string().max(150).optional().or(z.literal('')),
-        status: z.enum(['active', 'suspended', 'deleted']).optional(),
+        phone_e164: z.string().max(20).optional().or(z.literal('')),
+        status: z.enum(['active', 'inactive', 'suspended']).optional(),
+        role: z.enum(['super_admin', 'independent_user']).optional(),
+        can_create_content: z.boolean().optional(),
+        creator_status: z.enum(['none', 'pending', 'approved', 'rejected']).optional(),
       }),
     [t],
   )
 
   const usersQuery = useQuery({
-    queryKey: ['users', { limit: 50, offset: 0 }],
-    queryFn: () => listUsers({ limit: 50, offset: 0 }),
+    queryKey: ['admin-users', { limit: 50, offset: 0, statusFilter, roleFilter, search }],
+    queryFn: () =>
+      listAdminUsers({
+        limit: 50,
+        offset: 0,
+        status: statusFilter || undefined,
+        role: roleFilter || undefined,
+        search: search.trim() || undefined,
+      }),
+    enabled: isSuperAdmin,
   })
 
   const items = usersQuery.data?.items ?? []
   const activeCount = useMemo(() => items.filter((u) => u.status === 'active').length, [items])
   const suspendedCount = useMemo(() => items.filter((u) => u.status === 'suspended').length, [items])
-  const invitedCount = useMemo(() => items.filter((u) => !u.email_verified_at).length, [items])
+  const inactiveCount = useMemo(() => items.filter((u) => u.status === 'inactive').length, [items])
 
   const createForm = useForm<CreateValues>({
     resolver: zodResolver(createSchema),
     defaultValues: {
       email: '',
-      plain_password: '',
+      password: '',
       first_name: '',
       last_name: '',
       display_name: '',
       status: 'active',
+      role: 'independent_user',
+      can_create_content: false,
     },
   })
 
   const editForm = useForm<EditValues>({
     resolver: zodResolver(editSchema),
     defaultValues: {
-      email: '',
-      plain_password: '',
       first_name: '',
       last_name: '',
       display_name: '',
+      phone_e164: '',
       status: 'active',
+      role: 'independent_user',
+      can_create_content: false,
+      creator_status: 'none',
     },
   })
 
   const createMutation = useMutation({
-    mutationFn: createUser,
+    mutationFn: createAdminUser,
     onSuccess: async () => {
       createForm.reset({
         email: '',
-        plain_password: '',
+        password: '',
         first_name: '',
         last_name: '',
         display_name: '',
         status: 'active',
+        role: 'independent_user',
+        can_create_content: false,
       })
       setCreateOpen(false)
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      setToast({ message: t('usersPage.toast.created') as string, variant: 'success' })
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      await invalidateAdminDashboard(queryClient)
     },
+    onError: () => setToast({ message: t('usersPage.create.error') as string, variant: 'error' }),
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ user_uuid, payload }: { user_uuid: string; payload: any }) =>
-      updateUser(user_uuid, payload),
+    mutationFn: ({ user_uuid, payload }: { user_uuid: string; payload: Parameters<typeof updateAdminUser>[1] }) =>
+      updateAdminUser(user_uuid, payload),
     onSuccess: async () => {
       setEditing(null)
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      setToast({ message: t('usersPage.toast.saved') as string, variant: 'success' })
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      await invalidateAdminDashboard(queryClient)
     },
+    onError: () => setToast({ message: t('usersPage.edit.error') as string, variant: 'error' }),
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: ({ user_uuid, status }: { user_uuid: string; status: UserStatus }) =>
+      patchAdminUserStatus(user_uuid, status),
+    onSuccess: async () => {
+      setToast({ message: t('usersPage.toast.statusUpdated') as string, variant: 'success' })
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      await invalidateAdminDashboard(queryClient)
+    },
+    onError: () => setToast({ message: t('usersPage.edit.error') as string, variant: 'error' }),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (user_uuid: string) => deleteUser(user_uuid),
+    mutationFn: (user_uuid: string) => deleteAdminUser(user_uuid),
     onSuccess: async () => {
       setConfirmDelete(null)
-      await queryClient.invalidateQueries({ queryKey: ['users'] })
+      setToast({ message: t('usersPage.toast.deleted') as string, variant: 'success' })
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      await invalidateAdminDashboard(queryClient)
     },
+    onError: () => setToast({ message: t('usersPage.delete.error') as string, variant: 'error' }),
   })
 
   const editTitle = useMemo(
@@ -171,17 +236,20 @@ export function UsersPage() {
     [editing, t],
   )
 
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return items.filter((u) => {
-      if (statusFilter && u.status !== statusFilter) return false
-      if (!query) return true
-      return `${displayName(u)} ${u.email}`.toLowerCase().includes(query)
-    })
-  }, [items, search, statusFilter])
+  const filteredItems = items
+
+  if (!isSuperAdmin) {
+    return (
+      <EmptyState
+        title={t('usersPage.errors.superAdminOnlyTitle') as string}
+        description={t('usersPage.errors.superAdminOnlySubtitle') as string}
+      />
+    )
+  }
 
   return (
     <div className="space-y-8 pb-16">
+      {toast ? <Toast message={toast.message} variant={toast.variant} onDismiss={() => setToast(null)} /> : null}
       <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-[radial-gradient(circle_at_15%_0%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(168,85,247,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.02))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] md:p-8">
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:38px_38px]" />
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
@@ -213,7 +281,7 @@ export function UsersPage() {
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.heroMetric')}</div>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <IdentityOrb label={t('usersPage.status.active') as string} value={activeCount} tone="success" />
-              <IdentityOrb label={t('usersPage.premium.cards.verification') as string} value={invitedCount} tone="info" />
+              <IdentityOrb label={(t('usersPage.status.inactive') as string) || 'Inactive'} value={inactiveCount} tone="info" />
               <IdentityOrb label={t('usersPage.status.suspended') as string} value={suspendedCount} tone="warning" />
             </div>
           </Card>
@@ -223,20 +291,28 @@ export function UsersPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PremiumUserMetric label={t('usersPage.stats.total.label') as string} hint={t('usersPage.stats.total.hint') as string} value={usersQuery.data?.total ?? items.length} icon="◉" accent="from-cyan-300 to-blue-500" />
         <PremiumUserMetric label={t('usersPage.stats.active.label') as string} hint={t('usersPage.stats.active.hint') as string} value={activeCount} icon="✓" accent="from-emerald-300 to-teal-500" />
-        <PremiumUserMetric label={t('usersPage.stats.invited.label') as string} hint={t('usersPage.stats.invited.hint') as string} value={invitedCount} icon="✦" accent="from-violet-300 to-fuchsia-500" />
+        <PremiumUserMetric label={(t('usersPage.status.inactive') as string) || 'Inactive'} hint={t('usersPage.stats.inactive.hint') as string} value={inactiveCount} icon="✦" accent="from-violet-300 to-fuchsia-500" />
         <PremiumUserMetric label={t('usersPage.stats.suspended.label') as string} hint={t('usersPage.stats.suspended.hint') as string} value={suspendedCount} icon="○" accent="from-amber-300 to-orange-500" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
           <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
-            <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto]">
+            <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_160px_auto]">
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('usersPage.premium.filters.search') as string} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50" />
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50">
                 <option value="">{t('usersPage.premium.filters.allStatuses')}</option>
                 {statusOptions.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
+                  </option>
+                ))}
+              </Select>
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50">
+                <option value="">{t('usersPage.premium.filters.allRoles') as string}</option>
+                {roleOptions.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
                   </option>
                 ))}
               </Select>
@@ -270,13 +346,19 @@ export function UsersPage() {
                   onEdit={() => {
                     setEditing(u)
                     editForm.reset({
-                      email: u.email,
-                      plain_password: '',
                       first_name: u.first_name ?? '',
                       last_name: u.last_name ?? '',
                       display_name: u.display_name ?? '',
-                      status: (u.status as any) ?? 'active',
+                      phone_e164: u.phone_e164 ?? '',
+                      status: (u.status as CreateValues['status']) ?? 'active',
+                      role: (u.primary_role as EditValues['role']) ?? 'independent_user',
+                      can_create_content: u.can_create_content,
+                      creator_status: (u.creator_status as EditValues['creator_status']) ?? 'none',
                     })
+                  }}
+                  onToggleStatus={() => {
+                    const next = u.status === 'active' ? 'inactive' : 'active'
+                    statusMutation.mutate({ user_uuid: u.uuid, status: next })
                   }}
                   onDelete={() => setConfirmDelete(u)}
                 />
@@ -287,9 +369,11 @@ export function UsersPage() {
               <Table className="table-fixed">
                 <THead>
                   <TR>
-                    <TH className="w-[48%]">{t('usersPage.list.columns.user')}</TH>
-                    <TH className="w-[18%]">{t('usersPage.list.columns.status')}</TH>
-                    <TH className="hidden w-[18%] xl:table-cell">{t('usersPage.list.columns.createdAt')}</TH>
+                    <TH className="w-[30%]">{t('usersPage.list.columns.user')}</TH>
+                    <TH className="w-[12%]">{t('usersPage.list.columns.role') as string}</TH>
+                    <TH className="w-[10%]">{t('usersPage.list.columns.status')}</TH>
+                    <TH className="hidden w-[10%] lg:table-cell">{t('usersPage.list.columns.creatorEnabled') as string}</TH>
+                    <TH className="hidden w-[12%] xl:table-cell">{t('usersPage.list.columns.createdAt')}</TH>
                     <TH className="w-[26%] text-right">{t('usersPage.list.columns.actions')}</TH>
                   </TR>
                 </THead>
@@ -299,26 +383,42 @@ export function UsersPage() {
                       <TD className="font-medium text-ase-text">
                         <UserIdentity user={u} />
                       </TD>
+                      <TD className="text-ase-text2 text-sm">{u.primary_role ?? '—'}</TD>
                       <TD>{renderStatusBadge(t, u.status ?? null)}</TD>
+                      <TD className="hidden text-ase-text2 text-sm lg:table-cell">
+                        {u.can_create_content ? (t('usersPage.premium.cards.yes') as string) : (t('usersPage.premium.cards.no') as string)}
+                      </TD>
                       <TD className="hidden text-ase-muted xl:table-cell">{fmtDate(u.created_at)}</TD>
                       <TD className="text-right">
-                        <div className="inline-flex gap-2">
+                        <div className="inline-flex flex-wrap justify-end gap-2">
                           <Button
                             size="sm"
                             variant="secondary"
                             onClick={() => {
                               setEditing(u)
                               editForm.reset({
-                                email: u.email,
-                                plain_password: '',
                                 first_name: u.first_name ?? '',
                                 last_name: u.last_name ?? '',
                                 display_name: u.display_name ?? '',
-                                status: (u.status as any) ?? 'active',
+                                phone_e164: u.phone_e164 ?? '',
+                                status: (u.status as CreateValues['status']) ?? 'active',
+                                role: (u.primary_role as EditValues['role']) ?? 'independent_user',
+                                can_create_content: u.can_create_content,
+                                creator_status: (u.creator_status as EditValues['creator_status']) ?? 'none',
                               })
                             }}
                           >
                             {t('usersPage.actions.edit')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const next = u.status === 'active' ? 'inactive' : 'active'
+                              statusMutation.mutate({ user_uuid: u.uuid, status: next })
+                            }}
+                          >
+                            {u.status === 'active' ? (t('usersPage.actions.deactivate') as string) : (t('usersPage.actions.activate') as string)}
                           </Button>
                           <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setConfirmDelete(u)}>{t('usersPage.actions.delete')}</Button>
                         </div>
@@ -331,7 +431,7 @@ export function UsersPage() {
           )}
         </div>
 
-        <UsersInsightsPanel t={t} items={items} activeCount={activeCount} invitedCount={invitedCount} suspendedCount={suspendedCount} onCreate={() => setCreateOpen(true)} />
+        <UsersInsightsPanel t={t} items={items} activeCount={activeCount} inactiveCount={inactiveCount} suspendedCount={suspendedCount} onCreate={() => setCreateOpen(true)} />
       </div>
 
       {createOpen && (
@@ -349,7 +449,13 @@ export function UsersPage() {
               </Button>
             </div>
             <div className="mt-6">
-              <CreateUserForm t={t} form={createForm} statusOptions={statusOptions} createMutation={createMutation} />
+              <CreateUserForm
+                t={t}
+                form={createForm}
+                statusOptions={statusOptions}
+                roleOptions={roleOptions}
+                createMutation={createMutation}
+              />
             </div>
           </div>
         </div>
@@ -373,12 +479,14 @@ export function UsersPage() {
                 updateMutation.mutate({
                   user_uuid: editing.uuid,
                   payload: {
-                    email: values.email ? values.email : null,
-                    plain_password: values.plain_password ? values.plain_password : null,
-                    first_name: values.first_name ? values.first_name : null,
-                    last_name: values.last_name ? values.last_name : null,
-                    display_name: values.display_name ? values.display_name : null,
+                    first_name: values.first_name || null,
+                    last_name: values.last_name || null,
+                    display_name: values.display_name || null,
+                    phone_e164: values.phone_e164 || null,
                     status: values.status ?? null,
+                    role: values.role ?? null,
+                    can_create_content: values.can_create_content,
+                    creator_status: values.creator_status ?? null,
                   },
                 })
               })}
@@ -390,17 +498,7 @@ export function UsersPage() {
       >
         <div className="mb-4 text-sm text-ase-text2">{t('usersPage.edit.subtitle')}</div>
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
-            <Input placeholder={t('usersPage.create.placeholders.email') as string} {...editForm.register('email')} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
-            <Input type="password" placeholder={t('usersPage.edit.optionalPassword') as string} {...editForm.register('plain_password')} />
-            {editForm.formState.errors.plain_password && (
-              <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.plain_password.message}</p>
-            )}
-          </div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text2">{editing?.email}</div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
@@ -416,11 +514,39 @@ export function UsersPage() {
             <Input placeholder={t('usersPage.create.placeholders.displayName') as string} {...editForm.register('display_name')} />
           </div>
           <div>
+            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.phone') as string}</label>
+            <Input placeholder="+34…" {...editForm.register('phone_e164')} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.role') as string}</label>
+            <Select {...editForm.register('role')}>
+              {roleOptions.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
             <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
             <Select {...editForm.register('status')}>
               {statusOptions.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-ase-text2">
+            <input type="checkbox" className="rounded border-white/20" {...editForm.register('can_create_content')} />
+            {t('usersPage.create.fields.canCreateContent') as string}
+          </label>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.creatorStatus') as string}</label>
+            <Select {...editForm.register('creator_status')}>
+              {(['none', 'pending', 'approved', 'rejected'] as const).map((s) => (
+                <option key={s} value={s}>
+                  {s}
                 </option>
               ))}
             </Select>
@@ -461,7 +587,10 @@ export function UsersPage() {
           <div className="text-sm text-ase-text">
             {String(t('usersPage.delete.body')).replace('{{email}}', String(confirmDelete?.email ?? ''))}
           </div>
-          <div className="text-sm text-ase-text2">{t('usersPage.delete.note')}</div>
+          <div className="text-sm font-medium text-ase-error">
+            {(t('usersPage.delete.hardWarning') as string) ||
+              'This will permanently remove the user from the database. This cannot be undone.'}
+          </div>
           {deleteMutation.isError && (
             <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
               {t('usersPage.delete.error')}
@@ -475,15 +604,16 @@ export function UsersPage() {
 
 function renderStatusBadge(t: (k: string) => string, status: string | null) {
   if (!status) return <span className="text-ase-muted">{t('usersPage.common.na') as string}</span>
-  const key =
-    status === 'active' || status === 'suspended' || status === 'deleted'
-      ? (`usersPage.status.${status}` as const)
-      : ('usersPage.status.unknown' as const)
-  const variant = status === 'active' ? 'success' : status === 'suspended' ? 'warning' : status === 'deleted' ? 'error' : 'default'
+  const known = ['active', 'inactive', 'suspended', 'deleted'] as const
+  const key = known.includes(status as (typeof known)[number])
+    ? (`usersPage.status.${status}` as const)
+    : ('usersPage.status.unknown' as const)
+  const variant =
+    status === 'active' ? 'success' : status === 'inactive' ? 'default' : status === 'suspended' ? 'warning' : status === 'deleted' ? 'error' : 'default'
   return <Badge variant={variant}>{t(key) as string}</Badge>
 }
 
-function initials(u: User) {
+function initials(u: AdminUser) {
   const name = u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ')
   const source = (name || u.email || '').trim()
   const parts = source.split(/\s+/).filter(Boolean)
@@ -491,7 +621,7 @@ function initials(u: User) {
   return two.toUpperCase()
 }
 
-function UserIdentity({ user }: { user: User }) {
+function UserIdentity({ user }: { user: AdminUser }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
       <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-400/15 to-violet-400/10 text-xs font-extrabold text-ase-text">
@@ -540,11 +670,13 @@ function UserPremiumCard({
   user,
   t,
   onEdit,
+  onToggleStatus,
   onDelete,
 }: {
-  user: User
+  user: AdminUser
   t: (k: string) => string
   onEdit: () => void
+  onToggleStatus: () => void
   onDelete: () => void
 }) {
   return (
@@ -556,16 +688,20 @@ function UserPremiumCard({
       </div>
       <div className="relative mt-5 grid grid-cols-2 gap-3">
         <MiniUserMetric label={t('usersPage.premium.cards.identity') as string} value={displayName(user)} />
+        <MiniUserMetric label={t('usersPage.list.columns.role') as string} value={user.primary_role ?? '—'} />
         <MiniUserMetric label={t('usersPage.premium.cards.accessState') as string} value={t(`usersPage.status.${user.status}`) as string} />
         <MiniUserMetric label={t('usersPage.premium.cards.joined') as string} value={fmtDate(user.created_at)} />
         <MiniUserMetric
-          label={t('usersPage.premium.cards.verification') as string}
-          value={(user.email_verified_at ? t('usersPage.premium.cards.verified') : t('usersPage.premium.cards.pending')) as string}
+          label={t('usersPage.create.fields.canCreateContent') as string}
+          value={user.can_create_content ? (t('usersPage.premium.cards.yes') as string) : (t('usersPage.premium.cards.no') as string)}
         />
       </div>
       <div className="relative mt-5 flex flex-wrap gap-2">
         <Button size="sm" variant="secondary" onClick={onEdit}>
           {t('usersPage.premium.actions.viewProfile')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onToggleStatus}>
+          {user.status === 'active' ? (t('usersPage.actions.deactivate') as string) : (t('usersPage.actions.activate') as string)}
         </Button>
         <Button size="sm" variant="ghost" onClick={onEdit}>
           {t('usersPage.actions.edit')}
@@ -591,19 +727,19 @@ function UsersInsightsPanel({
   t,
   items,
   activeCount,
-  invitedCount,
+  inactiveCount,
   suspendedCount,
   onCreate,
 }: {
   t: (k: string) => string
-  items: User[]
+  items: AdminUser[]
   activeCount: number
-  invitedCount: number
+  inactiveCount: number
   suspendedCount: number
   onCreate: () => void
 }) {
   const recent = [...items].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 3)
-  const attention = items.filter((u) => u.status === 'suspended' || !u.email_verified_at)
+  const attention = items.filter((u) => u.status === 'suspended' || u.status === 'inactive')
   const total = Math.max(1, items.length)
   return (
     <aside className="space-y-6">
@@ -617,7 +753,7 @@ function UsersInsightsPanel({
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.insights.lifecycle')}</div>
             <div className="mt-3 space-y-3">
               <InsightBar label={t('usersPage.status.active') as string} value={activeCount} total={total} />
-              <InsightBar label={t('usersPage.premium.cards.verification') as string} value={invitedCount} total={total} />
+              <InsightBar label={(t('usersPage.status.inactive') as string) || 'Inactive'} value={inactiveCount} total={total} />
               <InsightBar label={t('usersPage.status.suspended') as string} value={suspendedCount} total={total} />
             </div>
           </section>
@@ -667,13 +803,15 @@ function CreateUserForm({
   t,
   form,
   statusOptions,
+  roleOptions,
   createMutation,
 }: {
   t: (k: string) => string
   form: UseFormReturn<CreateValues>
   statusOptions: Array<{ value: UserStatus; label: string }>
+  roleOptions: Array<{ value: string; label: string }>
   createMutation: {
-    mutate: (payload: Parameters<typeof createUser>[0]) => void
+    mutate: (payload: Parameters<typeof createAdminUser>[0]) => void
     isError: boolean
     isPending: boolean
   }
@@ -684,11 +822,13 @@ function CreateUserForm({
       onSubmit={form.handleSubmit((values) => {
         createMutation.mutate({
           email: values.email,
-          plain_password: values.plain_password,
+          password: values.password,
           first_name: values.first_name || null,
           last_name: values.last_name || null,
           display_name: values.display_name || null,
           status: values.status,
+          role: values.role,
+          can_create_content: values.can_create_content,
         })
       })}
     >
@@ -699,8 +839,8 @@ function CreateUserForm({
       </div>
       <div>
         <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
-        <Input type="password" placeholder={t('usersPage.create.placeholders.temporaryPassword') as string} {...form.register('plain_password')} />
-        {form.formState.errors.plain_password && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>}
+        <Input type="password" placeholder={t('usersPage.create.placeholders.temporaryPassword') as string} {...form.register('password')} />
+        {form.formState.errors.password && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.password.message}</p>}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -717,6 +857,16 @@ function CreateUserForm({
         <Input placeholder={t('usersPage.create.placeholders.displayName') as string} {...form.register('display_name')} />
       </div>
       <div>
+        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.role') as string}</label>
+        <Select {...form.register('role')}>
+          {roleOptions.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div>
         <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
         <Select {...form.register('status')}>
           {statusOptions.map((s) => (
@@ -724,6 +874,10 @@ function CreateUserForm({
           ))}
         </Select>
       </div>
+      <label className="flex items-center gap-2 text-sm text-ase-text2">
+        <input type="checkbox" className="rounded border-white/20" {...form.register('can_create_content')} />
+        {t('usersPage.create.fields.canCreateContent') as string}
+      </label>
       {createMutation.isError && <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">{t('usersPage.create.error')}</div>}
       <Button type="submit" className="w-full" disabled={createMutation.isPending} leftIcon={<span className="text-xs">+</span>}>
         {createMutation.isPending ? t('usersPage.create.creating') : t('usersPage.create.button')}

@@ -2,6 +2,40 @@ export type CatalogItemType = 'product' | 'course' | 'book' | 'resource'
 export type CatalogItemStatus = 'published' | 'draft' | 'coming_soon' | 'request_only'
 export type CatalogItemLevel = 'beginner' | 'intermediate' | 'advanced'
 
+export type PricingPlanType =
+  | 'free'
+  | 'one_time'
+  | 'subscription'
+  | 'lifetime'
+  | 'request_quote'
+
+export type PricingBillingInterval = 'none' | 'monthly' | 'quarterly' | 'yearly'
+
+export type PricingSupportLevel = 'none' | 'basic' | 'priority' | 'enterprise'
+
+export type PublicPricingPlan = {
+  id: number
+  name: string
+  slug: string
+  description?: string | null
+  planType: PricingPlanType
+  billingInterval: PricingBillingInterval
+  price: string | number
+  currency: string
+  trialDays?: number | null
+  setupFee?: string | number | null
+  discountPercentage?: string | number | null
+  isDefault: boolean
+  maxUsers?: number | null
+  maxDownloads?: number | null
+  accessDurationDays?: number | null
+  includesUpdates: boolean
+  includesSupport: boolean
+  supportLevel: PricingSupportLevel
+  features: string[]
+  limitations: string[]
+}
+
 export type CatalogItem = {
   id: string
   uuid: string
@@ -24,6 +58,7 @@ export type CatalogItem = {
   includedItems?: string[]
   isFavorite: boolean
   isPurchased: boolean
+  pricingPlans?: PublicPricingPlan[]
   createdAt: string
   updatedAt: string
 }

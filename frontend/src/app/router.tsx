@@ -13,6 +13,7 @@ import {
   ProfilePage,
 } from '../pages/independent'
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
+import { AdminPricingPlansPage } from '../pages/admin/AdminPricingPlansPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
 import { useRbac } from '../rbac/useRbac'
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
           },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/admin/catalog', element: <AdminCatalogPage /> },
+          { path: '/admin/pricing-plans', element: <AdminPricingPlansPage /> },
           { path: '/admin/purchases', element: <AdminPurchasesPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '/requests', element: <RequestsPage /> },

@@ -114,6 +114,8 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
 
       { to: '/admin/catalog', labelKey: 'private.nav.catalogManage', icon: '◇', anyPermission: ['catalog.manage'] },
 
+      { to: '/admin/pricing-plans', labelKey: 'private.nav.pricingPlansManage', icon: '€', anyPermission: ['catalog.manage'] },
+
       { to: '/users', labelKey: 'private.nav.users', icon: '◉', anyPermission: ['users.read'] },
 
       { to: '/admin/purchases', labelKey: 'private.nav.purchasesAdmin', icon: '🛒', anyPermission: ['purchases.read_all'] },
@@ -146,7 +148,7 @@ export const NAV_GROUPS = SUPER_ADMIN_NAV_GROUPS
 
 export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
 
-  super_admin: ['/dashboard', '/admin/catalog', '/users', '/admin/purchases', '/requests', '/profile'],
+  super_admin: ['/dashboard', '/admin/catalog', '/admin/pricing-plans', '/users', '/admin/purchases', '/requests', '/profile'],
 
   independent_user: [
 

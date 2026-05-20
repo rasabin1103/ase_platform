@@ -22,6 +22,7 @@ from app.models.resource_assignment import ResourceAssignment
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_favorite import CatalogFavorite
 from app.models.catalog_purchase import CatalogPurchase
+from app.models.catalog_pricing_plan import CatalogPricingPlan
 
 __all__ = [
     "User",
@@ -48,5 +49,6 @@ __all__ = [
     "CatalogItem",
     "CatalogFavorite",
     "CatalogPurchase",
+    "CatalogPricingPlan",
 ]
 

@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   createMyAccessRequest,
@@ -20,6 +21,7 @@ type Props = {
   title: string
   modalTitle: string
   modalDescription?: string
+  icon?: LucideIcon
 }
 
 export function AccessRequestModal({
@@ -32,6 +34,7 @@ export function AccessRequestModal({
   title,
   modalTitle,
   modalDescription,
+  icon: Icon,
 }: Props) {
   const { t } = useI18n()
   const [message, setMessage] = useState('')
@@ -76,7 +79,16 @@ export function AccessRequestModal({
         </div>
       }
     >
-      {modalDescription ? <p className="mb-4 text-sm text-ase-text2">{modalDescription}</p> : null}
+      <div className="mb-5 flex gap-4 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-cyan-400/10 to-violet-400/5 p-4">
+        {Icon ? (
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04]">
+            <Icon className="h-6 w-6 text-cyan-100/90" strokeWidth={1.75} aria-hidden />
+          </div>
+        ) : null}
+        <div className="min-w-0 text-sm leading-relaxed text-ase-text2">
+          {modalDescription ?? (t('capabilities.modal.premiumSubtitle') as string)}
+        </div>
+      </div>
       <label className="mb-2 block text-xs font-medium text-ase-muted">{t('requestsPage.modalMessageLabel')}</label>
       <Textarea
         value={message}

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { EmptyChartState } from '../../charts/EmptyChartState'
+import { chartYMax, normalizeChartSeries } from '../../charts/chartUtils'
 import { Badge } from '../../ui/Badge'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -47,6 +49,51 @@ export function PremiumHero({
         {sidePanel}
       </div>
     </section>
+  )
+}
+
+export function PremiumUsersMetricCard({
+  label,
+  hint,
+  active,
+  inactive,
+  icon,
+  accent,
+  activeLabel,
+  inactiveLabel,
+}: {
+  label: string
+  hint?: string
+  active: number
+  inactive: number
+  icon: string
+  accent: string
+  activeLabel: string
+  inactiveLabel: string
+}) {
+  return (
+    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur" interactive>
+      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', accent)} />
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.06] px-3 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-200/80">{activeLabel}</div>
+              <div className="mt-1 text-2xl font-semibold tabular-nums text-emerald-100">{active.toLocaleString()}</div>
+            </div>
+            <div className="rounded-2xl border border-amber-400/12 bg-amber-400/[0.05] px-3 py-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/70">{inactiveLabel}</div>
+              <div className="mt-1 text-2xl font-semibold tabular-nums text-amber-100/90">{inactive.toLocaleString()}</div>
+            </div>
+          </div>
+          {hint ? <div className="mt-3 text-xs text-ase-text2">{hint}</div> : null}
+        </div>
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm">
+          {icon}
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -136,42 +183,73 @@ export function PremiumChartCard({
   color = '#22d3ee',
   valueFormatter,
   className,
+  emptyMessage,
+  chartId,
+  /** True when the source table has no rows (from /admin/stats). */
+  noTableData = false,
 }: {
   title: string
   data: { month: string; value: number }[]
   color?: string
   valueFormatter?: (v: number) => string
   className?: string
+  emptyMessage?: string
+  /** Stable id for SVG gradients (avoid duplicate ids when titles repeat). */
+  chartId?: string
+  noTableData?: boolean
 }) {
-  const chartData = data.map((d) => ({ ...d, label: d.month.slice(5) || d.month }))
+  const chartData = normalizeChartSeries(data)
+  const showEmpty = noTableData
+  const gradientId = `grad-${(chartId ?? title).replace(/\s+/g, '-')}`
+  const yMax = chartYMax(chartData)
+
   return (
     <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur', className)}>
       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{title}</div>
-      <div className="mt-4 h-52">
-        {chartData.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-ase-muted">—</div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ left: -8, right: 8, top: 8, bottom: 0 }}>
-              <defs>
-                <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-              <Tooltip
-                contentStyle={{ background: '#0f1118', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
-                formatter={(v) => {
-                  const n = typeof v === 'number' ? v : Number(v ?? 0)
-                  return [valueFormatter ? valueFormatter(n) : n, '']
-                }}
-              />
-              <Area type="monotone" dataKey="value" stroke={color} fill={`url(#grad-${title})`} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
+      <div className="relative mt-4 h-52 min-h-[13rem] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ left: -4, right: 8, top: 8, bottom: 4 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={showEmpty ? 0.12 : 0.35} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(148,163,184,0.12)" strokeDasharray="4 4" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[0, yMax]}
+              allowDecimals={false}
+              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={40}
+            />
+            <Tooltip
+              contentStyle={{ background: '#0f1118', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
+              formatter={(v) => {
+                const n = typeof v === 'number' ? v : Number(v ?? 0)
+                return [valueFormatter ? valueFormatter(n) : n, '']
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeOpacity={showEmpty ? 0.45 : 1}
+              fill={`url(#${gradientId})`}
+              strokeWidth={2}
+              dot={showEmpty ? { r: 2, fill: color, strokeWidth: 0 } : false}
+              activeDot={{ r: 4 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+        {showEmpty && emptyMessage ? <EmptyChartState message={emptyMessage} /> : null}
       </div>
     </Card>
   )

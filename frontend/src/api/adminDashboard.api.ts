@@ -5,7 +5,9 @@ export type AdminStats = {
   catalog_by_type: Record<string, number>
   users_total: number
   users_active: number
+  users_inactive: number
   purchases_total: number
+  revenue_total: number
   requests_pending: number
 }
 

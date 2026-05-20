@@ -6,6 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+        display: ['Manrope', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         ase: {
@@ -26,7 +27,14 @@ export default {
         },
       },
       boxShadow: {
-        soft: '0 1px 0 rgba(255,255,255,0.04), 0 12px 32px rgba(0,0,0,0.45)',
+        /** Default card / panel depth */
+        soft: '0 1px 0 rgba(255,255,255,0.05), 0 10px 40px rgba(0,0,0,0.35)',
+        /** Primary actions — subtle lift, minimal chroma glow */
+        ase: '0 1px 0 rgba(255,255,255,0.06), 0 8px 28px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.04)',
+        'ase-lg': '0 1px 0 rgba(255,255,255,0.07), 0 16px 48px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.05)',
+      },
+      transitionDuration: {
+        ase: '180ms',
       },
       keyframes: {
         shimmer: {

@@ -101,10 +101,10 @@ export function AdminCatalogItemModal({
       open={open}
       onClose={onClose}
       title={isEdit ? t('adminCatalog.formEdit') : t('adminCatalog.formCreate')}
-      className="max-w-2xl"
+      size="wide"
     >
       <form
-        className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
+        className="w-full space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values, imageFile)
           onClose()
@@ -117,7 +117,7 @@ export function AdminCatalogItemModal({
           previewSrc={initial?.image_url}
           onFileSelect={setImageFile}
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.title')}</span>
             <Input {...form.register('title', { required: true })} />
@@ -162,8 +162,8 @@ export function AdminCatalogItemModal({
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescription')}</span>
             <textarea
-              className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
-              rows={4}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+              rows={5}
               {...form.register('long_description', { required: true })}
             />
           </label>

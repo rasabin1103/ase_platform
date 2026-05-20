@@ -21,7 +21,10 @@ import { coursesPageEn, coursesPageEs } from './coursesPage.locale'
 /** Private `/audit-logs` copy (EN + ES). Merged as root key `auditLogsPage`. */
 import { auditLogsPageEn, auditLogsPageEs } from './auditLogsPage.locale'
 import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
+import { capabilitiesEn, capabilitiesEs } from './capabilities.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
+import { pricingEn, pricingEs } from './pricing.locale'
+import { adminPricingPlansEn, adminPricingPlansEs } from './adminPricingPlans.locale'
 import {
   catalogEn,
   catalogEs,
@@ -62,12 +65,15 @@ export const translations = {
     coursesPage: coursesPageEn,
     auditLogsPage: auditLogsPageEn,
     requestsPage: requestsPageEn,
+    capabilities: capabilitiesEn,
     creatorApplication: creatorApplicationEn,
     catalog: catalogEn,
     independentDashboard: independentDashboardEn,
     profilePage: profilePageEn,
     adminDashboard: adminDashboardEn,
     adminCatalog: adminCatalogEn,
+    catalogPricing: pricingEn,
+    adminPricingPlans: adminPricingPlansEn,
     adminPurchases: adminPurchasesEn,
     cta: {
       talkToUs: 'Talk to us',
@@ -438,6 +444,7 @@ export const translations = {
         myBooks: 'My books',
         myResources: 'My resources',
         catalogManage: 'Catalog management',
+        pricingPlansManage: 'Pricing plans',
         purchasesAdmin: 'Purchases',
         groups: {
           command: 'Command Center',
@@ -494,12 +501,15 @@ export const translations = {
     coursesPage: coursesPageEs,
     auditLogsPage: auditLogsPageEs,
     requestsPage: requestsPageEs,
+    capabilities: capabilitiesEs,
     creatorApplication: creatorApplicationEs,
     catalog: catalogEs,
     independentDashboard: independentDashboardEs,
     profilePage: profilePageEs,
     adminDashboard: adminDashboardEs,
     adminCatalog: adminCatalogEs,
+    catalogPricing: pricingEs,
+    adminPricingPlans: adminPricingPlansEs,
     adminPurchases: adminPurchasesEs,
     cta: {
       talkToUs: 'Hablemos',
@@ -869,6 +879,7 @@ export const translations = {
         myBooks: 'Mis libros',
         myResources: 'Mis recursos',
         catalogManage: 'Gestión catálogo',
+        pricingPlansManage: 'Gestión de planes',
         purchasesAdmin: 'Compras',
         groups: {
           command: 'Centro de mando',

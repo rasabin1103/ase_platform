@@ -22,6 +22,7 @@ from app.core.database import engine  # noqa: F401
 
 from app.modules.access_requests.router import router as access_requests_router
 from app.modules.admin_dashboard.router import router as admin_dashboard_router
+from app.modules.admin_users.router import router as admin_users_router
 from app.modules.audit_logs.router import router as audit_logs_router
 from app.modules.auth.router import router as auth_router
 from app.modules.catalog.router import router as catalog_router
@@ -30,6 +31,7 @@ from app.modules.courses.router import router as courses_router
 from app.modules.health.router import router as health_router
 from app.modules.invitations.router import router as invitations_router
 from app.modules.media.router import router as media_router
+from app.modules.pricing.router import router as pricing_router
 from app.modules.member_roles.router import router as member_roles_router
 from app.modules.mvp_access_requests.router_admin import router as admin_access_requests_router
 from app.modules.mvp_access_requests.router_me import router as me_access_requests_router
@@ -79,6 +81,8 @@ def create_app() -> FastAPI:
     app.include_router(audit_logs_router)
     app.include_router(catalog_router)
     app.include_router(admin_dashboard_router)
+    app.include_router(admin_users_router)
+    app.include_router(pricing_router)
     app.include_router(media_router)
 
     if not settings.MVP_MODE:

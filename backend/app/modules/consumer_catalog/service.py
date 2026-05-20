@@ -10,6 +10,7 @@ from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRe
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
 from app.modules.consumer_catalog.schemas import CatalogItemListResponse, CatalogItemRead
+from app.modules.pricing.service import PricingPlansService
 
 CONSUMER_LIST_STATUSES = (CatalogItemStatus.published, CatalogItemStatus.coming_soon, CatalogItemStatus.request_only)
 CONSUMER_DETAIL_STATUSES = CONSUMER_LIST_STATUSES
@@ -34,7 +35,11 @@ class ConsumerCatalogService:
         *,
         favorite_slugs: set[str],
         purchased_slugs: set[str],
+        include_pricing: bool = False,
     ) -> CatalogItemRead:
+        pricing_plans = []
+        if include_pricing:
+            pricing_plans = PricingPlansService(self.db).list_active_for_item(item.id)
         return CatalogItemRead(
             id=str(item.uuid),
             uuid=item.uuid,
@@ -57,6 +62,7 @@ class ConsumerCatalogService:
             includedItems=item.included_items_json or [],
             isFavorite=item.slug in favorite_slugs,
             isPurchased=item.slug in purchased_slugs,
+            pricingPlans=pricing_plans,
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )
@@ -100,6 +106,7 @@ class ConsumerCatalogService:
             item,
             favorite_slugs=self.favorite_slugs(user_id),
             purchased_slugs=self.purchased_slugs(user_id),
+            include_pricing=True,
         )
 
     def toggle_favorite(self, slug: str, *, user_id: int) -> CatalogItemRead:
