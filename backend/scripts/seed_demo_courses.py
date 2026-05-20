@@ -27,7 +27,7 @@ from app.models.course import Course
 from app.models.course_enrollment import CourseEnrollment
 from app.models.enums import CourseStatus, EnrollmentStatus, UserStatus
 from app.models.user import User
-from app.modules.auth.security import hash_password
+from app.core.security import hash_password
 
 DEMO_PASSWORD = "DemoSeed123!"
 

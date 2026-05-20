@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.enums import UserStatus
 from app.models.user import User
 from app.modules.auth.schemas import LoginRequest, RegisterRequest, TokenPair
-from app.modules.auth.security import create_access_token, create_refresh_token, hash_password, verify_password, get_token_subject_uuid
+from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password, get_token_subject_uuid
 from app.modules.users.repository import UsersRepository
 
 

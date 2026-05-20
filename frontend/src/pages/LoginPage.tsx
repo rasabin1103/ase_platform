@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import axios from 'axios'
 import { API_BASE_URL } from '../api/client'
+import { authDebugLog } from '../utils/authDebugLog'
 import { AuthCard } from '../components/public/AuthCard'
 import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
@@ -39,9 +40,16 @@ export function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: login,
-    onSuccess: async (data) => {
-      await auth.login({ access_token: data.access_token, refresh_token: data.refresh_token })
-      navigate('/dashboard', { replace: true })
+    onSuccess: async (data, variables) => {
+      authDebugLog('login_success', { email: variables.email, apiBase: API_BASE_URL || '(empty)' })
+      try {
+        await auth.login({ access_token: data.access_token, refresh_token: data.refresh_token })
+        authDebugLog('redirecting_to_dashboard', { email: variables.email })
+        navigate('/dashboard', { replace: true })
+      } catch {
+        authDebugLog('post_login_bootstrap_failed', { email: variables.email })
+        throw new Error('SESSION_BOOTSTRAP_FAILED')
+      }
     },
   })
 
@@ -82,8 +90,15 @@ export function LoginPage() {
               {mutation.isError && (
                 <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
                   {(() => {
+                    if (mutation.error instanceof Error && mutation.error.message === 'SESSION_BOOTSTRAP_FAILED') {
+                      return 'Sesión creada pero no se pudo cargar tu usuario (GET /auth/me). Revisa la consola y VITE_API_URL.'
+                    }
                     if (axios.isAxiosError(mutation.error)) {
                       const status = mutation.error.response?.status
+                      const url = String(mutation.error.config?.url ?? '')
+                      if (status === 401 && url.includes('/auth/me')) {
+                        return 'Token recibido pero no válido para /auth/me. Comprueba JWT_SECRET_KEY en backend y que VITE_API_URL apunte al mismo API.'
+                      }
                       if (status === 401) return 'Credenciales inválidas.'
                       if (!mutation.error.response)
                         return `No se pudo conectar con el backend (CORS / API caída). VITE_API_URL=${API_BASE_URL || '(vacío)'}`

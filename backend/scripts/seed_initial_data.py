@@ -28,8 +28,8 @@ if _ROOT not in sys.path:
 
 
 
+from app.core.config import settings
 from app.core.database import SessionLocal
-
 from app.core.rbac import PERMISSION_METADATA, ROLE_DEFINITIONS, ROLE_PERMISSIONS
 
 from app.models.enums import BillingCycle, ProductStatus
@@ -594,7 +594,17 @@ def seed_db(db: Session) -> SeedResult:
 
     created_role_permissions, removed_role_permissions = _sync_role_permissions(db)
 
-
+    if settings.MVP_MODE:
+        return SeedResult(
+            created_roles=created_roles,
+            created_permissions=created_permissions,
+            created_role_permissions=created_role_permissions,
+            removed_role_permissions=removed_role_permissions,
+            created_plans=0,
+            created_products=0,
+            created_plan_products=0,
+            created_services=0,
+        )
 
     for spec in sorted(PUBLIC_MONTHLY_PLANS, key=lambda s: s["display_order"]):
 

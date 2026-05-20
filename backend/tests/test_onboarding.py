@@ -14,7 +14,7 @@ from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.role import Role
 from app.models.user import User
-from app.modules.auth.security import create_access_token, hash_password
+from app.core.security import create_access_token, hash_password
 
 
 def test_onboarding_create_organization_happy_path():
