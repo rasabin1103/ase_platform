@@ -104,7 +104,16 @@ app = create_app()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=[
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:3000",
+            "https://project-ou4wr.vercel.app",
+            "https://arcesabinengineering.com",
+            "https://www.arcesabinengineering.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
