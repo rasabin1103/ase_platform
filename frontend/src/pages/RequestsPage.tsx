@@ -11,7 +11,7 @@ import {
 import { AccessRequestModal } from '../components/access-requests/AccessRequestModal'
 import {
   AccessRequestTimelineCard,
-  CapabilitiesPortalSection,
+  CapabilitiesCompactStrip,
   EmptyCapabilityState,
   FeatureStatusBadge,
   RequestCapabilityCard,
@@ -162,10 +162,7 @@ export function RequestsPage() {
             <Card className="p-5 text-sm text-ase-text2">{t('requestsPage.creatorCtaRejected')}</Card>
           ) : null}
 
-          <CapabilitiesPortalSection
-            onRequestCreator={() => setCreatorModalOpen(true)}
-            showEmptyWhenNoActive
-          />
+          <CapabilitiesCompactStrip onRequestCreator={() => setCreatorModalOpen(true)} />
         </>
       ) : null}
 

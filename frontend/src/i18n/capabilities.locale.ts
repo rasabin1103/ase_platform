@@ -1,6 +1,10 @@
 /** Premium UX copy for platform capabilities & access portal (EN + ES). */
 
 export const capabilitiesEn = {
+  strip: {
+    label: 'Platform access',
+    hint: 'Quick view of what you can use today.',
+  },
   portal: {
     badge: 'ASE Capability Portal',
     title: 'Your platform capabilities',
@@ -116,6 +120,10 @@ export const capabilitiesEn = {
 }
 
 export const capabilitiesEs = {
+  strip: {
+    label: 'Acceso a la plataforma',
+    hint: 'Resumen de lo que puedes usar hoy.',
+  },
   portal: {
     badge: 'Portal de capacidades ASE',
     title: 'Tus capacidades en la plataforma',

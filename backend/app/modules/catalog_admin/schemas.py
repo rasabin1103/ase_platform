@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
+from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
 
 
 class CatalogItemAdminBase(BaseModel):
@@ -16,7 +16,7 @@ class CatalogItemAdminBase(BaseModel):
     category: str = Field(min_length=1, max_length=120)
     short_description: str = Field(min_length=1, max_length=500)
     long_description: str = Field(min_length=1)
-    image_url: str = Field(min_length=1, max_length=2048)
+    image_url: str = Field(default="", max_length=2048)
     preview_url: str | None = Field(default=None, max_length=2048)
     price: Decimal = Field(ge=0)
     currency: str = Field(default="EUR", min_length=3, max_length=3)
@@ -27,6 +27,18 @@ class CatalogItemAdminBase(BaseModel):
     benefits: list[str] = []
     requirements: list[str] = []
     included_items: list[str] = []
+    cover_image_url: str | None = Field(default=None, max_length=2048)
+    thumbnail_url: str | None = Field(default=None, max_length=2048)
+    amazon_url: str | None = Field(default=None, max_length=2048)
+    external_purchase_url: str | None = Field(default=None, max_length=2048)
+    purchase_provider: CatalogPurchaseProvider | None = CatalogPurchaseProvider.internal
+    pdf_url: str | None = Field(default=None, max_length=2048)
+    preview_pdf_url: str | None = Field(default=None, max_length=2048)
+    preview_pages: int | None = Field(default=None, ge=0)
+    sample_download_url: str | None = Field(default=None, max_length=2048)
+    rich_content_markdown: str | None = None
+    book_format: str | None = Field(default=None, max_length=80)
+    audience: list[str] = []
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -49,6 +61,18 @@ class CatalogItemAdminUpdate(BaseModel):
     benefits: list[str] | None = None
     requirements: list[str] | None = None
     included_items: list[str] | None = None
+    cover_image_url: str | None = Field(default=None, max_length=2048)
+    thumbnail_url: str | None = Field(default=None, max_length=2048)
+    amazon_url: str | None = None
+    external_purchase_url: str | None = None
+    purchase_provider: CatalogPurchaseProvider | None = None
+    pdf_url: str | None = None
+    preview_pdf_url: str | None = None
+    preview_pages: int | None = Field(default=None, ge=0)
+    sample_download_url: str | None = None
+    rich_content_markdown: str | None = None
+    book_format: str | None = None
+    audience: list[str] | None = None
 
 
 class CatalogItemAdminRead(CatalogItemAdminBase):

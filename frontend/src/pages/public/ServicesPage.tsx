@@ -52,7 +52,7 @@ export function ServicesPage() {
   }, [items])
 
   return (
-    <div className="min-h-screen bg-ase-bg">
+    <div className="w-full bg-ase-bg">
       <ServicesHeroPremium />
 
       {servicesQuery.isError ? (

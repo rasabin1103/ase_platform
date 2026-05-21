@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { BrandLogo } from '../../components/brand/BrandLogo'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -24,7 +23,7 @@ export function AboutPage() {
   )
 
   return (
-    <div className="min-h-screen bg-ase-bg">
+    <div className="w-full bg-ase-bg">
       {/* HERO */}
       <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-16 lg:pb-28 lg:pt-20">
         <HeroAmbient />
@@ -39,7 +38,6 @@ export function AboutPage() {
               <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
                 {t('aboutPage.hero.badge')}
               </Badge>
-              <BrandLogo variant="dark" size="lg" className="mt-6 opacity-95" />
 
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}

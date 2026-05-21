@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
-import { CapabilitiesPortalSection } from '../../components/capabilities'
+import { CapabilitiesCompactStrip } from '../../components/capabilities/CapabilitiesCompactStrip'
 import { CAPABILITY_ICONS } from '../../components/capabilities/capabilityIcons'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
@@ -108,7 +108,7 @@ export function ProfilePage() {
       />
 
       {isIndependent ? (
-        <CapabilitiesPortalSection onRequestCreator={() => setCreatorModalOpen(true)} />
+        <CapabilitiesCompactStrip onRequestCreator={() => setCreatorModalOpen(true)} />
       ) : null}
 
       <div className="w-full space-y-6">

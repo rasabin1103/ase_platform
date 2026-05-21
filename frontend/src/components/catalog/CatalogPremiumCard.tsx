@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CatalogImage } from './CatalogImage'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { useI18n } from '../../i18n'
@@ -58,10 +59,13 @@ export function CatalogPremiumCard({
           featured ? 'lg:w-[48%]' : 'aspect-[16/10] w-full',
         )}
       >
-        <img
+        <CatalogImage
           src={item.imageUrl}
-          alt=""
-          className={cn('h-full w-full object-cover', featured && 'min-h-[220px] lg:min-h-full')}
+          type={item.type}
+          variant={featured ? 'hero' : 'card'}
+          alt={item.title}
+          cacheKey={item.updatedAt}
+          className={cn(featured && 'min-h-[220px] lg:min-h-full')}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ase-bg/90 via-ase-bg/20 to-transparent" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">

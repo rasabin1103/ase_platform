@@ -47,6 +47,31 @@ class ConsumerCatalogRepository:
         stmt = base.order_by(CatalogItem.created_at.desc(), CatalogItem.id.desc()).limit(limit).offset(offset)
         return list(self.db.execute(stmt).scalars().all()), total
 
+    def list_related_published(
+        self,
+        item_type: CatalogItemType,
+        *,
+        exclude_slug: str,
+        limit: int = 4,
+    ) -> list[CatalogItem]:
+        stmt = (
+            select(CatalogItem)
+            .where(
+                CatalogItem.type == item_type,
+                CatalogItem.slug != exclude_slug,
+                CatalogItem.status.in_(
+                    (
+                        CatalogItemStatus.published,
+                        CatalogItemStatus.coming_soon,
+                        CatalogItemStatus.request_only,
+                    )
+                ),
+            )
+            .order_by(CatalogItem.created_at.desc())
+            .limit(limit)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
     def list_for_consumer(
         self,
         *,

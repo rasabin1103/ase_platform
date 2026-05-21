@@ -7,7 +7,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 
 const navLinkBase =
-  'text-[13px] font-medium text-ase-text2 transition duration-200 ease-out hover:text-ase-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 rounded-lg px-3 py-2'
+  'text-[12.5px] font-medium tracking-[0.01em] text-ase-text2 transition duration-200 ease-out hover:text-ase-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 rounded-lg px-2.5 py-2 lg:px-3'
 
 const navLinkActive =
   'text-ase-text bg-white/[0.07] ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
@@ -32,12 +32,19 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-ase-bg2/75 shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md supports-[backdrop-filter]:bg-ase-bg2/65">
-      <div className="mx-auto flex min-h-[3.75rem] w-full max-w-[1440px] items-center justify-between gap-6 px-5 py-2.5 sm:px-8 sm:py-3">
-        <Link to="/" className="min-w-0 shrink-0 py-0.5">
-          <BrandLogo variant="dark" size="sm" className="opacity-[0.97]" />
+      <div className="mx-auto flex min-h-[4.5rem] w-full max-w-[1440px] items-center justify-between gap-4 px-5 py-2 sm:min-h-[5.25rem] sm:gap-6 sm:px-8 sm:py-2.5 lg:min-h-[5.5rem]">
+        <Link
+          to="/"
+          className="group relative z-10 shrink-0 py-1 pr-2 transition duration-200 ease-out hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 rounded-xl"
+          aria-label={t('nav.home') as string}
+        >
+          <BrandLogo
+            placement="public-nav"
+            className="opacity-100 transition duration-200 ease-out group-hover:scale-[1.02]"
+          />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex lg:px-4">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} className={({ isActive }) => cn(navLinkBase, isActive && navLinkActive)}>
               {it.label}

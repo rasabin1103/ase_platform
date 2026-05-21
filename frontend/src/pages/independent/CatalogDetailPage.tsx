@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
@@ -9,7 +9,9 @@ import {
   purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
-import { CatalogPublicPricing } from '../../components/catalog/CatalogPublicPricing'
+import { CatalogBookDetailView } from '../../components/catalog/CatalogBookDetailView'
+import { CatalogImage } from '../../components/catalog/CatalogImage'
+import { CatalogRichContentRenderer } from '../../components/catalog/CatalogRichContentRenderer'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -49,14 +51,16 @@ function BulletList({ title, items }: { title: string; items: string[] }) {
 
 export function CatalogDetailPage() {
   const { type, slug } = useParams<{ type: CatalogItemType; slug: string }>()
+  const [searchParams] = useSearchParams()
+  const previewMode = searchParams.get('preview') === 'true'
   const { t } = useI18n()
   const qc = useQueryClient()
   const [accessModalOpen, setAccessModalOpen] = useState(false)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
 
   const query = useQuery({
-    queryKey: ['consumer-catalog', slug],
-    queryFn: () => getConsumerCatalogItem(slug!),
+    queryKey: ['consumer-catalog', slug, previewMode],
+    queryFn: () => getConsumerCatalogItem(slug!, { preview: previewMode }),
     enabled: Boolean(slug),
   })
 
@@ -81,22 +85,83 @@ export function CatalogDetailPage() {
     return <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
   }
 
-  const benefits = item.benefits ?? []
-  const requirements = item.requirements ?? []
-  const included = item.includedItems ?? []
   const catalogType = (type ?? item.type) as CatalogItemType
   const targetType = catalogType as AccessTargetType
   const showDemo = catalogType === 'product' || catalogType === 'course'
 
+  const modals = (
+    <>
+      <AccessRequestModal
+        open={accessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ['my-access-requests'] })}
+        requestType="product_access"
+        targetType={targetType}
+        targetId={item.slug}
+        title={`${t('catalog.requestAccessTitle')}: ${item.title}`}
+        modalTitle={t('catalog.requestAccess')}
+        icon={CAPABILITY_ICONS.catalog_access}
+      />
+      {showDemo ? (
+        <AccessRequestModal
+          open={demoModalOpen}
+          onClose={() => setDemoModalOpen(false)}
+          onSuccess={() => qc.invalidateQueries({ queryKey: ['my-access-requests'] })}
+          requestType="demo_access"
+          targetType={targetType}
+          targetId={item.slug}
+          title={`${t('catalog.requestDemoTitle')}: ${item.title}`}
+          modalTitle={t('catalog.requestDemo')}
+          icon={CAPABILITY_ICONS.private_demos}
+        />
+      ) : null}
+    </>
+  )
+
+  if (catalogType === 'book') {
+    return (
+      <div className="space-y-6">
+        {previewMode ? (
+          <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            {t('catalog.previewAsUserBanner')}
+          </div>
+        ) : null}
+        <CatalogBookDetailView
+          item={item}
+          backPath={backPath}
+          favoritePending={favMutation.isPending}
+          purchasePending={buyMutation.isPending}
+          onToggleFavorite={() => favMutation.mutate()}
+          onPurchase={() => buyMutation.mutate()}
+          onRequestAccess={() => setAccessModalOpen(true)}
+        />
+        {modals}
+      </div>
+    )
+  }
+
+  const benefits = item.benefits ?? []
+  const requirements = item.requirements ?? []
+  const included = item.includedItems ?? []
+
   return (
     <div className="space-y-8">
+      {previewMode ? (
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+          {t('catalog.previewAsUserBanner')}
+        </div>
+      ) : null}
       <Link to={backPath} className="text-sm text-cyan-300 hover:underline">
         ← {t('catalog.backToCatalog')}
       </Link>
       <div className="grid gap-8 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <img src={item.imageUrl} alt="" className="aspect-[4/3] w-full object-cover" />
-        </div>
+        <CatalogImage
+          src={item.imageUrl}
+          type={catalogType}
+          variant="detail"
+          alt={item.title}
+          cacheKey={item.updatedAt}
+        />
         <div className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
           <h1 className="text-3xl font-bold text-ase-text">{item.title}</h1>
@@ -109,11 +174,21 @@ export function CatalogDetailPage() {
             <p className="text-3xl font-bold text-ase-text">
               {formatPrice(item.price, item.currency, t('catalog.free'))}
             </p>
-          ) : null}
-          <p className="text-ase-text2 leading-relaxed">{item.longDescription}</p>
+          ) : (
+            <p className="text-sm text-ase-text2">
+              {t('catalog.pricingOnPlansPage')}{' '}
+              <Link to="/plans" className="font-semibold text-cyan-300 hover:underline">
+                {t('catalog.viewAvailablePlans')}
+              </Link>
+            </p>
+          )}
+          <CatalogRichContentRenderer
+            markdown={item.richContentMarkdown}
+            fallbackText={item.longDescription}
+          />
           <div className="flex flex-wrap gap-3 pt-2">
             {item.previewUrl ? (
-              <a href={item.previewUrl} target="_blank" rel="noreferrer">
+              <a href={item.previewUrl} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">{t('catalog.openPreview')}</Button>
               </a>
             ) : null}
@@ -147,42 +222,7 @@ export function CatalogDetailPage() {
         </div>
       </div>
 
-      <AccessRequestModal
-        open={accessModalOpen}
-        onClose={() => setAccessModalOpen(false)}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ['my-access-requests'] })}
-        requestType="product_access"
-        targetType={targetType}
-        targetId={item.slug}
-        title={`${t('catalog.requestAccessTitle')}: ${item.title}`}
-        modalTitle={t('catalog.requestAccess')}
-        icon={CAPABILITY_ICONS.catalog_access}
-      />
-      {showDemo ? (
-        <AccessRequestModal
-          open={demoModalOpen}
-          onClose={() => setDemoModalOpen(false)}
-          onSuccess={() => qc.invalidateQueries({ queryKey: ['my-access-requests'] })}
-          requestType="demo_access"
-          targetType={targetType}
-          targetId={item.slug}
-          title={`${t('catalog.requestDemoTitle')}: ${item.title}`}
-          modalTitle={t('catalog.requestDemo')}
-          icon={CAPABILITY_ICONS.private_demos}
-        />
-      ) : null}
-
-      <CatalogPublicPricing
-        plans={item.pricingPlans ?? []}
-        disabled={buyMutation.isPending || item.isPurchased}
-        onCta={(plan) => {
-          if (plan.planType === 'request_quote') {
-            setAccessModalOpen(true)
-            return
-          }
-          if (!item.isPurchased) buyMutation.mutate()
-        }}
-      />
+      {modals}
 
       <div className="grid gap-4 md:grid-cols-3">
         <BulletList title={t('catalog.benefits')} items={benefits} />
@@ -192,6 +232,3 @@ export function CatalogDetailPage() {
     </div>
   )
 }
-
-
-

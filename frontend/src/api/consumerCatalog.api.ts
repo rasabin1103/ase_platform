@@ -16,8 +16,10 @@ export async function listConsumerCatalog(params?: ListCatalogParams) {
   return data
 }
 
-export async function getConsumerCatalogItem(slug: string) {
-  const { data } = await apiClient.get<CatalogItem>(`/consumer-catalog/${slug}`)
+export async function getConsumerCatalogItem(slug: string, options?: { preview?: boolean }) {
+  const { data } = await apiClient.get<CatalogItem>(`/consumer-catalog/${slug}`, {
+    params: options?.preview ? { preview: true } : undefined,
+  })
   return data
 }
 

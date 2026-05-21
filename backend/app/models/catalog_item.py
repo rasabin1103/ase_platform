@@ -4,12 +4,12 @@ from decimal import Decimal
 
 from typing import Any
 
-from sqlalchemy import Enum, LargeBinary, Numeric, String, Text
+from sqlalchemy import Enum, Integer, LargeBinary, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
+from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
 from app.models.mixins import IdPkMixin, PublicUuidMixin, TimestampMixin
 
 
@@ -29,6 +29,8 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     short_description: Mapped[str] = mapped_column(String(500), nullable=False)
     long_description: Mapped[str] = mapped_column(Text, nullable=False)
     image_url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    cover_image_url: Mapped[str | None] = mapped_column(String(2048))
+    thumbnail_url: Mapped[str | None] = mapped_column(String(2048))
     image_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     image_mime: Mapped[str | None] = mapped_column(String(64))
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
@@ -47,6 +49,19 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     duration: Mapped[str | None] = mapped_column(String(80))
     author: Mapped[str] = mapped_column(String(200), nullable=False)
     preview_url: Mapped[str | None] = mapped_column(String(2048))
+    amazon_url: Mapped[str | None] = mapped_column(String(2048))
+    external_purchase_url: Mapped[str | None] = mapped_column(String(2048))
+    purchase_provider: Mapped[CatalogPurchaseProvider | None] = mapped_column(
+        Enum(CatalogPurchaseProvider, name="catalog_purchase_provider", native_enum=True),
+        nullable=True,
+    )
+    pdf_url: Mapped[str | None] = mapped_column(String(2048))
+    preview_pdf_url: Mapped[str | None] = mapped_column(String(2048))
+    preview_pages: Mapped[int | None] = mapped_column(Integer)
+    audience_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    sample_download_url: Mapped[str | None] = mapped_column(String(2048))
+    rich_content_markdown: Mapped[str | None] = mapped_column(Text)
+    book_format: Mapped[str | None] = mapped_column(String(80))
     benefits_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     requirements_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     included_items_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)

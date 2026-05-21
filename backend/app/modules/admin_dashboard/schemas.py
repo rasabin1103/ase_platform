@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel
 
@@ -23,6 +24,8 @@ class AdminPurchaseRead(BaseModel):
     user_email: str
     item_title: str
     item_type: str
+    amount: Decimal
+    currency: str
     created_at: datetime
 
 

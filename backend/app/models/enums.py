@@ -103,6 +103,13 @@ class CatalogItemLevel(str, Enum):
     advanced = "advanced"
 
 
+class CatalogPurchaseProvider(str, Enum):
+    internal = "internal"
+    amazon = "amazon"
+    external = "external"
+    request_only = "request_only"
+
+
 class PricingPlanType(str, Enum):
     free = "free"
     one_time = "one_time"

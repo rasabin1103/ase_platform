@@ -18,7 +18,17 @@ export type AdminPurchase = {
   user_email: string
   item_title: string
   item_type: string
+  amount: string | number
+  currency: string
   created_at: string
+}
+
+export type ListAdminPurchasesParams = {
+  limit?: number
+  offset?: number
+  search?: string
+  item_type?: string
+  user_email?: string
 }
 
 export type AdminPurchaseListResponse = {
@@ -33,7 +43,7 @@ export async function getAdminStats() {
   return data
 }
 
-export async function listAdminPurchases(params?: { limit?: number; offset?: number }) {
+export async function listAdminPurchases(params?: ListAdminPurchasesParams) {
   const { data } = await apiClient.get<AdminPurchaseListResponse>('/admin/purchases', { params })
   return data
 }

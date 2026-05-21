@@ -2,9 +2,15 @@
 @config '../tailwind.config.ts';
 
 html,
-body,
+body {
+  min-height: 100dvh;
+  height: auto;
+}
+
 #root {
-  height: 100%;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
 }
 
 @layer base {
