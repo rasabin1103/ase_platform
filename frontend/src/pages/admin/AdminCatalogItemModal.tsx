@@ -2,18 +2,34 @@ import { useEffect, useState } from 'react'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { useForm } from 'react-hook-form'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
-import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../../types/catalog.types'
+import type {
+  CatalogItemLevel,
+  CatalogItemStatus,
+  CatalogItemType,
+  CatalogPurchaseProvider,
+} from '../../types/catalog.types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { useI18n } from '../../i18n'
 
-type FormValues = CatalogItemAdminPayload
+type FormValues = CatalogItemAdminPayload & {
+  benefits_text: string
+  requirements_text: string
+  included_items_text: string
+  audience_text: string
+}
 
 const TYPES: CatalogItemType[] = ['product', 'course', 'book', 'resource']
 const STATUSES: CatalogItemStatus[] = ['published', 'draft', 'coming_soon', 'request_only']
 const LEVELS: CatalogItemLevel[] = ['beginner', 'intermediate', 'advanced']
+const PURCHASE_PROVIDERS: CatalogPurchaseProvider[] = [
+  'internal',
+  'amazon',
+  'external',
+  'request_only',
+]
 
 function slugify(text: string) {
   return text
@@ -24,6 +40,17 @@ function slugify(text: string) {
     .slice(0, 160)
 }
 
+function linesToText(lines: string[] | undefined) {
+  return (lines ?? []).join('\n')
+}
+
+function textToLines(text: string) {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+}
+
 const defaults = (type: CatalogItemType): FormValues => ({
   title: '',
   slug: '',
@@ -31,7 +58,7 @@ const defaults = (type: CatalogItemType): FormValues => ({
   category: 'General',
   short_description: '',
   long_description: '',
-  image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
+  image_url: '',
   preview_url: null,
   price: 0,
   currency: 'EUR',
@@ -42,16 +69,73 @@ const defaults = (type: CatalogItemType): FormValues => ({
   benefits: [],
   requirements: [],
   included_items: [],
+  cover_image_url: null,
+  thumbnail_url: null,
+  amazon_url: null,
+  external_purchase_url: null,
+  purchase_provider: 'internal',
+  pdf_url: null,
+  preview_pdf_url: null,
+  preview_pages: null,
+  sample_download_url: null,
+  rich_content_markdown: null,
+  book_format: null,
+  audience: [],
+  benefits_text: '',
+  requirements_text: '',
+  included_items_text: '',
+  audience_text: '',
 })
+
+function adminToForm(initial: CatalogItemAdmin): FormValues {
+  return {
+    title: initial.title,
+    slug: initial.slug,
+    type: initial.type,
+    category: initial.category,
+    short_description: initial.short_description,
+    long_description: initial.long_description,
+    image_url: initial.image_url,
+    preview_url: initial.preview_url,
+    price: Number(initial.price),
+    currency: initial.currency,
+    status: initial.status,
+    level: initial.level,
+    duration: initial.duration,
+    author: initial.author,
+    benefits: initial.benefits ?? [],
+    requirements: initial.requirements ?? [],
+    included_items: initial.included_items ?? [],
+    cover_image_url: initial.cover_image_url ?? null,
+    thumbnail_url: initial.thumbnail_url ?? null,
+    amazon_url: initial.amazon_url ?? null,
+    external_purchase_url: initial.external_purchase_url ?? null,
+    purchase_provider: initial.purchase_provider ?? 'internal',
+    pdf_url: initial.pdf_url ?? null,
+    preview_pdf_url: initial.preview_pdf_url ?? null,
+    preview_pages: initial.preview_pages ?? null,
+    sample_download_url: initial.sample_download_url ?? null,
+    rich_content_markdown: initial.rich_content_markdown ?? null,
+    book_format: initial.book_format ?? null,
+    audience: initial.audience ?? [],
+    benefits_text: linesToText(initial.benefits),
+    requirements_text: linesToText(initial.requirements),
+    included_items_text: linesToText(initial.included_items),
+    audience_text: linesToText(initial.audience),
+  }
+}
 
 type Props = {
   open: boolean
   onClose: () => void
   initial?: CatalogItemAdmin | null
   defaultType?: CatalogItemType
-  onSubmit: (values: FormValues, imageFile: File | null) => Promise<void>
+  onSubmit: (values: CatalogItemAdminPayload, imageFile: File | null) => Promise<void>
   isSubmitting?: boolean
 }
+
+const textareaClass =
+  'w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text'
 
 export function AdminCatalogItemModal({
   open,
@@ -65,29 +149,12 @@ export function AdminCatalogItemModal({
   const isEdit = Boolean(initial)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
+  const itemType = form.watch('type')
 
   useEffect(() => {
     if (!open) return
     if (initial) {
-      form.reset({
-        title: initial.title,
-        slug: initial.slug,
-        type: initial.type,
-        category: initial.category,
-        short_description: initial.short_description,
-        long_description: initial.long_description,
-        image_url: initial.image_url,
-        preview_url: initial.preview_url,
-        price: Number(initial.price),
-        currency: initial.currency,
-        status: initial.status,
-        level: initial.level,
-        duration: initial.duration,
-        author: initial.author,
-        benefits: initial.benefits ?? [],
-        requirements: initial.requirements ?? [],
-        included_items: initial.included_items ?? [],
-      })
+      form.reset(adminToForm(initial))
     } else {
       form.reset(defaults(defaultType))
     }
@@ -95,6 +162,24 @@ export function AdminCatalogItemModal({
   }, [open, initial, defaultType, form])
 
   const titleWatch = form.watch('title')
+
+  const buildPayload = (values: FormValues): CatalogItemAdminPayload => {
+    const {
+      benefits_text,
+      requirements_text,
+      included_items_text,
+      audience_text,
+      ...rest
+    } = values
+    return {
+      ...rest,
+      benefits: textToLines(benefits_text),
+      requirements: textToLines(requirements_text),
+      included_items: textToLines(included_items_text),
+      audience: textToLines(audience_text),
+      preview_pages: values.preview_pages ? Number(values.preview_pages) : null,
+    }
+  }
 
   return (
     <Modal
@@ -106,7 +191,7 @@ export function AdminCatalogItemModal({
       <form
         className="w-full space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(values, imageFile)
+          await onSubmit(buildPayload(values), imageFile)
           onClose()
         })}
       >
@@ -115,6 +200,7 @@ export function AdminCatalogItemModal({
           hint={t('adminCatalog.uploadPhotoHint')}
           uploadLabel={t('adminCatalog.uploadPhoto')}
           previewSrc={initial?.image_url}
+          previewCacheKey={initial?.updated_at}
           onFileSelect={setImageFile}
         />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
@@ -161,15 +247,11 @@ export function AdminCatalogItemModal({
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescription')}</span>
-            <textarea
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
-              rows={5}
-              {...form.register('long_description', { required: true })}
-            />
+            <textarea className={textareaClass} rows={4} {...form.register('long_description', { required: true })} />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.imageUrl')}</span>
-            <Input {...form.register('image_url', { required: true })} />
+            <Input {...form.register('image_url')} placeholder="https://… or upload above" />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewUrl')}</span>
@@ -204,10 +286,105 @@ export function AdminCatalogItemModal({
             </Select>
           </label>
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.duration')}</span>
-            <Input {...form.register('duration')} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {itemType === 'book' ? t('catalog.bookPages') : t('adminCatalog.fields.duration')}
+            </span>
+            <Input {...form.register('duration')} placeholder={itemType === 'book' ? '320' : ''} />
           </label>
         </div>
+
+        {itemType === 'book' ? (
+          <div className="space-y-5 rounded-2xl border border-cyan-300/15 bg-cyan-400/[0.04] p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-300/90">
+              {t('adminCatalog.bookDetailsSection')}
+            </h3>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.bookFormat')}</span>
+                <Input {...form.register('book_format')} placeholder="Paperback, eBook" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.purchaseProvider')}</span>
+                <Select {...form.register('purchase_provider')}>
+                  {PURCHASE_PROVIDERS.map((p) => (
+                    <option key={p} value={p}>
+                      {t(`adminCatalog.purchaseProvider.${p}`)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.coverImageUrl')}</span>
+                <Input {...form.register('cover_image_url')} placeholder="https://…" />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.amazonUrl')}</span>
+                <Input {...form.register('amazon_url')} placeholder="https://amazon.com/…" />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.externalPurchaseUrl')}</span>
+                <Input {...form.register('external_purchase_url')} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewPdfUrl')}</span>
+                <Input {...form.register('preview_pdf_url')} placeholder="https://…/preview.pdf" />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.pdfUrl')}</span>
+                <Input {...form.register('pdf_url')} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.sampleDownloadUrl')}</span>
+                <Input {...form.register('sample_download_url')} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewPages')}</span>
+                <Input type="number" min={0} {...form.register('preview_pages', { valueAsNumber: true })} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.richContentMarkdown')}</span>
+                <textarea
+                  className={textareaClass}
+                  rows={10}
+                  placeholder={'## Benefits\n\n- Point one\n\n> Highlight quote'}
+                  {...form.register('rich_content_markdown')}
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.benefitsLines')}</span>
+                <textarea className={textareaClass} rows={4} {...form.register('benefits_text')} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.includedLines')}</span>
+                <textarea className={textareaClass} rows={4} {...form.register('included_items_text')} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.audienceLines')}</span>
+                <textarea className={textareaClass} rows={3} {...form.register('audience_text')} />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.requirementsLines')}</span>
+                <textarea className={textareaClass} rows={3} {...form.register('requirements_text')} />
+              </label>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.benefitsLines')}</span>
+              <textarea className={textareaClass} rows={3} {...form.register('benefits_text')} />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.requirementsLines')}</span>
+              <textarea className={textareaClass} rows={3} {...form.register('requirements_text')} />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.includedLines')}</span>
+              <textarea className={textareaClass} rows={3} {...form.register('included_items_text')} />
+            </label>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>
             {t('adminCatalog.cancel')}

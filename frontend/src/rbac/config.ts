@@ -74,6 +74,8 @@ export const INDEPENDENT_NAV_GROUPS: NavGroupDef[] = [
 
       { to: '/my-resources', labelKey: 'private.nav.myResources', icon: '📦' },
 
+      { to: '/plans', labelKey: 'private.nav.plansAvailable', icon: '€' },
+
     ],
 
   },

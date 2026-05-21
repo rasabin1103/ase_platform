@@ -3,9 +3,11 @@ from __future__ import annotations
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.media_urls import catalog_has_stored_image, resolve_catalog_image_url
+from app.core.media_urls import catalog_has_stored_image
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
+from app.modules.catalog.catalog_read_fields import catalog_media_fields
+from app.modules.catalog_admin.validation import validate_catalog_fields
 from app.modules.catalog_admin.schemas import (
     CatalogItemAdminCreate,
     CatalogItemAdminListResponse,
@@ -21,6 +23,7 @@ class CatalogAdminService:
         self.repo = ConsumerCatalogRepository(db)
 
     def _to_read(self, item: CatalogItem) -> CatalogItemAdminRead:
+        media = catalog_media_fields(item)
         return CatalogItemAdminRead(
             id=item.id,
             uuid=item.uuid,
@@ -30,7 +33,7 @@ class CatalogAdminService:
             category=item.category,
             short_description=item.short_description,
             long_description=item.long_description,
-            image_url=resolve_catalog_image_url(item),
+            image_url=media["display_image_url"],
             has_stored_image=catalog_has_stored_image(item),
             preview_url=item.preview_url,
             price=item.price,
@@ -42,6 +45,18 @@ class CatalogAdminService:
             benefits=item.benefits_json or [],
             requirements=item.requirements_json or [],
             included_items=item.included_items_json or [],
+            cover_image_url=item.cover_image_url,
+            thumbnail_url=item.thumbnail_url,
+            amazon_url=item.amazon_url,
+            external_purchase_url=item.external_purchase_url,
+            purchase_provider=media["purchase_provider"],
+            pdf_url=item.pdf_url,
+            preview_pdf_url=item.preview_pdf_url,
+            preview_pages=item.preview_pages,
+            sample_download_url=item.sample_download_url,
+            rich_content_markdown=item.rich_content_markdown,
+            book_format=item.book_format,
+            audience=item.audience_json or [],
             created_at=item.created_at,
             updated_at=item.updated_at,
         )
@@ -78,6 +93,16 @@ class CatalogAdminService:
     def create(self, payload: CatalogItemAdminCreate) -> CatalogItemAdminRead:
         if self.repo.get_by_slug(payload.slug):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
+        validate_catalog_fields(
+            purchase_provider=payload.purchase_provider,
+            amazon_url=payload.amazon_url,
+            external_purchase_url=payload.external_purchase_url,
+            preview_pdf_url=payload.preview_pdf_url,
+            pdf_url=payload.pdf_url,
+            sample_download_url=payload.sample_download_url,
+            image_url=payload.image_url,
+            cover_image_url=payload.cover_image_url,
+        )
         item = CatalogItem(
             title=payload.title,
             slug=payload.slug,
@@ -96,6 +121,18 @@ class CatalogAdminService:
             benefits_json=payload.benefits,
             requirements_json=payload.requirements,
             included_items_json=payload.included_items,
+            cover_image_url=payload.cover_image_url,
+            thumbnail_url=payload.thumbnail_url,
+            amazon_url=payload.amazon_url,
+            external_purchase_url=payload.external_purchase_url,
+            purchase_provider=payload.purchase_provider,
+            pdf_url=payload.pdf_url,
+            preview_pdf_url=payload.preview_pdf_url,
+            preview_pages=payload.preview_pages,
+            sample_download_url=payload.sample_download_url,
+            rich_content_markdown=payload.rich_content_markdown,
+            book_format=payload.book_format,
+            audience_json=payload.audience,
         )
         self.db.add(item)
         self.db.commit()
@@ -107,12 +144,25 @@ class CatalogAdminService:
         if item is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Catalog item not found")
         data = payload.model_dump(exclude_unset=True)
+        merged = {**self._to_read(item).model_dump(), **data}
+        validate_catalog_fields(
+            purchase_provider=merged.get("purchase_provider"),
+            amazon_url=merged.get("amazon_url"),
+            external_purchase_url=merged.get("external_purchase_url"),
+            preview_pdf_url=merged.get("preview_pdf_url"),
+            pdf_url=merged.get("pdf_url"),
+            sample_download_url=merged.get("sample_download_url"),
+            image_url=merged.get("image_url"),
+            cover_image_url=merged.get("cover_image_url"),
+        )
         if "benefits" in data:
             item.benefits_json = data.pop("benefits")
         if "requirements" in data:
             item.requirements_json = data.pop("requirements")
         if "included_items" in data:
             item.included_items_json = data.pop("included_items")
+        if "audience" in data:
+            item.audience_json = data.pop("audience")
         for key, value in data.items():
             setattr(item, key, value)
         self.db.commit()

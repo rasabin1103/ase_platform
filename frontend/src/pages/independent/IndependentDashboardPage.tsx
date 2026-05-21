@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { CapabilitiesPortalSection } from '../../components/capabilities'
+import { CapabilitiesCompactStrip } from '../../components/capabilities/CapabilitiesCompactStrip'
+import { IndependentWorkspaceOverview } from '../../components/independent/IndependentWorkspaceOverview'
 import { Card } from '../../components/ui/Card'
 import { CatalogPremiumStrip } from '../../components/catalog/CatalogPremiumStrip'
 import { Badge } from '../../components/ui/Badge'
@@ -9,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth'
 const QUICK_LINKS = [
   { to: '/favorites', labelKey: 'independentDashboard.cards.favorites', icon: '♥' },
   { to: '/my-purchases', labelKey: 'independentDashboard.cards.purchases', icon: '🛒' },
+  { to: '/plans', labelKey: 'private.nav.plansAvailable', icon: '€' },
   { to: '/my-courses', labelKey: 'independentDashboard.cards.myCourses', icon: '✓' },
   { to: '/requests', labelKey: 'independentDashboard.cards.requests', icon: '◐' },
   { to: '/profile', labelKey: 'independentDashboard.cards.profile', icon: '◎' },
@@ -18,8 +20,9 @@ export function IndependentDashboardPage() {
   const { t } = useI18n()
   const { currentUser } = useAuth()
   const name = currentUser?.display_name || currentUser?.email || ''
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-gradient-to-br from-ase-surface/60 via-ase-bg2/80 to-ase-bg/90 p-6 sm:p-10">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_0%,rgba(56,189,248,0.14),transparent_55%)]" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -35,12 +38,9 @@ export function IndependentDashboardPage() {
         </div>
       </section>
 
-      <CapabilitiesPortalSection variant="compact" />
-      <p className="text-center">
-        <Link to="/requests" className="text-sm font-semibold text-cyan-300 hover:text-cyan-200">
-          {t('capabilities.portal.viewAllRequests')} →
-        </Link>
-      </p>
+      <IndependentWorkspaceOverview />
+
+      <CapabilitiesCompactStrip />
 
       <CatalogPremiumStrip
         type="product"
@@ -62,7 +62,7 @@ export function IndependentDashboardPage() {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ase-muted">
           {t('independentDashboard.explore')}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {QUICK_LINKS.map((link) => (
             <Link key={link.to} to={link.to}>
               <Card interactive className="flex h-full items-center gap-3 p-4">

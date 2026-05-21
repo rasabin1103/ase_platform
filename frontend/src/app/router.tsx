@@ -4,12 +4,14 @@ import { WorkspaceContextGate } from '../auth/WorkspaceContextGate'
 import { PostLoginGate } from '../auth/PostLoginGate'
 import { ConsumerRouteGuard } from '../auth/ConsumerRouteGuard'
 import { AppLayout } from '../components/layout/AppLayout'
+import { DocumentFrame } from '../components/layout/DocumentFrame'
 import { PublicLayout } from '../components/public/PublicLayout'
 import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
 import {
   CatalogDetailPage,
   CatalogListPage,
   IndependentDashboardPage,
+  IndependentPlansPage,
   ProfilePage,
 } from '../pages/independent'
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
@@ -32,6 +34,9 @@ import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
 
 export const router = createBrowserRouter([
+  {
+    element: <DocumentFrame />,
+    children: [
   {
     element: <PublicLayout />,
     children: [
@@ -78,6 +83,7 @@ export const router = createBrowserRouter([
               { path: '/my-courses', element: <MyCoursesPage /> },
               { path: '/my-books', element: <MyBooksPage /> },
               { path: '/my-resources', element: <MyResourcesPage /> },
+              { path: '/plans', element: <IndependentPlansPage /> },
             ],
           },
           { path: '/profile', element: <ProfilePage /> },
@@ -91,6 +97,8 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
+    ],
+  },
 ])
 
 function RoleAwareDashboard() {

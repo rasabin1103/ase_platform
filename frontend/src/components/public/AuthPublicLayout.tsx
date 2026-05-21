@@ -5,11 +5,11 @@ import { PublicFooter } from './PublicFooter'
 
 export function AuthPublicLayout() {
   return (
-    <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-ase-bg text-ase-text">
       <PublicAmbientBackground />
 
       <PublicHeader />
-      <main className="relative">
+      <main className="relative min-h-0 w-full flex-1 overflow-x-hidden">
         <Outlet />
       </main>
       <PublicFooter />

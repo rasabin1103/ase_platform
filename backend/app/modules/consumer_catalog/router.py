@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.models.user import User
-from app.modules.auth.dependencies import get_current_user, require_permission
+from app.modules.auth.dependencies import get_current_user, is_super_admin, require_permission
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.schemas import (
@@ -88,5 +88,12 @@ def purchase_item(slug: str, user: User = Depends(get_current_user), svc: Consum
 
 
 @router.get("/{slug}", response_model=CatalogItemRead, dependencies=[Depends(require_permission("catalog.read"))])
-def get_catalog_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
-    return svc.get_by_slug(slug, user_id=user.id)
+def get_catalog_item(
+    slug: str,
+    preview: bool = False,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    allow_preview = preview and is_super_admin(db, user)
+    return svc.get_by_slug(slug, user_id=user.id, allow_preview=allow_preview)

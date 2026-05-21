@@ -23,6 +23,8 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
 import { Toast } from '../components/ui/Toast'
+import { ConfirmDeactivateDialog } from '../components/admin/ConfirmDeactivateDialog'
+import { adminInactiveRowClass, adminInactiveSurfaceClass, isUserInactive } from '../components/admin/adminInactiveStyles'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { useAuth } from '../auth/AuthProvider'
@@ -74,6 +76,7 @@ export function UsersPage() {
   const { currentUser } = useAuth()
   const [editing, setEditing] = useState<AdminUser | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AdminUser | null>(null)
+  const [confirmStatusChange, setConfirmStatusChange] = useState<AdminUser | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -213,6 +216,7 @@ export function UsersPage() {
     mutationFn: ({ user_uuid, status }: { user_uuid: string; status: UserStatus }) =>
       patchAdminUserStatus(user_uuid, status),
     onSuccess: async () => {
+      setConfirmStatusChange(null)
       setToast({ message: t('usersPage.toast.statusUpdated') as string, variant: 'success' })
       await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
       await invalidateAdminDashboard(queryClient)
@@ -356,10 +360,7 @@ export function UsersPage() {
                       creator_status: (u.creator_status as EditValues['creator_status']) ?? 'none',
                     })
                   }}
-                  onToggleStatus={() => {
-                    const next = u.status === 'active' ? 'inactive' : 'active'
-                    statusMutation.mutate({ user_uuid: u.uuid, status: next })
-                  }}
+                  onToggleStatus={() => setConfirmStatusChange(u)}
                   onDelete={() => setConfirmDelete(u)}
                 />
               ))}
@@ -379,7 +380,7 @@ export function UsersPage() {
                 </THead>
                 <TBody>
                   {filteredItems.map((u) => (
-                    <TR key={u.uuid}>
+                    <TR key={u.uuid} className={adminInactiveRowClass(isUserInactive(u.status ?? ''))}>
                       <TD className="font-medium text-ase-text">
                         <UserIdentity user={u} />
                       </TD>
@@ -413,10 +414,7 @@ export function UsersPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {
-                              const next = u.status === 'active' ? 'inactive' : 'active'
-                              statusMutation.mutate({ user_uuid: u.uuid, status: next })
-                            }}
+                            onClick={() => setConfirmStatusChange(u)}
                           >
                             {u.status === 'active' ? (t('usersPage.actions.deactivate') as string) : (t('usersPage.actions.activate') as string)}
                           </Button>
@@ -598,6 +596,19 @@ export function UsersPage() {
           )}
         </div>
       </Modal>
+
+      <ConfirmDeactivateDialog
+        open={Boolean(confirmStatusChange)}
+        onClose={() => setConfirmStatusChange(null)}
+        itemName={confirmStatusChange ? displayName(confirmStatusChange) : undefined}
+        activating={confirmStatusChange?.status !== 'active'}
+        isPending={statusMutation.isPending}
+        onConfirm={() => {
+          if (!confirmStatusChange) return
+          const next = confirmStatusChange.status === 'active' ? 'inactive' : 'active'
+          statusMutation.mutate({ user_uuid: confirmStatusChange.uuid, status: next })
+        }}
+      />
     </div>
   )
 }
@@ -679,8 +690,14 @@ function UserPremiumCard({
   onToggleStatus: () => void
   onDelete: () => void
 }) {
+  const inactive = isUserInactive(user.status ?? '')
   return (
-    <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-cyan-300/20">
+    <Card
+      className={adminInactiveSurfaceClass(
+        inactive,
+        'group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-cyan-300/20',
+      )}
+    >
       <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_36%)]" />
       <div className="relative flex items-start justify-between gap-4">
         <UserIdentity user={user} />

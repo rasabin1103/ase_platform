@@ -6,8 +6,18 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
+from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
 from app.modules.pricing.schemas import PublicPricingPlanRead
+
+
+class CatalogItemSummaryRead(BaseModel):
+    id: str
+    title: str
+    slug: str
+    type: CatalogItemType
+    shortDescription: str
+    imageUrl: str
+    author: str
 
 
 class CatalogItemRead(BaseModel):
@@ -33,6 +43,19 @@ class CatalogItemRead(BaseModel):
     isFavorite: bool = False
     isPurchased: bool = False
     pricingPlans: list[PublicPricingPlanRead] = Field(default_factory=list)
+    coverImageUrl: str | None = None
+    thumbnailUrl: str | None = None
+    amazonUrl: str | None = None
+    externalPurchaseUrl: str | None = None
+    purchaseProvider: CatalogPurchaseProvider = CatalogPurchaseProvider.internal
+    pdfUrl: str | None = None
+    previewPdfUrl: str | None = None
+    previewPages: int | None = None
+    sampleDownloadUrl: str | None = None
+    richContentMarkdown: str | None = None
+    bookFormat: str | None = None
+    audience: list[str] = Field(default_factory=list)
+    relatedItems: list[CatalogItemSummaryRead] = Field(default_factory=list)
     createdAt: datetime
     updatedAt: datetime
 

@@ -13,10 +13,16 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
-import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Badge } from '../../components/ui/Badge'
-import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
+import { CatalogImage } from '../../components/catalog/CatalogImage'
+import { ConfirmDeleteDialog } from '../../components/admin/ConfirmDeleteDialog'
+import { ConfirmDeactivateDialog } from '../../components/admin/ConfirmDeactivateDialog'
+import {
+  adminInactiveRowClass,
+  adminInactiveSurfaceClass,
+  isCatalogItemInactive,
+} from '../../components/admin/adminInactiveStyles'
 import {
   MiniMetric,
   PremiumHero,
@@ -46,6 +52,7 @@ export function AdminCatalogPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
   const [deleting, setDeleting] = useState<CatalogItemAdmin | null>(null)
+  const [statusTarget, setStatusTarget] = useState<CatalogItemAdmin | null>(null)
 
   const typeFilter = tab === 'all' ? undefined : tab
   const query = useQuery({
@@ -102,6 +109,14 @@ export function AdminCatalogPage() {
     onSuccess: () => {
       invalidate()
       setDeleting(null)
+    },
+  })
+  const statusMut = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: 'published' | 'draft' }) =>
+      updateAdminCatalogItem(id, { status }),
+    onSuccess: () => {
+      invalidate()
+      setStatusTarget(null)
     },
   })
 
@@ -197,6 +212,7 @@ export function AdminCatalogPage() {
               t={t}
               onEdit={() => setEditing(item)}
               onDelete={() => setDeleting(item)}
+              onToggleStatus={() => setStatusTarget(item)}
             />
           ))}
         </div>
@@ -213,16 +229,38 @@ export function AdminCatalogPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[72px_1fr_90px_100px_100px_140px] items-center gap-2 px-4 py-3 text-sm"
+              className={cn(
+                'grid grid-cols-[72px_1fr_90px_100px_100px_180px] items-center gap-2 px-4 py-3 text-sm',
+                adminInactiveRowClass(isCatalogItemInactive(item.status)),
+              )}
             >
-              <AuthenticatedImage src={item.image_url} className="h-14 w-14 rounded-xl" />
+              <CatalogImage
+                src={item.image_url}
+                type={item.type}
+                variant="card"
+                alt={item.title}
+                cacheKey={item.updated_at}
+                className="h-14 w-14 rounded-xl"
+              />
               <span className="font-medium text-ase-text">{item.title}</span>
               <span>{item.type}</span>
               <span>{item.status}</span>
               <span>
                 {item.price} {item.currency}
               </span>
-              <span className="flex gap-2">
+              <span className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    window.open(`/catalog/${item.type}/${item.slug}?preview=true`, '_blank', 'noopener,noreferrer')
+                  }
+                >
+                  {t('adminCatalog.viewAsUser')}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setStatusTarget(item)}>
+                  {item.status === 'published' ? t('adminCatalog.deactivate') : t('adminCatalog.activate')}
+                </Button>
                 <Button size="sm" variant="secondary" onClick={() => setEditing(item)}>
                   {t('adminCatalog.edit')}
                 </Button>
@@ -256,18 +294,28 @@ export function AdminCatalogPage() {
         }}
       />
 
-      <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} title={t('adminCatalog.delete')}>
-        <p className="text-sm text-ase-text2">{t('adminCatalog.confirmDelete')}</p>
-        <p className="mt-2 font-medium text-ase-text">{deleting?.title}</p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setDeleting(null)}>
-            {t('adminCatalog.cancel')}
-          </Button>
-          <Button variant="danger" disabled={deleteMut.isPending} onClick={() => deleting && deleteMut.mutate(deleting.id)}>
-            {t('adminCatalog.delete')}
-          </Button>
-        </div>
-      </Modal>
+      <ConfirmDeleteDialog
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        itemName={deleting?.title}
+        onConfirm={() => deleting && deleteMut.mutate(deleting.id)}
+        isPending={deleteMut.isPending}
+        isError={deleteMut.isError}
+        body={t('adminCatalog.confirmDelete')}
+      />
+
+      <ConfirmDeactivateDialog
+        open={Boolean(statusTarget)}
+        onClose={() => setStatusTarget(null)}
+        itemName={statusTarget?.title}
+        activating={statusTarget?.status !== 'published'}
+        isPending={statusMut.isPending}
+        onConfirm={() => {
+          if (!statusTarget) return
+          const next = statusTarget.status === 'published' ? 'draft' : 'published'
+          statusMut.mutate({ id: statusTarget.id, status: next })
+        }}
+      />
     </div>
   )
 }
@@ -277,16 +325,31 @@ function CatalogPremiumCard({
   t,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   item: CatalogItemAdmin
   t: (k: string) => string
   onEdit: () => void
   onDelete: () => void
+  onToggleStatus: () => void
 }) {
+  const inactive = isCatalogItemInactive(item.status)
   return (
-    <Card className="group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20">
+    <Card
+      className={adminInactiveSurfaceClass(
+        inactive,
+        'group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20',
+      )}
+    >
       <div className="relative h-40 overflow-hidden border-b border-white/[0.06]">
-        <AuthenticatedImage src={item.image_url} className="h-full w-full" />
+        <CatalogImage
+          src={item.image_url}
+          type={item.type}
+          variant="card"
+          alt={item.title}
+          cacheKey={item.updated_at}
+          className="h-full min-h-[10rem]"
+        />
         <div className="absolute right-3 top-3">
           <Badge variant={item.status === 'published' ? 'success' : 'default'}>{item.status}</Badge>
         </div>
@@ -301,6 +364,19 @@ function CatalogPremiumCard({
           <MiniMetric label={t('adminCatalog.fields.author')} value={item.author} />
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const url = `/catalog/${item.type}/${item.slug}?preview=true`
+              window.open(url, '_blank', 'noopener,noreferrer')
+            }}
+          >
+            {t('adminCatalog.viewAsUser')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={onToggleStatus}>
+            {item.status === 'published' ? t('adminCatalog.deactivate') : t('adminCatalog.activate')}
+          </Button>
           <Button size="sm" variant="secondary" onClick={onEdit}>
             {t('adminCatalog.edit')}
           </Button>

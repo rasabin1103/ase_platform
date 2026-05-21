@@ -28,7 +28,7 @@ export function PlatformPage() {
   )
 
   return (
-    <div className="min-h-screen bg-ase-bg">
+    <div className="w-full bg-ase-bg">
       {/* HERO */}
       <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-16 lg:pb-28 lg:pt-20">
         <div className="pointer-events-none absolute -left-40 top-0 h-[28rem] w-[28rem] rounded-full bg-ase-primary/12 blur-3xl" />

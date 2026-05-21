@@ -1,6 +1,7 @@
 export type CatalogItemType = 'product' | 'course' | 'book' | 'resource'
 export type CatalogItemStatus = 'published' | 'draft' | 'coming_soon' | 'request_only'
 export type CatalogItemLevel = 'beginner' | 'intermediate' | 'advanced'
+export type CatalogPurchaseProvider = 'internal' | 'amazon' | 'external' | 'request_only'
 
 export type PricingPlanType =
   | 'free'
@@ -44,6 +45,16 @@ export type PublicCatalogPricingPlan = PublicPricingPlan & {
   catalogItemCategory: string
 }
 
+export type CatalogItemSummary = {
+  id: string
+  title: string
+  slug: string
+  type: CatalogItemType
+  shortDescription: string
+  imageUrl: string
+  author: string
+}
+
 export type CatalogItem = {
   id: string
   uuid: string
@@ -67,6 +78,19 @@ export type CatalogItem = {
   isFavorite: boolean
   isPurchased: boolean
   pricingPlans?: PublicPricingPlan[]
+  coverImageUrl?: string | null
+  thumbnailUrl?: string | null
+  amazonUrl?: string | null
+  externalPurchaseUrl?: string | null
+  purchaseProvider?: CatalogPurchaseProvider
+  pdfUrl?: string | null
+  previewPdfUrl?: string | null
+  previewPages?: number | null
+  sampleDownloadUrl?: string | null
+  richContentMarkdown?: string | null
+  bookFormat?: string | null
+  audience?: string[]
+  relatedItems?: CatalogItemSummary[]
   createdAt: string
   updatedAt: string
 }

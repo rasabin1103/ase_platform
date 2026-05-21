@@ -17,9 +17,11 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
-import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { ConfirmDeleteDialog } from '../../components/admin/ConfirmDeleteDialog'
+import { ConfirmDeactivateDialog } from '../../components/admin/ConfirmDeactivateDialog'
+import { adminInactiveSurfaceClass, isPricingPlanInactive } from '../../components/admin/adminInactiveStyles'
 import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { cn } from '../../components/ui/cn'
@@ -50,6 +52,7 @@ export function AdminPricingPlansPage() {
   const [createCatalogId, setCreateCatalogId] = useState<number | undefined>()
   const [editing, setEditing] = useState<PricingPlanWithCatalog | null>(null)
   const [deleting, setDeleting] = useState<PricingPlanWithCatalog | null>(null)
+  const [statusTarget, setStatusTarget] = useState<PricingPlanWithCatalog | null>(null)
 
   const catalogQuery = useQuery({
     queryKey: ['admin-catalog', 'pricing-plans-page'],
@@ -94,7 +97,10 @@ export function AdminPricingPlansPage() {
   })
   const statusMut = useMutation({
     mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) => patchPricingPlanStatus(id, is_active),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate()
+      setStatusTarget(null)
+    },
   })
   const deleteMut = useMutation({
     mutationFn: deletePricingPlan,
@@ -209,11 +215,12 @@ export function AdminPricingPlansPage() {
           {plans.map((plan) => (
             <Card
               key={plan.id}
-              className={cn(
-                'rounded-2xl border p-5 transition',
-                plan.is_active
-                  ? 'border-violet-300/25 bg-ase-surface/70'
-                  : 'border-white/10 bg-ase-bg2/40 opacity-85',
+              className={adminInactiveSurfaceClass(
+                isPricingPlanInactive(plan.is_active),
+                cn(
+                  'rounded-2xl border p-5 transition',
+                  plan.is_active ? 'border-violet-300/25 bg-ase-surface/70' : 'border-white/10',
+                ),
               )}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/80">
@@ -249,12 +256,7 @@ export function AdminPricingPlansPage() {
                 <Button size="sm" variant="secondary" onClick={() => openEdit(plan)}>
                   {t('catalogPricing.edit')}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={statusMut.isPending}
-                  onClick={() => statusMut.mutate({ id: plan.id, is_active: !plan.is_active })}
-                >
+                <Button size="sm" variant="outline" onClick={() => setStatusTarget(plan)}>
                   {plan.is_active ? t('catalogPricing.deactivate') : t('catalogPricing.activate')}
                 </Button>
                 <Button
@@ -293,22 +295,27 @@ export function AdminPricingPlansPage() {
         }}
       />
 
-      <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} title={t('catalogPricing.delete')}>
-        <p className="text-sm text-ase-text2">{t('catalogPricing.confirmDelete')}</p>
-        <p className="mt-2 font-medium text-ase-text">{deleting?.name}</p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setDeleting(null)}>
-            {t('catalogPricing.cancel')}
-          </Button>
-          <Button
-            variant="danger"
-            disabled={deleteMut.isPending}
-            onClick={() => deleting && deleteMut.mutate(deleting.id)}
-          >
-            {t('catalogPricing.delete')}
-          </Button>
-        </div>
-      </Modal>
+      <ConfirmDeleteDialog
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        itemName={deleting?.name}
+        onConfirm={() => deleting && deleteMut.mutate(deleting.id)}
+        isPending={deleteMut.isPending}
+        isError={deleteMut.isError}
+        body={t('catalogPricing.confirmDelete')}
+      />
+
+      <ConfirmDeactivateDialog
+        open={Boolean(statusTarget)}
+        onClose={() => setStatusTarget(null)}
+        itemName={statusTarget?.name}
+        activating={!statusTarget?.is_active}
+        isPending={statusMut.isPending}
+        onConfirm={() => {
+          if (!statusTarget) return
+          statusMut.mutate({ id: statusTarget.id, is_active: !statusTarget.is_active })
+        }}
+      />
     </div>
   )
 }

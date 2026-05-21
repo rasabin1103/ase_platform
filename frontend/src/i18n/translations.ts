@@ -22,6 +22,7 @@ import { coursesPageEn, coursesPageEs } from './coursesPage.locale'
 import { auditLogsPageEn, auditLogsPageEs } from './auditLogsPage.locale'
 import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
 import { capabilitiesEn, capabilitiesEs } from './capabilities.locale'
+import { adminConfirmEn, adminConfirmEs } from './adminConfirm.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import { pricingEn, pricingEs } from './pricing.locale'
 import { adminPricingPlansEn, adminPricingPlansEs } from './adminPricingPlans.locale'
@@ -30,6 +31,8 @@ import {
   catalogEs,
   independentDashboardEn,
   independentDashboardEs,
+  independentPlansEn,
+  independentPlansEs,
   profilePageEn,
   profilePageEs,
   adminDashboardEn,
@@ -66,9 +69,11 @@ export const translations = {
     auditLogsPage: auditLogsPageEn,
     requestsPage: requestsPageEn,
     capabilities: capabilitiesEn,
+    adminConfirm: adminConfirmEn,
     creatorApplication: creatorApplicationEn,
     catalog: catalogEn,
     independentDashboard: independentDashboardEn,
+    independentPlans: independentPlansEn,
     profilePage: profilePageEn,
     adminDashboard: adminDashboardEn,
     adminCatalog: adminCatalogEn,
@@ -312,6 +317,8 @@ export const translations = {
       platform: 'Platform',
       pricing: 'Pricing',
       clientLogin: 'Client login',
+      myWorkspace: 'My workspace',
+      myProfile: 'My profile',
       services: 'Services',
       saasPlatformEngineering: 'SaaS Platform Engineering',
       qaAutomationArchitecture: 'QA Automation Architecture',
@@ -443,6 +450,7 @@ export const translations = {
         myPurchases: 'My purchases',
         myBooks: 'My books',
         myResources: 'My resources',
+        plansAvailable: 'Available plans',
         catalogManage: 'Catalog management',
         pricingPlansManage: 'Pricing plans',
         purchasesAdmin: 'Purchases',
@@ -502,9 +510,11 @@ export const translations = {
     auditLogsPage: auditLogsPageEs,
     requestsPage: requestsPageEs,
     capabilities: capabilitiesEs,
+    adminConfirm: adminConfirmEs,
     creatorApplication: creatorApplicationEs,
     catalog: catalogEs,
     independentDashboard: independentDashboardEs,
+    independentPlans: independentPlansEs,
     profilePage: profilePageEs,
     adminDashboard: adminDashboardEs,
     adminCatalog: adminCatalogEs,
@@ -747,6 +757,8 @@ export const translations = {
       platform: 'Plataforma',
       pricing: 'Planes',
       clientLogin: 'Acceso clientes',
+      myWorkspace: 'Mi espacio',
+      myProfile: 'Mi perfil',
       services: 'Servicios',
       saasPlatformEngineering: 'Ingeniería de plataformas SaaS',
       qaAutomationArchitecture: 'Arquitectura de automatización QA',
@@ -878,6 +890,7 @@ export const translations = {
         myPurchases: 'Mis compras',
         myBooks: 'Mis libros',
         myResources: 'Mis recursos',
+        plansAvailable: 'Planes disponibles',
         catalogManage: 'Gestión catálogo',
         pricingPlansManage: 'Gestión de planes',
         purchasesAdmin: 'Compras',

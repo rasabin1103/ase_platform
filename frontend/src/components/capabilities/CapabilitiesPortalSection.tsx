@@ -4,6 +4,7 @@ import { CAPABILITY_ICONS } from './capabilityIcons'
 import { EmptyCapabilityState } from './EmptyCapabilityState'
 import { RequestCapabilityCard, resolveCapabilityCta } from './RequestCapabilityCard'
 import type { CapabilityId, CapabilityStatus } from './types'
+import { CapabilitiesCompactStrip } from './CapabilitiesCompactStrip'
 import { useUserCapabilities } from './useUserCapabilities'
 
 type Props = {
@@ -96,6 +97,10 @@ export function CapabilitiesPortalSection({
   }
 
   const hasActiveCreator = canCreate || grouped.active.length > 1
+
+  if (variant === 'compact') {
+    return <CapabilitiesCompactStrip onRequestCreator={onRequestCreator} />
+  }
 
   return (
     <section className="space-y-8">

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CatalogImage } from './CatalogImage'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { useI18n } from '../../i18n'
@@ -42,8 +43,14 @@ export function CatalogItemCard({
 
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0" interactive>
-      <div className="relative aspect-[16/10] overflow-hidden bg-ase-bg2">
-        <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+      <div className="relative overflow-hidden bg-ase-bg2">
+        <CatalogImage
+          src={item.imageUrl}
+          type={item.type}
+          variant="card"
+          alt={item.title}
+          cacheKey={item.updatedAt}
+        />
         <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text backdrop-blur">
           {t(typeLabelKey(item.type))}
         </span>
