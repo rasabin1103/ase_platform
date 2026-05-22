@@ -13,11 +13,13 @@ import {
   IndependentDashboardPage,
   IndependentPlansPage,
   ProfilePage,
+  ProfileSecurityPage,
 } from '../pages/independent'
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
 import { AdminPricingPlansPage } from '../pages/admin/AdminPricingPlansPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
+import { useAuth } from '../hooks/useAuth'
 import { useRbac } from '../rbac/useRbac'
 import { LoginPage } from '../pages/LoginPage'
 import { RequestsPage } from '../pages/RequestsPage'
@@ -32,6 +34,7 @@ import { ServicesPage } from '../pages/public/ServicesPage'
 import { PlatformPage } from '../pages/public/PlatformPage'
 import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
+import { EmailVerifyPage } from '../pages/EmailVerifyPage'
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +57,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/verify-email', element: <EmailVerifyPage /> },
     ],
   },
   {
@@ -87,6 +91,7 @@ export const router = createBrowserRouter([
             ],
           },
           { path: '/profile', element: <ProfilePage /> },
+          { path: '/profile/security', element: <ProfileSecurityPage /> },
           { path: '/admin/catalog', element: <AdminCatalogPage /> },
           { path: '/admin/pricing-plans', element: <AdminPricingPlansPage /> },
           { path: '/admin/purchases', element: <AdminPurchasesPage /> },
@@ -102,10 +107,16 @@ export const router = createBrowserRouter([
 ])
 
 function RoleAwareDashboard() {
+  const { currentUser } = useAuth()
   const { isConsumerMode, primaryRole, isSuperuser } = useRbac()
   if (isSuperuser || primaryRole === 'super_admin') return <AdminDashboardPage />
-  if (isConsumerMode || primaryRole === 'independent_user') return <IndependentDashboardPage />
-  // Avoid infinite <Navigate to="/dashboard" /> when role metadata is missing; send to onboarding.
+  if (
+    isConsumerMode ||
+    primaryRole === 'independent_user' ||
+    currentUser?.dashboard_mode === 'independent'
+  ) {
+    return <IndependentDashboardPage />
+  }
   return <Navigate to="/onboarding" replace />
 }
 

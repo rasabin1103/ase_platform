@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.enums import BillingCycle
 from app.modules.auth.dependencies import require_permission, require_platform_role
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.plans.schemas import PlanCreate, PlanListResponse, PlanRead, PlanUpdate
 from app.modules.plans.service import PlansService
 
@@ -20,7 +21,7 @@ def get_service(db: Session = Depends(get_db)) -> PlansService:
     "",
     response_model=PlanRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_platform_role("super_admin"))],
+    dependencies=[Depends(require_platform_role("super_admin")), Depends(require_security_onboarding)],
 )
 def create_plan(payload: PlanCreate, svc: PlansService = Depends(get_service)):
     return svc.create(payload)
@@ -53,12 +54,13 @@ def get_plan(plan_id: int, svc: PlansService = Depends(get_service)):
     return svc.get(plan_id)
 
 
-@router.patch("/{plan_id}", response_model=PlanRead, dependencies=[Depends(require_platform_role("super_admin"))])
+@router.patch("/{plan_id}", response_model=PlanRead, dependencies=[Depends(require_platform_role("super_admin")), Depends(require_security_onboarding)])
 def update_plan(plan_id: int, payload: PlanUpdate, svc: PlansService = Depends(get_service)):
     return svc.update(plan_id, payload)
 
 
-@router.delete("/{plan_id}", response_model=PlanRead, dependencies=[Depends(require_platform_role("super_admin"))])
+@router.delete("/{plan_id}", response_model=PlanRead, dependencies=[Depends(require_platform_role("super_admin")), Depends(require_security_onboarding)])
 def delete_plan(plan_id: int, svc: PlansService = Depends(get_service)):
     return svc.deactivate(plan_id)
+
 

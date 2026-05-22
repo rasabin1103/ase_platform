@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import re
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.models.catalog_item import CatalogItem
+from app.models.catalog_plan_subscription import CatalogPlanSubscription
 from app.models.catalog_pricing_plan import CatalogPricingPlan
-from app.models.enums import CatalogItemStatus, PricingBillingInterval, PricingPlanType, PricingSupportLevel
+from app.models.enums import CatalogItemStatus, CatalogItemType, PricingBillingInterval, PricingPlanType, PricingSupportLevel
+from app.modules.pricing.scope import plan_matches_item, plan_scope_categories, plan_scope_types
 
 PUBLIC_CATALOG_STATUSES = (
     CatalogItemStatus.published,
@@ -21,6 +24,10 @@ def slugify_name(name: str) -> str:
     s = name.lower().strip()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-")[:160] or "plan"
+
+
+def _scope_types_json(types: list[CatalogItemType]) -> list[str]:
+    return [t.value for t in types]
 
 
 class PricingPlansRepository:
@@ -42,19 +49,24 @@ class PricingPlansRepository:
         plan_type: PricingPlanType | None = None,
         is_active: bool | None = None,
         search: str | None = None,
-    ) -> tuple[list[tuple[CatalogPricingPlan, CatalogItem]], int]:
+    ) -> tuple[list[tuple[CatalogPricingPlan, CatalogItem | None]], int]:
         base = (
             select(CatalogPricingPlan, CatalogItem)
-            .join(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
+            .outerjoin(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
             .order_by(
-                CatalogItem.title.asc(),
+                CatalogPricingPlan.name.asc(),
                 CatalogPricingPlan.is_default.desc(),
                 CatalogPricingPlan.price.asc(),
                 CatalogPricingPlan.created_at.desc(),
             )
         )
         if catalog_item_id is not None:
-            base = base.where(CatalogPricingPlan.catalog_item_id == catalog_item_id)
+            base = base.where(
+                or_(
+                    CatalogPricingPlan.catalog_item_id == catalog_item_id,
+                    CatalogPricingPlan.catalog_item_id.is_(None),
+                )
+            )
         if plan_type is not None:
             base = base.where(CatalogPricingPlan.plan_type == plan_type)
         if is_active is not None:
@@ -78,16 +90,13 @@ class PricingPlansRepository:
         *,
         limit: int,
         offset: int,
-    ) -> tuple[list[tuple[CatalogPricingPlan, CatalogItem]], int]:
+    ) -> tuple[list[tuple[CatalogPricingPlan, CatalogItem | None]], int]:
         base = (
             select(CatalogPricingPlan, CatalogItem)
-            .join(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
-            .where(
-                CatalogPricingPlan.is_active.is_(True),
-                CatalogItem.status.in_(PUBLIC_CATALOG_STATUSES),
-            )
+            .outerjoin(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
+            .where(CatalogPricingPlan.is_active.is_(True))
             .order_by(
-                CatalogItem.title.asc(),
+                CatalogPricingPlan.name.asc(),
                 CatalogPricingPlan.is_default.desc(),
                 CatalogPricingPlan.price.asc(),
                 CatalogPricingPlan.created_at.desc(),
@@ -98,33 +107,30 @@ class PricingPlansRepository:
         return [(plan, item) for plan, item in rows], total
 
     def list_for_item(self, catalog_item_id: int) -> list[CatalogPricingPlan]:
-        stmt = (
-            select(CatalogPricingPlan)
-            .where(CatalogPricingPlan.catalog_item_id == catalog_item_id)
-            .order_by(
-                CatalogPricingPlan.is_default.desc(),
-                CatalogPricingPlan.price.asc(),
-                CatalogPricingPlan.created_at.desc(),
-            )
+        item = self.get_catalog_item(catalog_item_id)
+        if item is None:
+            return []
+        stmt = select(CatalogPricingPlan).order_by(
+            CatalogPricingPlan.is_default.desc(),
+            CatalogPricingPlan.price.asc(),
+            CatalogPricingPlan.created_at.desc(),
         )
-        return list(self.db.scalars(stmt).all())
+        plans = list(self.db.scalars(stmt).all())
+        return [p for p in plans if plan_matches_item(p, item)]
 
     def list_active_for_item(self, catalog_item_id: int) -> list[CatalogPricingPlan]:
-        stmt = (
-            select(CatalogPricingPlan)
-            .where(
-                CatalogPricingPlan.catalog_item_id == catalog_item_id,
-                CatalogPricingPlan.is_active.is_(True),
-            )
-            .order_by(
-                CatalogPricingPlan.is_default.desc(),
-                CatalogPricingPlan.price.asc(),
-                CatalogPricingPlan.created_at.desc(),
-            )
-        )
-        return list(self.db.scalars(stmt).all())
+        item = self.get_catalog_item(catalog_item_id)
+        if item is None:
+            return []
+        return [p for p in self.list_for_item(catalog_item_id) if p.is_active]
 
-    def slug_exists(self, catalog_item_id: int, slug: str, *, exclude_plan_id: int | None = None) -> bool:
+    def slug_exists_for_item(
+        self,
+        catalog_item_id: int,
+        slug: str,
+        *,
+        exclude_plan_id: int | None = None,
+    ) -> bool:
         stmt = select(CatalogPricingPlan.id).where(
             CatalogPricingPlan.catalog_item_id == catalog_item_id,
             CatalogPricingPlan.slug == slug,
@@ -133,13 +139,19 @@ class PricingPlansRepository:
             stmt = stmt.where(CatalogPricingPlan.id != exclude_plan_id)
         return self.db.scalar(stmt) is not None
 
-    def count_active_for_item(self, catalog_item_id: int, *, exclude_plan_id: int | None = None) -> int:
-        stmt = select(func.count()).select_from(CatalogPricingPlan).where(
-            CatalogPricingPlan.catalog_item_id == catalog_item_id,
-            CatalogPricingPlan.is_active.is_(True),
+    def slug_exists_global(self, slug: str, *, exclude_plan_id: int | None = None) -> bool:
+        stmt = select(CatalogPricingPlan.id).where(
+            CatalogPricingPlan.catalog_item_id.is_(None),
+            CatalogPricingPlan.slug == slug,
         )
         if exclude_plan_id is not None:
             stmt = stmt.where(CatalogPricingPlan.id != exclude_plan_id)
+        return self.db.scalar(stmt) is not None
+
+    def count_subscriptions_for_plan(self, plan_id: int) -> int:
+        stmt = select(func.count()).select_from(CatalogPlanSubscription).where(
+            CatalogPlanSubscription.catalog_pricing_plan_id == plan_id,
+        )
         return int(self.db.scalar(stmt) or 0)
 
     def clear_default_for_item(self, catalog_item_id: int, *, except_plan_id: int | None = None) -> None:
@@ -152,10 +164,35 @@ class PricingPlansRepository:
             stmt = stmt.where(CatalogPricingPlan.id != except_plan_id)
         self.db.execute(stmt)
 
+    def clear_default_for_scope(
+        self,
+        scope_catalog_types: list[CatalogItemType],
+        scope_categories: list[str],
+        *,
+        except_plan_id: int | None = None,
+    ) -> None:
+        types_json = _scope_types_json(scope_catalog_types)
+        cats_json = scope_categories
+        stmt = (
+            update(CatalogPricingPlan)
+            .where(
+                CatalogPricingPlan.catalog_item_id.is_(None),
+                CatalogPricingPlan.is_default.is_(True),
+                CatalogPricingPlan.scope_catalog_types == types_json,
+                CatalogPricingPlan.scope_categories == cats_json,
+            )
+            .values(is_default=False)
+        )
+        if except_plan_id is not None:
+            stmt = stmt.where(CatalogPricingPlan.id != except_plan_id)
+        self.db.execute(stmt)
+
     def create_plan(
         self,
         *,
-        catalog_item_id: int,
+        catalog_item_id: int | None,
+        scope_catalog_types: list[CatalogItemType],
+        scope_categories: list[str],
         name: str,
         slug: str,
         description: str | None,
@@ -179,6 +216,8 @@ class PricingPlansRepository:
     ) -> CatalogPricingPlan:
         plan = CatalogPricingPlan(
             catalog_item_id=catalog_item_id,
+            scope_catalog_types=_scope_types_json(scope_catalog_types),
+            scope_categories=scope_categories,
             name=name,
             slug=slug,
             description=description,
@@ -206,11 +245,3 @@ class PricingPlansRepository:
 
     def delete_plan(self, plan: CatalogPricingPlan) -> None:
         self.db.delete(plan)
-
-    @staticmethod
-    def item_allows_no_active_plans(status: CatalogItemStatus) -> bool:
-        return status in (
-            CatalogItemStatus.draft,
-            CatalogItemStatus.coming_soon,
-            CatalogItemStatus.request_only,
-        )

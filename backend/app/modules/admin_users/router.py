@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.models.enums import UserStatus
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_super_admin
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.admin_users.schemas import (
     AdminUserCreate,
     AdminUserListResponse,
@@ -53,6 +54,7 @@ def list_admin_users(
 def create_admin_user(
     payload: AdminUserCreate,
     actor: User = Depends(require_super_admin),
+    _: None = Depends(require_security_onboarding),
     svc: AdminUsersService = Depends(get_service),
 ):
     return svc.create_user(payload, actor=actor)
@@ -72,6 +74,7 @@ def update_admin_user(
     user_id: UUID,
     payload: AdminUserUpdate,
     actor: User = Depends(require_super_admin),
+    _: None = Depends(require_security_onboarding),
     svc: AdminUsersService = Depends(get_service),
 ):
     return svc.update_user(user_id, payload, actor=actor)
@@ -82,6 +85,7 @@ def patch_admin_user_status(
     user_id: UUID,
     payload: AdminUserStatusPatch,
     actor: User = Depends(require_super_admin),
+    _: None = Depends(require_security_onboarding),
     svc: AdminUsersService = Depends(get_service),
 ):
     return svc.patch_status(user_id, payload, actor=actor)
@@ -91,6 +95,7 @@ def patch_admin_user_status(
 def delete_admin_user(
     user_id: UUID,
     actor: User = Depends(require_super_admin),
+    _: None = Depends(require_security_onboarding),
     svc: AdminUsersService = Depends(get_service),
 ):
     svc.hard_delete_user(user_id, actor=actor)

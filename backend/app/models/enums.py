@@ -204,3 +204,8 @@ class ServicePriceType(str, Enum):
     fixed = "fixed"
     subscription = "subscription"
     custom = "custom"
+
+
+class VerificationChannel(str, Enum):
+    email = "email"
+    sms = "sms"

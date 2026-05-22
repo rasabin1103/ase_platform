@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.auth.dependencies import require_permission
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.plan_products.schemas import (
     PlanProductCreate,
     PlanProductListResponse,
@@ -24,7 +25,7 @@ def get_service(db: Session = Depends(get_db)) -> PlanProductsService:
     "",
     response_model=PlanProductRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def create_plan_product(payload: PlanProductCreate, svc: PlanProductsService = Depends(get_service)):
     return svc.create(payload)
@@ -63,7 +64,7 @@ def get_plan_product(plan_product_id: int, svc: PlanProductsService = Depends(ge
 @router.patch(
     "/{plan_product_id}",
     response_model=PlanProductRead,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def update_plan_product(plan_product_id: int, payload: PlanProductUpdate, svc: PlanProductsService = Depends(get_service)):
     return svc.update(plan_product_id, payload)
@@ -72,9 +73,10 @@ def update_plan_product(plan_product_id: int, payload: PlanProductUpdate, svc: P
 @router.delete(
     "/{plan_product_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def delete_plan_product(plan_product_id: int, svc: PlanProductsService = Depends(get_service)):
     svc.delete(plan_product_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 

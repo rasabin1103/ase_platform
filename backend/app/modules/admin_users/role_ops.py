@@ -14,6 +14,11 @@ from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.role import Role
 from app.models.user import User
+from app.modules.auth.platform_roles import (
+    assign_user_platform_role,
+    clear_user_platform_roles,
+    get_user_platform_role_codes,
+)
 
 MVP_PLATFORM_SLUG = "ase-platform"
 
@@ -33,7 +38,10 @@ def get_role_codes_for_user(db: Session, user_id: int) -> list[str]:
         .distinct()
         .order_by(Role.code.asc())
     )
-    return list(db.execute(stmt).scalars().all())
+    membership_codes = list(db.execute(stmt).scalars().all())
+    platform_codes = get_user_platform_role_codes(db, user_id=user_id)
+    merged = sorted(set(membership_codes) | set(platform_codes))
+    return merged
 
 
 def resolve_primary_platform_role(role_codes: list[str]) -> str | None:
@@ -118,7 +126,8 @@ def _ensure_membership(
 
 
 def clear_platform_roles(db: Session, user_id: int) -> None:
-    """Remove all member_roles for this user (MVP role change / delete prep)."""
+    """Remove all member_roles and direct platform roles for this user."""
+    clear_user_platform_roles(db, user_id)
     member_ids = list(
         db.execute(
             select(OrganizationMember.id).where(OrganizationMember.user_id == user_id)
@@ -151,14 +160,7 @@ def assign_platform_role(
         return
 
     if role_code == "independent_user":
-        personal = _get_or_create_org(
-            db,
-            name="Personal Workspace",
-            slug=_slugify(user.email),
-            org_type=OrganizationType.individual,
-            owner=user,
-        )
-        _ensure_membership(db, org=personal, user=user, role_code=role_code, assigner_id=assigner_id)
+        assign_user_platform_role(db, user=user, role_code=role_code, assigner_id=assigner_id)
         return
 
     raise ValueError(f"unsupported_role:{role_code}")

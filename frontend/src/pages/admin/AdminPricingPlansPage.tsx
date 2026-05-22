@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { listAdminCatalog } from '../../api/catalogAdmin.api'
 import {
-  createCatalogPricingPlan,
+  createPricingPlan,
   deletePricingPlan,
   listAllPricingPlans,
   patchPricingPlanStatus,
@@ -20,6 +20,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { ConfirmDeleteDialog } from '../../components/admin/ConfirmDeleteDialog'
+import { resolvePricingPlanDeleteError } from '../../utils/pricingPlanDeleteError'
 import { ConfirmDeactivateDialog } from '../../components/admin/ConfirmDeactivateDialog'
 import { adminInactiveSurfaceClass, isPricingPlanInactive } from '../../components/admin/adminInactiveStyles'
 import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
@@ -49,7 +50,6 @@ export function AdminPricingPlansPage() {
   const [typeFilter, setTypeFilter] = useState<PricingPlanType | ''>('')
   const [activeFilter, setActiveFilter] = useState<'' | 'true' | 'false'>('')
   const [planModalOpen, setPlanModalOpen] = useState(false)
-  const [createCatalogId, setCreateCatalogId] = useState<number | undefined>()
   const [editing, setEditing] = useState<PricingPlanWithCatalog | null>(null)
   const [deleting, setDeleting] = useState<PricingPlanWithCatalog | null>(null)
   const [statusTarget, setStatusTarget] = useState<PricingPlanWithCatalog | null>(null)
@@ -60,6 +60,14 @@ export function AdminPricingPlansPage() {
   })
 
   const catalogItems = catalogQuery.data?.items ?? []
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const item of catalogItems) {
+      if (item.category?.trim()) set.add(item.category.trim())
+    }
+    return [...set].sort((a, b) => a.localeCompare(b))
+  }, [catalogItems])
 
   const plansQuery = useQuery({
     queryKey: ['admin-pricing-plans', search, catalogFilter, typeFilter, activeFilter],
@@ -79,12 +87,10 @@ export function AdminPricingPlansPage() {
   }
 
   const createMut = useMutation({
-    mutationFn: ({ catalogItemId, payload }: { catalogItemId: number; payload: PricingPlanPayload }) =>
-      createCatalogPricingPlan(catalogItemId, payload),
+    mutationFn: (payload: PricingPlanPayload) => createPricingPlan(payload),
     onSuccess: () => {
       invalidate()
       setPlanModalOpen(false)
-      setCreateCatalogId(undefined)
     },
   })
   const updateMut = useMutation({
@@ -102,11 +108,17 @@ export function AdminPricingPlansPage() {
       setStatusTarget(null)
     },
   })
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
+
   const deleteMut = useMutation({
     mutationFn: deletePricingPlan,
     onSuccess: () => {
       invalidate()
       setDeleting(null)
+      setDeleteErrorMessage(null)
+    },
+    onError: (err) => {
+      setDeleteErrorMessage(resolvePricingPlanDeleteError(err, t))
     },
   })
 
@@ -115,13 +127,11 @@ export function AdminPricingPlansPage() {
 
   const openCreate = () => {
     setEditing(null)
-    setCreateCatalogId(undefined)
     setPlanModalOpen(true)
   }
 
   const openEdit = (plan: PricingPlanWithCatalog) => {
     setEditing(plan)
-    setCreateCatalogId(undefined)
     setPlanModalOpen(true)
   }
 
@@ -224,11 +234,13 @@ export function AdminPricingPlansPage() {
               )}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/80">
-                {plan.catalog_item_title}
+                {plan.scope_summary || plan.catalog_item_title || plan.name}
               </p>
-              <p className="text-[11px] text-ase-muted">
-                {plan.catalog_item_type} · {plan.catalog_item_slug}
-              </p>
+              {plan.catalog_item_slug ? (
+                <p className="text-[11px] text-ase-muted">
+                  {plan.catalog_item_type} · {plan.catalog_item_slug}
+                </p>
+              ) : null}
               <h3 className="mt-3 text-lg font-semibold text-ase-text">{plan.name}</h3>
               <div className="mt-2 flex flex-wrap gap-1">
                 <Badge variant={planTypeBadgeVariant(plan.plan_type)}>
@@ -278,30 +290,35 @@ export function AdminPricingPlansPage() {
         onClose={() => {
           setPlanModalOpen(false)
           setEditing(null)
-          setCreateCatalogId(undefined)
         }}
         initial={editing}
-        catalogItems={editing ? undefined : catalogItems}
-        catalogItemId={editing?.catalog_item_id ?? createCatalogId}
-        onCatalogItemIdChange={setCreateCatalogId}
+        bundleMode
+        categoryOptions={categoryOptions}
         isSubmitting={createMut.isPending || updateMut.isPending}
         onSubmit={async (payload) => {
           if (editing) {
             await updateMut.mutateAsync({ id: editing.id, payload })
             return
           }
-          if (!createCatalogId) return
-          await createMut.mutateAsync({ catalogItemId: createCatalogId, payload })
+          await createMut.mutateAsync(payload)
         }}
       />
 
       <ConfirmDeleteDialog
         open={Boolean(deleting)}
-        onClose={() => setDeleting(null)}
+        onClose={() => {
+          setDeleting(null)
+          setDeleteErrorMessage(null)
+          deleteMut.reset()
+        }}
         itemName={deleting?.name}
-        onConfirm={() => deleting && deleteMut.mutate(deleting.id)}
+        onConfirm={() => {
+          setDeleteErrorMessage(null)
+          if (deleting) deleteMut.mutate(deleting.id)
+        }}
         isPending={deleteMut.isPending}
         isError={deleteMut.isError}
+        errorMessage={deleteErrorMessage}
         body={t('catalogPricing.confirmDelete')}
       />
 

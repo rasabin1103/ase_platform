@@ -9,6 +9,7 @@ from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_super_admin, require_permission
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.schemas import (
@@ -77,12 +78,12 @@ def list_catalog(
     )
 
 
-@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own"))])
+@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own")), Depends(require_security_onboarding)])
 def toggle_favorite(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.toggle_favorite(slug, user_id=user.id)
 
 
-@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own"))])
+@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own")), Depends(require_security_onboarding)])
 def purchase_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.purchase(slug, user_id=user.id)
 
@@ -97,3 +98,4 @@ def get_catalog_item(
 ):
     allow_preview = preview and is_super_admin(db, user)
     return svc.get_by_slug(slug, user_id=user.id, allow_preview=allow_preview)
+

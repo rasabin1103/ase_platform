@@ -13,6 +13,7 @@ from app.modules.auth.creator_guards import (
     assert_can_publish_course,
     require_create_course,
 )
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.auth.dependencies import (
     get_current_user,
     is_platform_admin,
@@ -35,7 +36,7 @@ def get_service(db: Session = Depends(get_db)) -> CoursesService:
     "",
     response_model=CourseRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_create_course())],
+    dependencies=[Depends(require_create_course()), Depends(require_security_onboarding)],
 )
 def create_course(
     payload: CourseCreate,
@@ -185,7 +186,7 @@ def update_course(
     return svc.update(course_id, payload)
 
 
-@router.delete("/{course_id}", response_model=CourseRead, dependencies=[Depends(require_permission("courses.manage"))])
+@router.delete("/{course_id}", response_model=CourseRead, dependencies=[Depends(require_permission("courses.manage")), Depends(require_security_onboarding)])
 def delete_course(
     course_id: int,
     request: Request,
@@ -197,4 +198,5 @@ def delete_course(
     if not is_platform_admin(db, current_user) and course.organization_id != require_tenant_context(request, db, current_user).id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     return svc.archive(course_id)
+
 

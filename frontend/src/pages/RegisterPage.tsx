@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { register } from '../api/auth.api'
+import { isLoginRequires2FA, login, register } from '../api/auth.api'
 import { getAccessToken } from '../auth/auth.store'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -39,10 +39,22 @@ export function RegisterPage() {
   })
 
   const mutation = useMutation({
-    mutationFn: register,
+    mutationFn: async (values: FormValues) => {
+      await register({
+        email: values.email,
+        plain_password: values.plain_password,
+        first_name: values.first_name || null,
+        last_name: values.last_name || null,
+        display_name: values.display_name || null,
+      })
+      const loginResult = await login({ email: values.email, password: values.plain_password })
+      if (isLoginRequires2FA(loginResult)) {
+        throw new Error('UNEXPECTED_2FA_AFTER_REGISTER')
+      }
+      await auth.login(loginResult)
+    },
     onSuccess: () => {
-      void auth.loadCurrentUser()
-      navigate('/login', { replace: true })
+      navigate('/dashboard', { replace: true })
     },
   })
 
@@ -63,18 +75,7 @@ export function RegisterPage() {
               <div className="mt-1 text-sm text-ase-text2">{t('auth.register.formSubtitle')}</div>
             </div>
 
-            <form
-              className="space-y-4"
-              onSubmit={form.handleSubmit((values) =>
-                mutation.mutate({
-                  email: values.email,
-                  plain_password: values.plain_password,
-                  first_name: values.first_name || null,
-                  last_name: values.last_name || null,
-                  display_name: values.display_name || null,
-                }),
-              )}
-            >
+            <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
               <div>
                 <label className="mb-1 block text-xs font-medium text-ase-muted">Display name</label>
                 <Input autoComplete="nickname" placeholder="Roberto Arce" {...form.register('display_name')} />

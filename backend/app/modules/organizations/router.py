@@ -14,6 +14,7 @@ from app.models.organization_member import OrganizationMember
 from app.models.role import Role
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, require_permission, user_has_role_assigned
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.organizations.schemas import (
     OrganizationCreate,
     OrganizationListResponse,
@@ -70,7 +71,10 @@ def _to_read(org: Organization, *, db: Session, current_user_id: int) -> Organiz
     "",
     response_model=OrganizationRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("organizations.create"))],
+    dependencies=[
+        Depends(require_permission("organizations.create")),
+        Depends(require_security_onboarding),
+    ],
 )
 def create_organization(
     payload: OrganizationCreate,
@@ -119,7 +123,10 @@ def get_organization(
 @router.patch(
     "/{organization_uuid}",
     response_model=OrganizationRead,
-    dependencies=[Depends(require_permission("organizations.update"))],
+    dependencies=[
+        Depends(require_permission("organizations.update")),
+        Depends(require_security_onboarding),
+    ],
 )
 def update_organization(
     organization_uuid: UUID,
@@ -134,7 +141,10 @@ def update_organization(
 @router.delete(
     "/{organization_uuid}",
     response_model=OrganizationRead,
-    dependencies=[Depends(require_permission("organizations.delete"))],
+    dependencies=[
+        Depends(require_permission("organizations.delete")),
+        Depends(require_security_onboarding),
+    ],
 )
 def delete_organization(
     organization_uuid: UUID,

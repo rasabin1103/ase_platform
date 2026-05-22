@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.models.enums import EnrollmentStatus
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_platform_admin, require_permission, require_tenant_context
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.course_enrollments.schemas import (
     CourseEnrollmentCreate,
     CourseEnrollmentListResponse,
@@ -28,7 +29,7 @@ def get_service(db: Session = Depends(get_db)) -> CourseEnrollmentsService:
     "",
     response_model=CourseEnrollmentRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("courses.manage"))],
+    dependencies=[Depends(require_permission("courses.manage")), Depends(require_security_onboarding)],
 )
 def create_enrollment(
     payload: CourseEnrollmentCreate,
@@ -87,7 +88,7 @@ def get_enrollment(
     return item
 
 
-@router.patch("/{course_enrollment_id}", response_model=CourseEnrollmentRead, dependencies=[Depends(require_permission("courses.manage"))])
+@router.patch("/{course_enrollment_id}", response_model=CourseEnrollmentRead, dependencies=[Depends(require_permission("courses.manage")), Depends(require_security_onboarding)])
 def update_enrollment(
     course_enrollment_id: int,
     payload: CourseEnrollmentUpdate,
@@ -102,7 +103,7 @@ def update_enrollment(
     return svc.update(course_enrollment_id, payload)
 
 
-@router.delete("/{course_enrollment_id}", response_model=CourseEnrollmentRead, dependencies=[Depends(require_permission("courses.manage"))])
+@router.delete("/{course_enrollment_id}", response_model=CourseEnrollmentRead, dependencies=[Depends(require_permission("courses.manage")), Depends(require_security_onboarding)])
 def delete_enrollment(
     course_enrollment_id: int,
     request: Request,
@@ -114,4 +115,5 @@ def delete_enrollment(
     if not is_platform_admin(db, current_user) and svc.repo.get_course_organization_id(item.course_id) != require_tenant_context(request, db, current_user).id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course enrollment not found")
     return svc.cancel(course_enrollment_id)
+
 

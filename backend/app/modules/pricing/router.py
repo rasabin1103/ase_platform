@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_super_admin
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.models.enums import PricingPlanType
 from app.modules.pricing.schemas import (
     AdminPricingPlanListResponse,
@@ -80,7 +81,20 @@ def create_item_pricing_plan(
     _actor: User = Depends(require_super_admin),
     svc: PricingPlansService = Depends(get_service),
 ):
-    return svc.create_plan(catalog_item_id, payload)
+    return svc.create_plan_for_item(catalog_item_id, payload)
+
+
+@router.post(
+    "/api/v1/admin/pricing-plans",
+    response_model=PricingPlanRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_pricing_plan(
+    payload: PricingPlanCreate,
+    _actor: User = Depends(require_super_admin),
+    svc: PricingPlansService = Depends(get_service),
+):
+    return svc.create_plan(payload)
 
 
 @router.get("/api/v1/admin/pricing-plans/{plan_id}", response_model=PricingPlanRead)
@@ -119,3 +133,4 @@ def delete_pricing_plan(
     svc: PricingPlansService = Depends(get_service),
 ):
     svc.delete_plan(plan_id)
+
