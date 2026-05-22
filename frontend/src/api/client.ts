@@ -11,6 +11,10 @@ import {
   touchApiActivity,
 } from '../auth/auth.store'
 import { authDiagLog } from '../utils/authDebugLog'
+import {
+  emitSecurityOnboardingBlocked,
+  parseSecurityOnboardingError,
+} from '../auth/securityOnboardingEvents'
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -59,10 +63,15 @@ apiClient.interceptors.request.use((config) => {
   if (!API_BASE_URL) {
     throw new Error('VITE_API_URL is not set. Define it in ase_frontend/.env')
   }
-  try {
-    assertSessionNotIdleOrThrow()
-  } catch (err) {
-    return Promise.reject(err)
+  const rel = String(config.url ?? '').split('?')[0] ?? ''
+  const skipIdleCheck =
+    /(^|\/)auth\/email\/verify$/.test(rel) || /(^|\/)auth\/2fa\/login-confirm$/.test(rel)
+  if (!skipIdleCheck) {
+    try {
+      assertSessionNotIdleOrThrow()
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
   const token = getAccessToken()
   const hasAuth = Boolean(token && token.length > 0)
@@ -75,7 +84,6 @@ apiClient.interceptors.request.use((config) => {
     headers.set('X-Organization-UUID', orgUuid)
   }
   config.headers = headers
-  const rel = String(config.url ?? '').split('?')[0] ?? ''
   const method = String(config.method ?? 'get').toLowerCase()
   if (method === 'get' && /(^|\/)auth\/me$/.test(rel)) {
     authDiagLog({ me_request_has_authorization: hasAuth })
@@ -94,6 +102,12 @@ apiClient.interceptors.response.use(
     }
     const status = error.response?.status
     const original = error.config as InternalConfig
+    if (status === 403) {
+      const detail = parseSecurityOnboardingError(error.response?.data?.detail)
+      if (detail) {
+        emitSecurityOnboardingBlocked(detail)
+      }
+    }
     if (status !== 401 || original._aseRefreshTried) {
       return Promise.reject(error)
     }

@@ -22,6 +22,7 @@ from app.modules.auth.dependencies import (
     require_tenant_context,
     user_has_any_permission,
 )
+from app.modules.auth.security_onboarding import require_security_onboarding
 
 router = APIRouter(prefix="/api/v1/access-requests", tags=["access-requests"])
 
@@ -34,7 +35,7 @@ def get_service(db: Session = Depends(get_db)) -> AccessRequestsService:
     "/creator-application",
     response_model=AccessRequestRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("creator.request"))],
+    dependencies=[Depends(require_permission("creator.request")), Depends(require_security_onboarding)],
 )
 def create_creator_application(
     payload: CreatorApplicationCreate,
@@ -55,7 +56,7 @@ def create_creator_application(
     "",
     response_model=AccessRequestRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("requests.create"))],
+    dependencies=[Depends(require_permission("requests.create")), Depends(require_security_onboarding)],
 )
 def create_access_request(
     payload: AccessRequestCreate,
@@ -225,3 +226,4 @@ def reject_access_request(
     if not is_super_admin(db, current_user) and item.organization_id is not None and item.organization_id != org.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
     return svc.reject(request_id, reviewer_id=current_user.id)
+

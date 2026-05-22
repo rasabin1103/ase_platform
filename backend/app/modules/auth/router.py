@@ -16,31 +16,43 @@ from app.models.enums import MembershipStatus, OrganizationStatus, OrganizationT
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.user import User
-from app.core.rbac import resolve_primary_role
-from app.models.role import Role
-from app.models.member_role import MemberRole
 from app.modules.auth.dependencies import (
     require_permission,
-    _resolve_org_id_from_request,
     get_current_user,
     get_default_organization_id,
     get_default_organization_uuid,
-    get_rbac_context,
-    get_user_role_codes,
-    is_independent_user,
-    user_has_role_assigned,
 )
+from app.modules.auth.me_builder import build_me_response
 from app.modules.auth.schemas import (
+    EmailVerifyConfirmResponse,
     LoginRequest,
+    LoginResult,
     MeResponse,
+    PhoneVerifyConfirmRequest,
     ProfileUpdateRequest,
     RefreshRequest,
     RegisterRequest,
     TokenPair,
+    TwoFactorConfirmResponse,
+    TwoFactorDisableRequest,
+    TwoFactorLoginConfirmRequest,
+    TwoFactorRecoveryCodesResponse,
+    TwoFactorSetupResponse,
+    TwoFactorTotpCodeRequest,
+    VerificationSendResponse,
     WorkspaceListResponse,
     WorkspaceRead,
 )
 from app.modules.auth.service import AuthService
+from app.modules.auth.security_onboarding import (
+    dismiss_security_warning,
+    ensure_security_onboarding_complete,
+    sync_security_onboarding_completed_at,
+)
+from app.modules.auth.two_factor_service import TwoFactorService
+from app.modules.auth.verification_service import VerificationService
+from app.modules.notifications.schemas import EmailVerifyRequest, NotificationMessageResponse
+from app.modules.notifications.service import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -51,21 +63,97 @@ def get_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthService(db)
 
 
+def get_verification_service(db: Session = Depends(get_db)) -> VerificationService:
+    return VerificationService(db)
+
+
+def get_notification_service(db: Session = Depends(get_db)) -> NotificationService:
+    return NotificationService(db)
+
+
+def get_two_factor_service(db: Session = Depends(get_db)) -> TwoFactorService:
+    return TwoFactorService(db)
+
+
 @router.post("/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, svc: AuthService = Depends(get_service)):
-    return svc.register(payload)
+def register(
+    payload: RegisterRequest,
+    request: Request,
+    svc: AuthService = Depends(get_service),
+    db: Session = Depends(get_db),
+):
+    user = svc.register(payload)
+    return build_me_response(request, user, db)
 
 
-@router.post("/login", response_model=TokenPair)
+@router.post("/login", response_model=LoginResult)
 def login(payload: LoginRequest, svc: AuthService = Depends(get_service)):
-    tokens = svc.login(payload)
-    logger.info("login_success email=%s token_generated=true", str(payload.email))
-    return tokens
+    result = svc.login(payload)
+    if isinstance(result, TokenPair):
+        logger.info("login_success email=%s token_generated=true", str(payload.email))
+    else:
+        logger.info("login_requires_2fa email=%s", str(payload.email))
+    return result
 
 
 @router.post("/refresh", response_model=TokenPair)
 def refresh(payload: RefreshRequest, svc: AuthService = Depends(get_service)):
     return svc.refresh(payload.refresh_token)
+
+
+@router.post("/2fa/setup", response_model=TwoFactorSetupResponse)
+def two_factor_setup(
+    user: User = Depends(get_current_user),
+    svc: TwoFactorService = Depends(get_two_factor_service),
+):
+    return svc.setup(user)
+
+
+@router.post("/2fa/confirm", response_model=TwoFactorConfirmResponse)
+def two_factor_confirm(
+    payload: TwoFactorTotpCodeRequest,
+    user: User = Depends(get_current_user),
+    svc: TwoFactorService = Depends(get_two_factor_service),
+):
+    return svc.confirm(user, payload)
+
+
+@router.post("/2fa/disable", status_code=status.HTTP_204_NO_CONTENT)
+def two_factor_disable(
+    payload: TwoFactorDisableRequest,
+    user: User = Depends(get_current_user),
+    svc: TwoFactorService = Depends(get_two_factor_service),
+):
+    svc.disable(user, payload)
+
+
+@router.post("/2fa/recovery-codes/regenerate", response_model=TwoFactorRecoveryCodesResponse)
+def two_factor_regenerate_recovery_codes(
+    payload: TwoFactorTotpCodeRequest,
+    user: User = Depends(get_current_user),
+    svc: TwoFactorService = Depends(get_two_factor_service),
+):
+    return svc.regenerate_recovery_codes(user, payload)
+
+
+@router.post("/2fa/login-confirm", response_model=TokenPair)
+def two_factor_login_confirm(
+    payload: TwoFactorLoginConfirmRequest,
+    svc: TwoFactorService = Depends(get_two_factor_service),
+):
+    return svc.login_confirm(payload)
+
+
+@router.post("/security-warning/dismiss", response_model=MeResponse)
+def dismiss_security_warning_endpoint(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    dismiss_security_warning(user)
+    db.commit()
+    db.refresh(user)
+    return build_me_response(request, user, db)
 
 
 @router.get("/me", response_model=MeResponse)
@@ -75,72 +163,12 @@ def me(
     db: Session = Depends(get_db),
 ):
     logger.info("current_user_requested email=%s", user.email)
-    profile = MeResponse.model_validate(user)
-    organization_uuid = db.execute(
-        select(Organization.uuid)
-        .join(OrganizationMember, OrganizationMember.organization_id == Organization.id)
-        .where(
-            OrganizationMember.user_id == user.id,
-            OrganizationMember.membership_status == MembershipStatus.active,
-            Organization.status == OrganizationStatus.active,
-        )
-        .order_by(OrganizationMember.id.asc())
-        .limit(1)
-    ).scalar_one_or_none()
-    org_id = _resolve_org_id_from_request(request, db)
-    global_independent = is_independent_user(db, user)
-
-    if global_independent:
-        personal_org_id = db.execute(
-            select(Organization.id)
-            .join(OrganizationMember, OrganizationMember.organization_id == Organization.id)
-            .join(MemberRole, MemberRole.organization_member_id == OrganizationMember.id)
-            .join(Role, Role.id == MemberRole.role_id)
-            .where(
-                OrganizationMember.user_id == user.id,
-                OrganizationMember.membership_status == MembershipStatus.active,
-                Organization.status == OrganizationStatus.active,
-                Organization.type == OrganizationType.individual,
-                Role.code == "independent_user",
-            )
-            .order_by(OrganizationMember.id.asc())
-            .limit(1)
-        ).scalar_one_or_none()
-        ctx_org_id = personal_org_id or org_id
-    else:
-        ctx_org_id = org_id
-
-    rbac = get_rbac_context(db, user, organization_id=ctx_org_id)
-    if global_independent:
-        global_roles = get_user_role_codes(db, user_id=user.id, organization_id=None)
-        rbac = {
-            **rbac,
-            "role_codes": global_roles,
-            "primary_role": resolve_primary_role(global_roles),
-            "is_independent_user": True,
-            "consumer_mode": True,
-        }
-    else:
-        rbac = {**rbac, "consumer_mode": False}
-
-    is_superuser = user_has_role_assigned(db, user_id=user.id, role_code="super_admin")
-    active_workspace_uuid = get_default_organization_uuid(db, user)
-    body = profile.model_copy(
-        update={
-            "avatar_url": resolve_user_avatar_url(user),
-            "has_avatar": user_has_stored_avatar(user),
-            "phone_verified": user.phone_verified_at is not None,
-            "two_factor_enabled": bool(user.two_factor_enabled),
-            "organization_uuid": organization_uuid,
-            "active_workspace_uuid": active_workspace_uuid,
-            "is_superuser": is_superuser,
-            **rbac,
-        }
-    )
+    body = build_me_response(request, user, db)
     logger.info(
-        "current_user_resolved email=%s primary_role=%s role_codes=%s",
+        "current_user_resolved email=%s primary_role=%s dashboard_mode=%s role_codes=%s",
         str(body.email),
         body.primary_role,
+        body.dashboard_mode,
         ",".join(body.role_codes) if body.role_codes else "",
     )
     return body
@@ -206,17 +234,111 @@ def update_me(
     data.pop("avatar_url", None)
     if "phone_e164" in data and data["phone_e164"] != user.phone_e164:
         user.phone_verified_at = None
-        if user.two_factor_enabled and data["phone_e164"] is None:
-            user.two_factor_enabled = False
+    if "email" in data and str(data["email"]).lower() != user.email.lower():
+        ensure_security_onboarding_complete(user)
+        user.email_verified_at = None
+        sync_security_onboarding_completed_at(user)
     for key, value in data.items():
         setattr(user, key, value)
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        if "phone_e164" in str(exc.orig).lower() or "ix_users_phone_e164" in str(exc.orig).lower():
+        orig = str(exc.orig).lower()
+        if "phone_e164" in orig or "ix_users_phone_e164" in orig:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone number already in use") from exc
+        if "email" in orig or "ix_users_email" in orig:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already in use") from exc
         raise
+    db.refresh(user)
+    return me(request, user, db)
+
+
+@router.post(
+    "/email/resend-verification",
+    response_model=NotificationMessageResponse,
+    dependencies=[Depends(require_permission("profile.update_self"))],
+)
+def resend_email_verification(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    svc: NotificationService = Depends(get_notification_service),
+):
+    from app.modules.notifications.service import VERIFICATION_EMAIL_SENT_MESSAGE
+
+    svc.send_email_verification(user)
+    db.commit()
+    return NotificationMessageResponse(message=VERIFICATION_EMAIL_SENT_MESSAGE)
+
+
+@router.post("/email/verify", response_model=EmailVerifyConfirmResponse)
+def verify_email_with_token(
+    payload: EmailVerifyRequest,
+    db: Session = Depends(get_db),
+    svc: NotificationService = Depends(get_notification_service),
+):
+    user = svc.verify_email_token(payload.token)
+    db.commit()
+    return EmailVerifyConfirmResponse(message="email_verified", email=user.email)
+
+
+@router.post(
+    "/me/verify/email/send",
+    response_model=VerificationSendResponse,
+    dependencies=[Depends(require_permission("profile.update_self"))],
+)
+def send_email_verification_legacy(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    svc: NotificationService = Depends(get_notification_service),
+):
+    from app.modules.notifications.service import VERIFICATION_EMAIL_SENT_MESSAGE
+
+    svc.send_email_verification(user)
+    db.commit()
+    return VerificationSendResponse(message=VERIFICATION_EMAIL_SENT_MESSAGE)
+
+
+@router.get("/verify/email", response_model=EmailVerifyConfirmResponse)
+def confirm_email_verification(
+    token: str,
+    db: Session = Depends(get_db),
+    svc: NotificationService = Depends(get_notification_service),
+):
+    user = svc.verify_email_token(token)
+    db.commit()
+    return EmailVerifyConfirmResponse(message="email_verified", email=user.email)
+
+
+@router.post(
+    "/me/verify/phone/send",
+    response_model=VerificationSendResponse,
+    dependencies=[Depends(require_permission("profile.update_self"))],
+)
+def send_phone_verification(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    svc: VerificationService = Depends(get_verification_service),
+):
+    result = svc.send_phone_verification(user)
+    db.commit()
+    return VerificationSendResponse(**result)
+
+
+@router.post(
+    "/me/verify/phone/confirm",
+    response_model=MeResponse,
+    dependencies=[Depends(require_permission("profile.update_self"))],
+)
+def confirm_phone_verification(
+    payload: PhoneVerifyConfirmRequest,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    svc: VerificationService = Depends(get_verification_service),
+):
+    svc.confirm_phone_code(user, payload.code)
+    db.commit()
     db.refresh(user)
     return me(request, user, db)
 

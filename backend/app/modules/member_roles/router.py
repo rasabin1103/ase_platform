@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.member_roles.schemas import MemberRoleCreate, MemberRoleListResponse, MemberRoleRead
 from app.modules.member_roles.service import MemberRolesService
+from app.modules.auth.security_onboarding import require_security_onboarding
 
 router = APIRouter(prefix="/api/v1/member-roles", tags=["member-roles"])
 
@@ -56,4 +57,5 @@ def get_member_role(member_role_id: int, svc: MemberRolesService = Depends(get_s
 def delete_member_role(member_role_id: int, svc: MemberRolesService = Depends(get_service)):
     svc.delete(member_role_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 

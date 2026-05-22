@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.enums import ServiceCategory, ServiceKind
 from app.modules.auth.dependencies import require_permission
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.services.schemas import ServiceCreate, ServiceListResponse, ServiceRead, ServiceUpdate
 from app.modules.services.service_layer import ServicesService
 
@@ -57,7 +58,7 @@ def get_service_public(service_uuid: UUID, svc: ServicesService = Depends(get_se
     "",
     response_model=ServiceRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def create_service(payload: ServiceCreate, svc: ServicesService = Depends(get_service)):
     return svc.create(payload)
@@ -66,7 +67,7 @@ def create_service(payload: ServiceCreate, svc: ServicesService = Depends(get_se
 @router.patch(
     "/{service_uuid}",
     response_model=ServiceRead,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def update_service(service_uuid: UUID, payload: ServiceUpdate, svc: ServicesService = Depends(get_service)):
     return svc.update(service_uuid, payload)
@@ -75,7 +76,8 @@ def update_service(service_uuid: UUID, payload: ServiceUpdate, svc: ServicesServ
 @router.delete(
     "/{service_uuid}",
     response_model=ServiceRead,
-    dependencies=[Depends(require_permission("products.manage"))],
+    dependencies=[Depends(require_permission("products.manage")), Depends(require_security_onboarding)],
 )
 def delete_service(service_uuid: UUID, svc: ServicesService = Depends(get_service)):
     return svc.deactivate(service_uuid)
+

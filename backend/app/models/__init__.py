@@ -5,6 +5,7 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.role_permission import RolePermission
 from app.models.member_role import MemberRole
+from app.models.user_platform_role import UserPlatformRole
 from app.models.plan import Plan
 from app.models.plan_feature import PlanFeature
 from app.models.service import Service
@@ -23,6 +24,9 @@ from app.models.catalog_item import CatalogItem
 from app.models.catalog_favorite import CatalogFavorite
 from app.models.catalog_purchase import CatalogPurchase
 from app.models.catalog_pricing_plan import CatalogPricingPlan
+from app.models.catalog_plan_subscription import CatalogPlanSubscription
+from app.models.user_verification_challenge import UserVerificationChallenge
+from app.models.email_verification_token import EmailVerificationToken
 
 __all__ = [
     "User",
@@ -32,6 +36,7 @@ __all__ = [
     "Permission",
     "RolePermission",
     "MemberRole",
+    "UserPlatformRole",
     "Plan",
     "PlanFeature",
     "Service",
@@ -50,5 +55,8 @@ __all__ = [
     "CatalogFavorite",
     "CatalogPurchase",
     "CatalogPricingPlan",
+    "CatalogPlanSubscription",
+    "UserVerificationChallenge",
+    "EmailVerificationToken",
 ]
 

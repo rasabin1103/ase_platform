@@ -24,6 +24,7 @@ def cascade_delete_user_dependencies(
 ) -> None:
     _delete_user_leaf_rows(db, user_id)
     _nullify_user_references(db, user_id)
+    _delete_user_platform_roles(db, user_id, reassign_org_owner_to=reassign_org_owner_to)
     _delete_user_membership_graph(db, user_id)
     _delete_invitations_sent_by_user(db, user_id)
     _delete_owned_organizations(db, user_id, reassign_org_owner_to=reassign_org_owner_to)
@@ -69,6 +70,47 @@ def _delete_user_leaf_rows(db: Session, user_id: int) -> None:
         from app.models.access_request import AccessRequest
 
         db.execute(delete(AccessRequest).where(AccessRequest.requested_by_user_id == user_id))
+
+    if table_exists(db, "catalog_plan_subscriptions"):
+        from app.models.catalog_plan_subscription import CatalogPlanSubscription
+
+        db.execute(
+            delete(CatalogPlanSubscription).where(CatalogPlanSubscription.user_id == user_id)
+        )
+
+
+def _delete_user_platform_roles(
+    db: Session,
+    user_id: int,
+    *,
+    reassign_org_owner_to: int | None,
+) -> None:
+    """
+    user_platform_roles.assigned_by_user_id is RESTRICT (self-signup uses assigner_id=user.id).
+    Reassign assignments this user granted to others, then remove their platform roles.
+    """
+    if not table_exists(db, "user_platform_roles"):
+        return
+    from app.models.user_platform_role import UserPlatformRole
+
+    if reassign_org_owner_to is not None:
+        db.execute(
+            update(UserPlatformRole)
+            .where(
+                UserPlatformRole.assigned_by_user_id == user_id,
+                UserPlatformRole.user_id != user_id,
+            )
+            .values(assigned_by_user_id=reassign_org_owner_to)
+        )
+    else:
+        db.execute(
+            delete(UserPlatformRole).where(
+                UserPlatformRole.assigned_by_user_id == user_id,
+                UserPlatformRole.user_id != user_id,
+            )
+        )
+
+    db.execute(delete(UserPlatformRole).where(UserPlatformRole.user_id == user_id))
 
 
 def _nullify_user_references(db: Session, user_id: int) -> None:

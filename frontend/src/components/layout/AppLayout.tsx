@@ -5,17 +5,24 @@ import { useAuth } from '../../hooks/useAuth'
 import { PublicFooter } from '../public/PublicFooter'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
+import { SecurityOnboardingModal } from '../security/SecurityOnboardingModal'
+import { SecurityOnboardingProvider } from '../security/SecurityOnboardingProvider'
 
 export function AppLayout() {
   const { currentUser } = useAuth()
 
   useEffect(() => {
+    if (currentUser?.dashboard_mode === 'independent' && !currentUser.active_workspace_uuid) {
+      return
+    }
     if (currentUser?.active_workspace_uuid && !getActiveOrganizationUuid()) {
       setActiveOrganizationUuid(currentUser.active_workspace_uuid)
     }
-  }, [currentUser?.active_workspace_uuid])
+  }, [currentUser?.active_workspace_uuid, currentUser?.dashboard_mode])
 
   return (
+    <SecurityOnboardingProvider>
+    <SecurityOnboardingModal />
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-ase-bg">
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div
@@ -44,5 +51,6 @@ export function AppLayout() {
 
       <PublicFooter variant="app" />
     </div>
+    </SecurityOnboardingProvider>
   )
 }

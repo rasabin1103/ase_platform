@@ -10,7 +10,10 @@ from app.models.enums import CatalogItemType, PricingBillingInterval, PricingPla
 
 class PricingPlanRead(BaseModel):
     id: int
-    catalog_item_id: int
+    catalog_item_id: int | None = None
+    scope_catalog_types: list[CatalogItemType] = Field(default_factory=list)
+    scope_categories: list[str] = Field(default_factory=list)
+    scope_summary: str = ""
     name: str
     slug: str
     description: str | None = None
@@ -45,9 +48,9 @@ class PricingPlanListResponse(BaseModel):
 
 
 class PricingPlanWithCatalogRead(PricingPlanRead):
-    catalog_item_title: str
-    catalog_item_slug: str
-    catalog_item_type: CatalogItemType
+    catalog_item_title: str | None = None
+    catalog_item_slug: str | None = None
+    catalog_item_type: CatalogItemType | None = None
 
 
 class AdminPricingPlanListResponse(BaseModel):
@@ -58,6 +61,9 @@ class AdminPricingPlanListResponse(BaseModel):
 
 
 class PricingPlanCreate(BaseModel):
+    catalog_item_id: int | None = None
+    scope_catalog_types: list[CatalogItemType] = Field(default_factory=list)
+    scope_categories: list[str] = Field(default_factory=list)
     name: str = Field(min_length=1, max_length=200)
     slug: str | None = Field(default=None, max_length=160)
     description: str | None = None
@@ -81,6 +87,9 @@ class PricingPlanCreate(BaseModel):
 
 
 class PricingPlanUpdate(BaseModel):
+    catalog_item_id: int | None = None
+    scope_catalog_types: list[CatalogItemType] | None = None
+    scope_categories: list[str] | None = None
     name: str | None = Field(default=None, min_length=1, max_length=200)
     slug: str | None = Field(default=None, max_length=160)
     description: str | None = None

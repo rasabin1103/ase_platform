@@ -22,7 +22,7 @@ from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-TokenType = Literal["access", "refresh"]
+TokenType = Literal["access", "refresh", "2fa_pending"]
 
 
 def hash_password(plain_password: str) -> str:
@@ -61,6 +61,14 @@ def create_refresh_token(*, user_uuid: UUID) -> str:
         token_type="refresh",
         user_uuid=user_uuid,
         expires_delta=timedelta(days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS)),
+    )
+
+
+def create_2fa_pending_token(*, user_uuid: UUID) -> str:
+    return create_token(
+        token_type="2fa_pending",
+        user_uuid=user_uuid,
+        expires_delta=timedelta(minutes=int(settings.TWO_FACTOR_PENDING_TOKEN_EXPIRE_MINUTES)),
     )
 
 

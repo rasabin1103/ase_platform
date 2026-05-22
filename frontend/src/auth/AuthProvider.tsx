@@ -3,6 +3,7 @@ import type { MeResponse } from '../types/auth.types'
 import { me } from '../api/auth.api'
 import { API_BASE_URL } from '../api/client'
 import { authDebugLog, tokenMeta } from '../utils/authDebugLog'
+import { clearSecurityWarningDismissedSession } from './securityOnboardingSession'
 import {
   clearActiveOrganizationUuid,
   clearTokens,
@@ -46,7 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         primary_role: user.primary_role,
         role_codes: user.role_codes,
       })
-      if (user.active_workspace_uuid) {
+      if (user.dashboard_mode === 'independent' && !user.active_workspace_uuid) {
+        clearActiveOrganizationUuid()
+      } else if (user.active_workspace_uuid) {
         setActiveOrganizationUuid(user.active_workspace_uuid)
       }
       touchApiActivity()
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadCurrentUser])
 
   const login = useCallback(async (tokens: { access_token: string; refresh_token: string }) => {
+    clearSecurityWarningDismissedSession()
     setAccessToken(tokens.access_token)
     setRefreshToken(tokens.refresh_token)
     authDebugLog('token_saved', tokenMeta(tokens.access_token))
@@ -79,7 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         primary_role: user.primary_role,
         role_codes: user.role_codes,
       })
-      if (user.active_workspace_uuid) {
+      if (user.dashboard_mode === 'independent' && !user.active_workspace_uuid) {
+        clearActiveOrganizationUuid()
+      } else if (user.active_workspace_uuid) {
         setActiveOrganizationUuid(user.active_workspace_uuid)
       }
       touchApiActivity()
@@ -94,7 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const applyCurrentUser = useCallback((user: MeResponse) => {
     setCurrentUser(user)
-    if (user.active_workspace_uuid) {
+    if (user.dashboard_mode === 'independent' && !user.active_workspace_uuid) {
+      clearActiveOrganizationUuid()
+    } else if (user.active_workspace_uuid) {
       setActiveOrganizationUuid(user.active_workspace_uuid)
     }
   }, [])

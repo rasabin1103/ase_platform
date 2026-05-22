@@ -9,6 +9,7 @@ type Props = {
   onConfirm: () => void
   isPending?: boolean
   isError?: boolean
+  errorMessage?: string | null
   title?: string
   body?: string
 }
@@ -20,6 +21,7 @@ export function ConfirmDeleteDialog({
   onConfirm,
   isPending,
   isError,
+  errorMessage,
   title,
   body,
 }: Props) {
@@ -34,7 +36,9 @@ export function ConfirmDeleteDialog({
           {itemName}
         </p>
       ) : null}
-      {isError ? <p className="mt-3 text-sm text-ase-error">{t('adminConfirm.delete.error')}</p> : null}
+      {isError ? (
+        <p className="mt-3 text-sm text-ase-error">{errorMessage ?? t('adminConfirm.delete.error')}</p>
+      ) : null}
       <div className="mt-6 flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose} disabled={isPending}>
           {t('adminConfirm.delete.cancel')}

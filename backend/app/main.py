@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.db_url import database_host_label
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -15,6 +16,10 @@ _startup_log.info(
     "jwt_startup algorithm=%s secret_key_length=%d",
     settings.JWT_ALGORITHM,
     len(settings.JWT_SECRET_KEY or ""),
+)
+_startup_log.info(
+    "database_target host=%s (DATABASE_URL from backend/.env — use Supabase Session pooler :6543)",
+    database_host_label(settings.DATABASE_URL),
 )
 
 # Side effect: emit [DB] logs once at import time.

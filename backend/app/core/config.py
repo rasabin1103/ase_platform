@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    TWO_FACTOR_PENDING_TOKEN_EXPIRE_MINUTES: int = 5
+
+    TOTP_ISSUER: str = Field(
+        default="Arce Sabin Engineering",
+        description="Issuer name shown in authenticator apps (otpauth).",
+    )
+    TOTP_DIGITS: int = 6
+    TOTP_INTERVAL_SECONDS: int = 30
 
     MVP_MODE: bool = True
 
@@ -36,6 +44,42 @@ class Settings(BaseSettings):
         default="http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176",
         description="Comma-separated browser origins (SPA URLs) allowed for CORS.",
     )
+
+    FRONTEND_URL: str = Field(
+        default="http://localhost:5173",
+        description="SPA base URL for email verification and password-reset links.",
+    )
+
+    EMAIL_PROVIDER: str = Field(
+        default="console",
+        description='Transactional email: "console" (log only) or "resend".',
+    )
+    RESEND_API_KEY: str | None = Field(
+        default=None,
+        description="Resend API key (set in .env only; never commit).",
+    )
+    EMAIL_FROM: str = Field(
+        default="contact@arcesabinengineering.com",
+        description="From address for Resend (must be verified in Resend).",
+    )
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=60,
+        description="Email verification link lifetime.",
+    )
+
+    VERIFICATION_SMS_EXPIRE_MINUTES: int = 10
+    VERIFICATION_DEV_EXPOSE: bool = Field(
+        default=True,
+        description="When true and EMAIL_PROVIDER=console, API may return verify URLs for local testing.",
+    )
+
+    SMS_DEV_LOG_ONLY: bool = Field(
+        default=True,
+        description="Log SMS codes instead of sending (when Twilio is not configured).",
+    )
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

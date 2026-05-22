@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.models.enums import ProductStatus
 from app.models.user import User
 from app.modules.auth.creator_guards import assert_can_activate_product, require_create_product
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.core.rbac import expand_permission_codes
 from app.modules.auth.dependencies import (
     get_current_user,
@@ -30,7 +31,7 @@ def get_service(db: Session = Depends(get_db)) -> ProductsService:
     "",
     response_model=ProductRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_create_product())],
+    dependencies=[Depends(require_create_product()), Depends(require_security_onboarding)],
 )
 def create_product(
     payload: ProductCreate,
@@ -119,7 +120,8 @@ def update_product(
 @router.delete(
     "/{product_id}",
     response_model=ProductRead,
-    dependencies=[Depends(require_platform_role("super_admin"))],
+    dependencies=[Depends(require_platform_role("super_admin")), Depends(require_security_onboarding)],
 )
 def delete_product(product_id: int, svc: ProductsService = Depends(get_service)):
     return svc.deactivate(product_id)
+

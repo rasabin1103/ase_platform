@@ -11,9 +11,14 @@ export type PricingBillingInterval = 'none' | 'monthly' | 'quarterly' | 'yearly'
 
 export type PricingSupportLevel = 'none' | 'basic' | 'priority' | 'enterprise'
 
+export type CatalogItemTypeScope = 'product' | 'course' | 'book' | 'resource'
+
 export type PricingPlan = {
   id: number
-  catalog_item_id: number
+  catalog_item_id: number | null
+  scope_catalog_types: CatalogItemTypeScope[]
+  scope_categories: string[]
+  scope_summary: string
   name: string
   slug: string
   description: string | null
@@ -46,9 +51,9 @@ export type PricingPlanListResponse = {
 }
 
 export type PricingPlanWithCatalog = PricingPlan & {
-  catalog_item_title: string
-  catalog_item_slug: string
-  catalog_item_type: 'product' | 'course' | 'book' | 'resource'
+  catalog_item_title: string | null
+  catalog_item_slug: string | null
+  catalog_item_type: CatalogItemTypeScope | null
 }
 
 export type AdminPricingPlanListResponse = {
@@ -59,6 +64,9 @@ export type AdminPricingPlanListResponse = {
 }
 
 export type PricingPlanPayload = {
+  catalog_item_id?: number | null
+  scope_catalog_types?: CatalogItemTypeScope[]
+  scope_categories?: string[]
   name: string
   slug?: string | null
   description?: string | null
@@ -99,6 +107,11 @@ export async function listCatalogPricingPlans(catalogItemId: number) {
   const { data } = await apiClient.get<PricingPlanListResponse>(
     `/admin/catalog/${catalogItemId}/pricing-plans`,
   )
+  return data
+}
+
+export async function createPricingPlan(payload: PricingPlanPayload) {
+  const { data } = await apiClient.post<PricingPlan>('/admin/pricing-plans', payload)
   return data
 }
 

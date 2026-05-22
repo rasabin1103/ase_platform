@@ -15,5 +15,9 @@ export function pickConsumerOrganizationUuid(orgs: Organization[], me: MeRespons
 }
 
 export function isConsumerExperience(me: MeResponse | null, primaryRole: string | null): boolean {
-  return Boolean(me?.consumer_mode ?? me?.is_independent_user) || primaryRole === 'independent_user'
+  return (
+    me?.dashboard_mode === 'independent' ||
+    Boolean(me?.consumer_mode ?? me?.is_independent_user) ||
+    primaryRole === 'independent_user'
+  )
 }

@@ -12,7 +12,6 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,7 +24,6 @@ from app.models.mixins import IdPkMixin, TimestampMixin
 class CatalogPricingPlan(Base, IdPkMixin, TimestampMixin):
     __tablename__ = "catalog_pricing_plans"
     __table_args__ = (
-        UniqueConstraint("catalog_item_id", "slug", name="uq_catalog_pricing_plans_item_slug"),
         CheckConstraint("price >= 0", name="ck_catalog_pricing_plans_price_nonneg"),
         CheckConstraint("setup_fee >= 0", name="ck_catalog_pricing_plans_setup_fee_nonneg"),
         CheckConstraint(
@@ -34,11 +32,13 @@ class CatalogPricingPlan(Base, IdPkMixin, TimestampMixin):
         ),
     )
 
-    catalog_item_id: Mapped[int] = mapped_column(
+    catalog_item_id: Mapped[int | None] = mapped_column(
         ForeignKey("catalog_items.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
+        nullable=True,
     )
+    scope_catalog_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    scope_categories: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     slug: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
@@ -74,7 +74,11 @@ class CatalogPricingPlan(Base, IdPkMixin, TimestampMixin):
     stripe_price_id: Mapped[str | None] = mapped_column(String(255))
     stripe_product_id: Mapped[str | None] = mapped_column(String(255))
 
-    catalog_item: Mapped["CatalogItem"] = relationship("CatalogItem", back_populates="pricing_plans")
+    catalog_item: Mapped["CatalogItem | None"] = relationship("CatalogItem", back_populates="pricing_plans")
+    subscriptions: Mapped[list["CatalogPlanSubscription"]] = relationship(
+        "CatalogPlanSubscription",
+        back_populates="pricing_plan",
+    )
 
     def __repr__(self) -> str:
         return f"<CatalogPricingPlan id={self.id} slug={self.slug!r} item_id={self.catalog_item_id}>"

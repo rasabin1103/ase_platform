@@ -26,6 +26,7 @@ import { adminConfirmEn, adminConfirmEs } from './adminConfirm.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import { pricingEn, pricingEs } from './pricing.locale'
 import { adminPricingPlansEn, adminPricingPlansEs } from './adminPricingPlans.locale'
+import { adminFormValidationEn, adminFormValidationEs } from './adminFormValidation.locale'
 import {
   catalogEn,
   catalogEs,
@@ -42,6 +43,7 @@ import {
   adminPurchasesEn,
   adminPurchasesEs,
 } from './catalog.locale'
+import { securityOnboardingEn, securityOnboardingEs } from './securityOnboarding.locale'
 
 export type Language = 'en' | 'es'
 
@@ -75,10 +77,12 @@ export const translations = {
     independentDashboard: independentDashboardEn,
     independentPlans: independentPlansEn,
     profilePage: profilePageEn,
+    securityOnboarding: securityOnboardingEn,
     adminDashboard: adminDashboardEn,
     adminCatalog: adminCatalogEn,
     catalogPricing: pricingEn,
     adminPricingPlans: adminPricingPlansEn,
+    adminFormValidation: adminFormValidationEn,
     adminPurchases: adminPurchasesEn,
     cta: {
       talkToUs: 'Talk to us',
@@ -405,6 +409,17 @@ export const translations = {
         submit: 'Login',
         noAccount: 'New here?',
         createAccount: 'Create an account',
+        twoFactorTitle: 'Two-factor authentication',
+        twoFactorBody: 'Enter the 6-digit code from your authenticator app to finish signing in.',
+        twoFactorFormTitle: 'Authenticator code',
+        twoFactorFormSubtitle: 'Open your authenticator app and enter the current code.',
+        twoFactorCodeLabel: '6-digit code',
+        twoFactorSubmit: 'Verify and continue',
+        twoFactorLoading: 'Verifying…',
+        twoFactorBack: 'Back to login',
+        twoFactorInvalid: 'Invalid authentication code.',
+        twoFactorRateLimit: 'Too many attempts. Wait a few minutes and try again.',
+        twoFactorError: 'Could not verify the code. Try again.',
       },
       register: {
         badge: 'Start here',
@@ -516,10 +531,12 @@ export const translations = {
     independentDashboard: independentDashboardEs,
     independentPlans: independentPlansEs,
     profilePage: profilePageEs,
+    securityOnboarding: securityOnboardingEs,
     adminDashboard: adminDashboardEs,
     adminCatalog: adminCatalogEs,
     catalogPricing: pricingEs,
     adminPricingPlans: adminPricingPlansEs,
+    adminFormValidation: adminFormValidationEs,
     adminPurchases: adminPurchasesEs,
     cta: {
       talkToUs: 'Hablemos',
@@ -845,6 +862,17 @@ export const translations = {
         submit: 'Acceder',
         noAccount: '¿Aún no tienes cuenta?',
         createAccount: 'Crear cuenta',
+        twoFactorTitle: 'Autenticación en dos pasos',
+        twoFactorBody: 'Introduce el código de 6 dígitos de tu app autenticadora para completar el acceso.',
+        twoFactorFormTitle: 'Código del autenticador',
+        twoFactorFormSubtitle: 'Abre tu app autenticadora e introduce el código actual.',
+        twoFactorCodeLabel: 'Código de 6 dígitos',
+        twoFactorSubmit: 'Verificar y continuar',
+        twoFactorLoading: 'Verificando…',
+        twoFactorBack: 'Volver al login',
+        twoFactorInvalid: 'Código de autenticación no válido.',
+        twoFactorRateLimit: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+        twoFactorError: 'No se pudo verificar el código. Inténtalo de nuevo.',
       },
       register: {
         badge: 'Empieza aquí',

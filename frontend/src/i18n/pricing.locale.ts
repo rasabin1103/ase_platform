@@ -5,6 +5,24 @@ export const pricingEn = {
   edit: 'Edit plan',
   delete: 'Delete plan',
   confirmDelete: 'Delete this pricing plan permanently?',
+  deleteErrors: {
+    has_subscribers:
+      'Cannot delete: {count} user(s) are subscribed to the plan "{planName}". Cancel their subscriptions first.',
+  },
+  scope: {
+    section: 'Catalog scope',
+    typeLabels: {
+      product: 'Products',
+      course: 'Courses',
+      book: 'Books',
+      resource: 'Resources',
+    },
+    types: 'Included catalog types',
+    typesHint: 'e.g. all books, all courses — select one or more types.',
+    categories: 'Categories (optional)',
+    categoriesHint: 'Leave empty to include every category within the selected types.',
+    allCategories: 'All categories',
+  },
   cancel: 'Cancel',
   save: 'Save plan',
   empty: 'No pricing plans yet. Create one to define how customers can buy this item.',
@@ -91,6 +109,24 @@ export const pricingEs = {
   edit: 'Editar plan',
   delete: 'Eliminar plan',
   confirmDelete: '¿Eliminar este plan de pago de forma permanente?',
+  deleteErrors: {
+    has_subscribers:
+      'No se puede eliminar: {count} usuario(s) están suscritos al plan «{planName}». Cancela esas suscripciones antes.',
+  },
+  scope: {
+    section: 'Alcance del catálogo',
+    typeLabels: {
+      product: 'Productos',
+      course: 'Cursos',
+      book: 'Libros',
+      resource: 'Recursos',
+    },
+    types: 'Tipos de ítem incluidos',
+    typesHint: 'p. ej. todos los libros, todos los cursos — elige uno o más tipos.',
+    categories: 'Categorías (opcional)',
+    categoriesHint: 'Déjalo vacío para incluir todas las categorías de los tipos seleccionados.',
+    allCategories: 'Todas las categorías',
+  },
   cancel: 'Cancelar',
   save: 'Guardar plan',
   empty: 'Aún no hay planes. Crea uno para definir cómo se compra este ítem.',

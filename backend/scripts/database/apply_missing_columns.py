@@ -30,6 +30,20 @@ def main() -> None:
         alters.append(
             "ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN NOT NULL DEFAULT false"
         )
+    if not _has_column("users", "two_factor_secret"):
+        alters.append("ALTER TABLE users ADD COLUMN two_factor_secret TEXT")
+    if not _has_column("users", "two_factor_confirmed_at"):
+        alters.append("ALTER TABLE users ADD COLUMN two_factor_confirmed_at TIMESTAMPTZ")
+    if not _has_column("users", "two_factor_recovery_codes"):
+        alters.append("ALTER TABLE users ADD COLUMN two_factor_recovery_codes JSONB")
+    if not _has_column("users", "security_onboarding_completed_at"):
+        alters.append("ALTER TABLE users ADD COLUMN security_onboarding_completed_at TIMESTAMPTZ")
+    if not _has_column("users", "security_warning_dismissed_at"):
+        alters.append("ALTER TABLE users ADD COLUMN security_warning_dismissed_at TIMESTAMPTZ")
+    if not _has_column("users", "security_warning_count"):
+        alters.append(
+            "ALTER TABLE users ADD COLUMN security_warning_count INTEGER NOT NULL DEFAULT 0"
+        )
     if not _has_column("catalog_items", "image_data"):
         alters.append("ALTER TABLE catalog_items ADD COLUMN image_data BYTEA")
     if not _has_column("catalog_items", "image_mime"):

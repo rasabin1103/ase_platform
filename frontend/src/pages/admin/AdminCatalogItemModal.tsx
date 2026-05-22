@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
+import type { z } from 'zod'
+import { buildCatalogItemFormSchema } from '../../lib/admin/catalogItemForm.schema'
+import { FieldError, FormFieldLabel } from '../../components/ui/FormFieldLabel'
+import { cn } from '../../components/ui/cn'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
 import type {
   CatalogItemLevel,
@@ -14,12 +19,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { useI18n } from '../../i18n'
 
-type FormValues = CatalogItemAdminPayload & {
-  benefits_text: string
-  requirements_text: string
-  included_items_text: string
-  audience_text: string
-}
+type FormValues = z.infer<ReturnType<typeof buildCatalogItemFormSchema>>
 
 const TYPES: CatalogItemType[] = ['product', 'course', 'book', 'resource']
 const STATUSES: CatalogItemStatus[] = ['published', 'draft', 'coming_soon', 'request_only']
@@ -137,6 +137,28 @@ type Props = {
 const textareaClass =
   'w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text'
 
+function inputErrorClass(hasError: boolean) {
+  return cn(hasError && 'border-ase-error/50 ring-1 ring-ase-error/30')
+}
+
+type AdminFieldProps = {
+  label: string
+  required?: boolean
+  error?: string
+  className?: string
+  children: ReactNode
+}
+
+function AdminField({ label, required, error, className, children }: AdminFieldProps) {
+  return (
+    <label className={cn('block', className)}>
+      <FormFieldLabel label={label} required={required} />
+      {children}
+      <FieldError message={error} />
+    </label>
+  )
+}
+
 export function AdminCatalogItemModal({
   open,
   onClose,
@@ -148,8 +170,15 @@ export function AdminCatalogItemModal({
   const { t } = useI18n()
   const isEdit = Boolean(initial)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
+  const schema = useMemo(() => buildCatalogItemFormSchema(t), [t])
+  const form = useForm<FormValues>({
+    defaultValues: defaults(defaultType),
+    resolver: zodResolver(schema) as Resolver<FormValues>,
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+  })
   const itemType = form.watch('type')
+  const { errors } = form.formState
 
   useEffect(() => {
     if (!open) return
@@ -173,10 +202,10 @@ export function AdminCatalogItemModal({
     } = values
     return {
       ...rest,
-      benefits: textToLines(benefits_text),
-      requirements: textToLines(requirements_text),
-      included_items: textToLines(included_items_text),
-      audience: textToLines(audience_text),
+      benefits: textToLines(benefits_text ?? ''),
+      requirements: textToLines(requirements_text ?? ''),
+      included_items: textToLines(included_items_text ?? ''),
+      audience: textToLines(audience_text ?? ''),
       preview_pages: values.preview_pages ? Number(values.preview_pages) : null,
     }
   }
@@ -191,40 +220,63 @@ export function AdminCatalogItemModal({
       <form
         className="w-full space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
+          if (!isEdit && !imageFile && !values.image_url?.trim()) {
+            form.setError('image_url', {
+              type: 'manual',
+              message: String(t('adminFormValidation.catalogImage')),
+            })
+            return
+          }
           await onSubmit(buildPayload(values), imageFile)
           onClose()
         })}
       >
-        <ImageUploadField
-          label={t('adminCatalog.fields.photo')}
-          hint={t('adminCatalog.uploadPhotoHint')}
-          uploadLabel={t('adminCatalog.uploadPhoto')}
-          previewSrc={initial?.image_url}
-          previewCacheKey={initial?.updated_at}
-          onFileSelect={setImageFile}
-        />
+        <div>
+          <ImageUploadField
+            label={
+              !isEdit
+                ? `${t('adminCatalog.fields.photo')} *`
+                : (t('adminCatalog.fields.photo') as string)
+            }
+            hint={t('adminCatalog.uploadPhotoHint')}
+            uploadLabel={t('adminCatalog.uploadPhoto')}
+            previewSrc={initial?.image_url}
+            previewCacheKey={initial?.updated_at}
+            onFileSelect={(file) => {
+              setImageFile(file)
+              if (file) form.clearErrors('image_url')
+            }}
+          />
+          <FieldError message={errors.image_url?.message} />
+        </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.title')}</span>
-            <Input {...form.register('title', { required: true })} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.slug')}</span>
+          <AdminField
+            label={t('adminCatalog.fields.title') as string}
+            required
+            error={errors.title?.message}
+            className="sm:col-span-2"
+          >
+            <Input className={inputErrorClass(Boolean(errors.title))} {...form.register('title')} />
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.slug') as string} required error={errors.slug?.message}>
             <div className="flex gap-2">
-              <Input {...form.register('slug', { required: true })} disabled={isEdit} />
+              <Input
+                className={cn('min-w-0 flex-1', inputErrorClass(Boolean(errors.slug)))}
+                {...form.register('slug')}
+                disabled={isEdit}
+              />
               {!isEdit ? (
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => form.setValue('slug', slugify(titleWatch || ''))}
+                  onClick={() => form.setValue('slug', slugify(titleWatch || ''), { shouldValidate: true })}
                 >
                   →
                 </Button>
               ) : null}
             </div>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.type')}</span>
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.type') as string}>
             <Select {...form.register('type')} disabled={isEdit}>
               {TYPES.map((tp) => (
                 <option key={tp} value={tp}>
@@ -232,41 +284,70 @@ export function AdminCatalogItemModal({
                 </option>
               ))}
             </Select>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.category')}</span>
-            <Input {...form.register('category', { required: true })} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.author')}</span>
-            <Input {...form.register('author', { required: true })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.shortDescription')}</span>
-            <Input {...form.register('short_description', { required: true })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescription')}</span>
-            <textarea className={textareaClass} rows={4} {...form.register('long_description', { required: true })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.imageUrl')}</span>
-            <Input {...form.register('image_url')} placeholder="https://… or upload above" />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewUrl')}</span>
+          </AdminField>
+          <AdminField
+            label={t('adminCatalog.fields.category') as string}
+            required
+            error={errors.category?.message}
+          >
+            <Input className={inputErrorClass(Boolean(errors.category))} {...form.register('category')} />
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.author') as string} required error={errors.author?.message}>
+            <Input className={inputErrorClass(Boolean(errors.author))} {...form.register('author')} />
+          </AdminField>
+          <AdminField
+            label={t('adminCatalog.fields.shortDescription') as string}
+            required
+            error={errors.short_description?.message}
+            className="sm:col-span-2"
+          >
+            <Input
+              className={inputErrorClass(Boolean(errors.short_description))}
+              {...form.register('short_description')}
+            />
+          </AdminField>
+          <AdminField
+            label={t('adminCatalog.fields.longDescription') as string}
+            required
+            error={errors.long_description?.message}
+            className="sm:col-span-2"
+          >
+            <textarea
+              className={cn(textareaClass, inputErrorClass(Boolean(errors.long_description)))}
+              rows={4}
+              {...form.register('long_description')}
+            />
+          </AdminField>
+          <AdminField
+            label={t('adminCatalog.fields.imageUrl') as string}
+            error={errors.image_url?.message}
+            className="sm:col-span-2"
+          >
+            <Input
+              className={inputErrorClass(Boolean(errors.image_url))}
+              {...form.register('image_url')}
+              placeholder="https://… or upload above"
+            />
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.previewUrl') as string} className="sm:col-span-2">
             <Input {...form.register('preview_url')} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.price')}</span>
-            <Input type="number" step="0.01" {...form.register('price', { valueAsNumber: true })} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.currency')}</span>
-            <Input {...form.register('currency', { required: true })} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.status')}</span>
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.price') as string}>
+            <Input
+              type="number"
+              step="0.01"
+              className={inputErrorClass(Boolean(errors.price))}
+              {...form.register('price')}
+            />
+          </AdminField>
+          <AdminField
+            label={t('adminCatalog.fields.currency') as string}
+            required
+            error={errors.currency?.message}
+          >
+            <Input className={inputErrorClass(Boolean(errors.currency))} {...form.register('currency')} />
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.status') as string}>
             <Select {...form.register('status')}>
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -274,9 +355,8 @@ export function AdminCatalogItemModal({
                 </option>
               ))}
             </Select>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.level')}</span>
+          </AdminField>
+          <AdminField label={t('adminCatalog.fields.level') as string}>
             <Select {...form.register('level')}>
               {LEVELS.map((lv) => (
                 <option key={lv} value={lv}>
@@ -284,13 +364,15 @@ export function AdminCatalogItemModal({
                 </option>
               ))}
             </Select>
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">
-              {itemType === 'book' ? t('catalog.bookPages') : t('adminCatalog.fields.duration')}
-            </span>
+          </AdminField>
+          <AdminField
+            label={
+              (itemType === 'book' ? t('catalog.bookPages') : t('adminCatalog.fields.duration')) as string
+            }
+            className="sm:col-span-2"
+          >
             <Input {...form.register('duration')} placeholder={itemType === 'book' ? '320' : ''} />
-          </label>
+          </AdminField>
         </div>
 
         {itemType === 'book' ? (

@@ -1,13 +1,22 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { updateProfile, uploadAvatar } from '../../api/auth.api'
+import {
+  confirmPhoneVerification,
+  sendEmailVerification,
+  sendPhoneVerification,
+  updateProfile,
+  uploadAvatar,
+} from '../../api/auth.api'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { PhoneVerifyModal } from '../../components/profile/PhoneVerifyModal'
+import { SecurityContactField } from '../../components/profile/SecurityContactField'
+import { TwoFactorSecuritySection } from '../../components/profile/TwoFactorSecuritySection'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import { CapabilitiesCompactStrip } from '../../components/capabilities/CapabilitiesCompactStrip'
 import { CAPABILITY_ICONS } from '../../components/capabilities/capabilityIcons'
@@ -20,6 +29,7 @@ type ProfileForm = {
   first_name: string
   last_name: string
   display_name: string
+  email: string
   phone_e164: string
 }
 
@@ -32,9 +42,12 @@ export function ProfilePage() {
   const [avatarSaved, setAvatarSaved] = useState(false)
   const [avatarRevision, setAvatarRevision] = useState(0)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [emailVerifyFeedback, setEmailVerifyFeedback] = useState<'idle' | 'success' | 'error'>('idle')
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false)
+  const [phoneDevCode, setPhoneDevCode] = useState<string | null>(null)
 
   const form = useForm<ProfileForm>({
-    defaultValues: { first_name: '', last_name: '', display_name: '', phone_e164: '' },
+    defaultValues: { first_name: '', last_name: '', display_name: '', email: '', phone_e164: '' },
   })
 
   useEffect(() => {
@@ -43,9 +56,19 @@ export function ProfilePage() {
       first_name: currentUser.first_name ?? '',
       last_name: currentUser.last_name ?? '',
       display_name: currentUser.display_name ?? '',
+      email: currentUser.email ?? '',
       phone_e164: currentUser.phone_e164 ?? '',
     })
   }, [currentUser, form])
+
+  const watched = form.watch()
+  const savedEmail = currentUser?.email ?? ''
+  const savedPhone = currentUser?.phone_e164 ?? ''
+  const emailDirty = watched.email.trim().toLowerCase() !== savedEmail.toLowerCase()
+  const phoneDirty = watched.phone_e164.trim() !== (savedPhone ?? '')
+  const emailVerified =
+    currentUser?.email_verified === true || Boolean(currentUser?.email_verified_at)
+  const phoneVerified = currentUser?.phone_verified === true
 
   const avatarPreviewSrc = useMemo(
     () => avatarDisplayPath(currentUser?.has_avatar, currentUser?.avatar_url),
@@ -84,16 +107,39 @@ export function ProfilePage() {
     },
   })
 
+  const emailVerifyMut = useMutation({
+    mutationFn: sendEmailVerification,
+    onMutate: () => setEmailVerifyFeedback('idle'),
+    onSuccess: () => setEmailVerifyFeedback('success'),
+    onError: () => setEmailVerifyFeedback('error'),
+  })
+
+  const phoneSendMut = useMutation({
+    mutationFn: sendPhoneVerification,
+    onSuccess: (res) => {
+      setPhoneDevCode(res.dev_code ?? null)
+      setPhoneModalOpen(true)
+    },
+  })
+
+  const phoneConfirmMut = useMutation({
+    mutationFn: confirmPhoneVerification,
+    onSuccess: (me) => {
+      applyCurrentUser(me)
+      setPhoneModalOpen(false)
+      setPhoneDevCode(null)
+    },
+  })
+
   const isAdmin = isSuperuser || primaryRole === 'super_admin'
   const name = currentUser?.display_name || currentUser?.email || ''
-  const hasPhone = Boolean(currentUser?.phone_e164)
-  const phoneVerified = Boolean(currentUser?.phone_verified)
 
   const onSave = form.handleSubmit((values) =>
     saveMut.mutate({
       first_name: values.first_name || null,
       last_name: values.last_name || null,
       display_name: values.display_name || null,
+      email: values.email.trim() || undefined,
       phone_e164: values.phone_e164.trim() || null,
     }),
   )
@@ -132,9 +178,6 @@ export function ProfilePage() {
           <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
             <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.accountSection')}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="sm:col-span-2 lg:col-span-3">
-                <Row label={t('profilePage.email')} value={currentUser?.email ?? '—'} />
-              </div>
               <label className="block">
                 <span className="mb-1 block text-xs text-ase-muted">{t('profilePage.firstName')}</span>
                 <Input {...form.register('first_name')} className="rounded-xl border-white/10 bg-ase-bg2/50" />
@@ -158,46 +201,69 @@ export function ProfilePage() {
 
           <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
             <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.securitySection')}</h2>
-            <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <div className="mt-4 grid gap-8 lg:grid-cols-2">
               <div>
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-ase-muted">{t('profilePage.phone')}</span>
-                  {hasPhone ? (
-                    <Badge variant={phoneVerified ? 'success' : 'warning'}>
-                      {phoneVerified ? t('profilePage.phoneVerified') : t('profilePage.phoneNotVerified')}
-                    </Badge>
-                  ) : null}
-                </div>
-                <Input
-                  {...form.register('phone_e164')}
-                  type="tel"
-                  placeholder={t('profilePage.phonePlaceholder')}
-                  className="rounded-xl border-white/10 bg-ase-bg2/50"
+                <SecurityContactField
+                  label={t('profilePage.email')}
+                  hint={t('profilePage.emailHint')}
+                  value={watched.email}
+                  onChange={(v) => {
+                    form.setValue('email', v)
+                    setEmailVerifyFeedback('idle')
+                  }}
+                  inputType="email"
+                  verified={emailVerified && !emailDirty}
+                  verifyLabel={t('profilePage.verify')}
+                  verifiedLabel={t('profilePage.verified')}
+                  onVerify={() => emailVerifyMut.mutate()}
+                  verifyPending={emailVerifyMut.isPending}
+                  verifyDisabled={emailDirty || saveMut.isPending}
                 />
-                <p className="mt-2 text-xs text-ase-muted">{t('profilePage.phoneHint')}</p>
-                <Button type="button" variant="secondary" className="mt-3" disabled>
-                  {t('profilePage.verifyPhoneSoon')}
-                </Button>
+                {emailVerifyMut.isPending ? (
+                  <p className="mt-2 text-xs text-ase-muted">{t('profilePage.emailVerifySending')}</p>
+                ) : null}
+                {emailVerifyFeedback === 'success' ? (
+                  <p className="mt-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                    {t('profilePage.emailVerifySent')}
+                  </p>
+                ) : null}
+                {emailVerifyFeedback === 'error' ? (
+                  <p className="mt-2 rounded-xl border border-ase-error/25 bg-ase-error/10 px-3 py-2 text-sm text-ase-error">
+                    {t('profilePage.emailVerifySendError')}
+                  </p>
+                ) : null}
               </div>
+              {emailDirty ? (
+                <p className="-mt-4 text-xs text-amber-200/90 lg:col-span-2">{t('profilePage.saveBeforeVerify')}</p>
+              ) : null}
 
-              <div className="lg:border-l lg:border-white/10 lg:pl-6">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-ase-text">{t('profilePage.twoFactor')}</span>
-                  <Badge variant={currentUser?.two_factor_enabled ? 'success' : 'default'}>
-                    {currentUser?.two_factor_enabled
-                      ? t('profilePage.twoFactorEnabled')
-                      : t('profilePage.twoFactorDisabled')}
-                  </Badge>
-                </div>
-                <p className="text-xs text-ase-muted">
-                  {hasPhone && phoneVerified
-                    ? t('profilePage.twoFactorSoon')
-                    : t('profilePage.twoFactorRequiresPhone')}
-                </p>
-                <Button type="button" variant="outline" className="mt-3" disabled>
-                  {t('profilePage.twoFactorSoon')}
-                </Button>
+              <SecurityContactField
+                label={t('profilePage.phone')}
+                hint={t('profilePage.phoneHint')}
+                value={watched.phone_e164}
+                onChange={(v) => form.setValue('phone_e164', v)}
+                inputType="tel"
+                placeholder={t('profilePage.phonePlaceholder')}
+                verified={phoneVerified && !phoneDirty}
+                verifyLabel={t('profilePage.verify')}
+                verifiedLabel={t('profilePage.verified')}
+                onVerify={() => phoneSendMut.mutate()}
+                verifyPending={phoneSendMut.isPending}
+                verifyDisabled={phoneDirty || saveMut.isPending || !watched.phone_e164.trim()}
+              />
+              {phoneDirty ? (
+                <p className="-mt-4 text-xs text-amber-200/90 lg:col-span-2">{t('profilePage.saveBeforeVerify')}</p>
+              ) : null}
+
+              <div className="mb-3">
+                <Link
+                  to="/profile/security"
+                  className="text-sm font-medium text-cyan-300 hover:underline"
+                >
+                  {t('securityOnboarding.goToSecurity')} →
+                </Link>
               </div>
+              <TwoFactorSecuritySection twoFactorEnabled={currentUser?.two_factor_enabled === true} />
             </div>
           </Card>
 
@@ -210,6 +276,19 @@ export function ProfilePage() {
           </div>
         </form>
       </div>
+
+      <PhoneVerifyModal
+        open={phoneModalOpen}
+        onClose={() => {
+          setPhoneModalOpen(false)
+          setPhoneDevCode(null)
+        }}
+        devCode={phoneDevCode}
+        isPending={phoneConfirmMut.isPending}
+        onConfirm={async (code) => {
+          await phoneConfirmMut.mutateAsync(code)
+        }}
+      />
 
       <AccessRequestModal
         open={creatorModalOpen}
