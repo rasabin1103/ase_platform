@@ -110,6 +110,16 @@ class CatalogPurchaseProvider(str, Enum):
     request_only = "request_only"
 
 
+class BookPurchasePlatform(str, Enum):
+    amazon = "amazon"
+    ase = "ase"
+    lulu = "lulu"
+    gumroad = "gumroad"
+    shopify = "shopify"
+    hotmart = "hotmart"
+    other = "other"
+
+
 class PricingPlanType(str, Enum):
     free = "free"
     one_time = "one_time"

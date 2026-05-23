@@ -71,6 +71,18 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
         back_populates="catalog_item",
         cascade="all, delete-orphan",
     )
+    images: Mapped[list["CatalogItemImage"]] = relationship(
+        "CatalogItemImage",
+        back_populates="catalog_item",
+        cascade="all, delete-orphan",
+        order_by="CatalogItemImage.sort_order, CatalogItemImage.created_at",
+    )
+    purchase_links: Mapped[list["BookPurchaseLink"]] = relationship(
+        "BookPurchaseLink",
+        back_populates="catalog_item",
+        cascade="all, delete-orphan",
+        order_by="BookPurchaseLink.sort_order, BookPurchaseLink.created_at",
+    )
 
     def __repr__(self) -> str:
         return f"<CatalogItem id={self.id} slug={self.slug!r} type={self.type.value}>"

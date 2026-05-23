@@ -4,6 +4,9 @@ import type {
   CatalogItemStatus,
   CatalogItemType,
   CatalogPurchaseProvider,
+  BookPurchaseLinkInput,
+  CatalogItemImageInput,
+  BookPurchasePlatform,
 } from '../types/catalog.types'
 
 export type CatalogItemAdmin = {
@@ -39,6 +42,26 @@ export type CatalogItemAdmin = {
   book_format?: string | null
   audience?: string[]
   has_stored_image?: boolean
+  images?: Array<{
+    id: number
+    imageUrl: string
+    altText?: string | null
+    title?: string | null
+    sortOrder: number
+    isPrimary: boolean
+  }>
+  purchase_links?: Array<{
+    id: number
+    platform: BookPurchasePlatform
+    label: string
+    url: string
+    currency?: string | null
+    price?: string | number | null
+    country?: string | null
+    isPrimary: boolean
+    isActive: boolean
+    sortOrder: number
+  }>
   created_at: string
   updated_at: string
 }
@@ -80,6 +103,8 @@ export type CatalogItemAdminPayload = {
   rich_content_markdown?: string | null
   book_format?: string | null
   audience?: string[]
+  images?: CatalogItemImageInput[]
+  purchase_links?: BookPurchaseLinkInput[]
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>

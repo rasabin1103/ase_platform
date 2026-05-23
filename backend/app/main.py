@@ -31,6 +31,7 @@ from app.modules.admin_users.router import router as admin_users_router
 from app.modules.audit_logs.router import router as audit_logs_router
 from app.modules.auth.router import router as auth_router
 from app.modules.catalog.router import router as catalog_router
+from app.modules.contact.router import router as contact_router
 from app.modules.course_enrollments.router import router as course_enrollments_router
 from app.modules.courses.router import router as courses_router
 from app.modules.health.router import router as health_router
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.PROJECT_NAME)
     app.include_router(health_router)
     app.include_router(public_pricing_router)
+    app.include_router(contact_router)
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(services_router)

@@ -21,6 +21,8 @@ from app.models.audit_log import AuditLog
 from app.models.access_request import AccessRequest
 from app.models.resource_assignment import ResourceAssignment
 from app.models.catalog_item import CatalogItem
+from app.models.catalog_item_image import CatalogItemImage
+from app.models.book_purchase_link import BookPurchaseLink
 from app.models.catalog_favorite import CatalogFavorite
 from app.models.catalog_purchase import CatalogPurchase
 from app.models.catalog_pricing_plan import CatalogPricingPlan
@@ -52,6 +54,8 @@ __all__ = [
     "AccessRequest",
     "ResourceAssignment",
     "CatalogItem",
+    "CatalogItemImage",
+    "BookPurchaseLink",
     "CatalogFavorite",
     "CatalogPurchase",
     "CatalogPricingPlan",

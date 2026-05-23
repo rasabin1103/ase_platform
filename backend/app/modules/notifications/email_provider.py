@@ -15,32 +15,62 @@ RESEND_API_URL = "https://api.resend.com/emails"
 
 class EmailProvider(ABC):
     @abstractmethod
-    def send_email(self, *, to: str, subject: str, html: str) -> None:
+    def send_email(
+        self,
+        *,
+        to: str,
+        subject: str,
+        html: str,
+        text: str | None = None,
+        reply_to: str | None = None,
+    ) -> None:
         ...
 
 
 class ConsoleEmailProvider(EmailProvider):
     """Local development: log only in backend (never returned to clients)."""
 
-    def send_email(self, *, to: str, subject: str, html: str) -> None:
+    def send_email(
+        self,
+        *,
+        to: str,
+        subject: str,
+        html: str,
+        text: str | None = None,
+        reply_to: str | None = None,
+    ) -> None:
         verify_url = _extract_verify_url(html)
-        logger.info("[EMAIL DEV] to=%s subject=%r", to, subject)
+        logger.info("[EMAIL DEV] to=%s subject=%r reply_to=%s", to, subject, reply_to or "—")
+        if text:
+            logger.info("[EMAIL DEV] text_preview=%s", text[:200])
         if verify_url:
             logger.info("[EMAIL DEV] Verification URL: %s", verify_url)
 
 
 class ResendEmailProvider(EmailProvider):
-    def send_email(self, *, to: str, subject: str, html: str) -> None:
+    def send_email(
+        self,
+        *,
+        to: str,
+        subject: str,
+        html: str,
+        text: str | None = None,
+        reply_to: str | None = None,
+    ) -> None:
         api_key = (settings.RESEND_API_KEY or "").strip()
         if not api_key:
             raise EmailDeliveryError("RESEND_API_KEY is not configured")
 
-        payload = {
+        payload: dict[str, object] = {
             "from": settings.EMAIL_FROM,
             "to": [to],
             "subject": subject,
             "html": html,
         }
+        if text:
+            payload["text"] = text
+        if reply_to:
+            payload["reply_to"] = [reply_to]
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

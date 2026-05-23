@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
 from app.modules.pricing.schemas import PublicPricingPlanRead
+from app.modules.catalog.catalog_media_schemas import BookPurchaseLinkRead, CatalogItemImageRead
 
 
 class CatalogItemSummaryRead(BaseModel):
@@ -56,6 +57,9 @@ class CatalogItemRead(BaseModel):
     bookFormat: str | None = None
     audience: list[str] = Field(default_factory=list)
     relatedItems: list[CatalogItemSummaryRead] = Field(default_factory=list)
+    images: list[CatalogItemImageRead] = Field(default_factory=list)
+    purchaseLinks: list[BookPurchaseLinkRead] = Field(default_factory=list)
+    imageCount: int = 0
     createdAt: datetime
     updatedAt: datetime
 

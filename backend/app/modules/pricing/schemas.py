@@ -26,6 +26,10 @@ class PricingPlanRead(BaseModel):
     discount_percentage: Decimal | None = None
     is_active: bool
     is_default: bool
+    is_popular: bool = False
+    order_index: int | None = None
+    monthly_price: Decimal | None = None
+    annual_price: Decimal | None = None
     max_users: int | None = None
     max_downloads: int | None = None
     access_duration_days: int | None = None
@@ -76,6 +80,10 @@ class PricingPlanCreate(BaseModel):
     discount_percentage: Decimal | None = Field(default=None, ge=0, le=100)
     is_active: bool = True
     is_default: bool = False
+    is_popular: bool = False
+    order_index: int | None = Field(default=None, ge=0)
+    monthly_price: Decimal | None = Field(default=None, ge=0)
+    annual_price: Decimal | None = Field(default=None, ge=0)
     max_users: int | None = Field(default=None, ge=0)
     max_downloads: int | None = Field(default=None, ge=0)
     access_duration_days: int | None = Field(default=None, ge=0)
@@ -102,6 +110,10 @@ class PricingPlanUpdate(BaseModel):
     discount_percentage: Decimal | None = Field(default=None, ge=0, le=100)
     is_active: bool | None = None
     is_default: bool | None = None
+    is_popular: bool | None = None
+    order_index: int | None = Field(default=None, ge=0)
+    monthly_price: Decimal | None = Field(default=None, ge=0)
+    annual_price: Decimal | None = Field(default=None, ge=0)
     max_users: int | None = Field(default=None, ge=0)
     max_downloads: int | None = Field(default=None, ge=0)
     access_duration_days: int | None = Field(default=None, ge=0)
@@ -120,11 +132,20 @@ class PublicPricingPlanRead(BaseModel):
     id: int
     name: str
     slug: str
+    displayName: str = ""
     description: str | None = None
     planType: PricingPlanType
     billingInterval: PricingBillingInterval
     price: Decimal
     currency: str
+    monthlyPrice: Decimal | None = None
+    annualPrice: Decimal | None = None
+    annualDiscountPercentage: int = 10
+    annualSavingsAmount: Decimal | None = None
+    formattedMonthlyPrice: str = ""
+    formattedAnnualPrice: str = ""
+    isPopular: bool = False
+    orderIndex: int | None = None
     trialDays: int | None = None
     setupFee: Decimal | None = None
     discountPercentage: Decimal | None = None

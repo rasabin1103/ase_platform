@@ -12,9 +12,13 @@ import type {
   CatalogItemStatus,
   CatalogItemType,
   CatalogPurchaseProvider,
+  BookPurchaseLinkInput,
+  CatalogItemImageInput,
 } from '../../types/catalog.types'
-import { Button } from '../../components/ui/Button'
+import { CatalogItemImagesEditor } from '../../components/admin/catalog/CatalogItemImagesEditor'
+import { BookPurchaseLinksEditor } from '../../components/admin/catalog/BookPurchaseLinksEditor'
 import { Input } from '../../components/ui/Input'
+import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { useI18n } from '../../i18n'
@@ -170,6 +174,8 @@ export function AdminCatalogItemModal({
   const { t } = useI18n()
   const isEdit = Boolean(initial)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [images, setImages] = useState<CatalogItemImageInput[]>([])
+  const [purchaseLinks, setPurchaseLinks] = useState<BookPurchaseLinkInput[]>([])
   const schema = useMemo(() => buildCatalogItemFormSchema(t), [t])
   const form = useForm<FormValues>({
     defaultValues: defaults(defaultType),
@@ -184,8 +190,34 @@ export function AdminCatalogItemModal({
     if (!open) return
     if (initial) {
       form.reset(adminToForm(initial))
+      setImages(
+        (initial.images ?? []).map((img) => ({
+          id: img.id,
+          image_url: img.imageUrl,
+          alt_text: img.altText ?? '',
+          title: img.title ?? '',
+          sort_order: img.sortOrder,
+          is_primary: img.isPrimary,
+        })),
+      )
+      setPurchaseLinks(
+        (initial.purchase_links ?? []).map((link) => ({
+          id: link.id,
+          platform: link.platform,
+          label: link.label,
+          url: link.url,
+          currency: link.currency ?? 'EUR',
+          price: link.price != null ? Number(link.price) : null,
+          country: link.country ?? null,
+          is_primary: link.isPrimary,
+          is_active: link.isActive,
+          sort_order: link.sortOrder,
+        })),
+      )
     } else {
       form.reset(defaults(defaultType))
+      setImages([])
+      setPurchaseLinks([])
     }
     setImageFile(null)
   }, [open, initial, defaultType, form])
@@ -206,7 +238,9 @@ export function AdminCatalogItemModal({
       requirements: textToLines(requirements_text ?? ''),
       included_items: textToLines(included_items_text ?? ''),
       audience: textToLines(audience_text ?? ''),
-      preview_pages: values.preview_pages ? Number(values.preview_pages) : null,
+      preview_pages: values.preview_pages ?? null,
+      images,
+      ...(itemType === 'book' ? { purchase_links: purchaseLinks } : {}),
     }
   }
 
@@ -228,7 +262,6 @@ export function AdminCatalogItemModal({
             return
           }
           await onSubmit(buildPayload(values), imageFile)
-          onClose()
         })}
       >
         <div>
@@ -449,6 +482,7 @@ export function AdminCatalogItemModal({
                 <textarea className={textareaClass} rows={3} {...form.register('requirements_text')} />
               </label>
             </div>
+            <BookPurchaseLinksEditor value={purchaseLinks} onChange={setPurchaseLinks} />
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2">
@@ -466,6 +500,8 @@ export function AdminCatalogItemModal({
             </label>
           </div>
         )}
+
+        <CatalogItemImagesEditor value={images} onChange={setImages} />
 
         <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>

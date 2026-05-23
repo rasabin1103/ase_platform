@@ -1,4 +1,4 @@
-import type { PublicCatalogPricingPlan } from '../../api/publicCatalogPricing.api'
+import type { PublicCatalogPricingPlan } from '../../types/catalog.types'
 import type { PricingBillingInterval } from '../../api/pricingAdmin.api'
 
 export type PublicBillingFilter = 'monthly' | 'yearly'

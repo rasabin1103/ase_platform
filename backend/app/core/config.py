@@ -62,6 +62,18 @@ class Settings(BaseSettings):
         default="contact@arcesabinengineering.com",
         description="From address for Resend (must be verified in Resend).",
     )
+    CONTACT_INBOX_EMAIL: str = Field(
+        default="contact@arcesabinengineering.com",
+        description="Inbox that receives contact form submissions.",
+    )
+    CONTACT_RATE_LIMIT_MAX: int = Field(
+        default=5,
+        description="Max contact form submissions per IP/email window.",
+    )
+    CONTACT_RATE_LIMIT_WINDOW_SECONDS: int = Field(
+        default=600,
+        description="Rate limit window for contact form (seconds).",
+    )
     EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES: int = Field(
         default=60,
         description="Email verification link lifetime.",
