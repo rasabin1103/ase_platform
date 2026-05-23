@@ -11,6 +11,47 @@ from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRe
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
 from app.modules.consumer_catalog.schemas import CatalogItemListResponse, CatalogItemRead, CatalogItemSummaryRead
 from app.modules.pricing.service import PricingPlansService
+from app.modules.catalog.catalog_media_schemas import BookPurchaseLinkRead, CatalogItemImageRead
+
+
+def _image_reads(item: CatalogItem) -> list[CatalogItemImageRead]:
+    rows = sorted(item.images, key=lambda i: (i.sort_order, i.created_at))
+    return [
+        CatalogItemImageRead(
+            id=img.id,
+            imageUrl=img.image_url,
+            altText=img.alt_text,
+            title=img.title,
+            sortOrder=img.sort_order,
+            isPrimary=img.is_primary,
+            createdAt=img.created_at,
+            updatedAt=img.updated_at,
+        )
+        for img in rows
+    ]
+
+
+def _purchase_link_reads(item: CatalogItem, *, active_only: bool = True) -> list[BookPurchaseLinkRead]:
+    rows = sorted(item.purchase_links, key=lambda l: (l.sort_order, l.created_at))
+    if active_only:
+        rows = [l for l in rows if l.is_active]
+    return [
+        BookPurchaseLinkRead(
+            id=link.id,
+            platform=link.platform,
+            label=link.label,
+            url=link.url,
+            currency=link.currency,
+            price=link.price,
+            country=link.country,
+            isPrimary=link.is_primary,
+            isActive=link.is_active,
+            sortOrder=link.sort_order,
+            createdAt=link.created_at,
+            updatedAt=link.updated_at,
+        )
+        for link in rows
+    ]
 
 CONSUMER_LIST_STATUSES = (CatalogItemStatus.published, CatalogItemStatus.coming_soon, CatalogItemStatus.request_only)
 CONSUMER_DETAIL_STATUSES = CONSUMER_LIST_STATUSES
@@ -42,6 +83,9 @@ class ConsumerCatalogService:
         if include_pricing:
             pricing_plans = PricingPlansService(self.db).list_active_for_item(item.id)
         media = catalog_media_fields(item)
+        images = _image_reads(item)
+        primary_image = next((img.imageUrl for img in images if img.isPrimary), None)
+        display_image = primary_image or media["display_image_url"]
         related_reads = []
         if related is not None:
             for r in related:
@@ -66,7 +110,7 @@ class ConsumerCatalogService:
             category=item.category,
             shortDescription=item.short_description,
             longDescription=item.long_description,
-            imageUrl=media["display_image_url"],
+            imageUrl=display_image,
             price=item.price,
             currency=item.currency,
             status=item.status,
@@ -93,6 +137,9 @@ class ConsumerCatalogService:
             bookFormat=item.book_format,
             audience=item.audience_json or [],
             relatedItems=related_reads,
+            images=images,
+            purchaseLinks=_purchase_link_reads(item),
+            imageCount=len(images),
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )

@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listPublicCatalogPricingPlans } from '../../api/publicCatalogPricing.api'
-import { CatalogPublicPricing } from '../catalog/CatalogPublicPricing'
+import { PremiumPricingGrid } from './PremiumPricingGrid'
+import { BillingPeriodToggle } from './BillingPeriodToggle'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
-import { filterPlansForBilling, type PublicBillingFilter } from './catalogPricingFilters'
+import type { PublicBillingFilter } from './catalogPricingFilters'
 
 export function PricingSection({ compact }: { compact?: boolean }) {
   const { t } = useI18n()
@@ -19,19 +20,24 @@ export function PricingSection({ compact }: { compact?: boolean }) {
     staleTime: 60_000,
   })
 
-  const visiblePlans = useMemo(() => {
-    const items = plansQuery.data?.items ?? []
-    return filterPlansForBilling(items, billing)
-  }, [plansQuery.data?.items, billing])
+  const plans = plansQuery.data?.items ?? []
 
   const showBillingToggle = useMemo(
-    () => (plansQuery.data?.items ?? []).some((p) => p.planType === 'subscription'),
-    [plansQuery.data?.items],
+    () =>
+      plans.some(
+        (p) =>
+          p.planType === 'subscription' &&
+          (p.monthlyPrice != null || p.annualPrice != null || p.billingInterval !== 'none'),
+      ),
+    [plans],
   )
 
   return (
     <section className={cn('relative border-t border-white/5', compact ? 'py-0' : '')}>
-      <div className={cn('mx-auto w-full max-w-[1440px] px-6 sm:px-8', compact ? 'py-16' : 'py-28')}>
+      {!compact ? (
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(56,189,248,0.08),transparent)]" />
+      ) : null}
+      <div className={cn('relative mx-auto w-full max-w-[1440px] px-6 sm:px-8', compact ? 'py-16' : 'py-28')}>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Badge variant="info" className="w-fit">
@@ -46,35 +52,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           </div>
 
           {showBillingToggle ? (
-            <div className="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2 sm:w-auto">
-              <button
-                type="button"
-                onClick={() => setBilling('monthly')}
-                disabled={plansQuery.isLoading}
-                className={cn(
-                  'flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition sm:flex-none',
-                  billing === 'monthly' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
-                  plansQuery.isLoading && 'pointer-events-none opacity-60',
-                )}
-              >
-                {t('pricing.monthly')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBilling('yearly')}
-                disabled={plansQuery.isLoading}
-                className={cn(
-                  'flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition sm:flex-none',
-                  billing === 'yearly' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
-                  plansQuery.isLoading && 'pointer-events-none opacity-60',
-                )}
-              >
-                {t('pricing.yearly')}
-                <span className="ml-2 hidden rounded-full border border-ase-primary/30 bg-ase-primary/10 px-2 py-0.5 text-xs text-ase-primary sm:inline">
-                  {t('pricing.save')}
-                </span>
-              </button>
-            </div>
+            <BillingPeriodToggle billing={billing} onChange={setBilling} disabled={plansQuery.isLoading} />
           ) : null}
         </div>
 
@@ -88,17 +66,17 @@ export function PricingSection({ compact }: { compact?: boolean }) {
         ) : null}
 
         {plansQuery.isLoading ? (
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-72 animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
+                className="h-96 animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
               />
             ))}
           </div>
         ) : null}
 
-        {!plansQuery.isLoading && !plansQuery.isError && visiblePlans.length === 0 ? (
+        {!plansQuery.isLoading && !plansQuery.isError && plans.length === 0 ? (
           <div className="mt-12 rounded-3xl border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
             <p className="text-sm text-ase-text2">{t('pricing.empty')}</p>
             <Button type="button" variant="secondary" className="mt-4" onClick={() => plansQuery.refetch()}>
@@ -107,10 +85,11 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           </div>
         ) : null}
 
-        {!plansQuery.isLoading && !plansQuery.isError && visiblePlans.length > 0 ? (
+        {!plansQuery.isLoading && !plansQuery.isError && plans.length > 0 ? (
           <div className="mt-12">
-            <CatalogPublicPricing
-              plans={visiblePlans}
+            <PremiumPricingGrid
+              plans={plans}
+              billing={billing}
               showCatalogItem
               onCta={(plan) => {
                 const target =
@@ -118,12 +97,13 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 window.location.assign(target)
               }}
             />
-            <p className="mt-8 text-center text-sm text-ase-muted">
-              <Link to="/login" className="text-cyan-300 hover:underline">
+            <p className="mt-10 text-center text-sm text-ase-muted">{t('pricing.trialFooter')}</p>
+            <p className="mt-4 text-center text-sm text-ase-muted">
+              <Link to="/login" className="text-cyan-300 transition hover:underline">
                 {t('cta.clientLogin')}
               </Link>
               {' · '}
-              <Link to="/contact" className="text-cyan-300 hover:underline">
+              <Link to="/contact" className="text-cyan-300 transition hover:underline">
                 {t('nav.contact')}
               </Link>
             </p>

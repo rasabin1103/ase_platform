@@ -40,6 +40,7 @@ export function CatalogItemCard({
 }: Props) {
   const { t } = useI18n()
   const detailPath = `/catalog/${item.type}/${item.slug}`
+  const extraImages = Math.max(0, (item.imageCount ?? item.images?.length ?? 0) - 1)
 
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0" interactive>
@@ -54,6 +55,11 @@ export function CatalogItemCard({
         <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text backdrop-blur">
           {t(typeLabelKey(item.type))}
         </span>
+        {extraImages > 0 ? (
+          <span className="absolute bottom-3 right-3 rounded-lg border border-white/15 bg-black/55 px-2 py-1 text-xs font-medium text-ase-text backdrop-blur">
+            +{extraImages} {t('catalog.moreImages')}
+          </span>
+        ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>

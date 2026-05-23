@@ -96,9 +96,9 @@ class PricingPlansRepository:
             .outerjoin(CatalogItem, CatalogItem.id == CatalogPricingPlan.catalog_item_id)
             .where(CatalogPricingPlan.is_active.is_(True))
             .order_by(
-                CatalogPricingPlan.name.asc(),
-                CatalogPricingPlan.is_default.desc(),
+                CatalogPricingPlan.order_index.asc().nulls_last(),
                 CatalogPricingPlan.price.asc(),
+                CatalogPricingPlan.name.asc(),
                 CatalogPricingPlan.created_at.desc(),
             )
         )
@@ -205,6 +205,10 @@ class PricingPlansRepository:
         discount_percentage: Decimal | None,
         is_active: bool,
         is_default: bool,
+        is_popular: bool = False,
+        order_index: int | None = None,
+        monthly_price: Decimal | None = None,
+        annual_price: Decimal | None = None,
         max_users: int | None,
         max_downloads: int | None,
         access_duration_days: int | None,
@@ -230,6 +234,10 @@ class PricingPlansRepository:
             discount_percentage=discount_percentage,
             is_active=is_active,
             is_default=is_default,
+            is_popular=is_popular,
+            order_index=order_index,
+            monthly_price=monthly_price,
+            annual_price=annual_price,
             max_users=max_users,
             max_downloads=max_downloads,
             access_duration_days=access_duration_days,

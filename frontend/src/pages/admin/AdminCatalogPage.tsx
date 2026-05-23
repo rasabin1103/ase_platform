@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import {
   createAdminCatalogItem,
   deleteAdminCatalogItem,
+  getAdminCatalogItem,
   listAdminCatalog,
   updateAdminCatalogItem,
   uploadCatalogItemImage,
@@ -31,6 +32,7 @@ import {
 import { useI18n } from '../../i18n'
 import { cn } from '../../components/ui/cn'
 import { AdminCatalogItemModal } from './AdminCatalogItemModal'
+import { Toast } from '../../components/ui/Toast'
 
 type TabKey = 'all' | CatalogItemType
 type ViewMode = 'cards' | 'table'
@@ -50,7 +52,15 @@ export function AdminCatalogPage() {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [createOpen, setCreateOpen] = useState(false)
-  const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null)
+
+  const editDetailQuery = useQuery({
+    queryKey: ['admin-catalog-item', editingId],
+    queryFn: () => getAdminCatalogItem(editingId!),
+    enabled: editingId != null,
+  })
+  const editing = editDetailQuery.data ?? null
   const [deleting, setDeleting] = useState<CatalogItemAdmin | null>(null)
   const [statusTarget, setStatusTarget] = useState<CatalogItemAdmin | null>(null)
 
@@ -75,12 +85,17 @@ export function AdminCatalogPage() {
   const saveWithImage = async (
     values: Parameters<typeof createAdminCatalogItem>[0],
     imageFile: File | null,
-    existingId?: number,
+    existing?: CatalogItemAdmin,
   ) => {
-    if (existingId) {
-      const { type: _t, slug: _s, ...rest } = values
-      await updateAdminCatalogItem(existingId, rest)
-      if (imageFile) await uploadCatalogItemImage(existingId, imageFile)
+    if (existing) {
+      const { type: _t, slug: _s, image_url, ...rest } = values
+      const isMediaPath = image_url?.includes('/media/catalog/') || image_url?.startsWith('/api/')
+      const payload: Parameters<typeof updateAdminCatalogItem>[1] = { ...rest }
+      if (!(existing.has_stored_image || isMediaPath) || imageFile) {
+        payload.image_url = image_url
+      }
+      await updateAdminCatalogItem(existing.id, payload)
+      if (imageFile) await uploadCatalogItemImage(existing.id, imageFile)
       return
     }
     const created = await createAdminCatalogItem(values)
@@ -90,19 +105,29 @@ export function AdminCatalogPage() {
   const createMut = useMutation({
     mutationFn: ({ values, file }: { values: Parameters<typeof createAdminCatalogItem>[0]; file: File | null }) =>
       saveWithImage(values, file),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate()
+      setCreateOpen(false)
+      setToast({ message: String(t('adminCatalog.toast.saved')), variant: 'success' })
+    },
+    onError: () => setToast({ message: String(t('adminCatalog.toast.error')), variant: 'error' }),
   })
   const updateMut = useMutation({
     mutationFn: ({
-      id,
+      item,
       values,
       file,
     }: {
-      id: number
+      item: CatalogItemAdmin
       values: Parameters<typeof createAdminCatalogItem>[0]
       file: File | null
-    }) => saveWithImage(values, file, id),
-    onSuccess: invalidate,
+    }) => saveWithImage(values, file, item),
+    onSuccess: () => {
+      invalidate()
+      setEditingId(null)
+      setToast({ message: String(t('adminCatalog.toast.saved')), variant: 'success' })
+    },
+    onError: () => setToast({ message: String(t('adminCatalog.toast.error')), variant: 'error' }),
   })
   const deleteMut = useMutation({
     mutationFn: deleteAdminCatalogItem,
@@ -125,6 +150,9 @@ export function AdminCatalogPage() {
 
   return (
     <div className="space-y-8 pb-16">
+      {toast ? (
+        <Toast message={toast.message} variant={toast.variant} onDismiss={() => setToast(null)} />
+      ) : null}
       <PremiumHero
         accent="cyan"
         badge={t('adminCatalog.premium.badge')}
@@ -210,7 +238,7 @@ export function AdminCatalogPage() {
               key={item.id}
               item={item}
               t={t}
-              onEdit={() => setEditing(item)}
+              onEdit={() => setEditingId(item.id)}
               onDelete={() => setDeleting(item)}
               onToggleStatus={() => setStatusTarget(item)}
             />
@@ -261,7 +289,7 @@ export function AdminCatalogPage() {
                 <Button size="sm" variant="outline" onClick={() => setStatusTarget(item)}>
                   {item.status === 'published' ? t('adminCatalog.deactivate') : t('adminCatalog.activate')}
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => setEditing(item)}>
+                <Button size="sm" variant="secondary" onClick={() => setEditingId(item.id)}>
                   {t('adminCatalog.edit')}
                 </Button>
                 <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setDeleting(item)}>
@@ -284,13 +312,13 @@ export function AdminCatalogPage() {
       />
 
       <AdminCatalogItemModal
-        open={Boolean(editing)}
-        onClose={() => setEditing(null)}
+        open={Boolean(editingId)}
+        onClose={() => setEditingId(null)}
         initial={editing}
         isSubmitting={updateMut.isPending}
         onSubmit={async (values, file) => {
           if (!editing) return
-          await updateMut.mutateAsync({ id: editing.id, values, file })
+          await updateMut.mutateAsync({ item: editing, values, file })
         }}
       />
 

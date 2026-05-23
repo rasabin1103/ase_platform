@@ -7,6 +7,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
+from app.modules.catalog.catalog_media_schemas import (
+    BookPurchaseLinkInput,
+    BookPurchaseLinkRead,
+    CatalogItemImageInput,
+    CatalogItemImageRead,
+)
 
 
 class CatalogItemAdminBase(BaseModel):
@@ -42,7 +48,8 @@ class CatalogItemAdminBase(BaseModel):
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
-    pass
+    images: list[CatalogItemImageInput] = Field(default_factory=list)
+    purchase_links: list[BookPurchaseLinkInput] = Field(default_factory=list)
 
 
 class CatalogItemAdminUpdate(BaseModel):
@@ -73,12 +80,16 @@ class CatalogItemAdminUpdate(BaseModel):
     rich_content_markdown: str | None = None
     book_format: str | None = None
     audience: list[str] | None = None
+    images: list[CatalogItemImageInput] | None = None
+    purchase_links: list[BookPurchaseLinkInput] | None = None
 
 
 class CatalogItemAdminRead(CatalogItemAdminBase):
     id: int
     uuid: UUID
     has_stored_image: bool = False
+    images: list[CatalogItemImageRead] = Field(default_factory=list)
+    purchase_links: list[BookPurchaseLinkRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

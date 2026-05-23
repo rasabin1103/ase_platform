@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import type { CatalogItem } from '../../types/catalog.types'
 import { CatalogImage } from './CatalogImage'
+import { CatalogImageGallery } from './CatalogImageGallery'
+import { BookPurchaseButtons } from './BookPurchaseButtons'
 import { CatalogRichContentRenderer } from './CatalogRichContentRenderer'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -34,10 +36,12 @@ export function CatalogBookDetailView({
   purchasePending,
 }: Props) {
   const { t } = useI18n()
-  const showAmazon =
+  const purchaseLinks = item.purchaseLinks ?? []
+  const hasPurchaseLinks = purchaseLinks.some((l) => l.isActive)
+  const legacyAmazon =
     Boolean(item.amazonUrl) &&
+    !hasPurchaseLinks &&
     (item.purchaseProvider === 'amazon' || (!item.pricingPlans?.length && item.purchaseProvider !== 'internal'))
-  const externalUrl = item.externalPurchaseUrl || item.amazonUrl
 
   return (
     <div className="space-y-10">
@@ -47,7 +51,18 @@ export function CatalogBookDetailView({
 
       <div className="grid gap-10 lg:grid-cols-[minmax(280px,360px)_1fr] lg:items-start">
         <div className="mx-auto w-full max-w-sm lg:sticky lg:top-8">
-          <CatalogImage src={item.imageUrl} type="book" variant="hero" alt={item.title} cacheKey={item.updatedAt} />
+          <CatalogImageGallery
+            images={item.images ?? []}
+            fallbackSrc={item.imageUrl}
+            alt={item.title}
+            cacheKey={item.updatedAt}
+            type="book"
+          />
+          {(item.imageCount ?? item.images?.length ?? 0) > 1 ? (
+            <p className="mt-2 text-center text-xs text-ase-muted">
+              +{(item.imageCount ?? item.images?.length ?? 0) - 1} {t('catalog.moreImages')}
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-6">
@@ -82,29 +97,16 @@ export function CatalogBookDetailView({
             </p>
           )}
 
-          <div className="flex flex-wrap gap-3">
-            {showAmazon && item.amazonUrl ? (
+          <div className="space-y-3">
+            {hasPurchaseLinks ? <BookPurchaseButtons links={purchaseLinks} /> : null}
+            {!hasPurchaseLinks && legacyAmazon && item.amazonUrl ? (
               <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="primary">
                   {t('catalog.buyOnAmazon')}
                 </Button>
               </a>
             ) : null}
-            {item.previewPdfUrl ? (
-              <a href={item.previewPdfUrl} target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline">
-                  {t('catalog.openPdfPreview')}
-                </Button>
-              </a>
-            ) : null}
-            {item.sampleDownloadUrl ? (
-              <a href={item.sampleDownloadUrl} target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline">
-                  {t('catalog.downloadSample')}
-                </Button>
-              </a>
-            ) : null}
-            {!showAmazon ? (
+            {!hasPurchaseLinks && !legacyAmazon ? (
               <Button
                 size="lg"
                 variant="primary"
@@ -114,19 +116,38 @@ export function CatalogBookDetailView({
                 {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
               </Button>
             ) : null}
-            <Button size="lg" variant="outline" disabled={favoritePending} onClick={onToggleFavorite}>
-              {item.isFavorite ? t('catalog.removeFavorite') : t('catalog.addFavorite')}
-            </Button>
-            <Button size="lg" variant="outline" onClick={onRequestAccess}>
-              {t('catalog.requestAccess')}
-            </Button>
-            {externalUrl && item.purchaseProvider === 'external' ? (
-              <a href={externalUrl} target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="secondary">
-                  {t('catalog.buyExternal')}
-                </Button>
-              </a>
+            {!hasPurchaseLinks && !legacyAmazon && !item.amazonUrl && item.purchaseProvider === 'request_only' ? (
+              <p className="text-sm text-ase-muted">{t('catalog.comingSoonPurchase')}</p>
             ) : null}
+            <div className="flex flex-wrap gap-3">
+              {item.previewPdfUrl ? (
+                <a href={item.previewPdfUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline">
+                    {t('catalog.openPdfPreview')}
+                  </Button>
+                </a>
+              ) : null}
+              {item.sampleDownloadUrl ? (
+                <a href={item.sampleDownloadUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline">
+                    {t('catalog.downloadSample')}
+                  </Button>
+                </a>
+              ) : null}
+              <Button size="lg" variant="outline" disabled={favoritePending} onClick={onToggleFavorite}>
+                {item.isFavorite ? t('catalog.removeFavorite') : t('catalog.addFavorite')}
+              </Button>
+              <Button size="lg" variant="outline" onClick={onRequestAccess}>
+                {t('catalog.requestAccess')}
+              </Button>
+              {!hasPurchaseLinks && item.externalPurchaseUrl && item.purchaseProvider === 'external' ? (
+                <a href={item.externalPurchaseUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="secondary">
+                    {t('catalog.buyExternal')}
+                  </Button>
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -139,11 +160,6 @@ export function CatalogBookDetailView({
               ? t('catalog.pdfPreviewHintPages').replace('{n}', String(item.previewPages))
               : t('catalog.pdfPreviewHint')}
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a href={item.previewPdfUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="primary">{t('catalog.openPdfPreview')}</Button>
-            </a>
-          </div>
           <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-ase-bg2/80">
             <iframe
               title={t('catalog.pdfPreviewTitle')}
@@ -167,15 +183,11 @@ export function CatalogBookDetailView({
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {item.benefits?.length ? (
-          <SectionCard title={t('catalog.benefits')} items={item.benefits} />
-        ) : null}
+        {item.benefits?.length ? <SectionCard title={t('catalog.benefits')} items={item.benefits} /> : null}
         {item.includedItems?.length ? (
           <SectionCard title={t('catalog.included')} items={item.includedItems} />
         ) : null}
-        {item.audience?.length ? (
-          <SectionCard title={t('catalog.bookAudience')} items={item.audience} />
-        ) : null}
+        {item.audience?.length ? <SectionCard title={t('catalog.bookAudience')} items={item.audience} /> : null}
         {item.requirements?.length ? (
           <SectionCard title={t('catalog.requirements')} items={item.requirements} />
         ) : null}

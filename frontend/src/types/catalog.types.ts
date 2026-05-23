@@ -1,3 +1,56 @@
+export type BookPurchasePlatform =
+  | 'amazon'
+  | 'ase'
+  | 'lulu'
+  | 'gumroad'
+  | 'shopify'
+  | 'hotmart'
+  | 'other'
+
+export type CatalogItemImage = {
+  id: number
+  imageUrl: string
+  altText?: string | null
+  title?: string | null
+  sortOrder: number
+  isPrimary: boolean
+}
+
+export type CatalogItemImageInput = {
+  id?: number
+  image_url: string
+  alt_text?: string | null
+  title?: string | null
+  sort_order: number
+  is_primary: boolean
+}
+
+export type BookPurchaseLink = {
+  id: number
+  platform: BookPurchasePlatform
+  label: string
+  url: string
+  currency?: string | null
+  price?: string | number | null
+  country?: string | null
+  isPrimary: boolean
+  isActive: boolean
+  sortOrder: number
+}
+
+export type BookPurchaseLinkInput = {
+  id?: number
+  platform: BookPurchasePlatform
+  label?: string | null
+  url: string
+  currency?: string | null
+  price?: number | null
+  country?: string | null
+  is_primary: boolean
+  is_active: boolean
+  sort_order: number
+}
+
 export type CatalogItemType = 'product' | 'course' | 'book' | 'resource'
 export type CatalogItemStatus = 'published' | 'draft' | 'coming_soon' | 'request_only'
 export type CatalogItemLevel = 'beginner' | 'intermediate' | 'advanced'
@@ -18,11 +71,20 @@ export type PublicPricingPlan = {
   id: number
   name: string
   slug: string
+  displayName?: string
   description?: string | null
   planType: PricingPlanType
   billingInterval: PricingBillingInterval
   price: string | number
   currency: string
+  monthlyPrice?: string | number | null
+  annualPrice?: string | number | null
+  annualDiscountPercentage?: number
+  annualSavingsAmount?: string | number | null
+  formattedMonthlyPrice?: string
+  formattedAnnualPrice?: string
+  isPopular?: boolean
+  orderIndex?: number | null
   trialDays?: number | null
   setupFee?: string | number | null
   discountPercentage?: string | number | null
@@ -43,6 +105,13 @@ export type PublicCatalogPricingPlan = PublicPricingPlan & {
   catalogItemSlug: string
   catalogItemType: CatalogItemType
   catalogItemCategory: string
+}
+
+export type PublicCatalogPricingPlanListResponse = {
+  items: PublicCatalogPricingPlan[]
+  limit: number
+  offset: number
+  total: number
 }
 
 export type CatalogItemSummary = {
@@ -91,6 +160,9 @@ export type CatalogItem = {
   bookFormat?: string | null
   audience?: string[]
   relatedItems?: CatalogItemSummary[]
+  images?: CatalogItemImage[]
+  purchaseLinks?: BookPurchaseLink[]
+  imageCount?: number
   createdAt: string
   updatedAt: string
 }

@@ -21,6 +21,7 @@ from app.modules.pricing.schemas import (
     PublicPricingPlanRead,
 )
 from app.modules.pricing.scope import build_scope_summary, plan_scope_categories, plan_scope_types
+from app.modules.pricing.pricing_display import build_public_pricing_fields, consolidate_public_plans
 from app.modules.pricing.validation import validate_pricing_plan_fields
 
 
@@ -90,6 +91,10 @@ class PricingPlansService:
             discount_percentage=plan.discount_percentage,
             is_active=plan.is_active,
             is_default=plan.is_default,
+            is_popular=bool(getattr(plan, "is_popular", False)),
+            order_index=plan.order_index,
+            monthly_price=plan.monthly_price,
+            annual_price=plan.annual_price,
             max_users=plan.max_users,
             max_downloads=plan.max_downloads,
             access_duration_days=plan.access_duration_days,
@@ -105,15 +110,37 @@ class PricingPlansService:
         )
 
     def _to_public(self, plan: CatalogPricingPlan) -> PublicPricingPlanRead:
+        from app.modules.pricing.pricing_display import (
+            ANNUAL_DISCOUNT_PERCENTAGE,
+            annual_savings_amount,
+            display_plan_name,
+            formatted_price,
+            resolve_annual_price,
+            resolve_monthly_price,
+        )
+
+        monthly = resolve_monthly_price(plan)
+        annual = resolve_annual_price(plan, monthly)
+        savings = annual_savings_amount(monthly, annual)
+        currency = plan.currency or "EUR"
         return PublicPricingPlanRead(
             id=plan.id,
-            name=plan.name,
+            name=display_plan_name(plan.name),
             slug=plan.slug,
+            displayName=display_plan_name(plan.name),
             description=plan.description,
             planType=plan.plan_type,
             billingInterval=plan.billing_interval,
-            price=plan.price,
-            currency=plan.currency,
+            price=monthly if monthly is not None else plan.price,
+            currency=currency,
+            monthlyPrice=monthly,
+            annualPrice=annual,
+            annualDiscountPercentage=int(ANNUAL_DISCOUNT_PERCENTAGE),
+            annualSavingsAmount=savings,
+            formattedMonthlyPrice=formatted_price(monthly, currency) if monthly is not None else "",
+            formattedAnnualPrice=formatted_price(annual, currency) if annual is not None else "",
+            isPopular=bool(getattr(plan, "is_popular", False) or plan.is_default),
+            orderIndex=plan.order_index,
             trialDays=plan.trial_days,
             setupFee=plan.setup_fee,
             discountPercentage=plan.discount_percentage,
@@ -124,8 +151,25 @@ class PricingPlansService:
             includesUpdates=plan.includes_updates,
             includesSupport=plan.includes_support,
             supportLevel=plan.support_level,
-            features=list(plan.features or []),
-            limitations=list(plan.limitations or []),
+            features=[str(f) for f in list(plan.features or []) if f],
+            limitations=[str(x) for x in list(plan.limitations or []) if x],
+        )
+
+    def _to_public_from_tier(self, tier) -> PublicPricingPlanRead:
+        from app.modules.pricing.pricing_display import MergedPublicTier
+
+        assert isinstance(tier, MergedPublicTier)
+        plan = tier.primary
+        fields = build_public_pricing_fields(tier)
+        base = self._to_public(plan)
+        return base.model_copy(
+            update={
+                **fields,
+                "name": fields["displayName"] or base.name,
+                "price": fields["monthlyPrice"] or base.price,
+                "features": fields["features"],
+                "limitations": fields["limitations"],
+            }
         )
 
     def _ensure_item(self, catalog_item_id: int) -> CatalogItem:
@@ -179,21 +223,33 @@ class PricingPlansService:
         self,
         plan: CatalogPricingPlan,
         item: CatalogItem | None,
+        *,
+        public: PublicPricingPlanRead | None = None,
     ) -> PublicCatalogPricingPlanRead:
-        base = self._to_public(plan)
+        base = public or self._to_public(plan)
         return PublicCatalogPricingPlanRead(
             **base.model_dump(),
             catalogItemId=item.id if item else 0,
-            catalogItemTitle=item.title if item else base.name,
+            catalogItemTitle=item.title if item else base.displayName or base.name,
             catalogItemSlug=item.slug if item else plan.slug,
             catalogItemType=item.type if item else CatalogItemType.product,
             catalogItemCategory=item.category if item else "",
         )
 
     def list_public_active(self, *, limit: int = 100, offset: int = 0) -> PublicCatalogPricingPlanListResponse:
-        rows, total = self.repo.list_public_active(limit=limit, offset=offset)
+        rows, _ = self.repo.list_public_active(limit=500, offset=0)
+        plan_to_item = {plan.id: item for plan, item in rows}
+        tiers = consolidate_public_plans([plan for plan, _ in rows])
+        items: list[PublicCatalogPricingPlanRead] = []
+        for tier in tiers:
+            plan = tier.primary
+            item = plan_to_item.get(plan.id)
+            pub = self._to_public_from_tier(tier)
+            items.append(self._to_public_catalog(plan, item, public=pub))
+        total = len(items)
+        page = items[offset : offset + limit]
         return PublicCatalogPricingPlanListResponse(
-            items=[self._to_public_catalog(plan, item) for plan, item in rows],
+            items=page,
             limit=limit,
             offset=offset,
             total=total,
@@ -230,7 +286,8 @@ class PricingPlansService:
 
     def list_active_for_item(self, catalog_item_id: int) -> list[PublicPricingPlanRead]:
         self._ensure_item(catalog_item_id)
-        return [self._to_public(p) for p in self.repo.list_active_for_item(catalog_item_id)]
+        plans = self.repo.list_active_for_item(catalog_item_id)
+        return [self._to_public_from_tier(t) for t in consolidate_public_plans(plans)]
 
     def list_active_for_slug(self, slug: str) -> list[PublicPricingPlanRead]:
         from sqlalchemy import select
@@ -283,6 +340,10 @@ class PricingPlansService:
             discount_percentage=payload.discount_percentage,
             is_active=payload.is_active,
             is_default=payload.is_default,
+            is_popular=payload.is_popular,
+            order_index=payload.order_index,
+            monthly_price=payload.monthly_price,
+            annual_price=payload.annual_price,
             max_users=payload.max_users,
             max_downloads=payload.max_downloads,
             access_duration_days=payload.access_duration_days,
