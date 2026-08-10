@@ -5,7 +5,6 @@ from enum import Enum
 
 class UserStatus(str, Enum):
     active = "active"
-    inactive = "inactive"
     invited = "invited"
     suspended = "suspended"
     deleted = "deleted"
@@ -103,45 +102,6 @@ class CatalogItemLevel(str, Enum):
     advanced = "advanced"
 
 
-class CatalogPurchaseProvider(str, Enum):
-    internal = "internal"
-    amazon = "amazon"
-    external = "external"
-    request_only = "request_only"
-
-
-class BookPurchasePlatform(str, Enum):
-    amazon = "amazon"
-    ase = "ase"
-    lulu = "lulu"
-    gumroad = "gumroad"
-    shopify = "shopify"
-    hotmart = "hotmart"
-    other = "other"
-
-
-class PricingPlanType(str, Enum):
-    free = "free"
-    one_time = "one_time"
-    subscription = "subscription"
-    lifetime = "lifetime"
-    request_quote = "request_quote"
-
-
-class PricingBillingInterval(str, Enum):
-    none = "none"
-    monthly = "monthly"
-    quarterly = "quarterly"
-    yearly = "yearly"
-
-
-class PricingSupportLevel(str, Enum):
-    none = "none"
-    basic = "basic"
-    priority = "priority"
-    enterprise = "enterprise"
-
-
 class BillingCycle(str, Enum):
     monthly = "monthly"
     yearly = "yearly"
@@ -214,8 +174,3 @@ class ServicePriceType(str, Enum):
     fixed = "fixed"
     subscription = "subscription"
     custom = "custom"
-
-
-class VerificationChannel(str, Enum):
-    email = "email"
-    sms = "sms"

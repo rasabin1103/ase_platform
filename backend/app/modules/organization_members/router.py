@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_platform_admin, require_permission, require_tenant_context
-from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.organization_members.schemas import (
     OrganizationMemberCreate,
     OrganizationMemberListResponse,
@@ -28,7 +27,7 @@ def get_service(db: Session = Depends(get_db)) -> OrganizationMembersService:
     "",
     response_model=OrganizationMemberRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("users.create")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("users.create"))],
 )
 def create_member(
     payload: OrganizationMemberCreate,
@@ -124,7 +123,7 @@ def get_member(
     )
 
 
-@router.patch("/{member_id}", response_model=OrganizationMemberRead, dependencies=[Depends(require_permission("users.update")), Depends(require_security_onboarding)])
+@router.patch("/{member_id}", response_model=OrganizationMemberRead, dependencies=[Depends(require_permission("users.update"))])
 def update_member(
     member_id: int,
     payload: OrganizationMemberUpdate,
@@ -150,7 +149,7 @@ def update_member(
     )
 
 
-@router.delete("/{member_id}", response_model=OrganizationMemberRead, dependencies=[Depends(require_permission("users.delete")), Depends(require_security_onboarding)])
+@router.delete("/{member_id}", response_model=OrganizationMemberRead, dependencies=[Depends(require_permission("users.delete"))])
 def delete_member(
     member_id: int,
     request: Request,
@@ -173,5 +172,4 @@ def delete_member(
         created_at=m.created_at,
         updated_at=m.updated_at,
     )
-
 

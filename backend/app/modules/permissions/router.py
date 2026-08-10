@@ -11,7 +11,6 @@ from app.modules.permissions.schemas import (
     PermissionUpdate,
 )
 from app.modules.permissions.service import PermissionsService
-from app.modules.auth.security_onboarding import require_security_onboarding
 
 router = APIRouter(prefix="/api/v1/permissions", tags=["permissions"])
 
@@ -49,5 +48,4 @@ def update_permission(permission_id: int, payload: PermissionUpdate, svc: Permis
 def delete_permission(permission_id: int, svc: PermissionsService = Depends(get_permissions_service)):
     svc.delete(permission_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 

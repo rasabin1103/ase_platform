@@ -3,17 +3,6 @@ import { createPortal } from 'react-dom'
 import { cn } from './cn'
 import { Button } from './Button'
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'wide'
-
-const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
-  sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-  '2xl': 'max-w-5xl',
-  wide: 'max-w-6xl',
-}
-
 type Props = PropsWithChildren & {
   open: boolean
   title?: ReactNode
@@ -21,20 +10,9 @@ type Props = PropsWithChildren & {
   footer?: ReactNode
   className?: string
   closeLabel?: ReactNode
-  /** Dialog max width; default `md`. Use `wide` or `2xl` for large forms. */
-  size?: ModalSize
 }
 
-export function Modal({
-  open,
-  title,
-  onClose,
-  footer,
-  children,
-  className,
-  closeLabel = 'Close',
-  size = 'md',
-}: Props) {
+export function Modal({ open, title, onClose, footer, children, className, closeLabel = 'Close' }: Props) {
   if (!open) return null
 
   return createPortal(
@@ -45,13 +23,12 @@ export function Modal({
         aria-hidden="true"
       />
 
-      <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
           role="dialog"
           aria-modal="true"
           className={cn(
-            'flex max-h-[min(92vh,960px)] w-full flex-col overflow-hidden rounded-2xl border border-ase-border bg-ase-surface shadow-soft',
-            MODAL_SIZE_CLASS[size],
+            'w-full max-w-lg overflow-hidden rounded-2xl border border-ase-border bg-ase-surface shadow-soft',
             className,
           )}
         >
@@ -64,7 +41,7 @@ export function Modal({
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 sm:px-8 sm:py-6">{children}</div>
+          <div className="px-6 py-5">{children}</div>
 
           {footer && <div className="border-t border-ase-border px-6 py-4">{footer}</div>}
         </div>

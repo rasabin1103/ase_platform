@@ -2,16 +2,14 @@
 
 ## Source of truth (local dev)
 
-Schema migrations are managed with **Alembic** in `backend/alembic/versions/`.
-
-Configure **`DATABASE_URL`** in `backend/.env` (see `backend/.env.example`).
+Schema migrations are managed with **Alembic** in `ase_backend/alembic/versions/`.
 
 ```powershell
-cd backend
+cd ase_backend
 .venv\Scripts\alembic.exe upgrade head
 ```
 
-## Scripts (`backend/scripts/database`)
+## Scripts (`ase_backend/scripts/database`)
 
 | Script | Purpose |
 |--------|---------|
@@ -24,12 +22,12 @@ cd backend
 Fresh setup:
 
 ```powershell
-cd backend
+cd ase_backend
 .venv\Scripts\python.exe scripts\database\reset_database.py
 .venv\Scripts\python.exe scripts\database\seed_all.py
 ```
 
-Set `DEMO_SEED_PASSWORD` in `.env` before seeding when using Python seed scripts.
+Set `DEMO_SEED_PASSWORD` in `.env` before seeding (default in `.env.example`: `ChangeMeDemo123!`).
 
 ## Supabase SQL (`supabase/`)
 

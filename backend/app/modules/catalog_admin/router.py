@@ -10,7 +10,6 @@ from app.core.media_urls import catalog_has_stored_image
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.modules.auth.dependencies import require_permission
-from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.catalog_admin.schemas import (
     AddCatalogItemImageUrlRequest,
     CatalogItemAdminCreate,
@@ -40,7 +39,7 @@ def list_catalog_admin(
     return svc.list(limit=limit, offset=offset, type_filter=type, search=search)
 
 
-@router.post("/{item_id}/image", dependencies=[Depends(require_permission("catalog.manage")), Depends(require_security_onboarding)])
+@router.post("/{item_id}/image", dependencies=[Depends(require_permission("catalog.manage"))])
 async def upload_catalog_image(
     item_id: int,
     file: UploadFile = File(...),
@@ -136,17 +135,16 @@ def get_catalog_admin_item(item_id: int, svc: CatalogAdminService = Depends(get_
     return svc.get(item_id)
 
 
-@router.post("", response_model=CatalogItemAdminRead, status_code=201, dependencies=[Depends(require_permission("catalog.manage")), Depends(require_security_onboarding)])
+@router.post("", response_model=CatalogItemAdminRead, status_code=201, dependencies=[Depends(require_permission("catalog.manage"))])
 def create_catalog_item(payload: CatalogItemAdminCreate, svc: CatalogAdminService = Depends(get_service)):
     return svc.create(payload)
 
 
-@router.patch("/{item_id}", response_model=CatalogItemAdminRead, dependencies=[Depends(require_permission("catalog.manage")), Depends(require_security_onboarding)])
+@router.patch("/{item_id}", response_model=CatalogItemAdminRead, dependencies=[Depends(require_permission("catalog.manage"))])
 def update_catalog_item(item_id: int, payload: CatalogItemAdminUpdate, svc: CatalogAdminService = Depends(get_service)):
     return svc.update(item_id, payload)
 
 
-@router.delete("/{item_id}", status_code=204, dependencies=[Depends(require_permission("catalog.manage")), Depends(require_security_onboarding)])
+@router.delete("/{item_id}", status_code=204, dependencies=[Depends(require_permission("catalog.manage"))])
 def delete_catalog_item(item_id: int, svc: CatalogAdminService = Depends(get_service)):
     svc.delete(item_id)
-

@@ -15,7 +15,6 @@ export const usersPageEn = {
       search: 'Search by name or email',
       status: 'Status',
       allStatuses: 'All statuses',
-      allRoles: 'All roles',
     },
     view: {
       cards: 'Cards',
@@ -32,8 +31,6 @@ export const usersPageEn = {
       verification: 'Verification',
       verified: 'Verified',
       pending: 'Pending',
-      yes: 'Yes',
-      no: 'No',
     },
     insights: {
       title: 'User insights',
@@ -47,7 +44,6 @@ export const usersPageEn = {
     active: { label: 'Active users', hint: 'Ready to access' },
     invited: { label: 'Pending verification', hint: 'Awaiting confirmation' },
     suspended: { label: 'Restricted users', hint: 'Access blocked' },
-    inactive: { label: 'Inactive users', hint: 'Cannot sign in' },
   },
   list: {
     title: 'User directory',
@@ -56,9 +52,7 @@ export const usersPageEn = {
     columns: {
       user: 'User',
       email: 'Email',
-      role: 'Role',
       status: 'Status',
-      creatorEnabled: 'Creator access',
       createdAt: 'Created',
       actions: 'Actions',
     },
@@ -73,10 +67,6 @@ export const usersPageEn = {
       lastName: 'Last name',
       displayName: 'Display name',
       status: 'Status',
-      role: 'Role',
-      phone: 'Phone',
-      canCreateContent: 'Content Creator Access',
-      creatorStatus: 'Creator Program Status',
     },
     placeholders: {
       email: 'name@company.com',
@@ -99,11 +89,9 @@ export const usersPageEn = {
     error: 'Could not update the user.',
   },
   delete: {
-    title: 'Confirm permanent deletion',
-    body: 'You are about to permanently delete user {{email}}.',
-    hardWarning:
-      'This action will permanently remove the user from the database. It cannot be undone.',
-    note: 'All related memberships and favorites will be removed.',
+    title: 'Confirm delete',
+    body: 'You are about to delete user {{email}}.',
+    note: 'This action cannot be undone.',
     deleting: 'Deleting…',
     delete: 'Delete',
     cancel: 'Cancel',
@@ -113,18 +101,10 @@ export const usersPageEn = {
     edit: 'Edit',
     delete: 'Delete',
     activate: 'Activate',
-    deactivate: 'Deactivate',
     suspend: 'Suspend',
-  },
-  toast: {
-    created: 'User created successfully.',
-    saved: 'User updated successfully.',
-    deleted: 'User permanently deleted.',
-    statusUpdated: 'User status updated.',
   },
   status: {
     active: 'Active',
-    inactive: 'Inactive',
     suspended: 'Suspended',
     deleted: 'Deleted',
     unknown: 'Unknown',
@@ -137,8 +117,6 @@ export const usersPageEn = {
   errors: {
     loadTitle: 'Could not load users',
     loadSubtitle: 'Please try again or refresh your session.',
-    superAdminOnlyTitle: 'Super admin only',
-    superAdminOnlySubtitle: 'Platform user management requires the super_admin role.',
     passwordMin: 'Min 8 characters',
   },
 } as const
@@ -156,7 +134,6 @@ export const usersPageEs = {
       search: 'Buscar por nombre o email',
       status: 'Estado',
       allStatuses: 'Todos los estados',
-      allRoles: 'Todos los roles',
     },
     view: {
       cards: 'Tarjetas',
@@ -173,8 +150,6 @@ export const usersPageEs = {
       verification: 'Verificación',
       verified: 'Verificado',
       pending: 'Pendiente',
-      yes: 'Sí',
-      no: 'No',
     },
     insights: {
       title: 'Insights de usuarios',
@@ -188,7 +163,6 @@ export const usersPageEs = {
     active: { label: 'Usuarios activos', hint: 'Listos para acceder' },
     invited: { label: 'Verificación pendiente', hint: 'Esperando confirmación' },
     suspended: { label: 'Usuarios restringidos', hint: 'Acceso bloqueado' },
-    inactive: { label: 'Usuarios inactivos', hint: 'No pueden iniciar sesión' },
   },
   list: {
     title: 'Directorio de usuarios',
@@ -197,9 +171,7 @@ export const usersPageEs = {
     columns: {
       user: 'Usuario',
       email: 'Email',
-      role: 'Rol',
       status: 'Estado',
-      creatorEnabled: 'Acceso creador',
       createdAt: 'Fecha de alta',
       actions: 'Acciones',
     },
@@ -214,10 +186,6 @@ export const usersPageEs = {
       lastName: 'Apellidos',
       displayName: 'Nombre visible',
       status: 'Estado',
-      role: 'Rol',
-      phone: 'Teléfono',
-      canCreateContent: 'Acceso Content Creator',
-      creatorStatus: 'Estado del programa creador',
     },
     placeholders: {
       email: 'name@company.com',
@@ -240,13 +208,11 @@ export const usersPageEs = {
     error: 'No se pudo actualizar el usuario.',
   },
   delete: {
-    title: 'Confirmar eliminación definitiva',
-    body: 'Vas a eliminar definitivamente al usuario {{email}}.',
-    hardWarning:
-      'Esta acción eliminará definitivamente el usuario de la base de datos. No se puede deshacer.',
-    note: 'Se eliminarán membresías y favoritos relacionados.',
+    title: 'Confirmar eliminación',
+    body: 'Vas a eliminar el usuario {{email}}.',
+    note: 'Esta acción no se puede deshacer.',
     deleting: 'Eliminando…',
-    delete: 'Confirmar eliminación',
+    delete: 'Eliminar',
     cancel: 'Cancelar',
     error: 'No se pudo eliminar el usuario.',
   },
@@ -254,18 +220,10 @@ export const usersPageEs = {
     edit: 'Editar',
     delete: 'Eliminar',
     activate: 'Activar',
-    deactivate: 'Desactivar',
     suspend: 'Suspender',
-  },
-  toast: {
-    created: 'Usuario creado correctamente.',
-    saved: 'Usuario actualizado correctamente.',
-    deleted: 'Usuario eliminado definitivamente.',
-    statusUpdated: 'Estado del usuario actualizado.',
   },
   status: {
     active: 'Activo',
-    inactive: 'Inactivo',
     suspended: 'Suspendido',
     deleted: 'Eliminado',
     unknown: 'Desconocido',
@@ -278,9 +236,6 @@ export const usersPageEs = {
   errors: {
     loadTitle: 'No se pudo cargar usuarios',
     loadSubtitle: 'Inténtalo de nuevo o refresca tu sesión.',
-    superAdminOnlyTitle: 'Solo super administrador',
-    superAdminOnlySubtitle:
-      'La gestión de usuarios de plataforma requiere el rol super_admin.',
     passwordMin: 'Mínimo 8 caracteres',
   },
 } as const

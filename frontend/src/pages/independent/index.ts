@@ -1,6 +1,4 @@
 export { CatalogListPage } from './CatalogListPage'
 export { CatalogDetailPage } from './CatalogDetailPage'
 export { IndependentDashboardPage } from './IndependentDashboardPage'
-export { IndependentPlansPage } from './IndependentPlansPage'
 export { ProfilePage } from './ProfilePage'
-export { ProfileSecurityPage } from './ProfileSecurityPage'

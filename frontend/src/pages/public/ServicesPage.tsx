@@ -54,7 +54,7 @@ export function ServicesPage() {
   }, [items])
 
   return (
-    <div className="w-full bg-ase-bg">
+    <div className="min-h-screen bg-ase-bg">
       <ServicesHeroPremium />
       <ServicesInsideSection />
 

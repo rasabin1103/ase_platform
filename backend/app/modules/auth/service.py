@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
@@ -8,14 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import UserStatus
 from app.models.user import User
-from app.modules.auth.schemas import LoginRequest, LoginResult, RegisterRequest, TokenPair
-from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password, get_token_subject_uuid
-from app.modules.auth.two_factor_service import TwoFactorService
-from app.modules.auth.platform_roles import assign_independent_user_on_signup
-from app.modules.notifications.service import NotificationService
+from app.modules.auth.schemas import LoginRequest, RegisterRequest, TokenPair
+from app.modules.auth.security import create_access_token, create_refresh_token, hash_password, verify_password, get_token_subject_uuid
 from app.modules.users.repository import UsersRepository
-
-logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -36,41 +30,18 @@ class AuthService:
             status=UserStatus.active,
         )
         self.users.add(user)
-        self.db.flush()
-        assign_independent_user_on_signup(self.db, user=user)
         self.db.commit()
         self.db.refresh(user)
-        try:
-            NotificationService(self.db).send_email_verification(user)
-            self.db.commit()
-        except HTTPException as exc:
-            self.db.rollback()
-            logger.warning(
-                "register_verification_email_failed user_id=%s status=%s detail=%s",
-                user.id,
-                exc.status_code,
-                exc.detail,
-            )
-        except Exception:
-            self.db.rollback()
-            logger.exception("register_verification_email_failed user_id=%s", user.id)
         return user
 
-    def login(self, payload: LoginRequest) -> LoginResult:
+    def login(self, payload: LoginRequest) -> TokenPair:
         user = self.users.get_by_email(str(payload.email))
         if user is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if user.status != UserStatus.active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is not active",
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if not verify_password(payload.password, user.password_hash):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-        if user.two_factor_enabled:
-            logger.info("login_requires_2fa user_id=%s", user.id)
-            return TwoFactorService(self.db).create_login_challenge(user)
 
         user.last_login_at = datetime.now(timezone.utc)
         self.db.commit()
@@ -89,10 +60,7 @@ class AuthService:
 
         user = self.users.get_by_uuid(user_uuid)
         if user is None or user.status != UserStatus.active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is not active",
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
         return TokenPair(
             access_token=create_access_token(user_uuid=user.uuid),
