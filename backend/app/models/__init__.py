@@ -22,6 +22,14 @@ from app.models.resource_assignment import ResourceAssignment
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_favorite import CatalogFavorite
 from app.models.catalog_purchase import CatalogPurchase
+from app.models.catalog_item_rating import CatalogItemRating
+from app.models.catalog_item_image import CatalogItemImage
+from app.models.notification import Notification
+from app.models.suggestion import Suggestion
+from app.models.organization_catalog_item import OrganizationCatalogItem
+from app.models.team_member import TeamMember
+from app.models.testimonial import Testimonial
+from app.models.case_study import CaseStudy
 
 __all__ = [
     "User",
@@ -48,5 +56,13 @@ __all__ = [
     "CatalogItem",
     "CatalogFavorite",
     "CatalogPurchase",
+    "CatalogItemRating",
+    "CatalogItemImage",
+    "Notification",
+    "Suggestion",
+    "OrganizationCatalogItem",
+    "TeamMember",
+    "Testimonial",
+    "CaseStudy",
 ]
 

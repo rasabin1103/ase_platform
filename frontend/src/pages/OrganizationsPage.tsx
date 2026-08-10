@@ -156,14 +156,11 @@ export function OrganizationsPage() {
   if (isSuperAdmin) {
     return (
       <div className="space-y-8 pb-16">
-        <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.22),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(168,85,247,0.16),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.48)] md:p-8">
-          <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:38px_38px]" />
-          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
-          <div className="absolute -bottom-24 left-20 h-64 w-64 rounded-full bg-violet-400/10 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
 
           <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-center">
             <div>
-              <Badge variant="info" className="mb-5 border-cyan-300/30 bg-cyan-300/10 text-cyan-100">
+              <Badge variant="info" className="mb-5">
                 {t('organizationsPage.superAdmin.badge')}
               </Badge>
               <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">
@@ -182,21 +179,22 @@ export function OrganizationsPage() {
               </div>
             </div>
 
-            <div className="relative min-h-[220px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.20),transparent_42%)]" />
+            <div className="relative min-h-[220px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-5 shadow-soft">
               {items.slice(0, 5).map((org, index) => (
                 <div
                   key={org.uuid}
                   className={cn(
-                    'absolute h-16 w-16 rounded-2xl border bg-white/[0.05] p-2 text-center text-[10px] font-semibold text-ase-text shadow-[0_18px_50px_rgba(0,0,0,0.35)] backdrop-blur',
+                    'absolute h-16 w-16 rounded-2xl border border-white/[0.08] bg-ase-bg2 p-2 text-center text-[10px] font-semibold text-ase-text shadow-soft',
                     org.status === 'suspended' ? 'border-amber-300/30' : 'border-cyan-300/25',
                     ['left-[10%] top-[18%]', 'left-[62%] top-[12%]', 'left-[70%] top-[58%]', 'left-[24%] top-[66%]', 'left-[42%] top-[36%]'][index],
                   )}
                 >
-                  <div className="mx-auto grid h-8 w-8 place-items-center rounded-xl bg-cyan-300/10">{org.name.slice(0, 2).toUpperCase()}</div>
+                  <div className="mx-auto grid h-8 w-8 place-items-center rounded-xl bg-ase-brand/10 ring-1 ring-ase-brand/20">
+                    {org.name.slice(0, 2).toUpperCase()}
+                  </div>
                 </div>
               ))}
-              <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-3xl border border-cyan-200/30 bg-cyan-300/10 text-sm font-bold text-cyan-100 shadow-[0_0_44px_rgba(34,211,238,0.22)]">
+              <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-3xl border border-ase-brand/25 bg-ase-bg2 text-sm font-bold text-ase-text shadow-soft">
                 ASE
               </div>
             </div>
@@ -204,17 +202,17 @@ export function OrganizationsPage() {
         </section>
 
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-6">
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.total.label') as string} hint={t('organizationsPage.superAdmin.metrics.total.hint') as string} value={items.length} accent="from-cyan-300 to-blue-500" icon="⬡" />
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.active.label') as string} hint={t('organizationsPage.superAdmin.metrics.active.hint') as string} value={activeCount} accent="from-emerald-300 to-teal-500" icon="◉" />
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.suspended.label') as string} hint={t('organizationsPage.superAdmin.metrics.suspended.hint') as string} value={suspendedCount} accent="from-amber-300 to-orange-500" icon="△" />
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.managed.label') as string} hint={t('organizationsPage.superAdmin.metrics.managed.hint') as string} value={managedCount} accent="from-violet-300 to-fuchsia-500" icon="◇" />
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.business.label') as string} hint={t('organizationsPage.superAdmin.metrics.business.hint') as string} value={businessCount} accent="from-sky-300 to-cyan-500" icon="□" />
-          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.enterprise.label') as string} hint={t('organizationsPage.superAdmin.metrics.enterprise.hint') as string} value={enterpriseCount} accent="from-indigo-300 to-violet-500" icon="◆" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.total.label') as string} hint={t('organizationsPage.superAdmin.metrics.total.hint') as string} value={items.length} accent="from-ase-brand to-ase-brand" icon="⬡" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.active.label') as string} hint={t('organizationsPage.superAdmin.metrics.active.hint') as string} value={activeCount} accent="from-ase-brand to-ase-brand" icon="◉" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.suspended.label') as string} hint={t('organizationsPage.superAdmin.metrics.suspended.hint') as string} value={suspendedCount} accent="from-ase-brand to-ase-brand" icon="△" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.managed.label') as string} hint={t('organizationsPage.superAdmin.metrics.managed.hint') as string} value={managedCount} accent="from-ase-brand to-ase-brand" icon="◇" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.business.label') as string} hint={t('organizationsPage.superAdmin.metrics.business.hint') as string} value={businessCount} accent="from-ase-brand to-ase-brand" icon="□" />
+          <SuperMetricCard label={t('organizationsPage.superAdmin.metrics.enterprise.label') as string} hint={t('organizationsPage.superAdmin.metrics.enterprise.hint') as string} value={enterpriseCount} accent="from-ase-brand to-ase-brand" icon="◆" />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-ase-text">{t('organizationsPage.superAdmin.topology.title')}</h2>
@@ -236,7 +234,7 @@ export function OrganizationsPage() {
               </div>
             </Card>
 
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
               <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_160px_190px_auto]">
                 <Input
                   value={superSearch}
@@ -340,8 +338,8 @@ export function OrganizationsPage() {
 
         {createOpen ? (
           <div className="fixed inset-0 z-50">
-            <button className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setCreateOpen(false)} />
-            <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2/90 p-6 shadow-[0_0_80px_rgba(0,0,0,0.55)] backdrop-blur-md sm:p-8">
+            <button className="absolute inset-0 bg-black/65" onClick={() => setCreateOpen(false)} />
+            <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2 p-6 shadow-soft sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.create.open')}</div>
@@ -647,9 +645,9 @@ export function OrganizationsPage() {
 
 function StatCard({ label, value, icon, horizontal }: { label: string; value: string; icon: string; horizontal?: boolean }) {
   return (
-    <Card className="rounded-2xl border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm" interactive>
+    <Card className="rounded-2xl border-white/[0.08] bg-ase-surface p-4 shadow-soft" interactive>
       <div className={cn('flex items-start justify-between gap-3', horizontal && 'items-center')}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-sm text-ase-text">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">
           {icon}
         </span>
         <div className={cn('min-w-0 flex-1', horizontal ? 'flex items-center justify-between gap-4' : '')}>
@@ -657,7 +655,7 @@ function StatCard({ label, value, icon, horizontal }: { label: string; value: st
             <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
             <div className="mt-1 truncate text-xl font-extrabold tracking-tight text-ase-text">{value}</div>
           </div>
-          <div className="mt-2 h-2 w-2 rounded-full bg-ase-primary shadow-[0_0_18px_rgba(56,189,248,0.35)]" />
+          <div className="mt-2 h-2 w-2 rounded-full bg-ase-brand/80" />
         </div>
       </div>
     </Card>
@@ -669,7 +667,6 @@ function SuperMetricCard({
   hint,
   value,
   icon,
-  accent,
 }: {
   label: string
   hint: string
@@ -678,18 +675,18 @@ function SuperMetricCard({
   accent: string
 }) {
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur" interactive>
-      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', accent)} />
+    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
           <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{value.toLocaleString()}</div>
           <div className="mt-2 text-xs text-ase-text2">{hint}</div>
         </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm text-ase-text">{icon}</div>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
       </div>
       <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className={cn('h-full rounded-full bg-gradient-to-r', accent)} style={{ width: `${Math.min(100, 26 + value * 12)}%` }} />
+        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${Math.min(100, 26 + value * 12)}%` }} />
       </div>
     </Card>
   )
@@ -718,15 +715,20 @@ function OrganizationPremiumCard({
   return (
     <Card
       className={cn(
-        'group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition duration-200 hover:-translate-y-1',
-        isActive && 'border-cyan-300/30 shadow-[0_28px_90px_rgba(8,145,178,0.18)]',
+        'group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1',
+        isActive && 'border-ase-brand/25',
         org.status === 'suspended' && 'border-amber-300/20',
       )}
     >
-      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_36%)]" />
       <div className="relative flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-sm font-bold ring-1 ring-white/10', org.status === 'suspended' ? 'bg-amber-400/12 text-amber-100' : 'bg-cyan-400/12 text-cyan-100')}>
+          <div
+            className={cn(
+              'grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ase-bg2 text-sm font-bold text-ase-text ring-1 ring-white/10',
+              isActive && 'ring-ase-brand/25',
+              org.status === 'suspended' && 'ring-amber-300/20',
+            )}
+          >
             {org.name.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -799,7 +801,7 @@ function PlatformInsightsPanel({
 
   return (
     <aside className="space-y-6">
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur">
+      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-ase-text">{t('organizationsPage.superAdmin.insights.title')}</h2>
           <Button size="sm" onClick={onCreate}>
@@ -818,7 +820,7 @@ function PlatformInsightsPanel({
                     <span>{count}</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-violet-400" style={{ width: `${(count / maxType) * 100}%` }} />
+                    <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${(count / maxType) * 100}%` }} />
                   </div>
                 </div>
               ))}

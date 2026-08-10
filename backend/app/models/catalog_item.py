@@ -6,7 +6,7 @@ from typing import Any
 
 from sqlalchemy import Enum, LargeBinary, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
@@ -50,6 +50,14 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     benefits_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     requirements_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     included_items_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+
+    images: Mapped[list["CatalogItemImage"]] = relationship(
+        "CatalogItemImage",
+        back_populates="catalog_item",
+        order_by="CatalogItemImage.display_order",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     def __repr__(self) -> str:
         return f"<CatalogItem id={self.id} slug={self.slug!r} type={self.type.value}>"

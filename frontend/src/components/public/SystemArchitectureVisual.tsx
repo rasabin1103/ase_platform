@@ -1,98 +1,74 @@
-import { useId } from 'react'
-import { Card } from '../ui/Card'
+import { useQueries } from '@tanstack/react-query'
+import { fetchPlatformHealth } from '../../api/health.api'
+import { listPlansCatalog } from '../../api/plansCatalog.api'
+import { listPublicServices } from '../../api/services.api'
+import { useI18n } from '../../i18n'
+import type { Plan } from '../../types/plan.types'
+import type { Service, ServiceCategory } from '../../types/service.types'
+import { formatPlanPrice } from './pricingFromPlans'
 import { Badge } from '../ui/Badge'
+import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 
-type NodeProps = {
-  label: string
-  tone?: 'primary' | 'accent' | 'muted'
-  className?: string
-  compact?: boolean
+type PlanDotTone = 'gray' | 'blue' | 'purple'
+
+const planDotToneClass: Record<PlanDotTone, string> = {
+  gray: 'bg-white/40',
+  blue: 'bg-ase-primary shadow-[0_0_14px_rgba(56,189,248,0.28)]',
+  purple: 'bg-violet-400 shadow-[0_0_14px_rgba(167,139,250,0.22)]',
 }
 
-function Node({ label, tone = 'muted', className, compact }: NodeProps) {
-  const dot =
-    tone === 'primary'
-      ? 'bg-ase-primary shadow-[0_0_14px_rgba(56,189,248,0.28)]'
-      : tone === 'accent'
-        ? 'bg-ase-accent shadow-[0_0_14px_rgba(34,211,238,0.22)]'
-        : 'bg-white/40'
-
-  return (
-    <div
-      className={cn(
-        'group relative rounded-xl border border-white/[0.07] bg-white/[0.025] backdrop-blur-sm',
-        'transition duration-200 hover:border-white/12 hover:bg-white/[0.045]',
-        compact ? 'px-3 py-2.5' : 'px-3.5 py-3 sm:px-4 sm:py-3.5',
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        <span className={cn('h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5', dot)} />
-        <div className="min-w-0 text-sm font-semibold leading-snug text-ase-text">{label}</div>
-      </div>
-      {!compact && (
-        <div className="mt-1 pl-[1.375rem] text-[11px] leading-snug text-ase-muted sm:text-xs">Module</div>
-      )}
-      <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition duration-200 group-hover:opacity-100">
-        <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-ase-primary/8 via-ase-accent/6 to-transparent blur-xl" />
-      </div>
-    </div>
-  )
+function planDotTone(code: string): PlanDotTone {
+  const slug = code.trim().toLowerCase()
+  if (slug.includes('enterprise')) return 'purple'
+  if (slug.includes('professional') || slug === 'pro' || slug.startsWith('pro_')) return 'blue'
+  return 'gray'
 }
 
-function HubLines() {
-  const gid = useId().replace(/:/g, '')
-  const gradId = `arch-line-${gid}`
-  return (
-    <svg
-      className="pointer-events-none absolute inset-0 z-0 h-full w-full text-white/[0.1]"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
-          <stop offset="38%" stopColor="currentColor" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0.1" />
-        </linearGradient>
-      </defs>
-      <path d="M 50 52 L 18 18" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-      <path d="M 50 52 L 50 14" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-      <path d="M 50 52 L 82 18" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-      <path d="M 50 52 L 20 78" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-      <path d="M 50 52 L 50 88" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-      <path d="M 50 52 L 80 78" fill="none" stroke={`url(#${gradId})`} strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
+function formatPlansCount(t: (key: string) => unknown, count: number): string {
+  return (t('hero.preview.plansCount') as string).replace('{{count}}', String(count))
 }
 
-function CorePanel({ compact }: { compact?: boolean }) {
-  return (
-    <div
-      className={cn(
-        'relative z-[1] rounded-2xl border border-white/[0.08] bg-white/[0.04] text-center backdrop-blur-sm',
-        compact ? 'px-4 py-4' : 'px-4 py-4 sm:px-5 sm:py-5',
-      )}
-    >
-      <div className="mx-auto mb-2.5 h-8 w-8 rounded-xl bg-ase-primary/12 shadow-[0_0_20px_rgba(56,189,248,0.18)] sm:mb-3 sm:h-9 sm:w-9 sm:rounded-2xl" />
-      <div className="text-sm font-semibold text-ase-text">ASE Platform Core</div>
-      <div className="mt-1 text-xs leading-snug text-ase-muted sm:text-[13px]">
-        Policies · Events · APIs · Observability
-      </div>
-      <div className={cn('mt-3 grid gap-2 sm:mt-4', compact ? 'grid-cols-3' : 'grid-cols-3 gap-2 sm:gap-2.5')}>
-        <MiniMetric label="Latency" value="82ms" />
-        <MiniMetric label="Policies" value="12" />
-        <MiniMetric label="Tenants" value="1" />
-      </div>
-    </div>
-  )
+function serviceCategoryLabel(t: (key: string) => unknown, category: ServiceCategory): string {
+  const key = `hero.preview.categories.${category}`
+  const label = t(key)
+  return typeof label === 'string' ? label : category
 }
 
 export function SystemArchitectureVisual() {
+  const { t } = useI18n()
+
+  const [plansQuery, servicesQuery, healthQuery] = useQueries({
+    queries: [
+      {
+        queryKey: ['hero-preview', 'plans'],
+        queryFn: listPlansCatalog,
+        staleTime: 60_000,
+        retry: 1,
+      },
+      {
+        queryKey: ['hero-preview', 'services'],
+        queryFn: () => listPublicServices({ limit: 3 }),
+        staleTime: 60_000,
+        retry: 1,
+      },
+      {
+        queryKey: ['hero-preview', 'health'],
+        queryFn: fetchPlatformHealth,
+        staleTime: 30_000,
+        retry: 1,
+      },
+    ],
+  })
+
+  const isLoading = plansQuery.isLoading || servicesQuery.isLoading || healthQuery.isLoading
+  const plans = plansQuery.data ?? []
+  const services = servicesQuery.data ?? []
+  const health = healthQuery.data
+  const systemLive = health?.backendOk === true
+
   return (
-    <div className="relative w-full min-w-0">
+    <div className="relative w-full min-w-0" aria-label="ASE Platform Preview">
       <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-gradient-to-tr from-ase-primary/10 via-ase-accent/8 to-transparent blur-2xl sm:-inset-8" />
       <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-ase-primary/10 blur-3xl sm:h-48 sm:w-48" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-36 w-36 rounded-full bg-ase-accent/8 blur-3xl sm:h-44 sm:w-44" />
@@ -100,111 +76,79 @@ export function SystemArchitectureVisual() {
       <Card
         interactive
         className={cn(
-          'relative overflow-hidden rounded-2xl border-white/[0.06] bg-ase-surface/45 p-4 backdrop-blur-md sm:p-5 lg:p-6',
+          'relative overflow-hidden rounded-2xl border-white/[0.06] bg-ase-surface p-4 sm:p-5 lg:p-6',
           'shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_16px_48px_rgba(0,0,0,0.45)]',
         )}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-ase-text">System architecture preview</div>
-            <div className="mt-0.5 text-xs leading-relaxed text-ase-text2 sm:text-sm">
-              SaaS Core · Auth · RBAC · Billing · Products · Audit
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Badge variant="info" className="border-white/10 bg-white/[0.04] text-xs text-ase-text2 sm:text-[13px]">
-              Multi-tenant
-            </Badge>
-            <Badge variant="info" className="border-ase-primary/25 bg-ase-primary/8 text-xs sm:text-[13px]">
-              RBAC-ready
-            </Badge>
-          </div>
-        </div>
-
-        {/* Mobile / tablet: compact stack */}
-        <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent lg:hidden">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px]" />
-          <div className="relative z-[1] space-y-4 p-4 sm:p-5">
-            <CorePanel compact />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3">
-              <Node label="Auth" tone="primary" compact />
-              <Node label="RBAC" tone="accent" compact />
-              <Node label="Billing" compact />
-              <Node label="Products" compact />
-              <Node label="Organizations" compact />
-              <Node label="Audit" compact />
-            </div>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ase-muted">Activity</span>
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ase-accent/70 shadow-[0_0_12px_rgba(34,211,238,0.2)]" />
-              </div>
-              <div className="mt-2 space-y-1.5">
-                <FeedRow label="Token issued" meta="2m" />
-                <FeedRow label="Role linked" meta="9m" />
-              </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="text-sm font-semibold text-ase-text">{t('hero.preview.title')}</div>
+              {isLoading ? (
+                <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+              ) : (
+                <Badge
+                  variant="info"
+                  className={cn(
+                    'text-xs sm:text-[13px]',
+                    systemLive
+                      ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+                      : 'border-amber-400/30 bg-amber-400/10 text-amber-300',
+                  )}
+                >
+                  {systemLive ? t('hero.preview.liveBadge') : t('hero.preview.maintenanceBadge')}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Desktop: grid + hub lines — no overlapping absolutes */}
-        <div className="relative mt-5 hidden min-h-[400px] w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(56,189,248,0.08),transparent_55%)] lg:block lg:min-h-[420px] xl:min-h-[440px]">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.2] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent lg:mt-5">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px] lg:[background-size:28px_28px]" />
 
-          <div className="relative z-[2] grid min-h-[400px] grid-cols-3 grid-rows-[auto_1fr_auto] gap-x-6 gap-y-7 px-5 pb-6 pt-5 xl:min-h-[420px] xl:gap-x-8 xl:gap-y-8 xl:px-6 xl:pb-7 xl:pt-6">
-            <div className="col-start-1 row-start-1 self-end justify-self-start">
-              <Node label="Auth" tone="primary" className="w-full max-w-[200px]" />
-            </div>
-            <div className="col-start-2 row-start-1 justify-self-center self-end">
-              <Node label="Products" className="w-full max-w-[200px]" />
-            </div>
-            <div className="col-start-3 row-start-1 self-end justify-self-end">
-              <Node label="Organizations" className="w-full max-w-[220px]" />
-            </div>
+          <div className="relative z-[1] space-y-4 p-4 sm:p-5 lg:space-y-5 lg:p-6">
+            {isLoading ? (
+              <PreviewSkeleton />
+            ) : (
+              <>
+                <PlansSection
+                  plans={plans}
+                  failed={plansQuery.isError}
+                  perMonth={t('hero.preview.perMonth') as string}
+                  title={t('hero.preview.plansTitle') as string}
+                  unavailable={t('hero.preview.unavailable') as string}
+                />
 
-            <div className="relative col-span-3 row-start-2 flex min-h-[200px] items-center justify-center xl:min-h-[220px]">
-              <div className="pointer-events-none absolute inset-2 rounded-2xl bg-ase-primary/[0.03] blur-3xl" />
-              <HubLines />
-              <div className="relative z-[2] w-full max-w-[300px] xl:max-w-[320px]">
-                <CorePanel />
-              </div>
-            </div>
+                <ServicesSection
+                  services={services}
+                  failed={servicesQuery.isError}
+                  title={t('hero.preview.servicesTitle') as string}
+                  unavailable={t('hero.preview.unavailable') as string}
+                  categoryLabel={(category) => serviceCategoryLabel(t, category)}
+                />
 
-            <div className="col-start-1 row-start-3 self-start justify-self-start">
-              <div className="w-full max-w-[220px] space-y-5">
-                <Node label="RBAC" tone="accent" />
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">Activity</div>
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ase-accent/70 shadow-[0_0_12px_rgba(34,211,238,0.2)]" />
-                  </div>
-                  <div className="mt-2 space-y-1.5">
-                    <FeedRow label="Token issued" meta="2m" />
-                    <FeedRow label="Role linked" meta="9m" />
-                    <FeedRow label="Plan synced" meta="1h" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-start-2 row-start-3 self-start justify-self-center">
-              <Node label="Audit" className="w-full max-w-[200px]" />
-            </div>
-
-            <div className="col-start-3 row-start-3 self-start justify-self-end">
-              <div className="w-full max-w-[220px] space-y-5">
-                <Node label="Billing" />
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 backdrop-blur-sm">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">Status</div>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2">
-                    <MiniStat label="Auth" ok />
-                    <MiniStat label="RBAC" ok />
-                    <MiniStat label="Billing" ok />
-                    <MiniStat label="Audit" ok />
-                  </div>
-                </div>
-              </div>
-            </div>
+                <StatusSection
+                  health={health}
+                  healthFailed={healthQuery.isError}
+                  plansFailed={plansQuery.isError}
+                  apiActive={!plansQuery.isError}
+                  title={t('hero.preview.statusTitle') as string}
+                  labels={{
+                    backend: t('hero.preview.status.backend') as string,
+                    db: t('hero.preview.status.db') as string,
+                    api: t('hero.preview.status.api') as string,
+                    plans: t('hero.preview.status.plans') as string,
+                  }}
+                  values={{
+                    ok: t('hero.preview.statusValues.ok') as string,
+                    error: t('hero.preview.statusValues.error') as string,
+                    active: t('hero.preview.statusValues.active') as string,
+                  }}
+                  plansCountLabel={formatPlansCount(t, plans.length)}
+                  unavailable={t('hero.preview.unavailable') as string}
+                />
+              </>
+            )}
           </div>
         </div>
       </Card>
@@ -212,37 +156,227 @@ export function SystemArchitectureVisual() {
   )
 }
 
-function MiniMetric({ label, value }: { label: string; value: string }) {
+function PreviewSkeleton() {
   return (
-    <div className="rounded-lg border border-white/[0.07] bg-ase-bg2/35 px-2 py-1.5 sm:rounded-xl sm:px-2.5 sm:py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted sm:text-xs">{label}</div>
-      <div className="mt-0.5 text-sm font-extrabold tracking-tight text-ase-text">{value}</div>
+    <div className="space-y-4 lg:space-y-5" aria-busy="true" aria-live="polite">
+      <div>
+        <div className="mb-3 h-3 w-16 animate-pulse rounded bg-white/10" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="h-16 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.04]" />
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="mb-3 h-3 w-20 animate-pulse rounded bg-white/10" />
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="h-10 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.04]" />
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-14 animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.04]" />
+        ))}
+      </div>
     </div>
   )
 }
 
-function FeedRow({ label, meta }: { label: string; meta: string }) {
+function PlansSection({
+  plans,
+  failed,
+  perMonth,
+  title,
+  unavailable,
+}: {
+  plans: Plan[]
+  failed: boolean
+  perMonth: string
+  title: string
+  unavailable: string
+}) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-ase-bg2/30 px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2">
-      <div className="text-xs font-medium text-ase-text2">{label}</div>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{meta}</div>
+    <div className={cn(failed && 'opacity-60')}>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ase-muted">{title}</div>
+      {failed ? (
+        <UnavailablePanel message={unavailable} />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className="group relative rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3 transition duration-200 hover:border-white/12 hover:bg-white/[0.045] sm:px-4"
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    'h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5',
+                    planDotToneClass[planDotTone(plan.code)],
+                  )}
+                />
+                <div className="min-w-0 text-sm font-semibold leading-snug text-ase-text">{plan.name}</div>
+              </div>
+              <div className="mt-2 pl-[1.125rem] text-sm font-extrabold tracking-tight text-ase-text sm:pl-[1.375rem]">
+                {formatPlanPrice(plan)}
+                <span className="ml-1 text-xs font-semibold text-ase-muted">{perMonth}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function MiniStat({ label, ok }: { label: string; ok?: boolean }) {
+function ServicesSection({
+  services,
+  failed,
+  title,
+  unavailable,
+  categoryLabel,
+}: {
+  services: Service[]
+  failed: boolean
+  title: string
+  unavailable: string
+  categoryLabel: (category: ServiceCategory) => string
+}) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-ase-bg2/30 px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2">
+    <div className={cn('rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-3.5', failed && 'opacity-60')}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{title}</span>
+        {!failed ? (
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ase-accent/70 shadow-[0_0_12px_rgba(34,211,238,0.2)]" />
+        ) : null}
+      </div>
+      {failed ? (
+        <div className="mt-2">
+          <UnavailablePanel message={unavailable} compact />
+        </div>
+      ) : services.length === 0 ? (
+        <div className="mt-2">
+          <UnavailablePanel message={unavailable} compact />
+        </div>
+      ) : (
+        <div className="mt-2 space-y-1.5">
+          {services.map((service) => (
+            <div
+              key={service.id}
+              className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-ase-bg2/30 px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2"
+            >
+              <div className="min-w-0 truncate text-xs font-medium text-ase-text2">{service.name}</div>
+              <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold text-ase-text2 sm:text-[11px]">
+                {categoryLabel(service.category)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatusSection({
+  health,
+  healthFailed,
+  plansFailed,
+  apiActive,
+  title,
+  labels,
+  values,
+  plansCountLabel,
+  unavailable,
+}: {
+  health?: { backendOk: boolean; dbOk: boolean }
+  healthFailed: boolean
+  plansFailed: boolean
+  apiActive: boolean
+  title: string
+  labels: { backend: string; db: string; api: string; plans: string }
+  values: { ok: string; error: string; active: string }
+  plansCountLabel: string
+  unavailable: string
+}) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:p-3.5">
+      <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{title}</div>
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        <StatusRow
+          label={labels.backend}
+          value={healthFailed ? values.error : health?.backendOk ? values.ok : values.error}
+          state={!healthFailed && health?.backendOk ? 'ok' : 'error'}
+          muted={healthFailed}
+        />
+        <StatusRow
+          label={labels.db}
+          value={healthFailed ? values.error : health?.dbOk ? values.ok : values.error}
+          state={!healthFailed && health?.dbOk ? 'ok' : 'error'}
+          muted={healthFailed}
+        />
+        <StatusRow
+          label={labels.api}
+          value={apiActive ? values.active : values.error}
+          state={apiActive ? 'ok' : 'error'}
+          muted={!apiActive}
+        />
+        <StatusRow
+          label={labels.plans}
+          value={plansFailed ? unavailable : plansCountLabel}
+          state={plansFailed ? 'error' : 'ok'}
+          muted={plansFailed}
+        />
+      </div>
+    </div>
+  )
+}
+
+function StatusRow({
+  label,
+  value,
+  state,
+  muted,
+}: {
+  label: string
+  value: string
+  state: 'ok' | 'error'
+  muted?: boolean
+}) {
+  const isOk = state === 'ok'
+
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-white/[0.06] bg-ase-bg2/30 px-2.5 py-1.5 sm:rounded-xl sm:px-3 sm:py-2',
+        muted && 'opacity-60',
+      )}
+    >
       <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
       <div className="mt-1 flex items-center gap-1.5">
         <span
           className={cn(
             'h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2',
-            ok ? 'bg-ase-success/80 shadow-[0_0_12px_rgba(34,197,94,0.12)]' : 'bg-ase-warning/80',
+            isOk
+              ? 'bg-ase-success/80 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+              : 'bg-white/30',
           )}
         />
-        <span className="text-xs font-semibold text-ase-text2">{ok ? 'ok' : 'degraded'}</span>
+        <span className={cn('text-xs font-semibold', isOk ? 'text-ase-text2' : 'text-ase-muted')}>{value}</span>
       </div>
+    </div>
+  )
+}
+
+function UnavailablePanel({ message, compact }: { message: string; compact?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-white/[0.06] bg-white/[0.02] text-center text-xs text-ase-muted',
+        compact ? 'px-3 py-2' : 'px-4 py-6',
+      )}
+    >
+      {message}
     </div>
   )
 }

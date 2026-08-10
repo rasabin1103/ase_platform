@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -13,6 +15,9 @@ from app.modules.access_requests.schemas import (
     AccessRequestUpdate,
     CreatorApplicationCreate,
 )
+from app.modules.notifications.service import NotificationsService
+
+logger = logging.getLogger(__name__)
 
 
 class AccessRequestsService:
@@ -66,6 +71,16 @@ class AccessRequestsService:
         self.repo.add(item)
         self.db.commit()
         self.db.refresh(item)
+        try:
+            NotificationsService(self.db).notify_superadmins(
+                type="access_request_created",
+                title=f"Nueva solicitud: {item.title}",
+                body=item.description,
+                link="/requests",
+            )
+        except Exception:
+            self.db.rollback()
+            logger.exception("Failed to notify super admins about new access request %s", item.id)
         return self._to_read(item)
 
     def create_creator_application(

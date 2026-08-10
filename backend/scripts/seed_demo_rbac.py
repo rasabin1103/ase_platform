@@ -41,8 +41,17 @@ from app.modules.auth.security import hash_password
 
 DEMO_PASSWORD = os.environ.get("DEMO_SEED_PASSWORD", "ChangeMeDemo123!")
 
+# The platform super_admin always gets this fixed identity. Only the email
+# has a source-controlled default (not sensitive); the password must come
+# from the SUPER_ADMIN_PASSWORD env var (set it in your local, gitignored
+# .env) — it deliberately has no real-password fallback here so it can
+# never end up committed to git via this file.
+SUPER_ADMIN_EMAIL = os.environ.get("SUPER_ADMIN_EMAIL", "rasabin1103@gmail.com")
+SUPER_ADMIN_PASSWORD = os.environ.get("SUPER_ADMIN_PASSWORD", DEMO_PASSWORD)
+PASSWORD_OVERRIDES: dict[str, str] = {SUPER_ADMIN_EMAIL: SUPER_ADMIN_PASSWORD}
+
 DEMO_USERS: tuple[tuple[str, str], ...] = (
-    ("rasabin01@gmail.com", "super_admin"),
+    (SUPER_ADMIN_EMAIL, "super_admin"),
     ("rasabin02@gmail.com", "org_owner"),
     ("rasabin03@gmail.com", "org_admin"),
     ("rasabin04@gmail.com", "member"),
@@ -55,7 +64,7 @@ DEMO_PERSONAL_SLUG = "personal-rasabin05"
 DEMO_CREATOR_SLUG = "personal-rasabin06"
 MVP_PLATFORM_SLUG = "ase-platform"
 MVP_DEMO_USERS: tuple[tuple[str, str], ...] = (
-    ("rasabin01@gmail.com", "super_admin"),
+    (SUPER_ADMIN_EMAIL, "super_admin"),
     ("rasabin05@gmail.com", "independent_user"),
 )
 
@@ -71,11 +80,12 @@ class SeedRbacResult:
 
 
 def _upsert_user(db: Session, email: str, *, display_name: str) -> tuple[User, bool]:
+    password = PASSWORD_OVERRIDES.get(email, DEMO_PASSWORD)
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if user is None:
         user = User(
             email=email,
-            password_hash=hash_password(DEMO_PASSWORD),
+            password_hash=hash_password(password),
             display_name=display_name,
             first_name=display_name.split()[0],
             last_name=display_name.split()[-1] if " " in display_name else None,
@@ -84,7 +94,7 @@ def _upsert_user(db: Session, email: str, *, display_name: str) -> tuple[User, b
         db.add(user)
         db.flush()
         return user, True
-    user.password_hash = hash_password(DEMO_PASSWORD)
+    user.password_hash = hash_password(password)
     user.status = UserStatus.active
     db.flush()
     return user, False
@@ -186,7 +196,7 @@ def _seed_mvp_users(db: Session) -> SeedRbacResult:
         if is_new:
             created_users += 1
 
-    super_admin = users_by_email["rasabin01@gmail.com"]
+    super_admin = users_by_email[SUPER_ADMIN_EMAIL]
     independent = users_by_email["rasabin05@gmail.com"]
 
     platform_org, platform_new = _upsert_org(
@@ -273,7 +283,7 @@ def seed_demo_rbac_db(db: Session) -> SeedRbacResult:
         if is_new:
             created_users += 1
 
-    super_admin = users_by_email["rasabin01@gmail.com"]
+    super_admin = users_by_email[SUPER_ADMIN_EMAIL]
     org_owner = users_by_email["rasabin02@gmail.com"]
     org_admin = users_by_email["rasabin03@gmail.com"]
     member = users_by_email["rasabin04@gmail.com"]

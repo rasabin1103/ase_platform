@@ -1,4 +1,4 @@
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { Card } from '../ui/Card'
 import { useI18n } from '../../i18n'
 
@@ -13,9 +13,7 @@ export function WhyPillarsSection() {
   return (
     <section className="relative border-t border-white/5">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-28">
-        <Badge variant="info" className="w-fit">
-          {t('why.badge')}
-        </Badge>
+        <Eyebrow>{t('why.badge')}</Eyebrow>
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
           {t('why.title')}
         </h2>
@@ -28,9 +26,8 @@ export function WhyPillarsSection() {
             <Card
               key={p.title}
               interactive
-              className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/70 p-8 backdrop-blur"
+              className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-8"
             >
-              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-ase-primary/10 blur-3xl" />
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-semibold text-ase-text">{p.title}</div>

@@ -1,6 +1,16 @@
 @import 'tailwindcss';
 @config '../tailwind.config.ts';
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 html,
 body,
 #root {
@@ -9,16 +19,97 @@ body,
 
 @layer base {
   body {
-    @apply m-0 bg-ase-bg text-ase-text font-sans;
+    @apply m-0 bg-ase-bg text-ase-text font-sans text-body-md antialiased;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-tap-highlight-color: rgba(56, 189, 248, 0.18);
+  }
+
+  h1 {
+    @apply font-display text-heading-xl font-semibold text-ase-text;
+  }
+
+  h2 {
+    @apply font-display text-heading-lg font-semibold text-ase-text;
+  }
+
+  h3 {
+    @apply font-display text-heading-md font-semibold text-ase-text;
+  }
+
+  h4 {
+    @apply font-display text-heading-sm font-semibold text-ase-text;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@layer utilities {
+  /* Explicitly disallow "glass" effects project-wide */
+  .backdrop-blur,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl {
+    backdrop-filter: none !important;
+  }
+
+  /* Disallow aurora/gradient backgrounds from utility classes */
+  .bg-gradient-to-t,
+  .bg-gradient-to-tr,
+  .bg-gradient-to-r,
+  .bg-gradient-to-br,
+  .bg-gradient-to-b,
+  .bg-gradient-to-bl,
+  .bg-gradient-to-l,
+  .bg-gradient-to-tl {
+    background-image: none !important;
+  }
+
+  /* Disallow arbitrary-value gradient backgrounds (e.g. bg-[radial-gradient(...)]). */
+  [class*='bg-[radial-gradient'],
+  [class*='bg-[linear-gradient'] {
+    background-image: none !important;
+  }
+
+  /* Replace default Tailwind shadow presets with our custom soft shadow */
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 32px rgba(0, 0, 0, 0.45) !important;
   }
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.25);
+  background: rgba(56, 189, 248, 0.22);
 }
 
-/* Improve focus rings on dark UI */
+/* Brand focus — replaces browser default blue outline (DESIGN.md) */
+:focus {
+  outline: none;
+}
+
 :focus-visible {
-  outline: 2px solid rgba(56, 189, 248, 0.7);
+  outline: 2px solid rgba(56, 189, 248, 0.75);
   outline-offset: 2px;
+}
+
+@layer utilities {
+  .ase-focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg;
+  }
+
+  .ase-text-link {
+    @apply text-ase-text2 transition-colors duration-200 hover:text-ase-brand;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-sm;
+  }
 }

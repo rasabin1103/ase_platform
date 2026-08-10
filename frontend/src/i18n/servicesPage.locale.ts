@@ -3,19 +3,48 @@
  */
 
 import { servicesPageCatalogEsByCode } from './servicesPage.catalog.es'
+import { servicesPageCatalogEnByCode } from './servicesPage.catalog.en'
 
 export const servicesPageEn = {
   hero: {
-    badge: 'Arce Sabin Engineering',
-    title: 'Engineering services, frameworks and digital products designed for scalable organizations.',
+    badge: 'What ASE includes',
+    title: 'A complete ecosystem for professionals and teams who take quality seriously.',
     subtitle:
-      'A full-stack partner for SaaS platforms, QA automation, internal workflows, training and premium technical assets — delivered with governance and craft.',
+      'From hands-on training to ready-to-use tools and senior consulting — everything curated, integrated and accessible with your ASE plan.',
     primaryCta: 'Talk to us',
     secondaryCta: 'Platform overview',
     stats: {
-      delivery: { label: 'Delivery', value: 'Incremental' },
-      model: { label: 'Operating model', value: 'RBAC-first' },
-      stack: { label: 'Stack posture', value: 'API-first' },
+      delivery: { label: 'TRAINING', value: 'Practical courses and labs with real experts' },
+      model: { label: 'RESOURCES', value: 'Templates, frameworks and ready-to-use tools' },
+      stack: { label: 'CONSULTING', value: 'Access to senior services included in Enterprise plans' },
+    },
+  },
+  inside: {
+    title: 'What you find inside ASE',
+    cards: {
+      c1: {
+        icon: '◇',
+        title: 'Courses and certifications',
+        description:
+          'Structured learning paths for QA Engineers, Automation Leads and full teams.',
+      },
+      c2: {
+        icon: '◆',
+        title: 'Templates and frameworks',
+        description:
+          'Documentation, QA strategies, checklists and reporting models ready to use in your project.',
+      },
+      c3: {
+        icon: '▣',
+        title: 'Tools and resources',
+        description:
+          'Technical assets, scripts, configurations and CI/CD integration guides curated by experts.',
+      },
+      c4: {
+        icon: '⬡',
+        title: 'Consulting and services',
+        description: 'Direct access to senior QA consulting for companies on the Enterprise plan.',
+      },
     },
   },
   visuals: {
@@ -205,22 +234,50 @@ export const servicesPageEn = {
     retry: 'Retry',
   },
   catalog: {
-    byCode: {},
+    byCode: servicesPageCatalogEnByCode,
   },
 } as const
 
 export const servicesPageEs = {
   hero: {
-    badge: 'Arce Sabin Engineering',
-    title: 'Servicios de ingeniería, frameworks y productos digitales para organizaciones que escalan.',
+    badge: 'Qué incluye ASE',
+    title: 'Un ecosistema completo para profesionales y equipos que se toman en serio la calidad.',
     subtitle:
-      'Partner full-stack para plataformas SaaS, automatización QA, workflows internos, formación y assets técnicos premium — con gobernanza y oficio.',
+      'Desde formación práctica hasta herramientas listas para usar y consultoría senior — todo curado, todo integrado, todo accesible con tu plan ASE.',
     primaryCta: 'Hablemos',
     secondaryCta: 'Overview de plataforma',
     stats: {
-      delivery: { label: 'Entrega', value: 'Incremental' },
-      model: { label: 'Modelo operativo', value: 'RBAC-first' },
-      stack: { label: 'Postura de stack', value: 'API-first' },
+      delivery: { label: 'FORMACIÓN', value: 'Cursos y laboratorios prácticos con expertos reales' },
+      model: { label: 'RECURSOS', value: 'Plantillas, frameworks y herramientas listas para usar' },
+      stack: { label: 'CONSULTORÍA', value: 'Acceso a servicios senior incluidos en planes Enterprise' },
+    },
+  },
+  inside: {
+    title: 'Lo que encuentras dentro de ASE',
+    cards: {
+      c1: {
+        icon: '◇',
+        title: 'Cursos y certificaciones',
+        description:
+          'Rutas de aprendizaje estructuradas para QA Engineers, Automation Leads y equipos completos.',
+      },
+      c2: {
+        icon: '◆',
+        title: 'Plantillas y frameworks',
+        description:
+          'Documentación, estrategias QA, checklists y modelos de reporting listos para usar en tu proyecto.',
+      },
+      c3: {
+        icon: '▣',
+        title: 'Herramientas y recursos',
+        description:
+          'Assets técnicos, scripts, configuraciones y guías de integración CI/CD curadas por expertos.',
+      },
+      c4: {
+        icon: '⬡',
+        title: 'Consultoría y servicios',
+        description: 'Acceso directo a consultoría QA senior para empresas con plan Enterprise.',
+      },
     },
   },
   visuals: {

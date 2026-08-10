@@ -8,6 +8,7 @@ import {
   type MeAccessRequest,
 } from '../api/access_requests.api'
 import { AccessRequestModal } from '../components/access-requests/AccessRequestModal'
+import { SuggestionBox } from '../components/requests/SuggestionBox'
 import { AuthenticatedImage } from '../components/ui/AuthenticatedImage'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -40,7 +41,7 @@ function formatDate(iso: string) {
 
 export function RequestsPage() {
   const { t } = useI18n()
-  const { isSuperuser, primaryRole, can } = useRbac()
+  const { isSuperuser, primaryRole, can, hasPermission } = useRbac()
   const { currentUser, loadCurrentUser } = useAuth()
   const qc = useQueryClient()
   const isAdminReviewer = isSuperuser || primaryRole === 'super_admin'
@@ -71,8 +72,13 @@ export function RequestsPage() {
 
   const creatorStatus = currentUser?.creator_status ?? 'none'
   const canCreate = Boolean(currentUser?.can_create_content)
+  const isIndependentUser = primaryRole === 'independent_user' || hasPermission('creator.request')
   const showCreatorCta =
-    !isAdminReviewer && !canCreate && creatorStatus !== 'pending' && creatorStatus !== 'approved'
+    !isAdminReviewer &&
+    isIndependentUser &&
+    !canCreate &&
+    creatorStatus !== 'pending' &&
+    creatorStatus !== 'approved'
 
   const requestTypeLabel = (type: string) => {
     const key = `requestsPage.requestTypes.${type}` as const
@@ -107,6 +113,8 @@ export function RequestsPage() {
           ) : null
         }
       />
+
+      {!isAdminReviewer ? <SuggestionBox /> : null}
 
       {!isAdminReviewer && canCreate ? (
         <Card className="border-cyan-300/20 bg-cyan-300/5 p-6">

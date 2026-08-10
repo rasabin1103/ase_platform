@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router-dom'
+import { ScrollToTop } from '../layout/ScrollToTop'
 import { PublicHeader } from './PublicHeader'
 import { PublicFooter } from './PublicFooter'
 
 export function AuthPublicLayout() {
   return (
     <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+      <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-80 left-1/2 h-[720px] w-[1200px] -translate-x-1/2 rounded-full bg-gradient-to-r from-ase-primary/20 via-ase-accent/14 to-transparent blur-3xl" />
         <div className="absolute top-40 left-[-260px] h-[520px] w-[520px] rounded-full bg-gradient-to-tr from-ase-accent/10 via-transparent to-ase-primary/12 blur-3xl" />

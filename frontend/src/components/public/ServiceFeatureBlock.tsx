@@ -1,5 +1,8 @@
 import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
+import { useI18n, tStringArray } from '../../i18n'
+
+export type ServiceStat = { label: string; value: string }
 
 export type ServiceFeatureBlockProps = {
   icon: React.ReactNode
@@ -7,6 +10,7 @@ export type ServiceFeatureBlockProps = {
   title: string
   description: string
   bullets: string[]
+  stats: ServiceStat[]
   reverse?: boolean
 }
 
@@ -26,20 +30,23 @@ export function ServiceFeatureBlock({
   title,
   description,
   bullets,
+  stats,
   reverse,
 }: ServiceFeatureBlockProps) {
+  const { t } = useI18n()
+  const methodology = tStringArray(t, 'services.methodology')
+  const blueprintLabel = t('services.blueprintLabel') as string
+
   return (
     <div className={cn('grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14', reverse && 'lg:[&>*:first-child]:order-2')}>
       {/* Visual */}
       <Card
         interactive
         className={cn(
-          'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/70 p-8 backdrop-blur',
+          'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-8',
           'shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_rgba(0,0,0,0.55)]',
         )}
       >
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-ase-primary/12 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-ase-accent/10 blur-3xl" />
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
@@ -47,28 +54,24 @@ export function ServiceFeatureBlock({
             </div>
             <div>
               <div className="text-sm font-semibold text-ase-text">{title}</div>
-              <div className="mt-0.5 text-xs text-ase-muted">Delivery blueprint</div>
+              <div className="mt-0.5 text-xs text-ase-muted">{blueprintLabel}</div>
             </div>
           </div>
           <IndexPill index={index} />
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <MiniCard label="Outcome" value="Operational clarity" />
-          <MiniCard label="Speed" value="Incremental releases" />
-          <MiniCard label="Quality" value="Automation-first" />
-          <MiniCard label="Control" value="Governed access" />
+          {stats.map((s) => (
+            <MiniCard key={s.label} label={s.label} value={s.value} />
+          ))}
         </div>
 
         <div className="mt-6 h-px bg-white/5" />
 
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <Chip>Design</Chip>
-          <Chip>Build</Chip>
-          <Chip>Automate</Chip>
-          <Chip>Observe</Chip>
-          <Chip>Scale</Chip>
-          <Chip>Harden</Chip>
+          {methodology.map((step) => (
+            <Chip key={step}>{step}</Chip>
+          ))}
         </div>
       </Card>
 

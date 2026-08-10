@@ -4,22 +4,12 @@ import { servicesPageEn, servicesPageEs } from './servicesPage.locale'
 import { platformPageEn, platformPageEs } from './platformPage.locale'
 /** Public `/about` copy (EN + ES). Merged as root key `aboutPage`. */
 import { aboutPageEn, aboutPageEs } from './aboutPage.locale'
-/** Private `/dashboard` copy (EN + ES). Merged as root key `dashboardPage`. */
-import { dashboardPageEn, dashboardPageEs } from './dashboardPage.locale'
 /** Private `/organizations` copy (EN + ES). Merged as root key `organizationsPage`. */
 import { organizationsPageEn, organizationsPageEs } from './organizationsPage.locale'
 /** Private `/users` copy (EN + ES). Merged as root key `usersPage`. */
 import { usersPageEn, usersPageEs } from './usersPage.locale'
 /** Private `/plans` copy (EN + ES). Merged as root key `plansPage`. */
 import { plansPageEn, plansPageEs } from './plansPage.locale'
-/** Private `/products` copy (EN + ES). Merged as root key `productsPage`. */
-import { productsPageEn, productsPageEs } from './productsPage.locale'
-/** Private `/subscriptions` copy (EN + ES). Merged as root key `subscriptionsPage`. */
-import { subscriptionsPageEn, subscriptionsPageEs } from './subscriptionsPage.locale'
-/** Private `/courses` copy (EN + ES). Merged as root key `coursesPage`. */
-import { coursesPageEn, coursesPageEs } from './coursesPage.locale'
-/** Private `/audit-logs` copy (EN + ES). Merged as root key `auditLogsPage`. */
-import { auditLogsPageEn, auditLogsPageEs } from './auditLogsPage.locale'
 import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import {
@@ -35,7 +25,11 @@ import {
   adminCatalogEs,
   adminPurchasesEn,
   adminPurchasesEs,
+  servicesAdminEn,
+  servicesAdminEs,
 } from './catalog.locale'
+/** Private `/organization/*` copy (EN + ES). Merged as root key `organizationWorkspace`. */
+import { organizationWorkspaceEn, organizationWorkspaceEs } from './organizationWorkspace.locale'
 
 export type Language = 'en' | 'es'
 
@@ -43,24 +37,29 @@ export const translations = {
   en: {
     nav: {
       home: 'Home',
-      services: 'Services',
+      whatsIncluded: "What's included",
       platform: 'Platform',
-      pricing: 'Pricing',
-      about: 'About',
+      plans: 'Plans',
+      about: 'About ASE',
       story: 'Story',
       contact: 'Contact',
+      cta: 'Get started free',
+      clients: 'Client access',
+    },
+    notFound: {
+      badge: 'Page not found',
+      title: 'This page does not exist or was moved.',
+      subtitle: 'Check the URL or return to the homepage to continue exploring ASE.',
+      home: 'Back to home',
+      contact: 'Contact us',
     },
     servicesPage: servicesPageEn,
     platformPage: platformPageEn,
     aboutPage: aboutPageEn,
-    dashboardPage: dashboardPageEn,
     organizationsPage: organizationsPageEn,
+    organizationWorkspace: organizationWorkspaceEn,
     usersPage: usersPageEn,
     plansPage: plansPageEn,
-    productsPage: productsPageEn,
-    subscriptionsPage: subscriptionsPageEn,
-    coursesPage: coursesPageEn,
-    auditLogsPage: auditLogsPageEn,
     requestsPage: requestsPageEn,
     creatorApplication: creatorApplicationEn,
     catalog: catalogEn,
@@ -69,6 +68,7 @@ export const translations = {
     adminDashboard: adminDashboardEn,
     adminCatalog: adminCatalogEn,
     adminPurchases: adminPurchasesEn,
+    servicesAdmin: servicesAdminEn,
     cta: {
       talkToUs: 'Talk to us',
       clientLogin: 'Client login',
@@ -76,14 +76,56 @@ export const translations = {
       login: 'Login',
     },
     hero: {
-      badge: 'Enterprise SaaS · QA Automation · Software Architecture',
-      title: 'Build reliable software platforms for companies that need speed, quality and control.',
+      badge: 'The reference platform for QA professionals and teams',
+      title: 'Everything you need to master software quality. In one place.',
       subtitle:
-        'Arce Sabin Engineering designs SaaS platforms, QA automation ecosystems and internal business tools for teams that want to scale without chaos.',
+        'Arce Sabin Engineering brings together courses, templates, tools, books and premium QA consulting services — designed for independent professionals and teams who want to scale without chaos. Subscribe once, access everything.',
+      primaryCta: 'Explore the platform',
+      secondaryCta: 'View plans',
       trust: {
-        governance: { label: 'Governance', value: 'RBAC · tenant boundaries · audit' },
-        quality: { label: 'Quality', value: 'automation-first mindset' },
-        speed: { label: 'Delivery speed', value: 'incremental releases' },
+        governance: {
+          label: 'FOR PROFESSIONALS',
+          value: 'Courses, templates and tools to grow as a QA Lead or SDET',
+        },
+        quality: {
+          label: 'FOR TEAMS',
+          value: 'Frameworks, automation and training for teams that deliver with quality',
+        },
+        speed: {
+          label: 'FOR COMPANIES',
+          value: 'Multi-organization plans with RBAC, auditing and consulting included',
+        },
+      },
+      preview: {
+        title: 'ASE Platform',
+        liveBadge: '● Live',
+        maintenanceBadge: '● Maintenance',
+        plansTitle: 'PLANS',
+        servicesTitle: 'SERVICES',
+        statusTitle: 'STATUS',
+        unavailable: 'Unavailable',
+        perMonth: '/mo',
+        statusValues: {
+          ok: 'ok',
+          error: 'error',
+          active: 'active',
+        },
+        plansCount: '{{count}} plans',
+        categories: {
+          platform_engineering: 'Platform',
+          qa_automation: 'QA Automation',
+          training: 'Training',
+          digital_products: 'Digital',
+          consulting: 'Consulting',
+          ai_automation: 'AI',
+          frameworks: 'Frameworks',
+        },
+        status: {
+          backend: 'BACKEND',
+          db: 'DB',
+          api: 'API',
+          plans: 'PLANS',
+        },
       },
     },
     services: {
@@ -102,6 +144,10 @@ export const translations = {
             'Operator-first dashboards and admin workflows',
             'Incremental roadmap aligned with business outcomes',
           ],
+          stats: [
+            { label: 'Typical scope', value: 'Platform MVP → scale' },
+            { label: 'Stack posture', value: 'API-first · observable' },
+          ],
         },
         s2: {
           title: 'QA Automation Architecture',
@@ -112,6 +158,10 @@ export const translations = {
             'Framework templates and best practices',
             'CI pipelines and fast feedback signals',
             'Quality gates without slowing teams down',
+          ],
+          stats: [
+            { label: 'Integration depth', value: 'Pipelines + dashboards' },
+            { label: 'Operating model', value: 'Governed velocity' },
           ],
         },
         s3: {
@@ -124,6 +174,10 @@ export const translations = {
             'Audit-ready traceability and governance',
             'Automation aligned with KPIs and ownership',
           ],
+          stats: [
+            { label: 'Outcome focus', value: 'Hours saved / week' },
+            { label: 'Safety', value: 'Human-in-the-loop' },
+          ],
         },
         s4: {
           title: 'Technical Training & Frameworks',
@@ -135,8 +189,14 @@ export const translations = {
             'Review processes and delivery discipline',
             'Reusable modules for faster iteration',
           ],
+          stats: [
+            { label: 'Formats', value: 'Remote / onsite' },
+            { label: 'Depth', value: 'Beginner → advanced' },
+          ],
         },
       },
+      methodology: ['Design', 'Build', 'Automate', 'Observe', 'Scale', 'Harden'],
+      blueprintLabel: 'Delivery blueprint',
     },
     modules: {
       badge: 'Platform modules',
@@ -195,9 +255,22 @@ export const translations = {
       },
     },
     pricing: {
-      badge: 'Pricing',
-      title: 'Plans that scale from solo to enterprise',
-      subtitle: 'Toggle monthly or yearly billing. Yearly saves up to 2 months.',
+      badge: 'Plans and pricing',
+      title: 'Choose your plan. Access the entire ASE ecosystem.',
+      subtitle: 'One price. Courses, templates, tools, resources and consulting — no surprises.',
+      starterPara:
+        'Independent QA professionals, juniors and freelancers who want to grow with quality resources.',
+      professionalPara:
+        'QA Leads, small teams, consultancies and startups that need management, automation and advanced training.',
+      enterprisePara:
+        'Companies, consultancies and academies that need multi-organization management, corporate training and consulting included.',
+      guarantee: {
+        title: 'No risk',
+        text: 'Cancel whenever you want. No lock-in. No fine print.',
+        item1: 'Cancel at any time',
+        item2: 'Support included in all plans',
+        item3: 'Immediate access after payment',
+      },
       monthly: 'Monthly',
       yearly: 'Yearly',
       save: 'Save up to 2 months',
@@ -274,6 +347,17 @@ export const translations = {
       subtitle: 'Let’s align on constraints, governance and roadmap — then ship with confidence.',
     },
     footer: {
+      tagline: 'The reference platform for QA professionals and teams.',
+      copyright: '© 2026 Arce Sabin Engineering. All rights reserved.',
+      col2Title: 'Platform',
+      col3Title: 'Company',
+      link1: "What's included",
+      link2: 'Platform',
+      link3: 'Plans',
+      link4: 'Client access',
+      link5: 'About ASE',
+      link6: 'Contact',
+      response: 'Reply within 24h',
       claim:
         'Premium software platforms and automation ecosystems — engineered for governance, quality and speed.',
       tags: { enterprise: 'Enterprise-ready', automation: 'Automation-first', rbac: 'RBAC & governance' },
@@ -344,9 +428,15 @@ export const translations = {
         contact: 'Contact',
       },
       contact: {
-        badge: 'Contact',
-        title: 'Let’s talk about your platform',
-        body: 'Share a bit of context and we’ll respond with a clear next step. No spam — just a focused conversation.',
+        badge: "LET'S TALK",
+        title: 'Have a quality challenge? Tell us about it.',
+        body:
+          "Whether you want to explore the platform, have questions about an Enterprise plan, or need QA consulting for your team — we're here. We reply within 24 hours on business days.",
+        trust1: 'Reply within 24h',
+        trust2: 'No commitment',
+        trust3: 'For Enterprise plans, consulting included',
+        footerText:
+          'You can also reach us directly at rasabin1103@gmail.com or connect on LinkedIn with Roberto Arce Sabín.',
         sendTitle: 'Send a message',
         sendSubtitle: 'We’ll reply within 1–2 business days.',
         fields: {
@@ -411,10 +501,50 @@ export const translations = {
       logout: 'Logout',
       publicSite: 'Public site',
     },
+    notifications: {
+      bellLabel: 'Notifications',
+      title: 'Notifications',
+      markAllRead: 'Mark all read',
+      empty: 'No notifications yet.',
+    },
+    suggestions: {
+      boxTitle: 'Suggestions box',
+      boxSubtitle: 'Send a request or recommendation to the ASE team.',
+      placeholder: 'What would you like to request or recommend?',
+      targetLabel: 'Send to',
+      targetPlatform: 'ASE platform (super admin)',
+      targetOrganization: 'My organization (owner/admin)',
+      send: 'Send',
+      sending: 'Sending…',
+      sent: 'Sent — thanks for the feedback.',
+      error: 'Could not send your suggestion. Try again.',
+      myTitle: 'Your suggestions',
+      empty: 'You have not sent any suggestions yet.',
+      status: { pending: 'Pending', reviewed: 'Reviewed', resolved: 'Resolved' },
+      adminNote: 'Note from the team',
+    },
+    adminSuggestions: {
+      badge: 'Feedback',
+      title: 'Suggestions box',
+      subtitle: 'Requests and recommendations submitted by users and organizations.',
+      stats: { total: 'Total', pending: 'Pending', resolved: 'Resolved' },
+      filterLabel: 'Status',
+      filterAll: 'All',
+      loadError: 'Could not load suggestions.',
+      emptyTitle: 'No suggestions yet',
+      emptyDescription: 'When users submit requests or recommendations, they will show up here.',
+      review: 'Review',
+      modalTitle: 'Review suggestion',
+      statusLabel: 'Status',
+      save: 'Save',
+      saving: 'Saving…',
+    },
     private: {
       nav: {
         dashboard: 'Dashboard',
         organizations: 'Organizations',
+        services: 'Services',
+        suggestions: 'Suggestions',
         users: 'Users',
         plans: 'Plans',
         products: 'Products',
@@ -439,6 +569,8 @@ export const translations = {
         myResources: 'My resources',
         catalogManage: 'Catalog management',
         purchasesAdmin: 'Purchases',
+        orgCatalog: 'Organization catalog',
+        orgGrant: 'Send product',
         groups: {
           command: 'Command Center',
           operations: 'Operations',
@@ -448,6 +580,7 @@ export const translations = {
           catalogs: 'Catalogs',
           library: 'My library',
           admin: 'Administration',
+          organization: 'Organization',
         },
       },
       common: {
@@ -475,24 +608,29 @@ export const translations = {
   es: {
     nav: {
       home: 'Inicio',
-      services: 'Servicios',
+      whatsIncluded: 'Qué incluye',
       platform: 'Plataforma',
-      pricing: 'Planes',
+      plans: 'Planes',
       about: 'Sobre ASE',
       story: 'Historia',
+      contact: 'Contacto',
+      cta: 'Empezar gratis',
+      clients: 'Acceso clientes',
+    },
+    notFound: {
+      badge: 'Página no encontrada',
+      title: 'Esta página no existe o fue movida.',
+      subtitle: 'Revisa la URL o vuelve al inicio para seguir explorando ASE.',
+      home: 'Volver al inicio',
       contact: 'Contacto',
     },
     servicesPage: servicesPageEs,
     platformPage: platformPageEs,
     aboutPage: aboutPageEs,
-    dashboardPage: dashboardPageEs,
     organizationsPage: organizationsPageEs,
+    organizationWorkspace: organizationWorkspaceEs,
     usersPage: usersPageEs,
     plansPage: plansPageEs,
-    productsPage: productsPageEs,
-    subscriptionsPage: subscriptionsPageEs,
-    coursesPage: coursesPageEs,
-    auditLogsPage: auditLogsPageEs,
     requestsPage: requestsPageEs,
     creatorApplication: creatorApplicationEs,
     catalog: catalogEs,
@@ -501,6 +639,7 @@ export const translations = {
     adminDashboard: adminDashboardEs,
     adminCatalog: adminCatalogEs,
     adminPurchases: adminPurchasesEs,
+    servicesAdmin: servicesAdminEs,
     cta: {
       talkToUs: 'Hablemos',
       clientLogin: 'Acceso clientes',
@@ -508,14 +647,56 @@ export const translations = {
       login: 'Acceder',
     },
     hero: {
-      badge: 'Enterprise SaaS · Automatización QA · Arquitectura de Software',
-      title: 'Construye plataformas de software fiables para empresas que necesitan velocidad, calidad y control.',
+      badge: 'La plataforma de referencia para profesionales y equipos QA',
+      title: 'Todo lo que necesitas para dominar la calidad del software. En un solo lugar.',
       subtitle:
-        'Arce Sabin Engineering diseña plataformas SaaS, ecosistemas de automatización QA y herramientas internas para equipos que quieren escalar sin caos.',
+        'Arce Sabin Engineering reúne cursos, plantillas, herramientas, libros y servicios de consultoría QA premium — diseñada para profesionales independientes y equipos que quieren escalar sin caos. Suscríbete una vez, accede a todo.',
+      primaryCta: 'Explorar la plataforma',
+      secondaryCta: 'Ver planes',
       trust: {
-        governance: { label: 'Gobernanza', value: 'RBAC · contexto de organización · auditoría' },
-        quality: { label: 'Calidad', value: 'mentalidad automation-first' },
-        speed: { label: 'Velocidad', value: 'entregas incrementales' },
+        governance: {
+          label: 'PARA PROFESIONALES',
+          value: 'Cursos, plantillas y herramientas para crecer como QA Lead o SDET',
+        },
+        quality: {
+          label: 'PARA EQUIPOS',
+          value: 'Frameworks, automatización y formación para equipos que entregan con calidad',
+        },
+        speed: {
+          label: 'PARA EMPRESAS',
+          value: 'Planes multi-organización con RBAC, auditoría y consultoría incluida',
+        },
+      },
+      preview: {
+        title: 'ASE Platform',
+        liveBadge: '● Live',
+        maintenanceBadge: '● Mantenimiento',
+        plansTitle: 'PLANES',
+        servicesTitle: 'SERVICIOS',
+        statusTitle: 'ESTADO',
+        unavailable: 'No disponible',
+        perMonth: '/mes',
+        statusValues: {
+          ok: 'ok',
+          error: 'error',
+          active: 'activo',
+        },
+        plansCount: '{{count}} planes',
+        categories: {
+          platform_engineering: 'Plataforma',
+          qa_automation: 'Automatización QA',
+          training: 'Formación',
+          digital_products: 'Digital',
+          consulting: 'Consultoría',
+          ai_automation: 'IA',
+          frameworks: 'Frameworks',
+        },
+        status: {
+          backend: 'BACKEND',
+          db: 'DB',
+          api: 'API',
+          plans: 'PLANES',
+        },
       },
     },
     services: {
@@ -534,6 +715,10 @@ export const translations = {
             'Dashboards y workflows pensados para operadores',
             'Roadmap incremental alineado al negocio',
           ],
+          stats: [
+            { label: 'Alcance típico', value: 'MVP de plataforma → escala' },
+            { label: 'Postura de stack', value: 'API-first · observable' },
+          ],
         },
         s2: {
           title: 'Arquitectura de automatización QA',
@@ -544,6 +729,10 @@ export const translations = {
             'Templates y buenas prácticas de framework',
             'Pipelines CI y señales de feedback rápido',
             'Quality gates sin frenar al equipo',
+          ],
+          stats: [
+            { label: 'Profundidad de integración', value: 'Pipelines + dashboards' },
+            { label: 'Modelo operativo', value: 'Velocidad gobernada' },
           ],
         },
         s3: {
@@ -556,6 +745,10 @@ export const translations = {
             'Trazabilidad lista para auditoría',
             'Automatización alineada a KPIs y ownership',
           ],
+          stats: [
+            { label: 'Foco del resultado', value: 'Horas ahorradas / semana' },
+            { label: 'Seguridad', value: 'Humano en el bucle' },
+          ],
         },
         s4: {
           title: 'Formación técnica y frameworks',
@@ -567,8 +760,14 @@ export const translations = {
             'Procesos de revisión y disciplina de entrega',
             'Módulos reutilizables para iterar más rápido',
           ],
+          stats: [
+            { label: 'Formatos', value: 'Remoto / presencial' },
+            { label: 'Profundidad', value: 'Principiante → avanzado' },
+          ],
         },
       },
+      methodology: ['Diseño', 'Construcción', 'Automatización', 'Observabilidad', 'Escala', 'Hardening'],
+      blueprintLabel: 'Plano de entrega',
     },
     modules: {
       badge: 'Módulos de plataforma',
@@ -626,9 +825,22 @@ export const translations = {
       },
     },
     pricing: {
-      badge: 'Planes',
-      title: 'Planes para escalar de individual a enterprise',
-      subtitle: 'Cambia entre mensual o anual. Anual ahorra hasta 2 meses.',
+      badge: 'Planes y precios',
+      title: 'Elige tu plan. Accede a todo el ecosistema ASE.',
+      subtitle: 'Un solo precio. Cursos, plantillas, herramientas, recursos y consultoría — sin sorpresas.',
+      starterPara:
+        'Profesionales QA independientes, juniors y freelancers que quieren crecer con recursos de calidad.',
+      professionalPara:
+        'QA Leads, equipos pequeños, consultoras y startups que necesitan gestión, automatización y formación avanzada.',
+      enterprisePara:
+        'Empresas, consultoras y academias que necesitan gestión multi-organización, formación corporativa y consultoría incluida.',
+      guarantee: {
+        title: 'Sin riesgo',
+        text: 'Cancela cuando quieras. Sin permanencia. Sin letra pequeña.',
+        item1: 'Cancela en cualquier momento',
+        item2: 'Soporte incluido en todos los planes',
+        item3: 'Acceso inmediato tras el pago',
+      },
       monthly: 'Mensual',
       yearly: 'Anual',
       save: 'Ahorra hasta 2 meses',
@@ -705,6 +917,17 @@ export const translations = {
       subtitle: 'Alineemos restricciones, gobernanza y roadmap — y entrega con confianza.',
     },
     footer: {
+      tagline: 'La plataforma de referencia para profesionales y equipos QA.',
+      copyright: '© 2026 Arce Sabin Engineering. Todos los derechos reservados.',
+      col2Title: 'Plataforma',
+      col3Title: 'Empresa',
+      link1: 'Qué incluye',
+      link2: 'Plataforma',
+      link3: 'Planes',
+      link4: 'Acceso clientes',
+      link5: 'Sobre ASE',
+      link6: 'Contacto',
+      response: 'Respuesta en menos de 24h',
       claim:
         'Plataformas premium y ecosistemas de automatización — con gobernanza, calidad y velocidad.',
       tags: { enterprise: 'Listo para enterprise', automation: 'Automation-first', rbac: 'RBAC y gobernanza' },
@@ -775,9 +998,15 @@ export const translations = {
         contact: 'Contacto',
       },
       contact: {
-        badge: 'Contacto',
-        title: 'Hablemos de tu plataforma',
-        body: 'Cuéntanos el contexto y responderemos con un siguiente paso claro. Sin spam: conversación enfocada.',
+        badge: 'HABLEMOS',
+        title: '¿Tienes un reto de calidad? Cuéntanos.',
+        body:
+          'Ya sea que quieras explorar la plataforma, tienes preguntas sobre un plan Enterprise, o necesitas consultoría QA para tu equipo — estamos aquí. Te respondemos en menos de 24 horas en días laborables.',
+        trust1: 'Respuesta en menos de 24h',
+        trust2: 'Sin compromiso',
+        trust3: 'Para planes Enterprise, consultoría incluida',
+        footerText:
+          'También puedes escribirnos directamente a rasabin1103@gmail.com o conectar en LinkedIn con Roberto Arce Sabín.',
         sendTitle: 'Enviar mensaje',
         sendSubtitle: 'Respondemos en 1–2 días laborables.',
         fields: {
@@ -842,10 +1071,50 @@ export const translations = {
       logout: 'Salir',
       publicSite: 'Sitio público',
     },
+    notifications: {
+      bellLabel: 'Notificaciones',
+      title: 'Notificaciones',
+      markAllRead: 'Marcar todo leído',
+      empty: 'Todavía no hay notificaciones.',
+    },
+    suggestions: {
+      boxTitle: 'Buzón de sugerencias',
+      boxSubtitle: 'Envía una solicitud o recomendación al equipo de ASE.',
+      placeholder: '¿Qué te gustaría solicitar o recomendar?',
+      targetLabel: 'Enviar a',
+      targetPlatform: 'Plataforma ASE (super admin)',
+      targetOrganization: 'Mi organización (owner/admin)',
+      send: 'Enviar',
+      sending: 'Enviando…',
+      sent: 'Enviado — gracias por el feedback.',
+      error: 'No se pudo enviar tu sugerencia. Inténtalo de nuevo.',
+      myTitle: 'Tus sugerencias',
+      empty: 'Todavía no has enviado ninguna sugerencia.',
+      status: { pending: 'Pendiente', reviewed: 'Revisada', resolved: 'Resuelta' },
+      adminNote: 'Nota del equipo',
+    },
+    adminSuggestions: {
+      badge: 'Feedback',
+      title: 'Buzón de sugerencias',
+      subtitle: 'Solicitudes y recomendaciones enviadas por usuarios y organizaciones.',
+      stats: { total: 'Total', pending: 'Pendientes', resolved: 'Resueltas' },
+      filterLabel: 'Estado',
+      filterAll: 'Todos',
+      loadError: 'No se pudieron cargar las sugerencias.',
+      emptyTitle: 'Todavía no hay sugerencias',
+      emptyDescription: 'Cuando los usuarios envíen solicitudes o recomendaciones, aparecerán aquí.',
+      review: 'Revisar',
+      modalTitle: 'Revisar sugerencia',
+      statusLabel: 'Estado',
+      save: 'Guardar',
+      saving: 'Guardando…',
+    },
     private: {
       nav: {
         dashboard: 'Dashboard',
         organizations: 'Organizaciones',
+        services: 'Servicios',
+        suggestions: 'Sugerencias',
         users: 'Usuarios',
         plans: 'Planes',
         products: 'Productos',
@@ -870,6 +1139,8 @@ export const translations = {
         myResources: 'Mis recursos',
         catalogManage: 'Gestión catálogo',
         purchasesAdmin: 'Compras',
+        orgCatalog: 'Catálogo de la organización',
+        orgGrant: 'Enviar producto',
         groups: {
           command: 'Centro de mando',
           operations: 'Operaciones',
@@ -879,6 +1150,7 @@ export const translations = {
           catalogs: 'Catálogos',
           library: 'Mi biblioteca',
           admin: 'Administración',
+          organization: 'Organización',
         },
       },
       common: {

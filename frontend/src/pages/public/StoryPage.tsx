@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Badge } from '../../components/ui/Badge'
+import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { useI18n } from '../../i18n'
@@ -23,9 +23,7 @@ export function StoryPage() {
   const { t } = useI18n()
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-14">
-      <Badge variant="info" className="w-fit">
-        {t('pages.story.badge')}
-      </Badge>
+      <Eyebrow>{t('pages.story.badge')}</Eyebrow>
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
         {t('pages.story.title')}
       </h1>

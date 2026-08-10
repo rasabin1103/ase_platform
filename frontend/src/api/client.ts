@@ -1,15 +1,15 @@
 import axios from 'axios'
 import { getAccessToken, getActiveOrganizationUuid } from '../auth/auth.store'
 
-export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? ''
+export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
 })
 
 apiClient.interceptors.request.use((config) => {
-  if (!API_BASE_URL) {
-    throw new Error('VITE_API_URL is not set. Define it in ase_frontend/.env')
+  if (!API_BASE_URL && import.meta.env.PROD) {
+    throw new Error('VITE_API_URL is not set. Define it in frontend/.env.local')
   }
   const token = getAccessToken()
   if (token) {

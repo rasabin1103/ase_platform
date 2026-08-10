@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Arce Sabin Engineering">
+  <title>Arce Sabin Engineering</title>
+  <rect width="1200" height="630" fill="#020617"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#grid)" opacity="0.35"/>
+  <circle cx="980" cy="120" r="220" fill="#38BDF8" opacity="0.08"/>
+  <circle cx="180" cy="520" r="180" fill="#0EA5E9" opacity="0.06"/>
+  <rect x="80" y="80" width="1040" height="470" rx="32" fill="none" stroke="#38BDF8" stroke-opacity="0.22" stroke-width="2"/>
+  <text x="120" y="250" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="#F8FAFC">Arce Sabin</text>
+  <text x="120" y="340" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="#38BDF8">Engineering</text>
+  <text x="120" y="420" font-family="system-ui, sans-serif" font-size="28" fill="#CBD5E1">Enterprise SaaS � QA Automation � Software Architecture</text>
+  <rect x="120" y="460" width="120" height="4" rx="2" fill="#38BDF8"/>
+  <defs>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#334155" stroke-width="1"/>
+    </pattern>
+  </defs>
+</svg>

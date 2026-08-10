@@ -5,11 +5,13 @@ import { Card } from '../../components/ui/Card'
 import { Skeleton } from '../../components/ui/Skeleton'
 import {
   InsightBar,
+  PremiumBreakdownCard,
   PremiumChartCard,
   PremiumHero,
   PremiumInsightsCard,
   PremiumMetricCard,
   PremiumOrb,
+  PremiumSplitStat,
 } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../auth/AuthProvider'
@@ -37,7 +39,7 @@ export function AdminDashboardPage() {
   return (
     <div className="space-y-8 pb-16">
       <PremiumHero
-        accent="violet"
+        accent="cyan"
         badge={t('adminDashboard.heroBadge')}
         title={`${t('adminDashboard.title')}${name ? `, ${name}` : ''}`}
         subtitle={t('adminDashboard.subtitle')}
@@ -46,20 +48,20 @@ export function AdminDashboardPage() {
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-ase-text2">
               {t('adminDashboard.metrics.usersActive')}: {stats?.users_active ?? '—'}
             </span>
-            <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1.5 text-xs font-semibold text-violet-100">
+            <span className="rounded-full border border-ase-brand/25 bg-ase-brand/10 px-3 py-1.5 text-xs font-semibold text-ase-text">
               {t('adminDashboard.metrics.revenue')}:{' '}
               {(analytics?.revenue_total ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'EUR' })}
             </span>
           </>
         }
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">
               {t('adminDashboard.pulse.title')}
             </div>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <PremiumOrb label={t('adminDashboard.metrics.products')} value={byType.product ?? 0} tone="info" />
-              <PremiumOrb label={t('adminDashboard.metrics.courses')} value={byType.course ?? 0} tone="violet" />
+              <PremiumOrb label={t('adminDashboard.metrics.courses')} value={byType.course ?? 0} tone="info" />
               <PremiumOrb label={t('adminDashboard.metrics.books')} value={byType.book ?? 0} tone="success" />
             </div>
           </Card>
@@ -75,28 +77,28 @@ export function AdminDashboardPage() {
             hint={t('adminDashboard.metrics.catalogHint')}
             value={stats?.catalog_total ?? 0}
             icon="◇"
-            accent="from-cyan-300 to-blue-500"
+            accent="from-ase-brand to-ase-brand"
           />
           <PremiumMetricCard
             label={t('adminDashboard.metrics.users')}
             hint={t('adminDashboard.metrics.usersHint')}
             value={stats?.users_total ?? 0}
             icon="◉"
-            accent="from-emerald-300 to-teal-500"
+            accent="from-ase-brand to-ase-brand"
           />
           <PremiumMetricCard
             label={t('adminDashboard.metrics.purchases')}
             hint={t('adminDashboard.metrics.purchasesHint')}
             value={stats?.purchases_total ?? 0}
             icon="🛒"
-            accent="from-violet-300 to-fuchsia-500"
+            accent="from-ase-brand to-ase-brand"
           />
           <PremiumMetricCard
             label={t('adminDashboard.metrics.revenue')}
             hint={t('adminDashboard.metrics.revenueHint')}
             value={analytics?.revenue_total ?? 0}
             icon="€"
-            accent="from-amber-300 to-orange-500"
+            accent="from-ase-brand to-ase-brand"
             format="currency"
           />
         </div>
@@ -165,6 +167,59 @@ export function AdminDashboardPage() {
             </section>
           </PremiumInsightsCard>
         </aside>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {analyticsQuery.isLoading ? (
+          <Skeleton className="h-72 rounded-[2rem] xl:col-span-4" />
+        ) : (
+          <>
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.organizations.title') as string}
+              subtitle={t('adminDashboard.sections.organizations.subtitle') as string}
+              items={Object.entries(analytics?.organizations_by_type ?? {}).map(([type, value]) => ({
+                label: t(`organizationsPage.types.${type}`) as string,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyOrganizations') as string}
+            />
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.requests.title') as string}
+              subtitle={t('adminDashboard.sections.requests.subtitle') as string}
+              items={Object.entries(analytics?.requests_by_status ?? {}).map(([reqStatus, value]) => ({
+                label: t(`adminDashboard.requestStatus.${reqStatus}`) as string,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyRequests') as string}
+            />
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.usersByRole.title') as string}
+              subtitle={t('adminDashboard.sections.usersByRole.subtitle') as string}
+              items={Object.entries(analytics?.users_by_role ?? {}).map(([role, value]) => ({
+                label: (t(`adminDashboard.roleLabels.${role}`) as string) ?? role,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyRoles') as string}
+            />
+            <PremiumSplitStat
+              title={t('adminDashboard.sections.ratings.title') as string}
+              subtitle={t('adminDashboard.sections.ratings.subtitle') as string}
+              totalLabel={t('adminDashboard.ratingsLabels.total') as string}
+              total={analytics?.ratings_total ?? 0}
+              positiveLabel={t('adminDashboard.ratingsLabels.upvotes') as string}
+              positive={analytics?.ratings_upvotes ?? 0}
+              negativeLabel={t('adminDashboard.ratingsLabels.downvotes') as string}
+              negative={analytics?.ratings_downvotes ?? 0}
+              tagsLabel={t('adminDashboard.ratingsLabels.topTags') as string}
+              tags={(analytics?.ratings_top_tags ?? []).map((rt) => ({
+                tag: rt.tag,
+                count: rt.count,
+                label: (t(`catalog.rating.tags.${rt.tag}`) as string) ?? rt.tag,
+              }))}
+              emptyLabel={t('adminDashboard.ratingsLabels.empty') as string}
+            />
+          </>
+        )}
       </div>
     </div>
   )

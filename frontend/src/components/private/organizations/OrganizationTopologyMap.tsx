@@ -64,7 +64,7 @@ export function OrganizationTopologyMap({ organizations, coreLabel, activeUuid, 
         })}
       </svg>
 
-      <div className="absolute left-1/2 top-1/2 z-[2] w-40 -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-cyan-200/30 bg-ase-bg2/80 p-4 text-center shadow-[0_0_44px_rgba(34,211,238,0.22)] backdrop-blur-md">
+      <div className="absolute left-1/2 top-1/2 z-[2] w-40 -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-cyan-200/30 bg-ase-bg2/80 p-4 text-center shadow-[0_0_44px_rgba(34,211,238,0.22)]">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-cyan-400/15 text-lg font-bold text-cyan-100 ring-1 ring-cyan-200/25">
           ASE
         </div>
@@ -73,7 +73,7 @@ export function OrganizationTopologyMap({ organizations, coreLabel, activeUuid, 
 
       {visibleOrgs.map((org, index) => (
         <div key={org.uuid} className={cn('absolute z-[3] w-[150px]', positions[index])}>
-          <div className={cn('rounded-2xl border p-3 backdrop-blur-md transition duration-200 hover:-translate-y-1', statusClasses(org, activeUuid))}>
+          <div className={cn('rounded-2xl border p-3 transition duration-200 hover:-translate-y-1', statusClasses(org, activeUuid))}>
             <div className="flex items-center gap-2">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-xs font-bold ring-1 ring-white/15">
                 {initials(org.name)}

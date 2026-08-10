@@ -9,6 +9,7 @@ export type ListCatalogParams = {
   search?: string
   favorites_only?: boolean
   purchased_only?: boolean
+  sort?: 'top_rated'
 }
 
 export async function listConsumerCatalog(params?: ListCatalogParams) {
@@ -28,5 +29,15 @@ export async function toggleCatalogFavorite(slug: string) {
 
 export async function purchaseCatalogItem(slug: string) {
   const { data } = await apiClient.post<CatalogItem>(`/consumer-catalog/${slug}/purchase`)
+  return data
+}
+
+export async function rateCatalogItem(slug: string, payload: { isPositive: boolean; tags: string[] }) {
+  const { data } = await apiClient.post<CatalogItem>(`/consumer-catalog/${slug}/rating`, payload)
+  return data
+}
+
+export async function removeCatalogItemRating(slug: string) {
+  const { data } = await apiClient.delete<CatalogItem>(`/consumer-catalog/${slug}/rating`)
   return data
 }

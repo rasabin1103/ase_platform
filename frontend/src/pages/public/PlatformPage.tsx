@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMemo } from 'react'
-import { Badge } from '../../components/ui/Badge'
+import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { cn } from '../../components/ui/cn'
@@ -31,17 +31,11 @@ export function PlatformPage() {
     <div className="min-h-screen bg-ase-bg">
       {/* HERO */}
       <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-16 lg:pb-28 lg:pt-20">
-        <div className="pointer-events-none absolute -left-40 top-0 h-[28rem] w-[28rem] rounded-full bg-ase-primary/12 blur-3xl" />
-        <div className="pointer-events-none absolute -right-32 bottom-0 h-[22rem] w-[22rem] rounded-full bg-ase-accent/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
         <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 sm:px-8 lg:px-12">
           <div className="grid gap-12 lg:grid-cols-12 lg:items-start lg:gap-16">
             <div className="lg:col-span-6">
-              <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
-                {t('platformPage.hero.badge')}
-              </Badge>
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight text-ase-text sm:text-5xl lg:text-6xl">
+              <Eyebrow>{t('platformPage.hero.badge')}</Eyebrow>
+              <h1 className="mt-6 text-heading-xl font-semibold leading-[1.05] text-ase-text sm:text-display-lg lg:text-display-xl">
                 {t('platformPage.hero.title')}
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-relaxed text-ase-text2 sm:text-lg lg:text-xl">
@@ -75,11 +69,10 @@ export function PlatformPage() {
 
             {/* Right: premium preview */}
             <div className="relative lg:col-span-6">
-              <div className="pointer-events-none absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-ase-primary/18 via-ase-accent/10 to-transparent blur-3xl" />
               <Card
                 interactive
                 className={cn(
-                  'relative overflow-hidden rounded-[2rem] border border-white/[0.1] bg-ase-surface/50 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl',
+                  'relative overflow-hidden rounded-[2rem] border border-ase-brand/20 bg-ase-surface p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_120px_rgba(0,0,0,0.55)]',
                   'sm:p-8',
                 )}
               >
@@ -128,12 +121,11 @@ export function PlatformPage() {
 
       {/* Final CTA */}
       <section className="relative border-t border-white/[0.06] py-16 sm:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_0%,rgba(56,189,248,0.10),transparent_58%)]" />
         <div className="relative mx-auto w-full max-w-[min(100%,1200px)] px-5 sm:px-8 lg:px-12">
-          <div className="mx-auto overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/45 px-6 py-12 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_22px_70px_rgba(0,0,0,0.55)] backdrop-blur-md sm:px-10">
-            <Badge variant="info" className="mx-auto border-white/10 bg-white/[0.04] text-ase-text2">
-              {t('platformPage.cta.badge')}
-            </Badge>
+          <div className="mx-auto overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface px-6 py-12 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_22px_70px_rgba(0,0,0,0.55)] sm:px-10">
+            <div className="mx-auto w-fit">
+              <Eyebrow>{t('platformPage.cta.badge')}</Eyebrow>
+            </div>
             <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('platformPage.cta.title')}
             </h2>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
+import { CatalogGalleryManager } from '../../components/admin/premium/CatalogGalleryManager'
+import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
 import { useForm } from 'react-hook-form'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
 import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../../types/catalog.types'
@@ -7,7 +9,9 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
+import { cn } from '../../components/ui/cn'
 import { useI18n } from '../../i18n'
+import { parseApiError } from '../../utils/apiError'
 
 type FormValues = CatalogItemAdminPayload
 
@@ -49,8 +53,22 @@ type Props = {
   onClose: () => void
   initial?: CatalogItemAdmin | null
   defaultType?: CatalogItemType
-  onSubmit: (values: FormValues, imageFile: File | null) => Promise<void>
+  onSubmit: (
+    values: FormValues,
+    imageFile: File | null,
+    pendingGallery: PendingGalleryImage[],
+    pendingCoverKey: string | null,
+  ) => Promise<void>
   isSubmitting?: boolean
+}
+
+function RequiredMark() {
+  return <span className="text-ase-error"> *</span>
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return <p className="mt-1 text-xs text-ase-error">{message}</p>
 }
 
 export function AdminCatalogItemModal({
@@ -64,10 +82,19 @@ export function AdminCatalogItemModal({
   const { t } = useI18n()
   const isEdit = Boolean(initial)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [pendingGallery, setPendingGallery] = useState<PendingGalleryImage[]>([])
+  const [pendingCoverKey, setPendingCoverKey] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
+  const { errors } = form.formState
+
+  const requiredMsg = t('adminCatalog.validation.required') as string
+  const inputErrClass = (hasError: boolean) =>
+    hasError ? 'border-ase-error focus-visible:border-ase-error focus-visible:ring-ase-error/30' : ''
 
   useEffect(() => {
     if (!open) return
+    setServerError(null)
     if (initial) {
       form.reset({
         title: initial.title,
@@ -92,6 +119,13 @@ export function AdminCatalogItemModal({
       form.reset(defaults(defaultType))
     }
     setImageFile(null)
+    setPendingGallery((prev) => {
+      prev.forEach((img) => {
+        if (img.kind === 'file') URL.revokeObjectURL(img.previewUrl)
+      })
+      return []
+    })
+    setPendingCoverKey(null)
   }, [open, initial, defaultType, form])
 
   const titleWatch = form.watch('title')
@@ -106,10 +140,30 @@ export function AdminCatalogItemModal({
       <form
         className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
         onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(values, imageFile)
-          onClose()
+          setServerError(null)
+          try {
+            await onSubmit(values, imageFile, pendingGallery, pendingCoverKey)
+            onClose()
+          } catch (err) {
+            const parsed = parseApiError(err, t('adminCatalog.saveError') as string)
+            const isSlugConflict = /slug/i.test(parsed.message) && /exist/i.test(parsed.message)
+            if (isSlugConflict) {
+              form.setError('slug', { type: 'server', message: t('adminCatalog.slugExists') as string })
+            }
+            for (const [field, message] of Object.entries(parsed.fieldErrors)) {
+              form.setError(field as keyof FormValues, { type: 'server', message })
+            }
+            setServerError(parsed.message)
+          }
         })}
       >
+        {serverError ? (
+          <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+            {serverError}
+          </div>
+        ) : null}
+        <p className="text-xs text-ase-muted">{t('adminCatalog.requiredMark')}</p>
+
         <ImageUploadField
           label={t('adminCatalog.fields.photo')}
           hint={t('adminCatalog.uploadPhotoHint')}
@@ -117,15 +171,39 @@ export function AdminCatalogItemModal({
           previewSrc={initial?.image_url}
           onFileSelect={setImageFile}
         />
+        {isEdit && initial ? (
+          <CatalogGalleryManager itemId={initial.id} />
+        ) : (
+          <CatalogGalleryPicker
+            images={pendingGallery}
+            coverKey={pendingCoverKey}
+            onChange={setPendingGallery}
+            onCoverChange={setPendingCoverKey}
+          />
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.title')}</span>
-            <Input {...form.register('title', { required: true })} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.title')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.title)))}
+              {...form.register('title', { required: requiredMsg })}
+            />
+            <FieldError message={errors.title?.message as string | undefined} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.slug')}</span>
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.slug')}
+              <RequiredMark />
+            </span>
             <div className="flex gap-2">
-              <Input {...form.register('slug', { required: true })} disabled={isEdit} />
+              <Input
+                className={cn(inputErrClass(Boolean(errors.slug)))}
+                {...form.register('slug', { required: requiredMsg })}
+                disabled={isEdit}
+              />
               {!isEdit ? (
                 <Button
                   type="button"
@@ -136,6 +214,7 @@ export function AdminCatalogItemModal({
                 </Button>
               ) : null}
             </div>
+            <FieldError message={errors.slug?.message as string | undefined} />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.type')}</span>
@@ -148,40 +227,95 @@ export function AdminCatalogItemModal({
             </Select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.category')}</span>
-            <Input {...form.register('category', { required: true })} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.category')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.category)))}
+              {...form.register('category', { required: requiredMsg })}
+            />
+            <FieldError message={errors.category?.message as string | undefined} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.author')}</span>
-            <Input {...form.register('author', { required: true })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.shortDescription')}</span>
-            <Input {...form.register('short_description', { required: true })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescription')}</span>
-            <textarea
-              className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
-              rows={4}
-              {...form.register('long_description', { required: true })}
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.author')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.author)))}
+              {...form.register('author', { required: requiredMsg })}
             />
+            <FieldError message={errors.author?.message as string | undefined} />
           </label>
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.imageUrl')}</span>
-            <Input {...form.register('image_url', { required: true })} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.shortDescription')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.short_description)))}
+              {...form.register('short_description', { required: requiredMsg })}
+            />
+            <FieldError message={errors.short_description?.message as string | undefined} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.longDescription')}
+              <RequiredMark />
+            </span>
+            <textarea
+              className={cn(
+                'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text',
+                inputErrClass(Boolean(errors.long_description)),
+              )}
+              rows={4}
+              {...form.register('long_description', { required: requiredMsg })}
+            />
+            <FieldError message={errors.long_description?.message as string | undefined} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.imageUrl')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.image_url)))}
+              {...form.register('image_url', { required: requiredMsg })}
+            />
+            <FieldError message={errors.image_url?.message as string | undefined} />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewUrl')}</span>
             <Input {...form.register('preview_url')} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.price')}</span>
-            <Input type="number" step="0.01" {...form.register('price', { valueAsNumber: true })} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.price')}
+              <RequiredMark />
+            </span>
+            <Input
+              type="number"
+              step="0.01"
+              className={cn(inputErrClass(Boolean(errors.price)))}
+              {...form.register('price', {
+                required: requiredMsg,
+                valueAsNumber: true,
+                min: { value: 0, message: t('adminCatalog.validation.priceMin') as string },
+              })}
+            />
+            <FieldError message={errors.price?.message as string | undefined} />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.currency')}</span>
-            <Input {...form.register('currency', { required: true })} />
+            <span className="mb-1 block text-xs text-ase-muted">
+              {t('adminCatalog.fields.currency')}
+              <RequiredMark />
+            </span>
+            <Input
+              className={cn(inputErrClass(Boolean(errors.currency)))}
+              {...form.register('currency', { required: requiredMsg })}
+            />
+            <FieldError message={errors.currency?.message as string | undefined} />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.status')}</span>
@@ -192,6 +326,7 @@ export function AdminCatalogItemModal({
                 </option>
               ))}
             </Select>
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.statusNotifyHint')}</p>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.level')}</span>

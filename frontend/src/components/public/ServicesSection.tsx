@@ -1,4 +1,4 @@
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { ServiceFeatureBlock } from './ServiceFeatureBlock'
 import { useI18n } from '../../i18n'
 
@@ -13,9 +13,7 @@ export function ServicesSection() {
       <div className="mx-auto w-full max-w-[1200px] px-6 py-28">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Badge variant="info" className="w-fit">
-              {t('services.sectionBadge')}
-            </Badge>
+            <Eyebrow>{t('services.sectionBadge')}</Eyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('services.title')}
             </h2>
@@ -32,6 +30,7 @@ export function ServicesSection() {
             title={t('services.blocks.s1.title')}
             description={t('services.blocks.s1.description')}
             bullets={t('services.blocks.s1.bullets')}
+            stats={t('services.blocks.s1.stats')}
           />
           <ServiceFeatureBlock
             icon={<Icon>◆</Icon>}
@@ -39,6 +38,7 @@ export function ServicesSection() {
             title={t('services.blocks.s2.title')}
             description={t('services.blocks.s2.description')}
             bullets={t('services.blocks.s2.bullets')}
+            stats={t('services.blocks.s2.stats')}
             reverse
           />
           <ServiceFeatureBlock
@@ -47,6 +47,7 @@ export function ServicesSection() {
             title={t('services.blocks.s3.title')}
             description={t('services.blocks.s3.description')}
             bullets={t('services.blocks.s3.bullets')}
+            stats={t('services.blocks.s3.stats')}
           />
           <ServiceFeatureBlock
             icon={<Icon>▲</Icon>}
@@ -54,6 +55,7 @@ export function ServicesSection() {
             title={t('services.blocks.s4.title')}
             description={t('services.blocks.s4.description')}
             bullets={t('services.blocks.s4.bullets')}
+            stats={t('services.blocks.s4.stats')}
             reverse
           />
         </div>

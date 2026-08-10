@@ -36,6 +36,9 @@ _MVP_EXTRA_PERMISSIONS: frozenset[str] = frozenset(
         "favorites.manage_own",
         "purchases.manage_own",
         "purchases.read_all",
+        "ratings.manage_own",
+        "suggestions.create",
+        "suggestions.manage",
     }
 )
 
@@ -169,6 +172,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = (
             "requests.approve",
             "requests.manage",
             "profile.update_self",
+            "catalog.read",
+            "purchases.read_all",
+            "ratings.manage_own",
+            "suggestions.create",
         }
     ),
     "org_admin": frozenset(
@@ -186,6 +193,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = (
             "requests.read",
             "requests.create",
             "profile.update_self",
+            "catalog.read",
+            "purchases.read_all",
+            "ratings.manage_own",
+            "suggestions.create",
         }
     ),
     "member": frozenset(
@@ -197,6 +208,9 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = (
             "requests.read",
             "requests.create",
             "profile.update_self",
+            "catalog.read",
+            "ratings.manage_own",
+            "suggestions.create",
         }
     ),
     "independent_user": frozenset(
@@ -213,6 +227,11 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = (
             "creator.request",
             "creator.read_own",
             "profile.update_self",
+            "catalog.read",
+            "favorites.manage_own",
+            "purchases.manage_own",
+            "ratings.manage_own",
+            "suggestions.create",
         }
     ),
     "content_creator": frozenset(
@@ -228,6 +247,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = (
             "requests.read_own",
             "creator.read_own",
             "profile.update_self",
+            "ratings.manage_own",
+            "suggestions.create",
         }
     ),
     "viewer": frozenset(
@@ -341,6 +362,9 @@ PERMISSION_METADATA: dict[str, dict[str, str]] = {
     "favorites.manage_own": {"name": "Manage own favorites", "module": "catalog"},
     "purchases.manage_own": {"name": "Manage own purchases", "module": "catalog"},
     "purchases.read_all": {"name": "Read all purchases", "module": "catalog"},
+    "ratings.manage_own": {"name": "Rate catalog items (thumbs + tags)", "module": "catalog"},
+    "suggestions.create": {"name": "Submit requests/recommendations", "module": "suggestions"},
+    "suggestions.manage": {"name": "Review all suggestions (admin)", "module": "suggestions"},
     "users.write": {"name": "Write users (legacy)", "module": "users"},
     "organizations.write": {"name": "Write organizations (legacy)", "module": "organizations"},
 }

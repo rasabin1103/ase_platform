@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Badge } from '../../components/ui/Badge'
+import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -32,9 +32,7 @@ export function ContactPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-14">
-      <Badge variant="info" className="w-fit">
-        {t('pages.contact.badge')}
-      </Badge>
+      <Eyebrow>{t('pages.contact.badge')}</Eyebrow>
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
         {t('pages.contact.title')}
       </h1>
@@ -46,6 +44,20 @@ export function ContactPage() {
         <Card className="p-6 lg:col-span-2" interactive>
           <div className="text-sm font-semibold text-ase-text">{t('pages.contact.sendTitle')}</div>
           <div className="mt-1 text-sm text-ase-text2">{t('pages.contact.sendSubtitle')}</div>
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {(['trust1', 'trust2', 'trust3'] as const).map((key) => (
+              <div key={key} className="inline-flex items-center gap-2 text-sm text-ase-text2">
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ase-brand/30 bg-ase-brand/10 text-[11px] font-bold text-ase-brand"
+                  aria-hidden="true"
+                >
+                  ✓
+                </span>
+                <span>{t(`pages.contact.${key}`)}</span>
+              </div>
+            ))}
+          </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -93,6 +105,8 @@ export function ContactPage() {
               </Button>
             </a>
           </div>
+
+          <p className="mt-4 text-xs leading-relaxed text-ase-muted">{t('pages.contact.footerText')}</p>
         </Card>
 
         <Card className="p-6" interactive>

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import case, func, or_, select
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.catalog_item import CatalogItem
+from app.models.catalog_item_rating import CatalogItemRating
 from app.models.enums import CatalogItemStatus, CatalogItemType
 
 
@@ -12,7 +13,9 @@ class ConsumerCatalogRepository:
         self.db = db
 
     def get_by_slug(self, slug: str) -> CatalogItem | None:
-        return self.db.execute(select(CatalogItem).where(CatalogItem.slug == slug)).scalar_one_or_none()
+        return self.db.execute(
+            select(CatalogItem).options(selectinload(CatalogItem.images)).where(CatalogItem.slug == slug)
+        ).scalar_one_or_none()
 
     def list(
         self,
@@ -24,8 +27,9 @@ class ConsumerCatalogRepository:
         search: str | None,
         status: CatalogItemStatus | None,
         statuses: tuple[CatalogItemStatus, ...] | None = None,
+        sort: str | None = None,
     ) -> tuple[list[CatalogItem], int]:
-        base = select(CatalogItem)
+        base = select(CatalogItem).options(selectinload(CatalogItem.images))
         if type_filter is not None:
             base = base.where(CatalogItem.type == type_filter)
         if category is not None:
@@ -44,7 +48,24 @@ class ConsumerCatalogRepository:
                 )
             )
         total = int(self.db.execute(select(func.count()).select_from(base.subquery())).scalar_one())
-        stmt = base.order_by(CatalogItem.created_at.desc(), CatalogItem.id.desc()).limit(limit).offset(offset)
+
+        if sort == "top_rated":
+            net_score = (
+                select(
+                    CatalogItemRating.catalog_item_id.label("catalog_item_id"),
+                    func.sum(case((CatalogItemRating.is_positive.is_(True), 1), else_=-1)).label("net_score"),
+                )
+                .group_by(CatalogItemRating.catalog_item_id)
+                .subquery()
+            )
+            stmt = (
+                base.outerjoin(net_score, net_score.c.catalog_item_id == CatalogItem.id)
+                .order_by(func.coalesce(net_score.c.net_score, 0).desc(), CatalogItem.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+        else:
+            stmt = base.order_by(CatalogItem.created_at.desc(), CatalogItem.id.desc()).limit(limit).offset(offset)
         return list(self.db.execute(stmt).scalars().all()), total
 
     def list_for_consumer(
@@ -56,6 +77,7 @@ class ConsumerCatalogRepository:
         category: str | None,
         search: str | None,
         statuses: tuple[CatalogItemStatus, ...],
+        sort: str | None = None,
     ) -> tuple[list[CatalogItem], int]:
         return self.list(
             limit=limit,
@@ -65,4 +87,5 @@ class ConsumerCatalogRepository:
             search=search,
             status=None,
             statuses=statuses,
+            sort=sort,
         )

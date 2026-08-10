@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import AccessRequestStatus, AccessRequestType, CreatorStatus
+from app.models.enums import AccessRequestStatus, AccessRequestType
 
 MvpRequestType = Literal["product_access", "demo_access", "creator_access"]
 MvpTargetType = Literal[

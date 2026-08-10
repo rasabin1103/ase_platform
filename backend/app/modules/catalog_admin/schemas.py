@@ -51,10 +51,26 @@ class CatalogItemAdminUpdate(BaseModel):
     included_items: list[str] | None = None
 
 
+class CatalogItemImageRead(BaseModel):
+    id: int
+    url: str
+    is_cover: bool
+    display_order: int
+
+
+class CatalogItemImageListResponse(BaseModel):
+    items: list[CatalogItemImageRead]
+
+
+class AddCatalogItemImageUrlRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
+
+
 class CatalogItemAdminRead(CatalogItemAdminBase):
     id: int
     uuid: UUID
     has_stored_image: bool = False
+    images: list[CatalogItemImageRead] = []
     created_at: datetime
     updated_at: datetime
 

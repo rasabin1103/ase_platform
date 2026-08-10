@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PackageSearch } from 'lucide-react'
 import { cn } from './cn'
 import { Button } from './Button'
 
@@ -22,19 +23,17 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-ase-border bg-gradient-to-b from-white/[0.04] to-transparent p-8',
+        'rounded-2xl border border-ase-border bg-ase-surface px-8 py-10 text-center sm:text-left',
         className,
       )}
     >
-      <div className="flex items-start gap-4">
-        {icon && (
-          <div className="grid h-10 w-10 place-items-center rounded-xl border border-ase-border bg-ase-surfaceSoft text-ase-text2">
-            {icon}
-          </div>
-        )}
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-ase-text2">
+          {icon ?? <PackageSearch className="h-5 w-5" strokeWidth={1.75} />}
+        </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-ase-text">{title}</div>
-          {description && <div className="mt-1 text-sm text-ase-text2">{description}</div>}
+          {description && <div className="mt-1.5 text-sm leading-relaxed text-ase-text2">{description}</div>}
           {actionLabel && onAction && (
             <div className="mt-4">
               <Button variant="secondary" onClick={onAction}>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { tStringArray, useI18n } from '../../i18n'
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { Button } from '../ui/Button'
 import { cn } from '../ui/cn'
 
@@ -10,16 +10,12 @@ export function ServicesHeroPremium() {
 
   return (
     <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-16 lg:pb-32 lg:pt-20">
-      <div className="pointer-events-none absolute -left-40 top-0 h-[28rem] w-[28rem] rounded-full bg-ase-primary/12 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 bottom-0 h-[22rem] w-[22rem] rounded-full bg-ase-accent/10 blur-3xl" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
       <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 sm:px-8 lg:px-12">
         <div className="grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-16">
           <div className="min-w-0 lg:col-span-6">
-            <Badge variant="info" className="border-white/10 bg-white/[0.04]">
-              {t('servicesPage.hero.badge')}
-            </Badge>
+            <Eyebrow>{t('servicesPage.hero.badge')}</Eyebrow>
             <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight text-ase-text sm:text-5xl lg:text-6xl">
               {t('servicesPage.hero.title')}
             </h1>
@@ -43,28 +39,27 @@ export function ServicesHeroPremium() {
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">
                   {t('servicesPage.hero.stats.delivery.label')}
                 </div>
-                <div className="mt-2 text-lg font-extrabold text-ase-text">{t('servicesPage.hero.stats.delivery.value')}</div>
+                <div className="mt-2 text-sm leading-relaxed text-ase-text2">{t('servicesPage.hero.stats.delivery.value')}</div>
               </div>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">
                   {t('servicesPage.hero.stats.model.label')}
                 </div>
-                <div className="mt-2 text-lg font-extrabold text-ase-text">{t('servicesPage.hero.stats.model.value')}</div>
+                <div className="mt-2 text-sm leading-relaxed text-ase-text2">{t('servicesPage.hero.stats.model.value')}</div>
               </div>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">
                   {t('servicesPage.hero.stats.stack.label')}
                 </div>
-                <div className="mt-2 text-lg font-extrabold text-ase-text">{t('servicesPage.hero.stats.stack.value')}</div>
+                <div className="mt-2 text-sm leading-relaxed text-ase-text2">{t('servicesPage.hero.stats.stack.value')}</div>
               </div>
             </div>
           </div>
 
           <div className="relative lg:col-span-6">
-            <div className="pointer-events-none absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-ase-primary/20 via-ase-accent/12 to-transparent blur-3xl" />
             <div
               className={cn(
-                'relative overflow-hidden rounded-[2rem] border border-white/[0.1] bg-ase-surface/50 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl',
+                'relative overflow-hidden rounded-[2rem] border border-white/[0.1] bg-ase-surface p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_120px_rgba(0,0,0,0.55)]',
                 'sm:p-8',
               )}
             >

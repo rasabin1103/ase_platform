@@ -7,7 +7,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 
 const navLinkBase =
-  'text-sm font-medium text-ase-text2 transition hover:text-ase-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60 rounded-md px-2 py-1.5'
+  'text-sm font-medium text-ase-text2 transition-colors duration-200 hover:text-ase-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-md px-2 py-1.5'
 
 const navLinkActive = 'text-ase-text bg-white/[0.04] border border-white/10'
 
@@ -20,9 +20,9 @@ export function PublicHeader() {
   const items = useMemo(
     () => [
       { to: '/', label: t('nav.home') as string },
-      { to: '/services', label: t('nav.services') as string },
+      { to: '/services', label: t('nav.whatsIncluded') as string },
       { to: '/platform', label: t('nav.platform') as string },
-      { to: '/pricing', label: t('nav.pricing') as string },
+      { to: '/pricing', label: t('nav.plans') as string },
       { to: '/about', label: t('nav.about') as string },
       { to: '/contact', label: t('nav.contact') as string },
     ],
@@ -33,7 +33,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-40 border-b border-ase-border bg-ase-bg2/80 backdrop-blur supports-[backdrop-filter]:bg-ase-bg2/60">
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-6 sm:px-8">
         <Link to="/" className="min-w-0 shrink-0">
-          <BrandLogo variant="dark" size="sm" className="opacity-95" />
+          <BrandLogo variant="dark" size="sm" showText className="opacity-95" />
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
@@ -95,11 +95,11 @@ export function PublicHeader() {
               <>
                 <Link to="/login">
                   <Button size="sm" variant="secondary">
-                    {t('cta.clientLogin')}
+                    {t('nav.clients')}
                   </Button>
                 </Link>
-                <Link to="/contact">
-                  <Button size="sm">{t('cta.talkToUs')}</Button>
+                <Link to="/pricing">
+                  <Button size="sm">{t('nav.cta')}</Button>
                 </Link>
               </>
             )}
@@ -193,12 +193,12 @@ export function PublicHeader() {
                 </>
               ) : (
                 <>
-                  <Link to="/contact" onClick={() => setOpen(false)}>
-                    <Button className="w-full">{t('cta.talkToUs')}</Button>
+                  <Link to="/pricing" onClick={() => setOpen(false)}>
+                    <Button className="w-full">{t('nav.cta')}</Button>
                   </Link>
                   <Link to="/login" onClick={() => setOpen(false)}>
                     <Button variant="secondary" className="w-full">
-                      {t('cta.clientLogin')}
+                      {t('nav.clients')}
                     </Button>
                   </Link>
                 </>

@@ -20,6 +20,7 @@ _MVP_HIDDEN_ROUTERS: tuple[str, ...] = (
     "invitations",
     "resource_assignments",
     "onboarding",
+    "org_catalog",
 )
 from app.modules.health.router import router as health_router
 from app.modules.users.router import router as users_router
@@ -39,6 +40,7 @@ from app.modules.invitations.router import router as invitations_router
 from app.modules.audit_logs.router import router as audit_logs_router
 from app.modules.auth.router import router as auth_router
 from app.modules.onboarding.router import router as onboarding_router
+from app.modules.org_catalog.router import router as org_catalog_router
 from app.modules.services.router import router as services_router
 from app.modules.access_requests.router import router as access_requests_router
 from app.modules.mvp_access_requests.router_admin import router as admin_access_requests_router
@@ -48,6 +50,9 @@ from app.modules.consumer_catalog.router import router as consumer_catalog_route
 from app.modules.catalog_admin.router import router as catalog_admin_router
 from app.modules.admin_dashboard.router import router as admin_dashboard_router
 from app.modules.media.router import router as media_router
+from app.modules.public_catalog.router import router as public_catalog_router
+from app.modules.notifications.router import router as notifications_router
+from app.modules.suggestions.router import router as suggestions_router
 
 
 def create_app() -> FastAPI:
@@ -64,6 +69,12 @@ def create_app() -> FastAPI:
     app.include_router(catalog_admin_router)
     app.include_router(admin_dashboard_router)
     app.include_router(media_router)
+    app.include_router(public_catalog_router)
+    app.include_router(notifications_router)
+    app.include_router(suggestions_router)
+
+    # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
+    app.include_router(plans_router)
 
     if not settings.MVP_MODE:
         app.include_router(organizations_router)
@@ -72,7 +83,6 @@ def create_app() -> FastAPI:
         app.include_router(organization_members_router)
         app.include_router(role_permissions_router)
         app.include_router(member_roles_router)
-        app.include_router(plans_router)
         app.include_router(products_router)
         app.include_router(plan_products_router)
         app.include_router(subscriptions_router)
@@ -81,6 +91,7 @@ def create_app() -> FastAPI:
         app.include_router(invitations_router)
         app.include_router(onboarding_router)
         app.include_router(resource_assignments_router)
+        app.include_router(org_catalog_router)
     return app
 
 

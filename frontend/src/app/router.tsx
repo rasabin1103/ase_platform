@@ -15,6 +15,11 @@ import {
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
+import { ServicesAdminPage } from '../pages/admin/ServicesAdminPage'
+import { AdminSuggestionsPage } from '../pages/admin/AdminSuggestionsPage'
+import { OrganizationDashboardPage, OrganizationCatalogPage, OrganizationGrantPage } from '../pages/organization'
+import { OrganizationsPage } from '../pages/OrganizationsPage'
+import { PlansPage } from '../pages/PlansPage'
 import { useRbac } from '../rbac/useRbac'
 import { LoginPage } from '../pages/LoginPage'
 import { RequestsPage } from '../pages/RequestsPage'
@@ -29,6 +34,7 @@ import { ServicesPage } from '../pages/public/ServicesPage'
 import { PlatformPage } from '../pages/public/PlatformPage'
 import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
+import { NotFoundPage } from '../pages/NotFoundPage'
 
 export const router = createBrowserRouter([
   {
@@ -82,18 +88,25 @@ export const router = createBrowserRouter([
           { path: '/profile', element: <ProfilePage /> },
           { path: '/admin/catalog', element: <AdminCatalogPage /> },
           { path: '/admin/purchases', element: <AdminPurchasesPage /> },
+          { path: '/admin/organizations', element: <OrganizationsPage /> },
+          { path: '/admin/services', element: <ServicesAdminPage /> },
+          { path: '/admin/plans', element: <PlansPage /> },
+          { path: '/admin/suggestions', element: <AdminSuggestionsPage /> },
+          { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
+          { path: '/organization/grant', element: <OrganizationGrantPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '/requests', element: <RequestsPage /> },
         ],
       },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
+  { path: '*', element: <NotFoundPage /> },
 ])
 
 function RoleAwareDashboard() {
-  const { isConsumerMode, primaryRole, isSuperuser } = useRbac()
+  const { isConsumerMode, isOrgWorkspace, primaryRole, isSuperuser } = useRbac()
   if (isSuperuser || primaryRole === 'super_admin') return <AdminDashboardPage />
+  if (isOrgWorkspace) return <OrganizationDashboardPage />
   if (isConsumerMode) return <IndependentDashboardPage />
   return <Navigate to="/dashboard" replace />
 }

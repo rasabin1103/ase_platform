@@ -9,6 +9,16 @@ from pydantic import BaseModel, Field
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
 
 
+class MyRatingRead(BaseModel):
+    isPositive: bool
+    tags: list[str] = []
+
+
+class CatalogItemImagePublicRead(BaseModel):
+    url: str
+    isCover: bool
+
+
 class CatalogItemRead(BaseModel):
     id: str
     uuid: UUID
@@ -19,6 +29,7 @@ class CatalogItemRead(BaseModel):
     shortDescription: str
     longDescription: str
     imageUrl: str
+    images: list[CatalogItemImagePublicRead] = []
     price: Decimal
     currency: str
     status: CatalogItemStatus
@@ -31,8 +42,18 @@ class CatalogItemRead(BaseModel):
     includedItems: list[str] = []
     isFavorite: bool = False
     isPurchased: bool = False
+    upvotes: int = 0
+    downvotes: int = 0
+    netScore: int = 0
+    topTags: list[str] = []
+    myRating: MyRatingRead | None = None
     createdAt: datetime
     updatedAt: datetime
+
+
+class RateItemRequest(BaseModel):
+    isPositive: bool
+    tags: list[str] = Field(default_factory=list)
 
 
 class CatalogItemListResponse(BaseModel):

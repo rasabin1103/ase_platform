@@ -12,7 +12,6 @@ export function PremiumHero({
   contextChips,
   actions,
   sidePanel,
-  accent = 'cyan',
 }: {
   badge: string
   title: string
@@ -22,21 +21,11 @@ export function PremiumHero({
   sidePanel?: ReactNode
   accent?: 'cyan' | 'violet' | 'emerald' | 'amber'
 }) {
-  const glow =
-    accent === 'violet'
-      ? 'rgba(168,85,247,0.18)'
-      : accent === 'emerald'
-        ? 'rgba(52,211,153,0.16)'
-        : accent === 'amber'
-          ? 'rgba(251,191,36,0.16)'
-          : 'rgba(34,211,238,0.18)'
   return (
-    <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-[radial-gradient(circle_at_15%_0%,var(--glow),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.02))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] md:p-8" style={{ ['--glow' as string]: glow }}>
-      <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:38px_38px]" />
-      <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+    <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
       <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
         <div>
-          <Badge variant="info" className="mb-5 border-cyan-300/30 bg-cyan-300/10 text-cyan-100">
+          <Badge variant="info" className="mb-5">
             {badge}
           </Badge>
           <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{title}</h1>
@@ -55,7 +44,6 @@ export function PremiumMetricCard({
   hint,
   value,
   icon,
-  accent,
   format = 'number',
 }: {
   label: string
@@ -72,31 +60,24 @@ export function PremiumMetricCard({
         ? value.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
         : value.toLocaleString()
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur" interactive>
-      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', accent)} />
+    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
           <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{display}</div>
           {hint ? <div className="mt-2 text-xs text-ase-text2">{hint}</div> : null}
         </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm">{icon}</div>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
       </div>
     </Card>
   )
 }
 
 export function PremiumOrb({ label, value, tone }: { label: string; value: number | string; tone: 'success' | 'info' | 'warning' | 'violet' }) {
-  const toneClass =
-    tone === 'success'
-      ? 'from-emerald-300/20 to-teal-400/10 text-emerald-100'
-      : tone === 'warning'
-        ? 'from-amber-300/20 to-orange-400/10 text-amber-100'
-        : tone === 'violet'
-          ? 'from-violet-300/20 to-fuchsia-400/10 text-violet-100'
-          : 'from-cyan-300/20 to-violet-400/10 text-cyan-100'
+  const toneClass = tone === 'success' ? 'border-emerald-300/20' : tone === 'warning' ? 'border-amber-300/20' : 'border-white/10'
   return (
-    <div className={cn('rounded-3xl border border-white/10 bg-gradient-to-br p-4 text-center shadow-[0_18px_60px_rgba(0,0,0,0.28)]', toneClass)}>
+    <div className={cn('rounded-3xl border bg-ase-bg2/60 p-4 text-center shadow-soft', toneClass)}>
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide opacity-75">{label}</div>
     </div>
@@ -105,7 +86,7 @@ export function PremiumOrb({ label, value, tone }: { label: string; value: numbe
 
 export function PremiumInsightsCard({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur">
+    <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-ase-text">{title}</h2>
         {action}
@@ -124,7 +105,7 @@ export function InsightBar({ label, value, total }: { label: string; value: numb
         <span>{value}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-400" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
@@ -145,7 +126,7 @@ export function PremiumChartCard({
 }) {
   const chartData = data.map((d) => ({ ...d, label: d.month.slice(5) || d.month }))
   return (
-    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur', className)}>
+    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{title}</div>
       <div className="mt-4 h-52">
         {chartData.length === 0 ? (
@@ -173,6 +154,123 @@ export function PremiumChartCard({
           </ResponsiveContainer>
         )}
       </div>
+    </Card>
+  )
+}
+
+const BREAKDOWN_PALETTE = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa', '#f87171', '#94a3b8']
+
+export function PremiumBreakdownCard({
+  title,
+  subtitle,
+  items,
+  emptyLabel,
+  className,
+}: {
+  title: string
+  subtitle?: string
+  items: { label: string; value: number }[]
+  emptyLabel: string
+  className?: string
+}) {
+  const total = items.reduce((sum, i) => sum + i.value, 0)
+  const sorted = [...items].sort((a, b) => b.value - a.value)
+  return (
+    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+      <div className="text-sm font-semibold text-ase-text">{title}</div>
+      {subtitle ? <div className="mt-1 text-xs text-ase-text2">{subtitle}</div> : null}
+      <div className="mt-5 space-y-3">
+        {total === 0 ? (
+          <div className="py-6 text-center text-sm text-ase-muted">{emptyLabel}</div>
+        ) : (
+          sorted.map((item, idx) => {
+            const pct = total > 0 ? Math.round((item.value / total) * 100) : 0
+            const color = BREAKDOWN_PALETTE[idx % BREAKDOWN_PALETTE.length]
+            return (
+              <div key={item.label}>
+                <div className="mb-1 flex items-center justify-between text-xs text-ase-text2">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                    {item.label}
+                  </span>
+                  <span className="tabular-nums">{item.value}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </Card>
+  )
+}
+
+export function PremiumSplitStat({
+  title,
+  subtitle,
+  totalLabel,
+  total,
+  positiveLabel,
+  positive,
+  negativeLabel,
+  negative,
+  tags,
+  tagsLabel,
+  emptyLabel,
+  className,
+}: {
+  title: string
+  subtitle?: string
+  totalLabel: string
+  total: number
+  positiveLabel: string
+  positive: number
+  negativeLabel: string
+  negative: number
+  tags: { tag: string; count: number; label: string }[]
+  tagsLabel: string
+  emptyLabel: string
+  className?: string
+}) {
+  const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0
+  return (
+    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+      <div className="text-sm font-semibold text-ase-text">{title}</div>
+      {subtitle ? <div className="mt-1 text-xs text-ase-text2">{subtitle}</div> : null}
+      {total === 0 ? (
+        <div className="py-6 text-center text-sm text-ase-muted">{emptyLabel}</div>
+      ) : (
+        <>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <PremiumOrb label={totalLabel} value={total} tone="info" />
+            <PremiumOrb label={positiveLabel} value={positive} tone="success" />
+            <PremiumOrb label={negativeLabel} value={negative} tone="warning" />
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="flex h-full w-full">
+              <div className="h-full bg-emerald-400/80" style={{ width: `${positivePct}%` }} />
+              <div className="h-full flex-1 bg-amber-400/70" />
+            </div>
+          </div>
+          {tags.length > 0 ? (
+            <div className="mt-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{tagsLabel}</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <span
+                    key={t.tag}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-ase-text2"
+                  >
+                    {t.label} · {t.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
     </Card>
   )
 }

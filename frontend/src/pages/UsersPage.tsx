@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api'
+import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
@@ -14,6 +15,7 @@ import { Badge } from '../components/ui/Badge'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
+import { MemberCatalogStatsModal } from '../components/organization/MemberCatalogStatsModal'
 import type { User, UserStatus } from '../types/user.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
@@ -62,6 +64,7 @@ export function UsersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [viewMode, setViewMode] = useState<UsersViewMode>('cards')
+  const [statsOpen, setStatsOpen] = useState(false)
   const isSuperAdmin = Boolean(currentUser?.is_superuser)
 
   const statusOptions = useMemo<Array<{ value: UserStatus; label: string }>>(
@@ -108,6 +111,17 @@ export function UsersPage() {
   const activeCount = useMemo(() => items.filter((u) => u.status === 'active').length, [items])
   const suspendedCount = useMemo(() => items.filter((u) => u.status === 'suspended').length, [items])
   const invitedCount = useMemo(() => items.filter((u) => !u.email_verified_at).length, [items])
+
+  const catalogStatsQuery = useQuery({
+    queryKey: ['org-member-catalog-stats'],
+    queryFn: getMemberCatalogStats,
+    enabled: !isSuperAdmin,
+  })
+  const catalogStatsByUuid = useMemo(() => {
+    const map = new Map<string, MemberCatalogStat>()
+    for (const s of catalogStatsQuery.data?.items ?? []) map.set(s.uuid, s)
+    return map
+  }, [catalogStatsQuery.data])
 
   const createForm = useForm<CreateValues>({
     resolver: zodResolver(createSchema),
@@ -182,12 +196,10 @@ export function UsersPage() {
 
   return (
     <div className="space-y-8 pb-16">
-      <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-[radial-gradient(circle_at_15%_0%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(168,85,247,0.14),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.02))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] md:p-8">
-        <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
         <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
           <div>
-            <Badge variant="info" className="mb-5 border-cyan-300/30 bg-cyan-300/10 text-cyan-100">
+            <Badge variant="info" className="mb-5">
               {t('usersPage.premium.badge')}
             </Badge>
             <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{t('usersPage.title')}</h1>
@@ -201,6 +213,13 @@ export function UsersPage() {
                   {t('usersPage.premium.scopedView')}
                 </span>
               ) : null}
+              {!isSuperAdmin ? (
+                <Can permission="purchases.read_all">
+                  <Button size="sm" variant="secondary" onClick={() => setStatsOpen(true)}>
+                    {t('organizationWorkspace.memberStats.buttonLabel')}
+                  </Button>
+                </Can>
+              ) : null}
               <Can action="createUser">
                 <Button size="sm" onClick={() => setCreateOpen(true)} leftIcon={<span className="text-xs">+</span>}>
                   {t('usersPage.premium.actions.create')}
@@ -209,7 +228,7 @@ export function UsersPage() {
             </div>
           </div>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.heroMetric')}</div>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <IdentityOrb label={t('usersPage.status.active') as string} value={activeCount} tone="success" />
@@ -221,15 +240,15 @@ export function UsersPage() {
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <PremiumUserMetric label={t('usersPage.stats.total.label') as string} hint={t('usersPage.stats.total.hint') as string} value={usersQuery.data?.total ?? items.length} icon="◉" accent="from-cyan-300 to-blue-500" />
+        <PremiumUserMetric label={t('usersPage.stats.total.label') as string} hint={t('usersPage.stats.total.hint') as string} value={usersQuery.data?.total ?? items.length} icon="◉" accent="from-ase-brand to-ase-brand" />
         <PremiumUserMetric label={t('usersPage.stats.active.label') as string} hint={t('usersPage.stats.active.hint') as string} value={activeCount} icon="✓" accent="from-emerald-300 to-teal-500" />
-        <PremiumUserMetric label={t('usersPage.stats.invited.label') as string} hint={t('usersPage.stats.invited.hint') as string} value={invitedCount} icon="✦" accent="from-violet-300 to-fuchsia-500" />
+        <PremiumUserMetric label={t('usersPage.stats.invited.label') as string} hint={t('usersPage.stats.invited.hint') as string} value={invitedCount} icon="✦" accent="from-ase-brand to-ase-brand" />
         <PremiumUserMetric label={t('usersPage.stats.suspended.label') as string} hint={t('usersPage.stats.suspended.hint') as string} value={suspendedCount} icon="○" accent="from-amber-300 to-orange-500" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto]">
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('usersPage.premium.filters.search') as string} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50" />
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50">
@@ -267,6 +286,7 @@ export function UsersPage() {
                   key={u.uuid}
                   user={u}
                   t={t}
+                  catalogStat={catalogStatsByUuid.get(u.uuid)}
                   onEdit={() => {
                     setEditing(u)
                     editForm.reset({
@@ -283,23 +303,41 @@ export function UsersPage() {
               ))}
             </div>
           ) : (
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-0 shadow-soft">
               <Table className="table-fixed">
                 <THead>
                   <TR>
-                    <TH className="w-[48%]">{t('usersPage.list.columns.user')}</TH>
-                    <TH className="w-[18%]">{t('usersPage.list.columns.status')}</TH>
-                    <TH className="hidden w-[18%] xl:table-cell">{t('usersPage.list.columns.createdAt')}</TH>
-                    <TH className="w-[26%] text-right">{t('usersPage.list.columns.actions')}</TH>
+                    <TH className="w-[38%]">{t('usersPage.list.columns.user')}</TH>
+                    <TH className="w-[14%]">{t('usersPage.list.columns.status')}</TH>
+                    {!isSuperAdmin ? (
+                      <>
+                        <TH className="hidden w-[12%] text-center lg:table-cell">{t('organizationWorkspace.memberStats.columnSent')}</TH>
+                        <TH className="hidden w-[12%] text-center lg:table-cell">{t('organizationWorkspace.memberStats.columnConsumed')}</TH>
+                      </>
+                    ) : null}
+                    <TH className="hidden w-[14%] xl:table-cell">{t('usersPage.list.columns.createdAt')}</TH>
+                    <TH className="w-[22%] text-right">{t('usersPage.list.columns.actions')}</TH>
                   </TR>
                 </THead>
                 <TBody>
-                  {filteredItems.map((u) => (
+                  {filteredItems.map((u) => {
+                    const stat = catalogStatsByUuid.get(u.uuid)
+                    return (
                     <TR key={u.uuid}>
                       <TD className="font-medium text-ase-text">
                         <UserIdentity user={u} />
                       </TD>
                       <TD>{renderStatusBadge(t, u.status ?? null)}</TD>
+                      {!isSuperAdmin ? (
+                        <>
+                          <TD className="hidden text-center lg:table-cell">
+                            <Badge variant="info">{stat?.sentCount ?? 0}</Badge>
+                          </TD>
+                          <TD className="hidden text-center lg:table-cell">
+                            <Badge variant="success">{stat?.consumedCount ?? 0}</Badge>
+                          </TD>
+                        </>
+                      ) : null}
                       <TD className="hidden text-ase-muted xl:table-cell">{fmtDate(u.created_at)}</TD>
                       <TD className="text-right">
                         <div className="inline-flex gap-2">
@@ -324,7 +362,7 @@ export function UsersPage() {
                         </div>
                       </TD>
                     </TR>
-                  ))}
+                  )})}
                 </TBody>
               </Table>
             </Card>
@@ -336,8 +374,8 @@ export function UsersPage() {
 
       {createOpen && (
         <div className="fixed inset-0 z-50">
-          <button className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setCreateOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2/90 p-6 shadow-[0_0_80px_rgba(0,0,0,0.55)] backdrop-blur-md sm:p-8">
+          <button className="absolute inset-0 bg-black/65" onClick={() => setCreateOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2 p-6 shadow-soft sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.actions.create')}</div>
@@ -362,9 +400,6 @@ export function UsersPage() {
         onClose={() => setEditing(null)}
         footer={
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" onClick={() => setEditing(null)}>
-              {t('usersPage.edit.cancel')}
-            </Button>
             <Button
               variant="primary"
               disabled={updateMutation.isPending}
@@ -441,9 +476,6 @@ export function UsersPage() {
         onClose={() => setConfirmDelete(null)}
         footer={
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>
-              {t('usersPage.delete.cancel')}
-            </Button>
             <Button
               variant="danger"
               disabled={deleteMutation.isPending}
@@ -469,6 +501,8 @@ export function UsersPage() {
           )}
         </div>
       </Modal>
+
+      <MemberCatalogStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} />
     </div>
   )
 }
@@ -494,7 +528,7 @@ function initials(u: User) {
 function UserIdentity({ user }: { user: User }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-400/15 to-violet-400/10 text-xs font-extrabold text-ase-text">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-xs font-extrabold text-ase-text ring-1 ring-ase-brand/20">
         {initials(user)}
       </div>
       <div className="min-w-0">
@@ -506,31 +540,26 @@ function UserIdentity({ user }: { user: User }) {
 }
 
 function IdentityOrb({ label, value, tone }: { label: string; value: number; tone: 'success' | 'info' | 'warning' }) {
-  const toneClass =
-    tone === 'success'
-      ? 'from-emerald-300/20 to-teal-400/10 text-emerald-100'
-      : tone === 'warning'
-        ? 'from-amber-300/20 to-orange-400/10 text-amber-100'
-        : 'from-cyan-300/20 to-violet-400/10 text-cyan-100'
+  const toneClass = tone === 'success' ? 'border-emerald-300/20' : tone === 'warning' ? 'border-amber-300/20' : 'border-white/10'
   return (
-    <div className={cn('rounded-3xl border border-white/10 bg-gradient-to-br p-4 text-center shadow-[0_18px_60px_rgba(0,0,0,0.28)]', toneClass)}>
+    <div className={cn('rounded-3xl border bg-ase-bg2/60 p-4 text-center shadow-soft', toneClass)}>
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide opacity-75">{label}</div>
     </div>
   )
 }
 
-function PremiumUserMetric({ label, hint, value, icon, accent }: { label: string; hint: string; value: number; icon: string; accent: string }) {
+function PremiumUserMetric({ label, hint, value, icon }: { label: string; hint: string; value: number; icon: string; accent: string }) {
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur" interactive>
-      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', accent)} />
+    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
           <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{value.toLocaleString()}</div>
           <div className="mt-2 text-xs text-ase-text2">{hint}</div>
         </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm text-ase-text">{icon}</div>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
       </div>
     </Card>
   )
@@ -539,17 +568,18 @@ function PremiumUserMetric({ label, hint, value, icon, accent }: { label: string
 function UserPremiumCard({
   user,
   t,
+  catalogStat,
   onEdit,
   onDelete,
 }: {
   user: User
   t: (k: string) => string
+  catalogStat?: MemberCatalogStat
   onEdit: () => void
   onDelete: () => void
 }) {
   return (
-    <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-cyan-300/20">
-      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_36%)]" />
+    <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
       <div className="relative flex items-start justify-between gap-4">
         <UserIdentity user={user} />
         {renderStatusBadge(t, user.status ?? null)}
@@ -562,6 +592,18 @@ function UserPremiumCard({
           label={t('usersPage.premium.cards.verification') as string}
           value={(user.email_verified_at ? t('usersPage.premium.cards.verified') : t('usersPage.premium.cards.pending')) as string}
         />
+        {catalogStat ? (
+          <>
+            <MiniUserMetric
+              label={t('organizationWorkspace.memberStats.columnSent') as string}
+              value={String(catalogStat.sentCount)}
+            />
+            <MiniUserMetric
+              label={t('organizationWorkspace.memberStats.columnConsumed') as string}
+              value={String(catalogStat.consumedCount)}
+            />
+          </>
+        ) : null}
       </div>
       <div className="relative mt-5 flex flex-wrap gap-2">
         <Button size="sm" variant="secondary" onClick={onEdit}>
@@ -607,7 +649,7 @@ function UsersInsightsPanel({
   const total = Math.max(1, items.length)
   return (
     <aside className="space-y-6">
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur">
+      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-ase-text">{t('usersPage.premium.insights.title')}</h2>
           <Button size="sm" onClick={onCreate}>{t('usersPage.premium.actions.create')}</Button>
@@ -657,7 +699,7 @@ function InsightBar({ label, value, total }: { label: string; value: number; tot
         <span>{value}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-violet-400" style={{ width: `${(value / total) * 100}%` }} />
+        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${(value / total) * 100}%` }} />
       </div>
     </div>
   )

@@ -31,11 +31,27 @@ export function SidebarNavGroups({ groups }: Props) {
                   )
                 }
               >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-xs text-ase-text">
-                  {item.icon}
-                </span>
-                <span className="min-w-0 truncate">{t(item.labelKey)}</span>
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-current opacity-0 transition group-[.active]:opacity-100" />
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition',
+                        isActive
+                          ? 'border-cyan-300/25 bg-cyan-300/10 text-cyan-200'
+                          : 'border-white/10 bg-white/[0.04] text-ase-text2 group-hover:text-ase-text',
+                      )}
+                    >
+                      <item.icon className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0 truncate">{t(item.labelKey)}</span>
+                    <span
+                      className={cn(
+                        'ml-auto h-1.5 w-1.5 rounded-full bg-current transition',
+                        isActive ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                  </>
+                )}
               </NavLink>
             ))}
           </div>

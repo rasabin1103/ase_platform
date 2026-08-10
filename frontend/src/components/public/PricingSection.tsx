@@ -2,29 +2,41 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listPlansCatalog } from '../../api/plansCatalog.api'
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
-import { buildTierViewModels, type PricingTier } from './pricingFromPlans'
+import type { Plan } from '../../types/plan.types'
+import {
+  catalogPlansForBilling,
+  planFeatureLines,
+  planPriceView,
+  tierFromPlanCode,
+} from './pricingFromPlans'
 
 type Billing = 'monthly' | 'yearly'
 
 type TierTone = 'basic' | 'pro' | 'robust' | 'premium'
 
-const TIER_TONE: Record<PricingTier, TierTone> = {
-  free: 'basic',
-  pro: 'pro',
-  business: 'robust',
-  enterprise: 'premium',
+function planMarketingDescription(
+  t: (key: string) => unknown,
+  plan: Plan,
+): string {
+  const tier = tierFromPlanCode(plan.code)
+  if (tier === 'free') return t('pricing.starterPara') as string
+  if (tier === 'enterprise') return t('pricing.enterprisePara') as string
+  if (tier === 'pro' || tier === 'business') return t('pricing.professionalPara') as string
+  return plan.short_description || plan.description || ''
 }
 
-const TIER_HREF: Record<PricingTier, string> = {
-  free: '/contact',
-  pro: '/contact',
-  business: '/contact',
-  enterprise: '/contact',
+function cardTone(plan: Plan): TierTone {
+  const tier = tierFromPlanCode(plan.code)
+  if (tier === 'pro') return 'pro'
+  if (tier === 'business') return 'robust'
+  if (tier === 'enterprise') return 'premium'
+  if (plan.is_recommended) return 'pro'
+  return 'basic'
 }
 
 export function PricingSection({ compact }: { compact?: boolean }) {
@@ -37,23 +49,20 @@ export function PricingSection({ compact }: { compact?: boolean }) {
     staleTime: 60_000,
   })
 
-  const rows = useMemo(() => {
+  const plans = useMemo(() => {
     if (!plansQuery.data) return []
-    return buildTierViewModels(
+    return catalogPlansForBilling(
       plansQuery.data,
       billing,
-      t('pricing.perMonth') as string,
-      t('pricing.perYear') as string,
-      t('pricing.customPrice') as string,
     )
-  }, [plansQuery.data, billing, t])
+  }, [plansQuery.data, billing])
 
   const gridColsClass =
-    rows.length <= 1
+    plans.length <= 1
       ? 'lg:grid-cols-1'
-      : rows.length === 2
+      : plans.length === 2
         ? 'lg:grid-cols-2'
-        : rows.length === 3
+        : plans.length === 3
           ? 'lg:grid-cols-3'
           : 'lg:grid-cols-4'
 
@@ -62,9 +71,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
       <div className={cn('mx-auto w-full max-w-[1440px] px-6 sm:px-8', compact ? 'py-16' : 'py-28')}>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Badge variant="info" className="w-fit">
-              {t('pricing.badge')}
-            </Badge>
+            <Eyebrow>{t('pricing.badge')}</Eyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('pricing.title')}
             </h2>
@@ -114,28 +121,20 @@ export function PricingSection({ compact }: { compact?: boolean }) {
         ) : null}
 
         {plansQuery.isLoading ? (
-          <div className={cn('mt-12 grid grid-cols-1 gap-6', 'lg:grid-cols-4')}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Card
-                key={i}
-                className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/40 p-7 backdrop-blur"
-              >
+          <div className={cn('mt-12 grid grid-cols-1 gap-6', 'lg:grid-cols-3')} aria-busy="true" aria-live="polite">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7">
                 <div className="h-4 w-24 animate-pulse rounded-lg bg-white/10" />
                 <div className="mt-4 h-16 w-full animate-pulse rounded-xl bg-white/[0.06]" />
                 <div className="mt-6 h-12 w-full animate-pulse rounded-xl bg-white/[0.06]" />
-                <div className="mt-6 space-y-3">
-                  <div className="h-3 w-full animate-pulse rounded bg-white/[0.06]" />
-                  <div className="h-3 w-[85%] animate-pulse rounded bg-white/[0.06]" />
-                  <div className="h-3 w-[70%] animate-pulse rounded bg-white/[0.06]" />
-                </div>
                 <p className="sr-only">{t('pricing.loadingHint')}</p>
               </Card>
             ))}
           </div>
         ) : null}
 
-        {!plansQuery.isLoading && !plansQuery.isError && rows.length === 0 ? (
-          <div className="mt-12 rounded-3xl border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
+        {!plansQuery.isLoading && !plansQuery.isError && plans.length === 0 ? (
+          <div className="mt-12 rounded-3xl border border-white/10 bg-ase-surface px-6 py-12 text-center">
             <p className="text-sm text-ase-text2">{t('pricing.empty')}</p>
             <Button type="button" variant="secondary" className="mt-4" onClick={() => plansQuery.refetch()}>
               {t('pricing.retry')}
@@ -143,84 +142,103 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           </div>
         ) : null}
 
-        {!plansQuery.isLoading && !plansQuery.isError && rows.length > 0 ? (
+        {!plansQuery.isLoading && !plansQuery.isError && plans.length > 0 ? (
           <div className={cn('mt-12 grid grid-cols-1 gap-6', gridColsClass)}>
-            {rows.map((row) => {
-              const tone = TIER_TONE[row.tier]
-              const meta = tierCardCopy(t, row.tier)
+            {plans.map((plan) => {
+              const tone = cardTone(plan)
+              const { priceLabel, suffix } = planPriceView(
+                plan,
+                t('pricing.customPrice') as string,
+                t('pricing.perMonth') as string,
+                t('pricing.perYear') as string,
+                billing,
+              )
+              const features = planFeatureLines(plan)
+              const description = planMarketingDescription(t, plan)
+              const cta = plan.cta_label || (t('pricing.plans.pro.cta') as string)
+
               return (
                 <Card
-                  key={row.tier}
+                  key={plan.id}
                   interactive
                   className={cn(
-                    'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/60 p-7 backdrop-blur',
-                    tone === 'pro' &&
-                      'border-ase-primary/35 bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.12),transparent_55%)]',
-                    tone === 'premium' && 'bg-white/[0.02]',
+                    'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft',
+                    tone === 'pro' && 'border-ase-gold/35',
+                    tone === 'premium' && 'border-white/15',
                   )}
                 >
-                  {tone === 'pro' ? (
-                    <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-ase-primary/14 blur-3xl" />
-                  ) : null}
-
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-sm font-semibold text-ase-text">{meta.name}</div>
-                      {meta.badge ? (
-                        <div className="mt-2 inline-flex rounded-full border border-ase-primary/30 bg-ase-primary/10 px-2.5 py-0.5 text-xs font-semibold text-ase-primary">
-                          {meta.badge}
+                      <div className="text-sm font-semibold text-ase-text">{plan.name}</div>
+                      {plan.is_recommended ? (
+                        <div className="mt-2 inline-flex rounded-full border border-ase-gold/35 bg-ase-gold/10 px-2.5 py-0.5 text-xs font-semibold text-ase-gold">
+                          {t('pricing.plans.pro.badge')}
                         </div>
                       ) : null}
                     </div>
                   </div>
 
-                  <div className="mt-4 text-sm leading-relaxed text-ase-text2">{meta.desc}</div>
+                  {description ? (
+                    <div className="mt-4 text-sm leading-relaxed text-ase-text2">{description}</div>
+                  ) : null}
 
                   <div className="mt-6 flex items-end gap-2">
-                    <div className="text-4xl font-extrabold tracking-tight text-ase-text">{row.priceLabel}</div>
-                    {row.suffix ? <div className="pb-1 text-sm text-ase-text2">{row.suffix}</div> : null}
+                    <div className="text-4xl font-extrabold tracking-tight text-ase-text">{priceLabel}</div>
+                    {suffix ? <div className="pb-1 text-sm text-ase-text2">{suffix}</div> : null}
                   </div>
 
                   <div className="mt-6">
-                    <Link to={TIER_HREF[row.tier]}>
+                    <Link to="/contact">
                       <Button
                         size="lg"
                         variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}
                         className="w-full"
                       >
-                        {meta.cta}
+                        {cta}
                       </Button>
                     </Link>
                   </div>
 
-                  <ul className="mt-6 space-y-3">
-                    {meta.features.map((f) => (
-                      <li key={f} className="flex gap-3 text-sm text-ase-text2">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-accent/70 shadow-[0_0_12px_rgba(34,211,238,0.20)]" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {features.length > 0 ? (
+                    <ul className="mt-6 space-y-3">
+                      {features.map((f) => (
+                        <li key={f} className="flex gap-3 text-sm text-ase-text2">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </Card>
               )
             })}
           </div>
         ) : null}
+
+        {!compact && !plansQuery.isLoading && !plansQuery.isError && plans.length > 0 ? (
+          <div className="mt-16 rounded-3xl border border-white/10 bg-black/60 px-6 py-10 sm:px-10">
+            <h3 className="text-xl font-extrabold tracking-tight text-ase-text sm:text-2xl">
+              {t('pricing.guarantee.title')}
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ase-text2 sm:text-base">
+              {t('pricing.guarantee.text')}
+            </p>
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+              {(['item1', 'item2', 'item3'] as const).map((key) => (
+                <div key={key} className="inline-flex items-center gap-2 text-sm text-ase-text2">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ase-brand/30 bg-ase-brand/10 text-[11px] font-bold text-ase-brand"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                  <span>{t(`pricing.guarantee.${key}`)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   )
-}
-
-function tierCardCopy(
-  t: (key: string) => string,
-  tier: PricingTier,
-): { name: string; badge?: string; desc: string; features: string[]; cta: string } {
-  const base = `pricing.plans.${tier}`
-  return {
-    name: t(`${base}.name`) as string,
-    badge: tier === 'pro' ? (t('pricing.plans.pro.badge') as string) : undefined,
-    desc: t(`${base}.desc`) as string,
-    features: t(`${base}.features`) as unknown as string[],
-    cta: t(`${base}.cta`) as string,
-  }
 }

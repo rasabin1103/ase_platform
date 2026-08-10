@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Arce Sabin Engineering">
+  <title>ASE</title>
+  <rect width="180" height="180" rx="40" fill="#020617"/>
+  <rect x="2" y="2" width="176" height="176" rx="38" fill="none" stroke="#38BDF8" stroke-opacity="0.28" stroke-width="2"/>
+  <text x="90" y="78" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#38BDF8">ASE</text>
+  <text x="90" y="118" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="600" letter-spacing="0.22em" fill="#CBD5E1">ARCE SABIN</text>
+</svg>

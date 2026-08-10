@@ -14,7 +14,7 @@ export function HeroSection() {
             <Badge variant="info" className="w-fit">
               {t('hero.badge')}
             </Badge>
-            <h1 className="mt-8 text-5xl font-extrabold leading-[1.02] tracking-tight text-ase-text sm:text-6xl lg:text-7xl">
+            <h1 className="mt-8 text-display-lg font-semibold text-ase-text sm:text-display-xl lg:text-display-2xl">
               {t('hero.title')}
             </h1>
             <p className="mt-8 max-w-[44ch] text-base leading-relaxed text-ase-text2 sm:text-lg">
@@ -22,14 +22,14 @@ export function HeroSection() {
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link to="/contact">
+              <Link to="/pricing">
                 <Button size="lg" className="w-full sm:w-auto">
-                  {t('cta.talkToUs')}
+                  {t('hero.primaryCta')}
                 </Button>
               </Link>
-              <Link to="/platform">
+              <Link to="/pricing">
                 <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  {t('nav.platform')}
+                  {t('hero.secondaryCta')}
                 </Button>
               </Link>
               <Link to="/login">

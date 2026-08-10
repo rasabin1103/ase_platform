@@ -1,4 +1,4 @@
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
@@ -20,9 +20,7 @@ export function PlatformModulesMap() {
       <div className="mx-auto w-full max-w-[1440px] px-6 sm:px-8 py-28">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Badge variant="info" className="w-fit">
-              {t('modules.badge')}
-            </Badge>
+            <Eyebrow>{t('modules.badge')}</Eyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('modules.title')}
             </h2>
@@ -48,11 +46,10 @@ export function PlatformModulesMap() {
             </div>
 
             <div className="relative">
-              <div className="pointer-events-none absolute -inset-10 rounded-[44px] bg-gradient-to-tr from-ase-primary/16 via-ase-accent/12 to-transparent blur-3xl" />
               <Card
                 interactive
                 className={cn(
-                  'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/70 p-8 backdrop-blur',
+                  'relative overflow-hidden rounded-3xl border-ase-brand/25 bg-ase-surface p-8',
                   'shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_28px_70px_rgba(0,0,0,0.60)]',
                 )}
               >
@@ -95,7 +92,7 @@ export function PlatformModulesMap() {
 
 function ModuleCard({ title, desc }: { title: string; desc: string }) {
   return (
-    <Card className="rounded-3xl border-white/10 bg-ase-surface/60 p-7 backdrop-blur" interactive>
+    <Card className="rounded-3xl border-white/10 bg-ase-surface p-7" interactive>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm font-semibold text-ase-text">{title}</div>

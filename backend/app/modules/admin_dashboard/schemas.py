@@ -41,6 +41,11 @@ class TopUserPurchases(BaseModel):
     purchase_count: int
 
 
+class RatingTagCount(BaseModel):
+    tag: str
+    count: int
+
+
 class AdminAnalyticsRead(BaseModel):
     users_growth: list[TimeSeriesPoint]
     catalog_growth: list[TimeSeriesPoint]
@@ -49,6 +54,14 @@ class AdminAnalyticsRead(BaseModel):
     catalog_by_type: dict[str, int]
     revenue_total: float
     top_users: list[TopUserPurchases]
+    organizations_total: int = 0
+    organizations_by_type: dict[str, int] = {}
+    requests_by_status: dict[str, int] = {}
+    ratings_total: int = 0
+    ratings_upvotes: int = 0
+    ratings_downvotes: int = 0
+    ratings_top_tags: list[RatingTagCount] = []
+    users_by_role: dict[str, int] = {}
 
 
 class AdminPurchasesSummaryRead(BaseModel):

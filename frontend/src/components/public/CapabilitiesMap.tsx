@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 import { tStringArray, useI18n } from '../../i18n'
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { cn } from '../ui/cn'
 
 const NODE_IDS = ['saas', 'qa', 'rbac', 'billing', 'training', 'frameworks', 'books', 'ai', 'dashboards', 'audit'] as const
@@ -60,9 +60,7 @@ export function CapabilitiesMap() {
 
       <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 sm:px-8 lg:px-12">
         <div className="max-w-3xl">
-          <Badge variant="info" className="border-ase-primary/25 bg-ase-primary/10 text-ase-primary">
-            {t('servicesPage.capabilities.badge')}
-          </Badge>
+          <Eyebrow>{t('servicesPage.capabilities.badge')}</Eyebrow>
           <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl lg:text-[2.5rem]">
             {t('servicesPage.capabilities.title')}
           </h2>
@@ -111,10 +109,9 @@ export function CapabilitiesMap() {
 
             {/* Core hub */}
             <div className="pointer-events-none absolute left-1/2 top-1/2 z-[2] w-[min(92%,20rem)] -translate-x-1/2 -translate-y-1/2">
-              <div className="pointer-events-none absolute -inset-8 rounded-[2rem] bg-ase-primary/10 blur-3xl motion-safe:animate-cap-glow" />
               <div
                 className={cn(
-                  'relative overflow-hidden rounded-[1.75rem] border border-white/[0.12] bg-white/[0.06] p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_28px_90px_rgba(0,0,0,0.55)] backdrop-blur-xl motion-safe:animate-cap-float',
+                  'relative overflow-hidden rounded-[1.75rem] border border-white/[0.12] bg-white/[0.06] p-8 text-center shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_28px_90px_rgba(0,0,0,0.55)] motion-safe:animate-cap-float',
                   hovered && 'border-ase-primary/25 bg-white/[0.08]',
                 )}
               >
@@ -145,7 +142,7 @@ export function CapabilitiesMap() {
                 type="button"
                 style={{ left: `${n.left}%`, top: `${n.top}%` }}
                 className={cn(
-                  'absolute z-[3] w-[min(12.5rem,18vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-white/[0.05] p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-300',
+                  'absolute z-[3] w-[min(12.5rem,18vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-white/[0.05] p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition duration-300',
                   'border-white/[0.1] hover:-translate-y-[calc(50%+2px)] hover:border-ase-primary/35 hover:bg-white/[0.09] hover:shadow-[0_20px_60px_rgba(0,0,0,0.55)]',
                   isOn ? 'opacity-100' : 'opacity-[0.35]',
                   hovered === n.id && 'scale-[1.03] border-ase-primary/40 opacity-100 ring-1 ring-ase-primary/25',
@@ -181,7 +178,7 @@ export function CapabilitiesMap() {
           <aside className="relative z-[4] lg:pt-6">
             <div
               className={cn(
-                'sticky top-28 overflow-hidden rounded-2xl border border-white/[0.1] bg-ase-surface/70 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl transition duration-300',
+                'sticky top-28 overflow-hidden rounded-2xl border border-white/[0.1] bg-ase-surface p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.5)] transition duration-300',
                 active && 'border-ase-primary/25 shadow-[0_0_0_1px_rgba(56,189,248,0.12),0_24px_70px_rgba(0,0,0,0.55)]',
               )}
             >
@@ -207,8 +204,7 @@ export function CapabilitiesMap() {
 
         {/* Mobile / tablet: stacked ecosystem */}
         <div className="mt-12 space-y-6 lg:hidden">
-          <div className="relative mx-auto max-w-md overflow-hidden rounded-[1.75rem] border border-white/[0.1] bg-white/[0.05] p-6 text-center shadow-[0_20px_70px_rgba(0,0,0,0.5)] backdrop-blur-md">
-            <div className="pointer-events-none absolute -inset-10 bg-ase-primary/10 blur-3xl" />
+          <div className="relative mx-auto max-w-md overflow-hidden rounded-[1.75rem] border border-white/[0.1] bg-white/[0.05] p-6 text-center shadow-[0_20px_70px_rgba(0,0,0,0.5)]">
             <div className="relative z-[1] mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-ase-primary/30 bg-ase-primary/15 text-lg text-ase-primary">
               {t('servicesPage.visuals.capabilityCoreSymbol')}
             </div>
@@ -228,7 +224,7 @@ export function CapabilitiesMap() {
                   key={n.id}
                   type="button"
                   className={cn(
-                    'relative w-full rounded-2xl border border-white/[0.08] bg-ase-surface/60 p-4 text-left shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md transition',
+                    'relative w-full rounded-2xl border border-white/[0.08] bg-ase-surface p-4 text-left shadow-[0_8px_32px_rgba(0,0,0,0.35)] transition',
                     hovered === n.id && 'border-ase-primary/35 bg-white/[0.06] ring-1 ring-ase-primary/20',
                   )}
                   onClick={() => setHovered((cur) => (cur === n.id ? null : n.id))}

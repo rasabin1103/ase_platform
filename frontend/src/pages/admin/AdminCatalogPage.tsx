@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import {
+  addCatalogItemImage,
+  addCatalogItemImageUrl,
   createAdminCatalogItem,
   deleteAdminCatalogItem,
   listAdminCatalog,
+  setCatalogItemCoverImage,
   updateAdminCatalogItem,
   uploadCatalogItemImage,
   type CatalogItemAdmin,
 } from '../../api/catalogAdmin.api'
+import type { PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
 import type { CatalogItemType } from '../../types/catalog.types'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -69,8 +73,11 @@ export function AdminCatalogPage() {
     values: Parameters<typeof createAdminCatalogItem>[0],
     imageFile: File | null,
     existingId?: number,
+    pendingGallery: PendingGalleryImage[] = [],
+    pendingCoverKey: string | null = null,
   ) => {
     if (existingId) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { type: _t, slug: _s, ...rest } = values
       await updateAdminCatalogItem(existingId, rest)
       if (imageFile) await uploadCatalogItemImage(existingId, imageFile)
@@ -78,11 +85,34 @@ export function AdminCatalogPage() {
     }
     const created = await createAdminCatalogItem(values)
     if (imageFile) await uploadCatalogItemImage(created.id, imageFile)
+
+    // Upload any staged gallery images now that the item has an id, then set
+    // whichever one the admin picked (if any) as the cover.
+    let coverServerId: number | null = null
+    for (const staged of pendingGallery) {
+      const uploaded =
+        staged.kind === 'file' && staged.file
+          ? await addCatalogItemImage(created.id, staged.file)
+          : staged.kind === 'url' && staged.url
+            ? await addCatalogItemImageUrl(created.id, staged.url)
+            : null
+      if (uploaded && staged.key === pendingCoverKey) coverServerId = uploaded.id
+    }
+    if (coverServerId != null) await setCatalogItemCoverImage(created.id, coverServerId)
   }
 
   const createMut = useMutation({
-    mutationFn: ({ values, file }: { values: Parameters<typeof createAdminCatalogItem>[0]; file: File | null }) =>
-      saveWithImage(values, file),
+    mutationFn: ({
+      values,
+      file,
+      gallery,
+      coverKey,
+    }: {
+      values: Parameters<typeof createAdminCatalogItem>[0]
+      file: File | null
+      gallery: PendingGalleryImage[]
+      coverKey: string | null
+    }) => saveWithImage(values, file, undefined, gallery, coverKey),
     onSuccess: invalidate,
   })
   const updateMut = useMutation({
@@ -240,8 +270,8 @@ export function AdminCatalogPage() {
         onClose={() => setCreateOpen(false)}
         defaultType={defaultType}
         isSubmitting={createMut.isPending}
-        onSubmit={async (values, file) => {
-          await createMut.mutateAsync({ values, file })
+        onSubmit={async (values, file, gallery, coverKey) => {
+          await createMut.mutateAsync({ values, file, gallery, coverKey })
         }}
       />
 

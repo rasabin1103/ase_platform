@@ -1,6 +1,13 @@
 import { apiClient } from './client'
 import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../types/catalog.types'
 
+export type CatalogItemImage = {
+  id: number
+  url: string
+  is_cover: boolean
+  display_order: number
+}
+
 export type CatalogItemAdmin = {
   id: number
   uuid: string
@@ -11,6 +18,7 @@ export type CatalogItemAdmin = {
   short_description: string
   long_description: string
   image_url: string
+  images: CatalogItemImage[]
   preview_url: string | null
   price: string | number
   currency: string
@@ -88,4 +96,30 @@ export async function uploadCatalogItemImage(itemId: number, file: File) {
   const form = new FormData()
   form.append('file', file)
   await apiClient.post(`/admin/catalog/${itemId}/image`, form)
+}
+
+export async function listCatalogItemImages(itemId: number) {
+  const { data } = await apiClient.get<{ items: CatalogItemImage[] }>(`/admin/catalog/${itemId}/images`)
+  return data.items
+}
+
+export async function addCatalogItemImage(itemId: number, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await apiClient.post<CatalogItemImage>(`/admin/catalog/${itemId}/images`, form)
+  return data
+}
+
+export async function addCatalogItemImageUrl(itemId: number, url: string) {
+  const { data } = await apiClient.post<CatalogItemImage>(`/admin/catalog/${itemId}/images/url`, { url })
+  return data
+}
+
+export async function setCatalogItemCoverImage(itemId: number, imageId: number) {
+  const { data } = await apiClient.patch<CatalogItemImage>(`/admin/catalog/${itemId}/images/${imageId}/cover`)
+  return data
+}
+
+export async function deleteCatalogItemImage(itemId: number, imageId: number) {
+  await apiClient.delete(`/admin/catalog/${itemId}/images/${imageId}`)
 }
