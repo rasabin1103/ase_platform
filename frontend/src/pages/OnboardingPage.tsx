@@ -40,17 +40,6 @@ export function OnboardingPage() {
   const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: me })
   const orgsQuery = useQuery({ queryKey: ['organizations', 'onboarding'], queryFn: listOrganizations })
 
-  useEffect(() => {
-    const profile = meQuery.data
-    if (!profile) return
-    if (
-      profile.dashboard_mode === 'independent' ||
-      (profile.is_independent_user && profile.primary_role === 'independent_user' && !profile.organization_uuid)
-    ) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [meQuery.data, navigate])
-
   // If orgs appear (e.g. user got invited), go select/auto.
   useEffect(() => {
     if ((orgsQuery.data?.items?.length ?? 0) > 0) {
@@ -87,8 +76,7 @@ export function OnboardingPage() {
         </Badge>
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ase-text">Welcome, {display}</h1>
         <p className="mt-1 text-sm text-ase-text2">
-          Opcional: crea una organización para equipos o acepta una invitación. Los usuarios independientes acceden al
-          dashboard sin este paso.
+          You don’t have an organization yet. Create one to start, create an individual workspace, or accept an invite.
         </p>
       </div>
 

@@ -11,7 +11,6 @@ from app.modules.auth.dependencies import (
     require_permission,
     require_tenant_context,
 )
-from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.resource_assignments.schemas import (
     ResourceAssignmentCreate,
     ResourceAssignmentListResponse,
@@ -31,7 +30,7 @@ def get_service(db: Session = Depends(get_db)) -> ResourceAssignmentsService:
     "",
     response_model=ResourceAssignmentRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("resources.assign")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("resources.assign"))],
 )
 def create_resource_assignment(
     payload: ResourceAssignmentCreate,
@@ -98,7 +97,7 @@ def get_resource_assignment(
 @router.patch(
     "/{assignment_id}",
     response_model=ResourceAssignmentRead,
-    dependencies=[Depends(require_permission("resources.assign")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("resources.assign"))],
 )
 def update_resource_assignment(
     assignment_id: int,
@@ -114,4 +113,3 @@ def update_resource_assignment(
         if item.organization_id is not None and item.organization_id != org.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
     return svc.update(assignment_id, payload)
-

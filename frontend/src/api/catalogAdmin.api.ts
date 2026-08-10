@@ -1,13 +1,5 @@
 import { apiClient } from './client'
-import type {
-  CatalogItemLevel,
-  CatalogItemStatus,
-  CatalogItemType,
-  CatalogPurchaseProvider,
-  BookPurchaseLinkInput,
-  CatalogItemImageInput,
-  BookPurchasePlatform,
-} from '../types/catalog.types'
+import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../types/catalog.types'
 
 export type CatalogItemImage = {
   id: number
@@ -37,39 +29,7 @@ export type CatalogItemAdmin = {
   benefits: string[]
   requirements: string[]
   included_items: string[]
-  cover_image_url?: string | null
-  thumbnail_url?: string | null
-  amazon_url?: string | null
-  external_purchase_url?: string | null
-  purchase_provider?: CatalogPurchaseProvider
-  pdf_url?: string | null
-  preview_pdf_url?: string | null
-  preview_pages?: number | null
-  sample_download_url?: string | null
-  rich_content_markdown?: string | null
-  book_format?: string | null
-  audience?: string[]
   has_stored_image?: boolean
-  images?: Array<{
-    id: number
-    imageUrl: string
-    altText?: string | null
-    title?: string | null
-    sortOrder: number
-    isPrimary: boolean
-  }>
-  purchase_links?: Array<{
-    id: number
-    platform: BookPurchasePlatform
-    label: string
-    url: string
-    currency?: string | null
-    price?: string | number | null
-    country?: string | null
-    isPrimary: boolean
-    isActive: boolean
-    sortOrder: number
-  }>
   created_at: string
   updated_at: string
 }
@@ -99,20 +59,6 @@ export type CatalogItemAdminPayload = {
   benefits?: string[]
   requirements?: string[]
   included_items?: string[]
-  cover_image_url?: string | null
-  thumbnail_url?: string | null
-  amazon_url?: string | null
-  external_purchase_url?: string | null
-  purchase_provider?: CatalogPurchaseProvider
-  pdf_url?: string | null
-  preview_pdf_url?: string | null
-  preview_pages?: number | null
-  sample_download_url?: string | null
-  rich_content_markdown?: string | null
-  book_format?: string | null
-  audience?: string[]
-  images?: CatalogItemImageInput[]
-  purchase_links?: BookPurchaseLinkInput[]
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>

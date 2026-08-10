@@ -1,1 +1,0 @@
-"""Public contact form submissions."""

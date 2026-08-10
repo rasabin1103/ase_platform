@@ -9,7 +9,6 @@ from app.core.database import get_db
 from app.models.enums import SubscriptionStatus
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_platform_admin, require_permission, require_tenant_context
-from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.subscriptions.schemas import (
     SubscriptionCreate,
     SubscriptionListResponse,
@@ -29,7 +28,7 @@ def get_service(db: Session = Depends(get_db)) -> SubscriptionsService:
     "",
     response_model=SubscriptionRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("subscriptions.manage")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("subscriptions.manage"))],
 )
 def create_subscription(
     payload: SubscriptionCreate,
@@ -103,7 +102,7 @@ def get_subscription(
 @router.patch(
     "/{subscription_id}",
     response_model=SubscriptionRead,
-    dependencies=[Depends(require_permission("subscriptions.manage")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("subscriptions.manage"))],
 )
 def update_subscription(
     subscription_id: int,
@@ -131,7 +130,7 @@ def update_subscription(
 @router.delete(
     "/{subscription_id}",
     response_model=SubscriptionRead,
-    dependencies=[Depends(require_permission("subscriptions.manage")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("subscriptions.manage"))],
 )
 def delete_subscription(
     subscription_id: int,
@@ -144,5 +143,4 @@ def delete_subscription(
     if not is_platform_admin(db, current_user) and sub.organization_id != require_tenant_context(request, db, current_user).id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
     return svc.cancel(subscription_id)
-
 

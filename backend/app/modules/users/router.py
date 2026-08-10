@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_platform_admin, require_permission, require_tenant_context
-from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.users.schemas import UserCreate, UserListResponse, UserRead, UserUpdate
 from app.modules.users.service import UsersService
 
@@ -23,7 +22,7 @@ def get_users_service(db: Session = Depends(get_db)) -> UsersService:
     "",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("users.create")), Depends(require_security_onboarding)],
+    dependencies=[Depends(require_permission("users.create"))],
 )
 def create_user(payload: UserCreate, svc: UsersService = Depends(get_users_service)):
     user = svc.create_user(payload)
@@ -61,7 +60,7 @@ def get_user(
     return svc.get_user_for_organization(user_uuid, organization_id=org.id)
 
 
-@router.patch("/{user_uuid}", response_model=UserRead, dependencies=[Depends(require_permission("users.update")), Depends(require_security_onboarding)])
+@router.patch("/{user_uuid}", response_model=UserRead, dependencies=[Depends(require_permission("users.update"))])
 def update_user(
     user_uuid: UUID,
     payload: UserUpdate,
@@ -76,7 +75,7 @@ def update_user(
     return svc.update_user(user_uuid, payload)
 
 
-@router.delete("/{user_uuid}", response_model=UserRead, dependencies=[Depends(require_permission("users.delete")), Depends(require_security_onboarding)])
+@router.delete("/{user_uuid}", response_model=UserRead, dependencies=[Depends(require_permission("users.delete"))])
 def delete_user(
     user_uuid: UUID,
     request: Request,
@@ -88,5 +87,4 @@ def delete_user(
         org = require_tenant_context(request, db, current_user)
         svc.get_user_for_organization(user_uuid, organization_id=org.id)
     return svc.soft_delete_user(user_uuid)
-
 

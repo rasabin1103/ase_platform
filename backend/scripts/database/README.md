@@ -4,12 +4,12 @@ Scripts to reset and seed the MVP database (roles: `super_admin`, `independent_u
 
 ## Prerequisites
 
-- PostgreSQL running and `DATABASE_URL` set in `backend/.env`
-- Virtualenv with dependencies: `backend/.venv`
+- PostgreSQL running and `DATABASE_URL` (or `POSTGRES_*`) set in `ase_backend/.env`
+- Virtualenv with dependencies: `ase_backend/.venv`
 
 ## Commands
 
-From `backend`:
+From `ase_backend`:
 
 ```powershell
 # 1. Drop & recreate schema (destructive)
@@ -48,9 +48,7 @@ local, gitignored `.env` (falls back to the shared demo password if unset).
 ## Full fresh setup
 
 ```powershell
-cd backend
+cd ase_backend
 .venv\Scripts\python.exe scripts\database\reset_database.py
 .venv\Scripts\python.exe scripts\database\seed_all.py
 ```
-
-See also [../README.md](../README.md) and [../maintenance/](../maintenance/).

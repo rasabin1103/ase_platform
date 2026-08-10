@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.roles.schemas import RoleCreate, RoleListResponse, RoleRead, RoleUpdate
 from app.modules.roles.service import RolesService
-from app.modules.auth.security_onboarding import require_security_onboarding
 
 router = APIRouter(prefix="/api/v1/roles", tags=["roles"])
 
@@ -44,5 +43,4 @@ def update_role(role_id: int, payload: RoleUpdate, svc: RolesService = Depends(g
 def delete_role(role_id: int, svc: RolesService = Depends(get_roles_service)):
     svc.delete(role_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
 
