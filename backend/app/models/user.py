@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, LargeBinary, String
+from sqlalchemy import Boolean, DateTime, Enum, LargeBinary, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -35,6 +36,9 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     phone_e164: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
     phone_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     two_factor_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    two_factor_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    two_factor_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    two_factor_recovery_codes: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     can_create_content: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     creator_status: Mapped[CreatorStatus] = mapped_column(
         Enum(CreatorStatus, name="creator_status", native_enum=True),
@@ -50,6 +54,9 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
 
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    security_onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    security_warning_dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    security_warning_count: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
 
     owned_organizations: Mapped[list["Organization"]] = relationship(
         back_populates="owner",

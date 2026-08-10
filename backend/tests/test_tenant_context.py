@@ -11,7 +11,7 @@ from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_organization
-from app.modules.auth.security import create_access_token, hash_password
+from app.core.security import create_access_token, hash_password
 
 
 def _make_app() -> FastAPI:

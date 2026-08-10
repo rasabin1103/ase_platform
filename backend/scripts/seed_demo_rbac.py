@@ -37,7 +37,7 @@ from app.models.organization_member import OrganizationMember
 from app.models.resource_assignment import ResourceAssignment
 from app.models.role import Role
 from app.models.user import User
-from app.modules.auth.security import hash_password
+from app.core.security import hash_password
 
 DEMO_PASSWORD = os.environ.get("DEMO_SEED_PASSWORD", "ChangeMeDemo123!")
 

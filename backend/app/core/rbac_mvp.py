@@ -12,6 +12,7 @@ MVP_PERMISSION_CODES: frozenset[str] = frozenset(
         "users.read",
         "users.create",
         "users.update",
+        "users.delete",
         "catalog.read",
         "catalog.manage",
         "favorites.manage_own",

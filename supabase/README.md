@@ -20,8 +20,20 @@ Ordered SQL snapshots for core MVP entities:
 2. Catalog items
 3. Favorites & purchases
 4. Access requests
+5. Catalog pricing plans
+6. Catalog media / external links
+7. **user_platform_roles** (independent users without org on register)
 
-These files document the schema and can be applied on empty databases. The **complete** schema (phone fields, creator flags, binary images, etc.) is defined in `ase_backend/alembic/versions/` — run Alembic for parity with the app.
+These files document the schema and can be applied on empty databases. The **complete** schema is defined in `backend/alembic/versions/` — **always run Alembic against production `DATABASE_URL`** after deploy:
+
+```powershell
+cd backend
+Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe scripts\maintenance\show_db_target.py
+```
+
+If production was updated only via SQL files here and not Alembic, you can apply `00007_user_platform_roles.sql` in the Supabase SQL editor instead.
 
 ## `seed.sql`
 

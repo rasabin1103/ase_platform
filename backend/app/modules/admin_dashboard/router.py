@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -11,6 +11,10 @@ from app.models.catalog_purchase import CatalogPurchase
 from app.models.enums import AccessRequestStatus, CatalogItemType, UserStatus
 from app.models.user import User
 from app.modules.admin_dashboard.analytics import build_admin_analytics
+from app.modules.admin_dashboard.counts import (
+    count_users_excluding_deleted,
+    count_users_inactive_or_suspended,
+)
 from app.modules.admin_dashboard.schemas import (
     AdminAnalyticsRead,
     AdminPurchaseListResponse,
@@ -33,11 +37,18 @@ def admin_stats(db: Session = Depends(get_db)):
             db.execute(select(func.count()).select_from(CatalogItem).where(CatalogItem.type == t)).scalar_one()
         )
         by_type[t.value] = n
-    users_total = int(db.execute(select(func.count()).select_from(User)).scalar_one())
+    users_total = count_users_excluding_deleted(db)
     users_active = int(
         db.execute(select(func.count()).select_from(User).where(User.status == UserStatus.active)).scalar_one()
     )
+    users_inactive = count_users_inactive_or_suspended(db)
     purchases_total = int(db.execute(select(func.count()).select_from(CatalogPurchase)).scalar_one())
+    revenue_raw = db.execute(
+        select(func.coalesce(func.sum(CatalogItem.price), 0))
+        .select_from(CatalogPurchase)
+        .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+    ).scalar_one()
+    revenue_total = float(revenue_raw or 0)
     requests_pending = int(
         db.execute(
             select(func.count()).select_from(AccessRequest).where(AccessRequest.status == AccessRequestStatus.pending)
@@ -48,7 +59,9 @@ def admin_stats(db: Session = Depends(get_db)):
         catalog_by_type=by_type,
         users_total=users_total,
         users_active=users_active,
+        users_inactive=users_inactive,
         purchases_total=purchases_total,
+        revenue_total=revenue_total,
         requests_pending=requests_pending,
     )
 
@@ -59,18 +72,34 @@ def admin_stats(db: Session = Depends(get_db)):
     dependencies=[Depends(require_permission("purchases.read_all"))],
 )
 def list_admin_purchases(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    search: str | None = None,
+    item_type: CatalogItemType | None = None,
+    user_email: str | None = None,
     db: Session = Depends(get_db),
 ):
-    total = int(db.execute(select(func.count()).select_from(CatalogPurchase)).scalar_one())
-    rows = db.execute(
-        select(CatalogPurchase, User.email, CatalogItem.title, CatalogItem.type)
+    base = (
+        select(CatalogPurchase, User.email, CatalogItem.title, CatalogItem.type, CatalogItem.price, CatalogItem.currency)
         .join(User, User.id == CatalogPurchase.user_id)
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
-        .order_by(CatalogPurchase.created_at.desc())
-        .limit(limit)
-        .offset(offset)
+    )
+    if item_type is not None:
+        base = base.where(CatalogItem.type == item_type)
+    if user_email and user_email.strip():
+        base = base.where(User.email.ilike(f"%{user_email.strip()}%"))
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        base = base.where(
+            or_(
+                User.email.ilike(term),
+                CatalogItem.title.ilike(term),
+            )
+        )
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = int(db.execute(count_stmt).scalar_one())
+    rows = db.execute(
+        base.order_by(CatalogPurchase.created_at.desc()).limit(limit).offset(offset)
     ).all()
     items = [
         AdminPurchaseRead(
@@ -80,9 +109,11 @@ def list_admin_purchases(
             user_email=email,
             item_title=title,
             item_type=itype.value if hasattr(itype, "value") else str(itype),
+            amount=price,
+            currency=currency or "EUR",
             created_at=p.created_at,
         )
-        for p, email, title, itype in rows
+        for p, email, title, itype, price, currency in rows
     ]
     return AdminPurchaseListResponse(items=items, limit=limit, offset=offset, total=total)
 

@@ -1,9 +1,10 @@
 export const creatorApplicationEn = {
-  title: 'Apply to become a creator',
-  subtitle: 'ASE reviews every creator application to protect platform quality.',
-  requiresApproval: 'To create content on ASE you need quality approval from our team.',
-  requestCreator: 'Apply to become a creator',
-  requestAuthorization: 'Request authorization',
+  title: 'Content Creator Access',
+  subtitle: 'Unlock publishing capabilities inside ASE — every application is reviewed for quality and fit.',
+  requiresApproval:
+    'Publish courses and products in the ASE ecosystem after a short quality review by our team.',
+  requestCreator: 'Apply for creator access',
+  requestAuthorization: 'Apply for creator access',
   fields: {
     type: 'What do you want to create?',
     typeCourses: 'Courses',
@@ -36,11 +37,12 @@ export const creatorApplicationEn = {
 }
 
 export const creatorApplicationEs = {
-  title: 'Solicitar ser creador',
-  subtitle: 'ASE revisa cada solicitud para proteger la calidad de la plataforma.',
-  requiresApproval: 'Para crear contenido en ASE necesitas aprobación de calidad por nuestro equipo.',
-  requestCreator: 'Solicitar ser creador',
-  requestAuthorization: 'Solicitar autorización',
+  title: 'Acceso Content Creator',
+  subtitle: 'Desbloquea capacidades de publicación en ASE — cada solicitud se revisa por calidad y encaje.',
+  requiresApproval:
+    'Publica cursos y productos en el ecosistema ASE tras una breve revisión de calidad por nuestro equipo.',
+  requestCreator: 'Solicitar acceso creador',
+  requestAuthorization: 'Solicitar acceso creador',
   fields: {
     type: '¿Qué quieres crear?',
     typeCourses: 'Cursos',

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.role_permissions.schemas import RolePermissionCreate, RolePermissionListResponse, RolePermissionRead
 from app.modules.role_permissions.service import RolePermissionsService
+from app.modules.auth.security_onboarding import require_security_onboarding
 
 router = APIRouter(prefix="/api/v1/role-permissions", tags=["role-permissions"])
 
@@ -45,4 +46,5 @@ def get_role_permission(role_permission_id: int, svc: RolePermissionsService = D
 def delete_role_permission(role_permission_id: int, svc: RolePermissionsService = Depends(get_service)):
     svc.delete(role_permission_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 

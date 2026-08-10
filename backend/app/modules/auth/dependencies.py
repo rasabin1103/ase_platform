@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -18,22 +19,74 @@ from app.models.permission import Permission
 from app.models.role import Role
 from app.models.role_permission import RolePermission
 from app.models.user import User
-from app.modules.auth.security import get_token_subject_uuid
+from app.models.user_platform_role import UserPlatformRole
+from app.core.security import (
+    get_token_subject_uuid,
+    peek_unverified_token_sub_and_typ,
+    sanitize_client_access_token,
+)
+from app.modules.auth.platform_roles import (
+    get_user_platform_role_codes,
+    user_has_platform_role,
+)
 from app.modules.users.repository import UsersRepository
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
+http_bearer = HTTPBearer(auto_error=False)
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    try:
-        user_uuid = get_token_subject_uuid(token, expected_type="access")
-    except ValueError:
+
+def get_current_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(http_bearer),
+    db: Session = Depends(get_db),
+) -> User:
+    """Resolve the authenticated user from ``Authorization: Bearer <access_jwt>``.
+
+    Business rules stay in :mod:`app.modules.auth.service`; here we only validate
+    the bearer token (access type) and load the :class:`~app.models.user.User` row.
+    """
+    auth_header_present = creds is not None and bool(creds.credentials and str(creds.credentials).strip())
+    if not auth_header_present:
+        logger.info(
+            "auth_diag auth_header_present=false token_decode_ok=false user_found=false token_subject=(none)"
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    raw = sanitize_client_access_token(creds.credentials)
+    if not raw:
+        logger.info(
+            "auth_diag auth_header_present=true token_decode_ok=false user_found=false token_subject=(none) detail=empty_after_sanitize"
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    user_uuid: UUID | None = None
+    try:
+        user_uuid = get_token_subject_uuid(raw, expected_type="access")
+    except ValueError as e:
+        peek = peek_unverified_token_sub_and_typ(raw)
+        logger.info(
+            "auth_diag auth_header_present=true token_decode_ok=false user_found=false "
+            "token_subject_hint=%s typ_hint=%s",
+            peek.get("sub_hint") or "(none)",
+            peek.get("typ_hint") or "(none)",
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials") from e
 
     user = UsersRepository(db).get_by_uuid(user_uuid)
     if user is None:
+        logger.info(
+            "auth_diag auth_header_present=true token_decode_ok=true user_found=false token_subject=%s",
+            str(user_uuid),
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    logger.debug(
+        "auth_diag auth_header_present=true token_decode_ok=true user_found=true token_subject=%s",
+        str(user_uuid),
+    )
     return user
 
 
@@ -197,6 +250,8 @@ def _resolve_effective_org_id(request: Request, db: Session, user: User) -> int 
 
 
 def _user_has_role_on_membership(db: Session, *, user_id: int, role_code: str) -> bool:
+    if user_has_platform_role(db, user_id=user_id, role_code=role_code):
+        return True
     stmt = (
         select(func.count())
         .select_from(MemberRole)
@@ -212,6 +267,8 @@ def is_super_admin(db: Session, user: User) -> bool:
 
 
 def is_independent_user(db: Session, user: User, *, organization_id: int | None = None) -> bool:
+    if user_has_platform_role(db, user_id=user.id, role_code="independent_user"):
+        return True
     stmt = (
         select(func.count())
         .select_from(MemberRole)
@@ -233,6 +290,7 @@ def user_has_role_assigned(db: Session, *, user_id: int, role_code: str) -> bool
 
 
 def get_user_role_codes(db: Session, *, user_id: int, organization_id: int | None = None) -> list[str]:
+    platform_codes = get_user_platform_role_codes(db, user_id=user_id) if organization_id is None else []
     stmt = (
         select(Role.code)
         .join(MemberRole, MemberRole.role_id == Role.id)
@@ -242,14 +300,17 @@ def get_user_role_codes(db: Session, *, user_id: int, organization_id: int | Non
     )
     if organization_id is not None:
         stmt = stmt.where(OrganizationMember.organization_id == organization_id)
-    return list(db.execute(stmt).scalars().all())
+    membership_codes = list(db.execute(stmt).scalars().all())
+    if organization_id is not None:
+        return membership_codes
+    return sorted(set(platform_codes) | set(membership_codes))
 
 
 def get_user_permissions(db: Session, *, user_id: int, organization_id: int | None = None) -> list[str]:
     if _user_has_role_on_membership(db, user_id=user_id, role_code="super_admin"):
         return sorted(ALL_PERMISSION_CODES)
 
-    stmt = (
+    membership_stmt = (
         select(Permission.code)
         .join(RolePermission, RolePermission.permission_id == Permission.id)
         .join(Role, Role.id == RolePermission.role_id)
@@ -260,11 +321,24 @@ def get_user_permissions(db: Session, *, user_id: int, organization_id: int | No
             OrganizationMember.membership_status == MembershipStatus.active,
         )
         .distinct()
-        .order_by(Permission.code.asc())
     )
     if organization_id is not None:
-        stmt = stmt.where(OrganizationMember.organization_id == organization_id)
-    return list(db.execute(stmt).scalars().all())
+        membership_stmt = membership_stmt.where(OrganizationMember.organization_id == organization_id)
+    membership_perms = set(db.execute(membership_stmt).scalars().all())
+
+    if organization_id is None:
+        platform_stmt = (
+            select(Permission.code)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .join(Role, Role.id == RolePermission.role_id)
+            .join(UserPlatformRole, UserPlatformRole.role_id == Role.id)
+            .where(UserPlatformRole.user_id == user_id)
+            .distinct()
+        )
+        platform_perms = set(db.execute(platform_stmt).scalars().all())
+        return sorted(membership_perms | platform_perms)
+
+    return sorted(membership_perms)
 
 
 def user_has_any_permission(
@@ -299,6 +373,11 @@ def require_organization_context(request: Request, db: Session, user: User) -> O
 
     org_id = _resolve_effective_org_id(request, db, user)
     if org_id is None:
+        if is_independent_user(db, user) and user_has_platform_role(db, user_id=user.id, role_code="independent_user"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This action requires an organization workspace. Create or join one from your profile when available.",
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No workspace is associated with this user. Complete onboarding or contact support.",

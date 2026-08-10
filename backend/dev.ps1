@@ -34,6 +34,9 @@ Assert-Command docker
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
+# Use DATABASE_URL from backend/.env only (ignore stale shell variables)
+Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+
 if (-not (Test-Path ".\.venv")) {
   Write-Host "Creando venv en .venv..." -ForegroundColor Yellow
   python -m venv .venv

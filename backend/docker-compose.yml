@@ -3,8 +3,10 @@ services:
     image: postgres:16-alpine
     container_name: ase_postgres
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: ase
+      POSTGRES_PASSWORD: ase
+      POSTGRES_DB: ase
     ports:
       - "5432:5432"
     volumes:
@@ -12,7 +14,7 @@ services:
     networks:
       - ase_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ase -d ase"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,8 +25,9 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-    env_file:
-      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: change-me
     ports:
       - "5050:80"
     volumes:

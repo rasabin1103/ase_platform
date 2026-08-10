@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.models.enums import InvitationStatus
 from app.models.user import User
 from app.modules.auth.dependencies import get_current_user, is_platform_admin, require_permission, require_tenant_context
+from app.modules.auth.security_onboarding import require_security_onboarding
 from app.modules.invitations.schemas import (
     InvitationCreate,
     InvitationListResponse,
@@ -44,7 +45,10 @@ def _to_read(inv) -> InvitationRead:
     "",
     response_model=InvitationRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("users.create"))],
+    dependencies=[
+        Depends(require_permission("users.create")),
+        Depends(require_security_onboarding),
+    ],
 )
 def create_invitation(
     payload: InvitationCreate,
@@ -107,7 +111,14 @@ def get_invitation(
     return _to_read(inv)
 
 
-@router.patch("/{invitation_id}", response_model=InvitationRead, dependencies=[Depends(require_permission("users.update"))])
+@router.patch(
+    "/{invitation_id}",
+    response_model=InvitationRead,
+    dependencies=[
+        Depends(require_permission("users.update")),
+        Depends(require_security_onboarding),
+    ],
+)
 def update_invitation(
     invitation_id: int,
     payload: InvitationUpdate,
@@ -122,7 +133,14 @@ def update_invitation(
     return _to_read(svc.update(invitation_id, payload))
 
 
-@router.delete("/{invitation_id}", response_model=InvitationRead, dependencies=[Depends(require_permission("users.delete"))])
+@router.delete(
+    "/{invitation_id}",
+    response_model=InvitationRead,
+    dependencies=[
+        Depends(require_permission("users.delete")),
+        Depends(require_security_onboarding),
+    ],
+)
 def delete_invitation(
     invitation_id: int,
     request: Request,
