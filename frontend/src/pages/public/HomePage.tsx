@@ -10,11 +10,17 @@ export function HomePage() {
   return (
     <div>
       <HeroSection />
-      <ServicesSection />
+      <div className="bg-ase-bg2/40">
+        <ServicesSection />
+      </div>
       <PlatformModulesMap />
-      <ProcessTimeline />
+      <div className="bg-ase-bg2/40">
+        <ProcessTimeline />
+      </div>
       <WhyPillarsSection />
-      <PricingSection compact />
+      <div className="bg-ase-bg2/40">
+        <PricingSection compact />
+      </div>
       <CTASection />
     </div>
   )

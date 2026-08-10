@@ -14,7 +14,6 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { Skeleton } from '../components/ui/Skeleton'
-import { cn } from '../components/ui/cn'
 
 const ACTIONS = ['CREATED', 'UPDATED', 'DELETED', 'LOGIN', 'FAILED_LOGIN'] as const
 const ENTITIES = ['User', 'Organization', 'Plan', 'Subscription', 'Product', 'Course', 'Auth'] as const
@@ -98,14 +97,14 @@ function iconEye() {
   )
 }
 
-function MetricCard({ label, value, accent }: { label: string; value: number; accent: string }) {
+function MetricCard({ label, value, accent: _accent }: { label: string; value: number; accent: string }) {
   return (
     <Card className="relative overflow-hidden border-white/[0.08] bg-ase-surface/70 p-5 shadow-[0_22px_70px_rgba(0,0,0,0.36)]">
-      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', accent)} />
+      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="text-xs font-semibold uppercase tracking-[0.22em] text-ase-muted">{label}</div>
       <div className="mt-4 text-3xl font-semibold tabular-nums text-ase-text">{value.toLocaleString()}</div>
       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className={cn('h-full rounded-full bg-gradient-to-r', accent)} style={{ width: `${Math.min(100, 24 + value * 9)}%` }} />
+        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${Math.min(100, 24 + value * 9)}%` }} />
       </div>
     </Card>
   )

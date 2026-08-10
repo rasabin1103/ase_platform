@@ -1,29 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import {
+  addCatalogItemImage,
+  addCatalogItemImageUrl,
   createAdminCatalogItem,
   deleteAdminCatalogItem,
-  getAdminCatalogItem,
   listAdminCatalog,
+  setCatalogItemCoverImage,
   updateAdminCatalogItem,
   uploadCatalogItemImage,
   type CatalogItemAdmin,
 } from '../../api/catalogAdmin.api'
+import type { PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
 import type { CatalogItemType } from '../../types/catalog.types'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Badge } from '../../components/ui/Badge'
-import { CatalogImage } from '../../components/catalog/CatalogImage'
-import { ConfirmDeleteDialog } from '../../components/admin/ConfirmDeleteDialog'
-import { ConfirmDeactivateDialog } from '../../components/admin/ConfirmDeactivateDialog'
-import {
-  adminInactiveRowClass,
-  adminInactiveSurfaceClass,
-  isCatalogItemInactive,
-} from '../../components/admin/adminInactiveStyles'
+import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import {
   MiniMetric,
   PremiumHero,
@@ -32,7 +29,6 @@ import {
 import { useI18n } from '../../i18n'
 import { cn } from '../../components/ui/cn'
 import { AdminCatalogItemModal } from './AdminCatalogItemModal'
-import { Toast } from '../../components/ui/Toast'
 
 type TabKey = 'all' | CatalogItemType
 type ViewMode = 'cards' | 'table'
@@ -52,17 +48,8 @@ export function AdminCatalogPage() {
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [createOpen, setCreateOpen] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null)
-
-  const editDetailQuery = useQuery({
-    queryKey: ['admin-catalog-item', editingId],
-    queryFn: () => getAdminCatalogItem(editingId!),
-    enabled: editingId != null,
-  })
-  const editing = editDetailQuery.data ?? null
+  const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
   const [deleting, setDeleting] = useState<CatalogItemAdmin | null>(null)
-  const [statusTarget, setStatusTarget] = useState<CatalogItemAdmin | null>(null)
 
   const typeFilter = tab === 'all' ? undefined : tab
   const query = useQuery({
@@ -85,49 +72,60 @@ export function AdminCatalogPage() {
   const saveWithImage = async (
     values: Parameters<typeof createAdminCatalogItem>[0],
     imageFile: File | null,
-    existing?: CatalogItemAdmin,
+    existingId?: number,
+    pendingGallery: PendingGalleryImage[] = [],
+    pendingCoverKey: string | null = null,
   ) => {
-    if (existing) {
-      const { type: _t, slug: _s, image_url, ...rest } = values
-      const isMediaPath = image_url?.includes('/media/catalog/') || image_url?.startsWith('/api/')
-      const payload: Parameters<typeof updateAdminCatalogItem>[1] = { ...rest }
-      if (!(existing.has_stored_image || isMediaPath) || imageFile) {
-        payload.image_url = image_url
-      }
-      await updateAdminCatalogItem(existing.id, payload)
-      if (imageFile) await uploadCatalogItemImage(existing.id, imageFile)
+    if (existingId) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { type: _t, slug: _s, ...rest } = values
+      await updateAdminCatalogItem(existingId, rest)
+      if (imageFile) await uploadCatalogItemImage(existingId, imageFile)
       return
     }
     const created = await createAdminCatalogItem(values)
     if (imageFile) await uploadCatalogItemImage(created.id, imageFile)
+
+    // Upload any staged gallery images now that the item has an id, then set
+    // whichever one the admin picked (if any) as the cover.
+    let coverServerId: number | null = null
+    for (const staged of pendingGallery) {
+      const uploaded =
+        staged.kind === 'file' && staged.file
+          ? await addCatalogItemImage(created.id, staged.file)
+          : staged.kind === 'url' && staged.url
+            ? await addCatalogItemImageUrl(created.id, staged.url)
+            : null
+      if (uploaded && staged.key === pendingCoverKey) coverServerId = uploaded.id
+    }
+    if (coverServerId != null) await setCatalogItemCoverImage(created.id, coverServerId)
   }
 
   const createMut = useMutation({
-    mutationFn: ({ values, file }: { values: Parameters<typeof createAdminCatalogItem>[0]; file: File | null }) =>
-      saveWithImage(values, file),
-    onSuccess: () => {
-      invalidate()
-      setCreateOpen(false)
-      setToast({ message: String(t('adminCatalog.toast.saved')), variant: 'success' })
-    },
-    onError: () => setToast({ message: String(t('adminCatalog.toast.error')), variant: 'error' }),
+    mutationFn: ({
+      values,
+      file,
+      gallery,
+      coverKey,
+    }: {
+      values: Parameters<typeof createAdminCatalogItem>[0]
+      file: File | null
+      gallery: PendingGalleryImage[]
+      coverKey: string | null
+    }) => saveWithImage(values, file, undefined, gallery, coverKey),
+    onSuccess: invalidate,
   })
   const updateMut = useMutation({
     mutationFn: ({
-      item,
+      id,
       values,
       file,
     }: {
-      item: CatalogItemAdmin
+      id: number
       values: Parameters<typeof createAdminCatalogItem>[0]
       file: File | null
-    }) => saveWithImage(values, file, item),
-    onSuccess: () => {
-      invalidate()
-      setEditingId(null)
-      setToast({ message: String(t('adminCatalog.toast.saved')), variant: 'success' })
-    },
-    onError: () => setToast({ message: String(t('adminCatalog.toast.error')), variant: 'error' }),
+    }) => saveWithImage(values, file, id),
+    onSuccess: invalidate,
   })
   const deleteMut = useMutation({
     mutationFn: deleteAdminCatalogItem,
@@ -136,23 +134,12 @@ export function AdminCatalogPage() {
       setDeleting(null)
     },
   })
-  const statusMut = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: 'published' | 'draft' }) =>
-      updateAdminCatalogItem(id, { status }),
-    onSuccess: () => {
-      invalidate()
-      setStatusTarget(null)
-    },
-  })
 
   const defaultType = useMemo<CatalogItemType>(() => (tab === 'all' ? 'product' : tab), [tab])
   const publishedCount = items.filter((i) => i.status === 'published').length
 
   return (
     <div className="space-y-8 pb-16">
-      {toast ? (
-        <Toast message={toast.message} variant={toast.variant} onDismiss={() => setToast(null)} />
-      ) : null}
       <PremiumHero
         accent="cyan"
         badge={t('adminCatalog.premium.badge')}
@@ -238,9 +225,8 @@ export function AdminCatalogPage() {
               key={item.id}
               item={item}
               t={t}
-              onEdit={() => setEditingId(item.id)}
+              onEdit={() => setEditing(item)}
               onDelete={() => setDeleting(item)}
-              onToggleStatus={() => setStatusTarget(item)}
             />
           ))}
         </div>
@@ -257,39 +243,17 @@ export function AdminCatalogPage() {
           {items.map((item) => (
             <div
               key={item.id}
-              className={cn(
-                'grid grid-cols-[72px_1fr_90px_100px_100px_180px] items-center gap-2 px-4 py-3 text-sm',
-                adminInactiveRowClass(isCatalogItemInactive(item.status)),
-              )}
+              className="grid grid-cols-[72px_1fr_90px_100px_100px_140px] items-center gap-2 px-4 py-3 text-sm"
             >
-              <CatalogImage
-                src={item.image_url}
-                type={item.type}
-                variant="card"
-                alt={item.title}
-                cacheKey={item.updated_at}
-                className="h-14 w-14 rounded-xl"
-              />
+              <AuthenticatedImage src={item.image_url} className="h-14 w-14 rounded-xl" />
               <span className="font-medium text-ase-text">{item.title}</span>
               <span>{item.type}</span>
               <span>{item.status}</span>
               <span>
                 {item.price} {item.currency}
               </span>
-              <span className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    window.open(`/catalog/${item.type}/${item.slug}?preview=true`, '_blank', 'noopener,noreferrer')
-                  }
-                >
-                  {t('adminCatalog.viewAsUser')}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setStatusTarget(item)}>
-                  {item.status === 'published' ? t('adminCatalog.deactivate') : t('adminCatalog.activate')}
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setEditingId(item.id)}>
+              <span className="flex gap-2">
+                <Button size="sm" variant="secondary" onClick={() => setEditing(item)}>
                   {t('adminCatalog.edit')}
                 </Button>
                 <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setDeleting(item)}>
@@ -306,44 +270,34 @@ export function AdminCatalogPage() {
         onClose={() => setCreateOpen(false)}
         defaultType={defaultType}
         isSubmitting={createMut.isPending}
-        onSubmit={async (values, file) => {
-          await createMut.mutateAsync({ values, file })
+        onSubmit={async (values, file, gallery, coverKey) => {
+          await createMut.mutateAsync({ values, file, gallery, coverKey })
         }}
       />
 
       <AdminCatalogItemModal
-        open={Boolean(editingId)}
-        onClose={() => setEditingId(null)}
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
         initial={editing}
         isSubmitting={updateMut.isPending}
         onSubmit={async (values, file) => {
           if (!editing) return
-          await updateMut.mutateAsync({ item: editing, values, file })
+          await updateMut.mutateAsync({ id: editing.id, values, file })
         }}
       />
 
-      <ConfirmDeleteDialog
-        open={Boolean(deleting)}
-        onClose={() => setDeleting(null)}
-        itemName={deleting?.title}
-        onConfirm={() => deleting && deleteMut.mutate(deleting.id)}
-        isPending={deleteMut.isPending}
-        isError={deleteMut.isError}
-        body={t('adminCatalog.confirmDelete')}
-      />
-
-      <ConfirmDeactivateDialog
-        open={Boolean(statusTarget)}
-        onClose={() => setStatusTarget(null)}
-        itemName={statusTarget?.title}
-        activating={statusTarget?.status !== 'published'}
-        isPending={statusMut.isPending}
-        onConfirm={() => {
-          if (!statusTarget) return
-          const next = statusTarget.status === 'published' ? 'draft' : 'published'
-          statusMut.mutate({ id: statusTarget.id, status: next })
-        }}
-      />
+      <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} title={t('adminCatalog.delete')}>
+        <p className="text-sm text-ase-text2">{t('adminCatalog.confirmDelete')}</p>
+        <p className="mt-2 font-medium text-ase-text">{deleting?.title}</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setDeleting(null)}>
+            {t('adminCatalog.cancel')}
+          </Button>
+          <Button variant="danger" disabled={deleteMut.isPending} onClick={() => deleting && deleteMut.mutate(deleting.id)}>
+            {t('adminCatalog.delete')}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
@@ -353,31 +307,16 @@ function CatalogPremiumCard({
   t,
   onEdit,
   onDelete,
-  onToggleStatus,
 }: {
   item: CatalogItemAdmin
   t: (k: string) => string
   onEdit: () => void
   onDelete: () => void
-  onToggleStatus: () => void
 }) {
-  const inactive = isCatalogItemInactive(item.status)
   return (
-    <Card
-      className={adminInactiveSurfaceClass(
-        inactive,
-        'group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20',
-      )}
-    >
+    <Card className="group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20">
       <div className="relative h-40 overflow-hidden border-b border-white/[0.06]">
-        <CatalogImage
-          src={item.image_url}
-          type={item.type}
-          variant="card"
-          alt={item.title}
-          cacheKey={item.updated_at}
-          className="h-full min-h-[10rem]"
-        />
+        <AuthenticatedImage src={item.image_url} className="h-full w-full" />
         <div className="absolute right-3 top-3">
           <Badge variant={item.status === 'published' ? 'success' : 'default'}>{item.status}</Badge>
         </div>
@@ -392,19 +331,6 @@ function CatalogPremiumCard({
           <MiniMetric label={t('adminCatalog.fields.author')} value={item.author} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const url = `/catalog/${item.type}/${item.slug}?preview=true`
-              window.open(url, '_blank', 'noopener,noreferrer')
-            }}
-          >
-            {t('adminCatalog.viewAsUser')}
-          </Button>
-          <Button size="sm" variant="outline" onClick={onToggleStatus}>
-            {item.status === 'published' ? t('adminCatalog.deactivate') : t('adminCatalog.activate')}
-          </Button>
           <Button size="sm" variant="secondary" onClick={onEdit}>
             {t('adminCatalog.edit')}
           </Button>

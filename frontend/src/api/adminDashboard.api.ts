@@ -50,6 +50,8 @@ export async function listAdminPurchases(params?: ListAdminPurchasesParams) {
 
 export type TimeSeriesPoint = { month: string; value: number }
 
+export type RatingTagCount = { tag: string; count: number }
+
 export type AdminAnalytics = {
   users_growth: TimeSeriesPoint[]
   catalog_growth: TimeSeriesPoint[]
@@ -58,6 +60,14 @@ export type AdminAnalytics = {
   catalog_by_type: Record<string, number>
   revenue_total: number
   top_users: { email: string; purchase_count: number }[]
+  organizations_total: number
+  organizations_by_type: Record<string, number>
+  requests_by_status: Record<string, number>
+  ratings_total: number
+  ratings_upvotes: number
+  ratings_downvotes: number
+  ratings_top_tags: RatingTagCount[]
+  users_by_role: Record<string, number>
 }
 
 export type AdminPurchasesSummary = {

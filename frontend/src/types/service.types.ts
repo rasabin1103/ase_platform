@@ -61,3 +61,37 @@ export type ServiceListResponse = {
   offset: number
   total: number
 }
+
+export type ServiceFeatureCreateRequest = {
+  text: string
+  display_order?: number
+  is_active?: boolean
+}
+
+export type ServiceHighlightCreateRequest = {
+  title: string
+  value: string
+  description?: string | null
+  display_order?: number
+}
+
+export type ServiceCreateRequest = {
+  code: string
+  name: string
+  slug: string
+  short_description?: string | null
+  description?: string | null
+  category: ServiceCategory
+  service_type: ServiceKind
+  price_type?: ServicePriceType
+  is_featured?: boolean
+  is_active?: boolean
+  display_order?: number
+  icon?: string | null
+  hero_title?: string | null
+  hero_subtitle?: string | null
+  features?: ServiceFeatureCreateRequest[]
+  highlights?: ServiceHighlightCreateRequest[]
+}
+
+export type ServiceUpdateRequest = Partial<ServiceCreateRequest>

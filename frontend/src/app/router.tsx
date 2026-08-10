@@ -4,22 +4,22 @@ import { WorkspaceContextGate } from '../auth/WorkspaceContextGate'
 import { PostLoginGate } from '../auth/PostLoginGate'
 import { ConsumerRouteGuard } from '../auth/ConsumerRouteGuard'
 import { AppLayout } from '../components/layout/AppLayout'
-import { DocumentFrame } from '../components/layout/DocumentFrame'
 import { PublicLayout } from '../components/public/PublicLayout'
 import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
 import {
   CatalogDetailPage,
   CatalogListPage,
   IndependentDashboardPage,
-  IndependentPlansPage,
   ProfilePage,
-  ProfileSecurityPage,
 } from '../pages/independent'
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
-import { AdminPricingPlansPage } from '../pages/admin/AdminPricingPlansPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
-import { useAuth } from '../hooks/useAuth'
+import { ServicesAdminPage } from '../pages/admin/ServicesAdminPage'
+import { AdminSuggestionsPage } from '../pages/admin/AdminSuggestionsPage'
+import { OrganizationDashboardPage, OrganizationCatalogPage, OrganizationGrantPage } from '../pages/organization'
+import { OrganizationsPage } from '../pages/OrganizationsPage'
+import { PlansPage } from '../pages/PlansPage'
 import { useRbac } from '../rbac/useRbac'
 import { LoginPage } from '../pages/LoginPage'
 import { RequestsPage } from '../pages/RequestsPage'
@@ -34,12 +34,9 @@ import { ServicesPage } from '../pages/public/ServicesPage'
 import { PlatformPage } from '../pages/public/PlatformPage'
 import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
-import { EmailVerifyPage } from '../pages/EmailVerifyPage'
+import { NotFoundPage } from '../pages/NotFoundPage'
 
 export const router = createBrowserRouter([
-  {
-    element: <DocumentFrame />,
-    children: [
   {
     element: <PublicLayout />,
     children: [
@@ -57,7 +54,6 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
-      { path: '/verify-email', element: <EmailVerifyPage /> },
     ],
   },
   {
@@ -87,37 +83,32 @@ export const router = createBrowserRouter([
               { path: '/my-courses', element: <MyCoursesPage /> },
               { path: '/my-books', element: <MyBooksPage /> },
               { path: '/my-resources', element: <MyResourcesPage /> },
-              { path: '/plans', element: <IndependentPlansPage /> },
             ],
           },
           { path: '/profile', element: <ProfilePage /> },
-          { path: '/profile/security', element: <ProfileSecurityPage /> },
           { path: '/admin/catalog', element: <AdminCatalogPage /> },
-          { path: '/admin/pricing-plans', element: <AdminPricingPlansPage /> },
           { path: '/admin/purchases', element: <AdminPurchasesPage /> },
+          { path: '/admin/organizations', element: <OrganizationsPage /> },
+          { path: '/admin/services', element: <ServicesAdminPage /> },
+          { path: '/admin/plans', element: <PlansPage /> },
+          { path: '/admin/suggestions', element: <AdminSuggestionsPage /> },
+          { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
+          { path: '/organization/grant', element: <OrganizationGrantPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '/requests', element: <RequestsPage /> },
         ],
       },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
-    ],
-  },
+  { path: '*', element: <NotFoundPage /> },
 ])
 
 function RoleAwareDashboard() {
-  const { currentUser } = useAuth()
-  const { isConsumerMode, primaryRole, isSuperuser } = useRbac()
+  const { isConsumerMode, isOrgWorkspace, primaryRole, isSuperuser } = useRbac()
   if (isSuperuser || primaryRole === 'super_admin') return <AdminDashboardPage />
-  if (
-    isConsumerMode ||
-    primaryRole === 'independent_user' ||
-    currentUser?.dashboard_mode === 'independent'
-  ) {
-    return <IndependentDashboardPage />
-  }
-  return <Navigate to="/onboarding" replace />
+  if (isOrgWorkspace) return <OrganizationDashboardPage />
+  if (isConsumerMode) return <IndependentDashboardPage />
+  return <Navigate to="/dashboard" replace />
 }
 
 function CatalogProductsPage() {

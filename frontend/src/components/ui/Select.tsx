@@ -9,7 +9,7 @@ export function Select({ className, children, ...props }: Props) {
       <select
         className={cn(
           'h-10 w-full appearance-none rounded-md border border-ase-border bg-ase-surface px-3 pr-10 text-sm text-ase-text',
-          'outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60',
+          'outline-none focus-visible:border-ase-brand/50 focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg',
           className,
         )}
         {...props}

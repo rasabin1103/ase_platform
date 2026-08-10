@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.creator import is_creator_request_type
 from app.core.rbac import expand_permission_codes
 from app.models.enums import AccessRequestStatus
 from app.models.user import User
@@ -66,6 +67,18 @@ def create_access_request(
     svc: AccessRequestsService = Depends(get_service),
 ):
     org = require_tenant_context(request, db, current_user)
+    if is_creator_request_type(payload.request_type) and not is_super_admin(db, current_user):
+        can_request_creator = user_has_any_permission(
+            db,
+            user_id=current_user.id,
+            organization_id=org.id,
+            permission_codes=expand_permission_codes("creator.request"),
+        )
+        if not can_request_creator:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only independent users can apply to become a content creator",
+            )
     if payload.organization_id is None:
         payload = payload.model_copy(update={"organization_id": org.id})
     elif not is_super_admin(db, current_user) and payload.organization_id != org.id:

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { tStringArray, useI18n } from '../../../i18n'
-import { Badge } from '../../ui/Badge'
+import { Eyebrow } from '../../ui/Eyebrow'
 import { cn } from '../../ui/cn'
 
 type OrgId = 'orgA' | 'orgB'
@@ -18,9 +18,7 @@ export function TenantArchitectureVisual() {
       <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 sm:px-8 lg:px-12">
         <div className="grid gap-10 lg:grid-cols-12 lg:items-start lg:gap-12">
           <div className="lg:col-span-5">
-            <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
-              {t('platformPage.multiTenant.badge')}
-            </Badge>
+            <Eyebrow>{t('platformPage.multiTenant.badge')}</Eyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('platformPage.multiTenant.title')}
             </h2>
@@ -37,10 +35,8 @@ export function TenantArchitectureVisual() {
           </div>
 
           <div className="lg:col-span-7">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/45 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_22px_70px_rgba(0,0,0,0.55)] backdrop-blur-md sm:p-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_22px_70px_rgba(0,0,0,0.55)] sm:p-8">
               <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:32px_32px]" />
-              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-ase-primary/10 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-ase-accent/8 blur-3xl" />
 
               <div className="relative z-[1] flex flex-col gap-6">
                 <div className="flex flex-wrap items-center gap-2">
@@ -153,7 +149,7 @@ function OrgCard({ title, active, onHover }: { title: string; active: boolean; o
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border bg-white/[0.04] p-5 backdrop-blur-sm transition',
+        'group relative overflow-hidden rounded-2xl border bg-white/[0.04] p-5 transition',
         active ? 'border-ase-primary/30 ring-1 ring-ase-primary/20' : 'border-white/[0.08] hover:border-white/15',
       )}
       onMouseEnter={onHover}
@@ -201,7 +197,6 @@ function OrgCard({ title, active, onHover }: { title: string; active: boolean; o
         />
       </div>
       <div className="pointer-events-none absolute -inset-8 opacity-0 transition duration-300 group-hover:opacity-100">
-        <div className="absolute inset-0 bg-gradient-to-tr from-ase-primary/10 via-ase-accent/8 to-transparent blur-2xl" />
       </div>
     </div>
   )

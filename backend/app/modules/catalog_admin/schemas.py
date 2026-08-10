@@ -6,13 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
-from app.modules.catalog.catalog_media_schemas import (
-    BookPurchaseLinkInput,
-    BookPurchaseLinkRead,
-    CatalogItemImageInput,
-    CatalogItemImageRead,
-)
+from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
 
 
 class CatalogItemAdminBase(BaseModel):
@@ -22,7 +16,7 @@ class CatalogItemAdminBase(BaseModel):
     category: str = Field(min_length=1, max_length=120)
     short_description: str = Field(min_length=1, max_length=500)
     long_description: str = Field(min_length=1)
-    image_url: str = Field(default="", max_length=2048)
+    image_url: str = Field(min_length=1, max_length=2048)
     preview_url: str | None = Field(default=None, max_length=2048)
     price: Decimal = Field(ge=0)
     currency: str = Field(default="EUR", min_length=3, max_length=3)
@@ -33,23 +27,10 @@ class CatalogItemAdminBase(BaseModel):
     benefits: list[str] = []
     requirements: list[str] = []
     included_items: list[str] = []
-    cover_image_url: str | None = Field(default=None, max_length=2048)
-    thumbnail_url: str | None = Field(default=None, max_length=2048)
-    amazon_url: str | None = Field(default=None, max_length=2048)
-    external_purchase_url: str | None = Field(default=None, max_length=2048)
-    purchase_provider: CatalogPurchaseProvider | None = CatalogPurchaseProvider.internal
-    pdf_url: str | None = Field(default=None, max_length=2048)
-    preview_pdf_url: str | None = Field(default=None, max_length=2048)
-    preview_pages: int | None = Field(default=None, ge=0)
-    sample_download_url: str | None = Field(default=None, max_length=2048)
-    rich_content_markdown: str | None = None
-    book_format: str | None = Field(default=None, max_length=80)
-    audience: list[str] = []
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
-    images: list[CatalogItemImageInput] = Field(default_factory=list)
-    purchase_links: list[BookPurchaseLinkInput] = Field(default_factory=list)
+    pass
 
 
 class CatalogItemAdminUpdate(BaseModel):
@@ -68,28 +49,28 @@ class CatalogItemAdminUpdate(BaseModel):
     benefits: list[str] | None = None
     requirements: list[str] | None = None
     included_items: list[str] | None = None
-    cover_image_url: str | None = Field(default=None, max_length=2048)
-    thumbnail_url: str | None = Field(default=None, max_length=2048)
-    amazon_url: str | None = None
-    external_purchase_url: str | None = None
-    purchase_provider: CatalogPurchaseProvider | None = None
-    pdf_url: str | None = None
-    preview_pdf_url: str | None = None
-    preview_pages: int | None = Field(default=None, ge=0)
-    sample_download_url: str | None = None
-    rich_content_markdown: str | None = None
-    book_format: str | None = None
-    audience: list[str] | None = None
-    images: list[CatalogItemImageInput] | None = None
-    purchase_links: list[BookPurchaseLinkInput] | None = None
+
+
+class CatalogItemImageRead(BaseModel):
+    id: int
+    url: str
+    is_cover: bool
+    display_order: int
+
+
+class CatalogItemImageListResponse(BaseModel):
+    items: list[CatalogItemImageRead]
+
+
+class AddCatalogItemImageUrlRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
 
 
 class CatalogItemAdminRead(CatalogItemAdminBase):
     id: int
     uuid: UUID
     has_stored_image: bool = False
-    images: list[CatalogItemImageRead] = Field(default_factory=list)
-    purchase_links: list[BookPurchaseLinkRead] = Field(default_factory=list)
+    images: list[CatalogItemImageRead] = []
     created_at: datetime
     updated_at: datetime
 

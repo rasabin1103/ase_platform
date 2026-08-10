@@ -17,3 +17,11 @@ class CatalogPurchase(Base, IdPkMixin, TimestampMixin):
         index=True,
         nullable=False,
     )
+    # Set when this purchase was granted (and paid for) by an organization admin
+    # on behalf of the user, instead of a self-service purchase.
+    granted_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True,
+    )
+    organization_id: Mapped[int | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="SET NULL"), index=True, nullable=True,
+    )

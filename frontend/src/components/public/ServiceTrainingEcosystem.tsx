@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { Service } from '../../types/service.types'
 import { localizedServiceCopy } from '../../i18n/localizedService'
 import { tStringArray, useI18n } from '../../i18n'
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 
 const STEP_KEYS = ['workshops', 'mentoring', 'enterprise', 'labs'] as const
 
@@ -25,13 +25,10 @@ export function ServiceTrainingEcosystem({ service }: Props) {
 
   return (
     <section className="relative border-t border-white/[0.06] py-20 sm:py-28 lg:py-32">
-      <div className="pointer-events-none absolute inset-x-0 top-24 h-64 bg-gradient-to-b from-ase-accent/10 to-transparent blur-3xl" />
       <div className="relative mx-auto w-full max-w-[min(100%,1400px)] px-5 sm:px-8 lg:px-12">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <Badge variant="info" className="border-white/10 bg-white/[0.04]">
-              {t('servicesPage.training.badge')}
-            </Badge>
+            <Eyebrow>{t('servicesPage.training.badge')}</Eyebrow>
             <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
               {t('servicesPage.training.title')}
             </h2>

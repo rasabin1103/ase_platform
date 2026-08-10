@@ -135,6 +135,102 @@ DEMO_ITEMS = [
             "Changelog and upgrade guide",
         ],
     },
+    {
+        "slug": "claude-code-review-skill",
+        "title": "Claude Skill: Automated Code Review",
+        "type": CatalogItemType.resource,
+        "category": "AI Skills",
+        "short_description": "A Claude skill that reviews pull requests against your team's style guide.",
+        "long_description": (
+            "Drop-in Claude skill configuration for automated PR review: checks naming, "
+            "test coverage expectations and architectural conventions before a human review pass."
+        ),
+        "image_url": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",
+        "price": Decimal("29.00"),
+        "currency": "EUR",
+        "level": CatalogItemLevel.intermediate,
+        "duration": "Instant download",
+        "author": "ASE Templates",
+        "preview_url": None,
+        "benefits_json": [
+            "Skill definition + prompt files",
+            "Configurable rule set",
+            "Example CI wiring",
+        ],
+        "requirements_json": ["Claude access (claude.ai or API)", "Git repository"],
+        "included_items_json": ["Skill package", "Setup guide", "Update notifications"],
+    },
+    {
+        "slug": "chatgpt-qa-test-writer-skill",
+        "title": "ChatGPT Skill: QA Test Case Writer",
+        "type": CatalogItemType.resource,
+        "category": "AI Skills",
+        "short_description": "Turns user stories into structured QA test cases with ChatGPT.",
+        "long_description": (
+            "A packaged custom-GPT configuration and prompt library that converts user stories "
+            "and acceptance criteria into structured manual and automated test cases."
+        ),
+        "image_url": "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80",
+        "price": Decimal("29.00"),
+        "currency": "EUR",
+        "level": CatalogItemLevel.beginner,
+        "duration": "Instant download",
+        "author": "ASE Templates",
+        "preview_url": None,
+        "benefits_json": [
+            "Custom GPT configuration",
+            "Prompt library",
+            "Sample input/output pairs",
+        ],
+        "requirements_json": ["ChatGPT Plus/Team (for custom GPTs)"],
+        "included_items_json": ["Skill package", "Setup guide"],
+    },
+    {
+        "slug": "sql-for-qa-engineers-book",
+        "title": "SQL for QA Engineers",
+        "type": CatalogItemType.book,
+        "category": "Engineering",
+        "short_description": "Practical SQL for people who test and validate data-heavy systems.",
+        "long_description": (
+            "A focused reference on querying, validating and debugging data as a QA engineer: "
+            "joins, aggregates, data integrity checks and reproducible test fixtures."
+        ),
+        "image_url": "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80",
+        "price": Decimal("24.90"),
+        "currency": "EUR",
+        "level": CatalogItemLevel.beginner,
+        "duration": "210 pages",
+        "author": "ASE Academy",
+        "preview_url": None,
+        "benefits_json": ["PDF + ePub", "Practice datasets", "Checklists"],
+        "requirements_json": ["Basic SQL familiarity"],
+        "included_items_json": ["PDF + ePub", "Sample database"],
+    },
+    {
+        "slug": "api-automation-with-pytest-course",
+        "title": "API Automation with Pytest",
+        "type": CatalogItemType.course,
+        "category": "Automation",
+        "short_description": "Build a maintainable API test suite from scratch with Pytest.",
+        "long_description": (
+            "Design API test suites with fixtures, parametrization, contract checks and CI "
+            "reporting. Includes a capstone project against a sample service."
+        ),
+        "image_url": "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&q=80",
+        "price": Decimal("99.00"),
+        "currency": "EUR",
+        "level": CatalogItemLevel.intermediate,
+        "duration": "9 hours",
+        "author": "ASE Academy",
+        "preview_url": None,
+        "benefits_json": [
+            "9h video + labs",
+            "Certificate of completion",
+            "Starter template repository",
+        ],
+        "requirements_json": ["Basic Python"],
+        "included_items_json": ["6 modules + capstone", "Downloadable cheat-sheets"],
+    },
 ]
 
 

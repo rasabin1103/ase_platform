@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
-import { CatalogImage } from './CatalogImage'
+import { Heart, Check, ShoppingCart } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
+import { AuthenticatedImage } from '../ui/AuthenticatedImage'
+import { cn } from '../ui/cn'
+import { catalogImageAspectClass } from './catalogCardShape'
+import { RatingWidget } from './RatingWidget'
 import { useI18n } from '../../i18n'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 
@@ -12,6 +16,9 @@ type Props = {
   onPurchase: (slug: string) => void
   favoritePending?: boolean
   purchasePending?: boolean
+  /** Overrides the type-based aspect ratio — use in grids that mix several
+   *  catalog types so every image renders at the same height. */
+  imageAspectClass?: string
 }
 
 function typeLabelKey(type: CatalogItemType): string {
@@ -37,40 +44,57 @@ export function CatalogItemCard({
   onPurchase,
   favoritePending,
   purchasePending,
+  imageAspectClass,
 }: Props) {
   const { t } = useI18n()
   const detailPath = `/catalog/${item.type}/${item.slug}`
-  const extraImages = Math.max(0, (item.imageCount ?? item.images?.length ?? 0) - 1)
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden p-0" interactive>
-      <div className="relative overflow-hidden bg-ase-bg2">
-        <CatalogImage
+    <Card className="group flex h-full flex-col overflow-hidden p-0" interactive>
+      <div className={cn('relative overflow-hidden bg-ase-bg2', imageAspectClass ?? catalogImageAspectClass(item.type))}>
+        <AuthenticatedImage
           src={item.imageUrl}
-          type={item.type}
-          variant="card"
-          alt={item.title}
-          cacheKey={item.updatedAt}
+          alt=""
+          className="h-full w-full transition duration-500 ease-out group-hover:scale-[1.08]"
         />
-        <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text backdrop-blur">
+        {item.type === 'book' ? (
+          <>
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 w-2.5"
+              style={{ backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.5), transparent)' }}
+            />
+            <div className="pointer-events-none absolute inset-y-0 left-2.5 w-px bg-white/20" />
+          </>
+        ) : null}
+        <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text">
           {t(typeLabelKey(item.type))}
         </span>
-        {extraImages > 0 ? (
-          <span className="absolute bottom-3 right-3 rounded-lg border border-white/15 bg-black/55 px-2 py-1 text-xs font-medium text-ase-text backdrop-blur">
-            +{extraImages} {t('catalog.moreImages')}
-          </span>
-        ) : null}
+        <button
+          type="button"
+          disabled={favoritePending}
+          onClick={() => onToggleFavorite(item.slug)}
+          aria-label={item.isFavorite ? t('catalog.removeFavorite') : t('catalog.addFavorite')}
+          className={cn(
+            'absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full border transition',
+            item.isFavorite
+              ? 'border-rose-400/50 bg-rose-500/25 text-rose-200'
+              : 'border-white/15 bg-black/50 text-ase-text hover:bg-black/65',
+          )}
+        >
+          <Heart className="h-4 w-4" strokeWidth={1.75} fill={item.isFavorite ? 'currentColor' : 'none'} />
+        </button>
       </div>
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-cyan-300/80">{item.category}</p>
-          <h3 className="mt-1 text-lg font-bold text-ase-text line-clamp-2">{item.title}</h3>
-          <p className="mt-2 text-sm text-ase-muted line-clamp-3">{item.shortDescription}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
+          <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{item.title}</h3>
+          <p className="mt-1.5 text-sm text-ase-muted line-clamp-2">{item.shortDescription}</p>
         </div>
-        <p className="text-xl font-bold text-ase-text">
+        <p className="text-lg font-bold text-ase-text">
           {formatPrice(item.price, item.currency, t('catalog.free'))}
         </p>
-        <div className="mt-auto flex flex-wrap gap-2">
+        <RatingWidget item={item} compact />
+        <div className="mt-auto flex flex-wrap items-center gap-2">
           <Link to={detailPath}>
             <Button size="sm" variant="primary">
               {t('catalog.viewDetail')}
@@ -85,15 +109,8 @@ export function CatalogItemCard({
           ) : null}
           <Button
             size="sm"
-            variant="secondary"
-            disabled={favoritePending}
-            onClick={() => onToggleFavorite(item.slug)}
-          >
-            {item.isFavorite ? t('catalog.removeFavorite') : t('catalog.addFavorite')}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
+            variant={item.isPurchased ? 'success' : 'ghost'}
+            leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
             disabled={purchasePending || item.isPurchased}
             onClick={() => onPurchase(item.slug)}
           >

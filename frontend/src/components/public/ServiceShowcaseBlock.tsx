@@ -25,8 +25,6 @@ function TechPanel({ className }: { className?: string }) {
       )}
     >
       <div className="pointer-events-none absolute inset-0 opacity-[0.2] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
-      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ase-primary/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-ase-accent/10 blur-3xl" />
       <div className="relative z-[1] space-y-4">
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ase-muted">
@@ -117,7 +115,7 @@ export function ServiceShowcaseBlock({ service, reverse, categoryLabel }: Props)
                   {highs.map((h) => (
                     <div
                       key={h.id}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 backdrop-blur-sm"
+                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4"
                     >
                       <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{h.title}</div>
                       <div className="mt-2 text-lg font-extrabold tracking-tight text-ase-text">{h.value}</div>

@@ -1,4 +1,4 @@
-import { Badge } from '../ui/Badge'
+import { Eyebrow } from '../ui/Eyebrow'
 import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
@@ -22,9 +22,7 @@ export function ProcessTimeline() {
   return (
     <section className="relative border-t border-white/5">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-28">
-        <Badge variant="info" className="w-fit">
-          {t('process.badge')}
-        </Badge>
+        <Eyebrow>{t('process.badge')}</Eyebrow>
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
           {t('process.title')}
         </h2>
@@ -39,7 +37,7 @@ export function ProcessTimeline() {
             {steps.map((s) => (
               <div key={s.title} className="relative">
                 <div className="absolute left-1/2 top-8 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ase-primary/30 shadow-[0_0_18px_rgba(56,189,248,0.18)]" />
-                <Card className="rounded-3xl border-white/10 bg-ase-surface/65 p-7 backdrop-blur" interactive>
+                <Card className="rounded-3xl border-white/10 bg-ase-surface p-7" interactive>
                   <div className="flex items-center justify-between gap-4">
                     <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">
                       {String(s.index).padStart(2, '0')}
@@ -61,7 +59,7 @@ export function ProcessTimeline() {
             {steps.map((s) => (
               <div key={s.title} className="relative pl-10">
                 <div className="absolute left-4 top-8 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ase-primary/30 shadow-[0_0_18px_rgba(56,189,248,0.18)]" />
-                <Card className="rounded-3xl border-white/10 bg-ase-surface/65 p-7 backdrop-blur" interactive>
+                <Card className="rounded-3xl border-white/10 bg-ase-surface p-7" interactive>
                   <div className="flex items-center justify-between gap-4">
                     <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">
                       {String(s.index).padStart(2, '0')}

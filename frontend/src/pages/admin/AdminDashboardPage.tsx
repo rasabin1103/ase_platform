@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getAdminAnalytics, getAdminStats } from '../../api/adminDashboard.api'
-import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Skeleton } from '../../components/ui/Skeleton'
 import {
   InsightBar,
+  PremiumBreakdownCard,
   PremiumChartCard,
   PremiumHero,
   PremiumInsightsCard,
   PremiumMetricCard,
   PremiumOrb,
-  PremiumUsersMetricCard,
+  PremiumSplitStat,
 } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../auth/AuthProvider'
@@ -27,94 +27,46 @@ const QUICK_LINKS = [
 export function AdminDashboardPage() {
   const { t } = useI18n()
   const { currentUser } = useAuth()
-  const dashboardQueryOpts = {
-    staleTime: 0,
-    refetchOnMount: 'always' as const,
-    refetchOnWindowFocus: true,
-  }
-
-  const statsQuery = useQuery({
-    queryKey: ['admin-stats'],
-    queryFn: getAdminStats,
-    ...dashboardQueryOpts,
-  })
-  const analyticsQuery = useQuery({
-    queryKey: ['admin-analytics'],
-    queryFn: getAdminAnalytics,
-    ...dashboardQueryOpts,
-  })
+  const statsQuery = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats })
+  const analyticsQuery = useQuery({ queryKey: ['admin-analytics'], queryFn: getAdminAnalytics })
   const stats = statsQuery.data
   const analytics = analyticsQuery.data
   const name = currentUser?.display_name || currentUser?.email || ''
 
   const catalogTotal = stats?.catalog_total ?? 0
-  const usersTotal = stats?.users_total ?? 0
-  const purchasesTotal = stats?.purchases_total ?? 0
   const byType = analytics?.catalog_by_type ?? stats?.catalog_by_type ?? {}
-  const chartEmptyMsg = t('adminDashboard.charts.empty')
-  const chartsReady = !statsQuery.isLoading && !analyticsQuery.isLoading
-  const loadError = statsQuery.isError || analyticsQuery.isError
-
-  const refreshDashboard = () => {
-    void statsQuery.refetch()
-    void analyticsQuery.refetch()
-  }
 
   return (
     <div className="space-y-8 pb-16">
       <PremiumHero
-        accent="violet"
+        accent="cyan"
         badge={t('adminDashboard.heroBadge')}
         title={`${t('adminDashboard.title')}${name ? `, ${name}` : ''}`}
         subtitle={t('adminDashboard.subtitle')}
-        actions={
-          <Button type="button" variant="secondary" size="sm" onClick={refreshDashboard} disabled={statsQuery.isFetching || analyticsQuery.isFetching}>
-            {statsQuery.isFetching || analyticsQuery.isFetching
-              ? (t('adminDashboard.refreshing') as string)
-              : (t('adminDashboard.refresh') as string)}
-          </Button>
-        }
         contextChips={
           <>
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-ase-text2">
               {t('adminDashboard.metrics.usersActive')}: {stats?.users_active ?? '—'}
             </span>
-            <span className="rounded-full border border-violet-300/25 bg-violet-300/10 px-3 py-1.5 text-xs font-semibold text-violet-100">
+            <span className="rounded-full border border-ase-brand/25 bg-ase-brand/10 px-3 py-1.5 text-xs font-semibold text-ase-text">
               {t('adminDashboard.metrics.revenue')}:{' '}
-              {(stats?.revenue_total ?? analytics?.revenue_total ?? 0).toLocaleString(undefined, {
-                style: 'currency',
-                currency: 'EUR',
-              })}
+              {(analytics?.revenue_total ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'EUR' })}
             </span>
-            {statsQuery.dataUpdatedAt ? (
-              <span className="text-xs text-ase-muted">
-                {t('adminDashboard.updatedAt')}: {new Date(statsQuery.dataUpdatedAt).toLocaleTimeString()}
-              </span>
-            ) : null}
           </>
         }
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">
               {t('adminDashboard.pulse.title')}
             </div>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <PremiumOrb label={t('adminDashboard.metrics.products')} value={byType.product ?? 0} tone="info" />
-              <PremiumOrb label={t('adminDashboard.metrics.courses')} value={byType.course ?? 0} tone="violet" />
+              <PremiumOrb label={t('adminDashboard.metrics.courses')} value={byType.course ?? 0} tone="info" />
               <PremiumOrb label={t('adminDashboard.metrics.books')} value={byType.book ?? 0} tone="success" />
             </div>
           </Card>
         }
       />
-
-      {loadError ? (
-        <Card className="rounded-2xl border-ase-error/30 bg-ase-error/10 p-4">
-          <p className="text-sm text-ase-error">{t('adminDashboard.loadError')}</p>
-          <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={refreshDashboard}>
-            {t('adminDashboard.retry')}
-          </Button>
-        </Card>
-      ) : null}
 
       {statsQuery.isLoading ? (
         <Skeleton className="h-28 w-full rounded-2xl" />
@@ -125,31 +77,28 @@ export function AdminDashboardPage() {
             hint={t('adminDashboard.metrics.catalogHint')}
             value={stats?.catalog_total ?? 0}
             icon="◇"
-            accent="from-cyan-300 to-blue-500"
+            accent="from-ase-brand to-ase-brand"
           />
-          <PremiumUsersMetricCard
+          <PremiumMetricCard
             label={t('adminDashboard.metrics.users')}
-            hint={`${usersTotal.toLocaleString()} — ${t('adminDashboard.metrics.usersHint')}`}
-            active={stats?.users_active ?? 0}
-            inactive={stats?.users_inactive ?? 0}
-            activeLabel={t('adminDashboard.metrics.usersActiveLabel')}
-            inactiveLabel={t('adminDashboard.metrics.usersInactiveLabel')}
+            hint={t('adminDashboard.metrics.usersHint')}
+            value={stats?.users_total ?? 0}
             icon="◉"
-            accent="from-emerald-300 to-teal-500"
+            accent="from-ase-brand to-ase-brand"
           />
           <PremiumMetricCard
             label={t('adminDashboard.metrics.purchases')}
             hint={t('adminDashboard.metrics.purchasesHint')}
             value={stats?.purchases_total ?? 0}
             icon="🛒"
-            accent="from-violet-300 to-fuchsia-500"
+            accent="from-ase-brand to-ase-brand"
           />
           <PremiumMetricCard
             label={t('adminDashboard.metrics.revenue')}
             hint={t('adminDashboard.metrics.revenueHint')}
-            value={stats?.revenue_total ?? analytics?.revenue_total ?? 0}
+            value={analytics?.revenue_total ?? 0}
             icon="€"
-            accent="from-amber-300 to-orange-500"
+            accent="from-ase-brand to-ase-brand"
             format="currency"
           />
         </div>
@@ -157,46 +106,29 @@ export function AdminDashboardPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-4 lg:grid-cols-2">
-          {!chartsReady ? (
-            <>
-              <Skeleton className="h-[17rem] rounded-[2rem]" />
-              <Skeleton className="h-[17rem] rounded-[2rem]" />
-              <Skeleton className="h-[17rem] rounded-[2rem]" />
-              <Skeleton className="h-[17rem] rounded-[2rem]" />
-            </>
+          {analyticsQuery.isLoading ? (
+            <Skeleton className="h-64 rounded-[2rem] lg:col-span-2" />
           ) : (
             <>
               <PremiumChartCard
                 title={t('adminDashboard.charts.users')}
                 data={analytics?.users_growth ?? []}
                 color="#22d3ee"
-                chartId="users-growth"
-                emptyMessage={chartEmptyMsg}
-                noTableData={usersTotal === 0}
               />
               <PremiumChartCard
                 title={t('adminDashboard.charts.catalog')}
                 data={analytics?.catalog_growth ?? []}
                 color="#a78bfa"
-                chartId="catalog-growth"
-                emptyMessage={chartEmptyMsg}
-                noTableData={catalogTotal === 0}
               />
               <PremiumChartCard
                 title={t('adminDashboard.charts.purchases')}
                 data={analytics?.purchases_growth ?? []}
                 color="#34d399"
-                chartId="purchases-growth"
-                emptyMessage={chartEmptyMsg}
-                noTableData={purchasesTotal === 0}
               />
               <PremiumChartCard
                 title={t('adminDashboard.charts.revenue')}
                 data={analytics?.revenue_growth ?? []}
                 color="#fbbf24"
-                chartId="revenue-growth"
-                emptyMessage={chartEmptyMsg}
-                noTableData={purchasesTotal === 0}
                 valueFormatter={(v) => v.toLocaleString(undefined, { style: 'currency', currency: 'EUR' })}
               />
             </>
@@ -235,6 +167,59 @@ export function AdminDashboardPage() {
             </section>
           </PremiumInsightsCard>
         </aside>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {analyticsQuery.isLoading ? (
+          <Skeleton className="h-72 rounded-[2rem] xl:col-span-4" />
+        ) : (
+          <>
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.organizations.title') as string}
+              subtitle={t('adminDashboard.sections.organizations.subtitle') as string}
+              items={Object.entries(analytics?.organizations_by_type ?? {}).map(([type, value]) => ({
+                label: t(`organizationsPage.types.${type}`) as string,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyOrganizations') as string}
+            />
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.requests.title') as string}
+              subtitle={t('adminDashboard.sections.requests.subtitle') as string}
+              items={Object.entries(analytics?.requests_by_status ?? {}).map(([reqStatus, value]) => ({
+                label: t(`adminDashboard.requestStatus.${reqStatus}`) as string,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyRequests') as string}
+            />
+            <PremiumBreakdownCard
+              title={t('adminDashboard.sections.usersByRole.title') as string}
+              subtitle={t('adminDashboard.sections.usersByRole.subtitle') as string}
+              items={Object.entries(analytics?.users_by_role ?? {}).map(([role, value]) => ({
+                label: (t(`adminDashboard.roleLabels.${role}`) as string) ?? role,
+                value,
+              }))}
+              emptyLabel={t('adminDashboard.emptyRoles') as string}
+            />
+            <PremiumSplitStat
+              title={t('adminDashboard.sections.ratings.title') as string}
+              subtitle={t('adminDashboard.sections.ratings.subtitle') as string}
+              totalLabel={t('adminDashboard.ratingsLabels.total') as string}
+              total={analytics?.ratings_total ?? 0}
+              positiveLabel={t('adminDashboard.ratingsLabels.upvotes') as string}
+              positive={analytics?.ratings_upvotes ?? 0}
+              negativeLabel={t('adminDashboard.ratingsLabels.downvotes') as string}
+              negative={analytics?.ratings_downvotes ?? 0}
+              tagsLabel={t('adminDashboard.ratingsLabels.topTags') as string}
+              tags={(analytics?.ratings_top_tags ?? []).map((rt) => ({
+                tag: rt.tag,
+                count: rt.count,
+                label: (t(`catalog.rating.tags.${rt.tag}`) as string) ?? rt.tag,
+              }))}
+              emptyLabel={t('adminDashboard.ratingsLabels.empty') as string}
+            />
+          </>
+        )}
       </div>
     </div>
   )

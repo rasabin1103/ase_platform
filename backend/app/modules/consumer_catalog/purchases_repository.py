@@ -19,7 +19,15 @@ class CatalogPurchasesRepository:
         )
         return set(self.db.execute(stmt).scalars().all())
 
-    def add(self, user_id: int, catalog_item_id: int) -> None:
+    def add(
+        self,
+        user_id: int,
+        catalog_item_id: int,
+        *,
+        granted_by_user_id: int | None = None,
+        organization_id: int | None = None,
+    ) -> bool:
+        """Returns True if a new purchase row was created, False if the user already owned it."""
         existing = self.db.execute(
             select(CatalogPurchase).where(
                 CatalogPurchase.user_id == user_id,
@@ -27,9 +35,17 @@ class CatalogPurchasesRepository:
             )
         ).scalar_one_or_none()
         if existing:
-            return
-        self.db.add(CatalogPurchase(user_id=user_id, catalog_item_id=catalog_item_id))
+            return False
+        self.db.add(
+            CatalogPurchase(
+                user_id=user_id,
+                catalog_item_id=catalog_item_id,
+                granted_by_user_id=granted_by_user_id,
+                organization_id=organization_id,
+            )
+        )
         self.db.flush()
+        return True
 
     def replace_all(self, user_id: int, catalog_item_ids: list[int]) -> None:
         self.db.execute(delete(CatalogPurchase).where(CatalogPurchase.user_id == user_id))

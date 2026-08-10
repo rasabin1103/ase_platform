@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 import { tStringArray, useI18n } from '../../../i18n'
-import { Badge } from '../../ui/Badge'
+import { Eyebrow } from '../../ui/Eyebrow'
 import { cn } from '../../ui/cn'
 
 type NodeId = 'user' | 'org' | 'rbac' | 'catalog' | 'subs' | 'ops' | 'audit'
@@ -41,9 +41,7 @@ export function SystemFlowDiagram() {
 
       <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 sm:px-8 lg:px-12">
         <div className="max-w-3xl">
-          <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
-            {t('platformPage.diagram.badge')}
-          </Badge>
+          <Eyebrow>{t('platformPage.diagram.badge')}</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
             {t('platformPage.diagram.title')}
           </h2>
@@ -89,7 +87,7 @@ export function SystemFlowDiagram() {
                   key={n.id}
                   type="button"
                   className={cn(
-                    'relative overflow-hidden rounded-2xl border border-white/[0.09] bg-white/[0.04] p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-md transition duration-300',
+                    'relative overflow-hidden rounded-2xl border border-white/[0.09] bg-white/[0.04] p-4 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition duration-300',
                     'hover:border-ase-primary/30 hover:bg-white/[0.06]',
                     isOn ? 'opacity-100' : 'opacity-[0.45]',
                     active === n.id && 'ring-1 ring-ase-primary/25',
@@ -125,7 +123,7 @@ export function SystemFlowDiagram() {
 
         {/* Mobile flow */}
         <div className="mt-12 lg:hidden">
-          <div className="relative mx-auto max-w-2xl overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/45 p-5 backdrop-blur-md sm:p-6">
+          <div className="relative mx-auto max-w-2xl overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-5 sm:p-6">
             <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:28px_28px]" />
             <ol className="relative z-[1] space-y-4">
               {nodes.map((n, idx) => (
@@ -133,7 +131,7 @@ export function SystemFlowDiagram() {
                   <button
                     type="button"
                     className={cn(
-                      'w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 text-left backdrop-blur-sm transition',
+                      'w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 text-left transition',
                       active === n.id && 'border-ase-primary/35 ring-1 ring-ase-primary/20',
                     )}
                     onClick={() => setActive((cur) => (cur === n.id ? null : n.id))}

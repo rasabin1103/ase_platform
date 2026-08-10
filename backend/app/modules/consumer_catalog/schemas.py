@@ -6,19 +6,17 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType, CatalogPurchaseProvider
-from app.modules.pricing.schemas import PublicPricingPlanRead
-from app.modules.catalog.catalog_media_schemas import BookPurchaseLinkRead, CatalogItemImageRead
+from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
 
 
-class CatalogItemSummaryRead(BaseModel):
-    id: str
-    title: str
-    slug: str
-    type: CatalogItemType
-    shortDescription: str
-    imageUrl: str
-    author: str
+class MyRatingRead(BaseModel):
+    isPositive: bool
+    tags: list[str] = []
+
+
+class CatalogItemImagePublicRead(BaseModel):
+    url: str
+    isCover: bool
 
 
 class CatalogItemRead(BaseModel):
@@ -31,6 +29,7 @@ class CatalogItemRead(BaseModel):
     shortDescription: str
     longDescription: str
     imageUrl: str
+    images: list[CatalogItemImagePublicRead] = []
     price: Decimal
     currency: str
     status: CatalogItemStatus
@@ -43,25 +42,18 @@ class CatalogItemRead(BaseModel):
     includedItems: list[str] = []
     isFavorite: bool = False
     isPurchased: bool = False
-    pricingPlans: list[PublicPricingPlanRead] = Field(default_factory=list)
-    coverImageUrl: str | None = None
-    thumbnailUrl: str | None = None
-    amazonUrl: str | None = None
-    externalPurchaseUrl: str | None = None
-    purchaseProvider: CatalogPurchaseProvider = CatalogPurchaseProvider.internal
-    pdfUrl: str | None = None
-    previewPdfUrl: str | None = None
-    previewPages: int | None = None
-    sampleDownloadUrl: str | None = None
-    richContentMarkdown: str | None = None
-    bookFormat: str | None = None
-    audience: list[str] = Field(default_factory=list)
-    relatedItems: list[CatalogItemSummaryRead] = Field(default_factory=list)
-    images: list[CatalogItemImageRead] = Field(default_factory=list)
-    purchaseLinks: list[BookPurchaseLinkRead] = Field(default_factory=list)
-    imageCount: int = 0
+    upvotes: int = 0
+    downvotes: int = 0
+    netScore: int = 0
+    topTags: list[str] = []
+    myRating: MyRatingRead | None = None
     createdAt: datetime
     updatedAt: datetime
+
+
+class RateItemRequest(BaseModel):
+    isPositive: bool
+    tags: list[str] = Field(default_factory=list)
 
 
 class CatalogItemListResponse(BaseModel):

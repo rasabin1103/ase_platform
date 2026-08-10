@@ -8,6 +8,8 @@ import { ServiceFrameworkEcosystem } from '../../components/public/ServiceFramew
 import { ServiceShowcaseBlock } from '../../components/public/ServiceShowcaseBlock'
 import { ServiceTrainingEcosystem } from '../../components/public/ServiceTrainingEcosystem'
 import { ServicesHeroPremium } from '../../components/public/ServicesHeroPremium'
+import { ServicesInsideSection } from '../../components/public/ServicesInsideSection'
+import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -54,6 +56,7 @@ export function ServicesPage() {
   return (
     <div className="w-full bg-ase-bg">
       <ServicesHeroPremium />
+      <ServicesInsideSection />
 
       {servicesQuery.isError ? (
         <div className="mx-auto max-w-[min(100%,720px)] px-5 py-16 text-center sm:px-8">
@@ -91,9 +94,7 @@ export function ServicesPage() {
           <section className="border-t border-white/[0.06] bg-ase-bg2/30 py-14 sm:py-20">
             <div className="mx-auto w-full max-w-[min(100%,1400px)] px-5 sm:px-8 lg:px-12">
               <div className="max-w-3xl">
-                <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
-                  {t('servicesPage.overview.badge')}
-                </Badge>
+                <Eyebrow>{t('servicesPage.overview.badge')}</Eyebrow>
                 <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">
                   {t('servicesPage.overview.title')}
                 </h2>
@@ -128,9 +129,7 @@ export function ServicesPage() {
 
           <section className="border-t border-white/[0.06] py-20 sm:py-28">
             <div className="mx-auto flex max-w-[min(100%,900px)] flex-col items-center px-5 text-center sm:px-8">
-              <Badge variant="info" className="border-white/10 bg-white/[0.04] text-ase-text2">
-                {t('servicesPage.cta.badge')}
-              </Badge>
+              <Eyebrow>{t('servicesPage.cta.badge')}</Eyebrow>
               <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
                 {t('servicesPage.cta.title')}
               </h2>

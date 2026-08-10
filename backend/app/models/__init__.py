@@ -5,7 +5,6 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.role_permission import RolePermission
 from app.models.member_role import MemberRole
-from app.models.user_platform_role import UserPlatformRole
 from app.models.plan import Plan
 from app.models.plan_feature import PlanFeature
 from app.models.service import Service
@@ -21,14 +20,16 @@ from app.models.audit_log import AuditLog
 from app.models.access_request import AccessRequest
 from app.models.resource_assignment import ResourceAssignment
 from app.models.catalog_item import CatalogItem
-from app.models.catalog_item_image import CatalogItemImage
-from app.models.book_purchase_link import BookPurchaseLink
 from app.models.catalog_favorite import CatalogFavorite
 from app.models.catalog_purchase import CatalogPurchase
-from app.models.catalog_pricing_plan import CatalogPricingPlan
-from app.models.catalog_plan_subscription import CatalogPlanSubscription
-from app.models.user_verification_challenge import UserVerificationChallenge
-from app.models.email_verification_token import EmailVerificationToken
+from app.models.catalog_item_rating import CatalogItemRating
+from app.models.catalog_item_image import CatalogItemImage
+from app.models.notification import Notification
+from app.models.suggestion import Suggestion
+from app.models.organization_catalog_item import OrganizationCatalogItem
+from app.models.team_member import TeamMember
+from app.models.testimonial import Testimonial
+from app.models.case_study import CaseStudy
 
 __all__ = [
     "User",
@@ -38,7 +39,6 @@ __all__ = [
     "Permission",
     "RolePermission",
     "MemberRole",
-    "UserPlatformRole",
     "Plan",
     "PlanFeature",
     "Service",
@@ -54,13 +54,15 @@ __all__ = [
     "AccessRequest",
     "ResourceAssignment",
     "CatalogItem",
-    "CatalogItemImage",
-    "BookPurchaseLink",
     "CatalogFavorite",
     "CatalogPurchase",
-    "CatalogPricingPlan",
-    "CatalogPlanSubscription",
-    "UserVerificationChallenge",
-    "EmailVerificationToken",
+    "CatalogItemRating",
+    "CatalogItemImage",
+    "Notification",
+    "Suggestion",
+    "OrganizationCatalogItem",
+    "TeamMember",
+    "Testimonial",
+    "CaseStudy",
 ]
 

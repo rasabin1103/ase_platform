@@ -6,10 +6,12 @@
 
 export const aboutPageEn = {
   hero: {
-    badge: 'Engineering Philosophy',
-    title: 'Software engineering built to last',
+    badge: 'About ASE',
+    title: 'Built by someone who has been in the trenches.',
     subtitle:
-      'Arce Sabin Engineering is built on a simple idea: modern companies don’t need more tools. They need solid systems, real automation, and platforms that can grow without losing control.',
+      'Roberto Arce Sabín is a QA Strategy Lead with over 10 years of experience in high-criticality enterprise environments — digital banking (Banco Santander), aeronautics (Iberia) and retail (Inditex). ASE was born from detecting the same pattern over and over: talented teams without the tools, training or frameworks to deliver real quality.',
+    primaryCta: 'See what ASE includes',
+    secondaryCta: 'Talk to Roberto',
     cards: {
       architecture: {
         icon: '◇',
@@ -35,9 +37,9 @@ export const aboutPageEn = {
   },
   why: {
     badge: 'Origin',
-    title: 'Why ASE exists',
+    title: 'Why does ASE exist?',
     body:
-      'After years in enterprise projects, we kept seeing the same pattern: fragile systems, automation that’s hard to maintain, accumulated technical debt, and manual processes that constrained growth.\n\nASE exists to solve that problem.\n\nNot as a traditional consultancy — but as an engineering studio focused on building robust platforms, sustainable automation, and software designed to evolve for years.',
+      'After more than a decade leading QA strategies at Santander, Iberia, Inditex and Securitas Direct, I detected the same pattern repeating constantly: fragile systems, hard-to-maintain automations, accumulated technical debt and manual processes that limited growth. ASE exists to change that — giving access to the resources, training and tools I would have wanted from the start.',
     timeline: {
       title: 'Engineering signals',
       items: [
@@ -46,6 +48,26 @@ export const aboutPageEn = {
         { title: 'Manual ops', desc: 'Unmeasured workflows that silently tax teams.' },
         { title: 'Governance gap', desc: 'RBAC, tenant boundaries and auditability added too late.' },
       ],
+    },
+  },
+  impact: {
+    title: 'Real impact on real projects',
+    items: {
+      m1: {
+        value: '−60%',
+        label: 'Critical errors in production',
+        sub: 'Banco Santander',
+      },
+      m2: {
+        value: '25→90%',
+        label: 'Automated coverage',
+        sub: 'in less than 12 months',
+      },
+      m3: {
+        value: '−70%',
+        label: 'CI/CD pipeline execution time',
+        sub: 'suite optimization',
+      },
     },
   },
   principles: {
@@ -137,10 +159,12 @@ export const aboutPageEn = {
 
 export const aboutPageEs = {
   hero: {
-    badge: 'Filosofía de ingeniería',
-    title: 'Ingeniería de software construida para durar',
+    badge: 'Sobre ASE',
+    title: 'Construido por alguien que ha estado en las trincheras.',
     subtitle:
-      'Arce Sabin Engineering nace de una idea simple: las empresas modernas no necesitan más herramientas. Necesitan sistemas sólidos, automatización real y plataformas capaces de crecer sin perder control.',
+      'Roberto Arce Sabín es QA Strategy Lead con más de 10 años de experiencia en entornos enterprise de alta criticidad — banca digital (Banco Santander), aeronáutico (Iberia) y retail (Inditex). ASE nació de detectar el mismo patrón una y otra vez: equipos con talento pero sin las herramientas, la formación ni los frameworks para entregar con calidad real.',
+    primaryCta: 'Ver qué incluye ASE',
+    secondaryCta: 'Hablar con Roberto',
     cards: {
       architecture: {
         icon: '◇',
@@ -168,7 +192,7 @@ export const aboutPageEs = {
     badge: 'Origen',
     title: '¿Por qué existe ASE?',
     body:
-      'Después de años trabajando en proyectos enterprise, detectamos el mismo patrón repetirse constantemente: sistemas frágiles, automatizaciones difíciles de mantener, deuda técnica acumulada y procesos manuales que limitaban el crecimiento.\n\nASE nace para resolver ese problema.\n\nNo como una consultora tradicional, sino como un estudio de ingeniería enfocado en construir plataformas robustas, automatización sostenible y software preparado para evolucionar durante años.',
+      'Después de más de una década liderando estrategias QA en Santander, Iberia, Inditex y Securitas Direct, detecté el mismo patrón repetirse constantemente: sistemas frágiles, automatizaciones difíciles de mantener, deuda técnica acumulada y procesos manuales que limitaban el crecimiento. ASE existe para cambiar eso — dando acceso a los recursos, la formación y las herramientas que yo habría querido tener desde el principio.',
     timeline: {
       title: 'Señales de ingeniería',
       items: [
@@ -177,6 +201,26 @@ export const aboutPageEs = {
         { title: 'Operación manual', desc: 'Workflows sin medir que penalizan silenciosamente al equipo.' },
         { title: 'Brecha de gobernanza', desc: 'RBAC, fronteras de tenant y auditoría añadidos demasiado tarde.' },
       ],
+    },
+  },
+  impact: {
+    title: 'Impacto real en proyectos reales',
+    items: {
+      m1: {
+        value: '−60%',
+        label: 'Errores críticos en producción',
+        sub: 'Banco Santander',
+      },
+      m2: {
+        value: '25→90%',
+        label: 'Cobertura automatizada',
+        sub: 'en menos de 12 meses',
+      },
+      m3: {
+        value: '−70%',
+        label: 'Tiempo de ejecución en pipelines CI/CD',
+        sub: 'optimización de suites',
+      },
     },
   },
   principles: {

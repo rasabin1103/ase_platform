@@ -14,6 +14,8 @@ import {
 
   INDEPENDENT_NAV_GROUPS,
 
+  ORGANIZATION_NAV_GROUPS,
+
   resolvePrimaryRole,
 
   SUPER_ADMIN_NAV_GROUPS,
@@ -70,6 +72,20 @@ export function useRbac() {
 
     }
 
+    if (primaryRole === 'org_owner' || primaryRole === 'org_admin') {
+
+      return filterNavGroups(ORGANIZATION_NAV_GROUPS, {
+
+        primaryRole,
+
+        permissions,
+
+        isSuperuser,
+
+      })
+
+    }
+
     return []
 
   }, [isConsumerMode, primaryRole, permissions, isSuperuser])
@@ -95,6 +111,8 @@ export function useRbac() {
     isIndependentUser: Boolean(currentUser?.is_independent_user),
 
     isConsumerMode,
+
+    isOrgWorkspace: primaryRole === 'org_owner' || primaryRole === 'org_admin',
 
     navGroups,
 

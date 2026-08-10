@@ -36,6 +36,8 @@ from app.models.enums import BillingCycle, ProductStatus
 
 from app.seed_data.services_catalog import apply_services_catalog_seed
 
+from app.seed_data.credibility_content import apply_credibility_content_seed
+
 from app.models.permission import Permission
 
 from app.models.plan import Plan
@@ -73,6 +75,8 @@ class SeedResult:
     created_plan_products: int = 0
 
     created_services: int = 0
+
+    created_credibility_content: int = 0
 
 
 
@@ -702,6 +706,10 @@ def seed_db(db: Session) -> SeedResult:
 
     created_services = apply_services_catalog_seed(db)
 
+    credibility_counts = apply_credibility_content_seed(db)
+
+    created_credibility_content = sum(credibility_counts.values())
+
 
 
     return SeedResult(
@@ -721,6 +729,8 @@ def seed_db(db: Session) -> SeedResult:
         created_plan_products=created_plan_products,
 
         created_services=created_services,
+
+        created_credibility_content=created_credibility_content,
 
     )
 
@@ -776,7 +786,9 @@ def main() -> None:
 
         f"created_plan_products={result.created_plan_products} "
 
-        f"created_services={result.created_services}"
+        f"created_services={result.created_services} "
+
+        f"created_credibility_content={result.created_credibility_content} (all inactive — review before publishing)"
 
     )
 

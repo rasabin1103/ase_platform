@@ -38,10 +38,12 @@ From `backend`:
 
 | Email | Password | Role |
 |-------|----------|------|
-| `rasabin01@gmail.com` | value of `DEMO_SEED_PASSWORD` in `.env` | `super_admin` |
+| value of `SUPER_ADMIN_EMAIL` in `.env` | value of `SUPER_ADMIN_PASSWORD` in `.env` | `super_admin` |
 | `rasabin05@gmail.com` | value of `DEMO_SEED_PASSWORD` in `.env` | `independent_user` |
 
-Default password in `.env.example`: `ChangeMeDemo123!`
+Default demo password in `.env.example`: `ChangeMeDemo123!`. The super_admin identity has no
+real-value default in source control — set `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` in your
+local, gitignored `.env` (falls back to the shared demo password if unset).
 
 ## Full fresh setup
 

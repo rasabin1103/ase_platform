@@ -25,6 +25,8 @@ export type Plan = {
   display_order?: number
   is_recommended?: boolean
   cta_label?: string | null
+  /** Annual price when catalog API exposes monthly + annual on one row (Railway public catalog). */
+  annual_price?: string | null
   features?: PlanFeature[]
 }
 

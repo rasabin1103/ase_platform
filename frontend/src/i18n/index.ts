@@ -3,7 +3,7 @@ import type { Language } from './translations'
 import { translations } from './translations'
 
 const STORAGE_KEY = 'ase_language'
-const DEFAULT_LANGUAGE: Language = 'en'
+const DEFAULT_LANGUAGE: Language = 'es'
 
 export type I18nContextValue = {
   language: Language

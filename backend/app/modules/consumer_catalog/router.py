@@ -8,13 +8,13 @@ from app.core.database import get_db
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.models.user import User
-from app.modules.auth.dependencies import get_current_user, is_super_admin, require_permission
-from app.modules.auth.security_onboarding import require_security_onboarding
+from app.modules.auth.dependencies import get_current_user, require_permission
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.schemas import (
     CatalogItemListResponse,
     CatalogItemRead,
+    RateItemRequest,
     UserCatalogStateRead,
     UserCatalogStateUpdate,
 )
@@ -63,6 +63,7 @@ def list_catalog(
     search: str | None = None,
     favorites_only: bool = False,
     purchased_only: bool = False,
+    sort: str | None = Query(default=None, description="Set to 'top_rated' to sort by net rating score"),
     user: User = Depends(get_current_user),
     svc: ConsumerCatalogService = Depends(get_service),
 ):
@@ -75,27 +76,39 @@ def list_catalog(
         search=search,
         favorites_only=favorites_only,
         purchased_only=purchased_only,
+        sort=sort,
     )
 
 
-@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own")), Depends(require_security_onboarding)])
+@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own"))])
 def toggle_favorite(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.toggle_favorite(slug, user_id=user.id)
 
 
-@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own")), Depends(require_security_onboarding)])
+@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own"))])
 def purchase_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.purchase(slug, user_id=user.id)
 
 
 @router.get("/{slug}", response_model=CatalogItemRead, dependencies=[Depends(require_permission("catalog.read"))])
-def get_catalog_item(
+def get_catalog_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    return svc.get_by_slug(slug, user_id=user.id)
+
+
+@router.post("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+def rate_catalog_item(
     slug: str,
-    preview: bool = False,
+    payload: RateItemRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
     svc: ConsumerCatalogService = Depends(get_service),
 ):
-    allow_preview = preview and is_super_admin(db, user)
-    return svc.get_by_slug(slug, user_id=user.id, allow_preview=allow_preview)
+    return svc.rate(slug, user_id=user.id, is_positive=payload.isPositive, tags=payload.tags)
 
+
+@router.delete("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+def remove_catalog_item_rating(
+    slug: str,
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    return svc.remove_rating(slug, user_id=user.id)

@@ -7,10 +7,9 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 
 const navLinkBase =
-  'text-[12.5px] font-medium tracking-[0.01em] text-ase-text2 transition duration-200 ease-out hover:text-ase-text focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 rounded-lg px-2.5 py-2 lg:px-3'
+  'text-sm font-medium text-ase-text2 transition-colors duration-200 hover:text-ase-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-md px-2 py-1.5'
 
-const navLinkActive =
-  'text-ase-text bg-white/[0.07] ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+const navLinkActive = 'text-ase-text bg-white/[0.04] border border-white/10'
 
 export function PublicHeader() {
   const [open, setOpen] = useState(false)
@@ -21,9 +20,9 @@ export function PublicHeader() {
   const items = useMemo(
     () => [
       { to: '/', label: t('nav.home') as string },
-      { to: '/services', label: t('nav.services') as string },
+      { to: '/services', label: t('nav.whatsIncluded') as string },
       { to: '/platform', label: t('nav.platform') as string },
-      { to: '/pricing', label: t('nav.pricing') as string },
+      { to: '/pricing', label: t('nav.plans') as string },
       { to: '/about', label: t('nav.about') as string },
       { to: '/contact', label: t('nav.contact') as string },
     ],
@@ -31,20 +30,13 @@ export function PublicHeader() {
   )
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-ase-bg2/75 shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md supports-[backdrop-filter]:bg-ase-bg2/65">
-      <div className="mx-auto flex min-h-[4.5rem] w-full max-w-[1440px] items-center justify-between gap-4 px-5 py-2 sm:min-h-[5.25rem] sm:gap-6 sm:px-8 sm:py-2.5 lg:min-h-[5.5rem]">
-        <Link
-          to="/"
-          className="group relative z-10 shrink-0 py-1 pr-2 transition duration-200 ease-out hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 rounded-xl"
-          aria-label={t('nav.home') as string}
-        >
-          <BrandLogo
-            placement="public-nav"
-            className="opacity-100 transition duration-200 ease-out group-hover:scale-[1.02]"
-          />
+    <header className="sticky top-0 z-40 border-b border-ase-border bg-ase-bg2/80 backdrop-blur supports-[backdrop-filter]:bg-ase-bg2/60">
+      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-6 sm:px-8">
+        <Link to="/" className="min-w-0 shrink-0">
+          <BrandLogo variant="dark" size="sm" showText className="opacity-95" />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex lg:px-4">
+        <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} className={({ isActive }) => cn(navLinkBase, isActive && navLinkActive)}>
               {it.label}
@@ -52,15 +44,15 @@ export function PublicHeader() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-          <div className="hidden items-center gap-2.5 md:flex">
-            <div className="inline-flex items-center rounded-2xl border border-white/[0.08] bg-white/[0.025] p-0.5 ring-1 ring-white/[0.04]">
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
+            <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
                 className={cn(
-                  'rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-wide transition duration-200 ease-out',
-                  language === 'en' ? 'bg-white/[0.08] text-ase-text shadow-sm' : 'text-ase-text2 hover:text-ase-text',
+                  'rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                  language === 'en' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
                 )}
               >
                 EN
@@ -69,8 +61,8 @@ export function PublicHeader() {
                 type="button"
                 onClick={() => setLanguage('es')}
                 className={cn(
-                  'rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-wide transition duration-200 ease-out',
-                  language === 'es' ? 'bg-white/[0.08] text-ase-text shadow-sm' : 'text-ase-text2 hover:text-ase-text',
+                  'rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                  language === 'es' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
                 )}
               >
                 ES
@@ -78,11 +70,11 @@ export function PublicHeader() {
             </div>
             {auth.isAuthenticated ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-ase-text2 ring-1 ring-white/[0.04]">
-                  <span className="mr-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-success/90" />
-                  {t('session.loggedIn')}
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-ase-text2">
+                  <span className="mr-2 h-1.5 w-1.5 rounded-full bg-ase-success/80 shadow-[0_0_18px_rgba(34,197,94,0.12)]" />
+                    {t('session.loggedIn')}
                 </span>
-                <span className="hidden max-w-[200px] truncate text-sm text-ase-text2 lg:inline">
+                <span className="hidden max-w-[220px] truncate text-sm text-ase-text2 lg:inline">
                   {auth.currentUser?.display_name ?? auth.currentUser?.email}
                 </span>
                 <Link to="/dashboard">
@@ -103,11 +95,11 @@ export function PublicHeader() {
               <>
                 <Link to="/login">
                   <Button size="sm" variant="secondary">
-                    {t('cta.clientLogin')}
+                    {t('nav.clients')}
                   </Button>
                 </Link>
-                <Link to="/contact">
-                  <Button size="sm">{t('cta.talkToUs')}</Button>
+                <Link to="/pricing">
+                  <Button size="sm">{t('nav.cta')}</Button>
                 </Link>
               </>
             )}
@@ -115,22 +107,22 @@ export function PublicHeader() {
 
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-medium text-ase-text shadow-soft transition duration-200 ease-out hover:bg-white/[0.07] focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50 md:hidden"
+            className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60 md:hidden"
             aria-label="Open menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
-            <span className="mr-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-primary/90" />
+            <span className="mr-2 h-1.5 w-1.5 rounded-full bg-ase-primary shadow-[0_0_14px_rgba(56,189,248,0.35)]" />
             {t('header.menu')}
           </button>
         </div>
       </div>
 
       {open ? (
-        <div className="border-t border-white/[0.06] bg-ase-bg2/92 backdrop-blur-lg md:hidden">
-          <div className="mx-auto w-full max-w-[1440px] px-5 py-4 sm:px-8">
+        <div className="border-t border-white/5 bg-ase-bg2/90 md:hidden">
+          <div className="mx-auto w-full max-w-[1440px] px-6 sm:px-8 py-4">
             <div className="mb-3 flex items-center justify-end">
-              <div className="inline-flex items-center rounded-2xl border border-white/[0.08] bg-white/[0.025] p-0.5">
+              <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -138,8 +130,8 @@ export function PublicHeader() {
                     setOpen(false)
                   }}
                   className={cn(
-                    'rounded-xl px-2.5 py-1.5 text-xs font-semibold transition duration-200 ease-out',
-                    language === 'en' ? 'bg-white/[0.08] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
+                    'rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                    language === 'en' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
                   )}
                 >
                   EN
@@ -151,8 +143,8 @@ export function PublicHeader() {
                     setOpen(false)
                   }}
                   className={cn(
-                    'rounded-xl px-2.5 py-1.5 text-xs font-semibold transition duration-200 ease-out',
-                    language === 'es' ? 'bg-white/[0.08] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
+                    'rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                    language === 'es' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
                   )}
                 >
                   ES
@@ -168,10 +160,10 @@ export function PublicHeader() {
                     to={it.to}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'rounded-2xl border px-3 py-2.5 text-sm font-medium transition duration-200 ease-out',
+                      'rounded-lg border px-3 py-2 text-sm font-medium transition',
                       active
-                        ? 'border-white/[0.1] bg-white/[0.07] text-ase-text ring-1 ring-white/[0.06]'
-                        : 'border-transparent bg-white/[0.03] text-ase-text2 hover:bg-white/[0.06] hover:text-ase-text',
+                        ? 'border-white/10 bg-white/[0.05] text-ase-text'
+                        : 'border-transparent bg-white/[0.02] text-ase-text2 hover:bg-white/[0.05] hover:text-ase-text',
                     )}
                   >
                     {it.label}
@@ -201,12 +193,12 @@ export function PublicHeader() {
                 </>
               ) : (
                 <>
-                  <Link to="/contact" onClick={() => setOpen(false)}>
-                    <Button className="w-full">{t('cta.talkToUs')}</Button>
+                  <Link to="/pricing" onClick={() => setOpen(false)}>
+                    <Button className="w-full">{t('nav.cta')}</Button>
                   </Link>
                   <Link to="/login" onClick={() => setOpen(false)}>
                     <Button variant="secondary" className="w-full">
-                      {t('cta.clientLogin')}
+                      {t('nav.clients')}
                     </Button>
                   </Link>
                 </>
@@ -218,3 +210,4 @@ export function PublicHeader() {
     </header>
   )
 }
+
