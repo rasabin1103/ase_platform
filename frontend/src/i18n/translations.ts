@@ -436,7 +436,7 @@ export const translations = {
         trust2: 'No commitment',
         trust3: 'For Enterprise plans, consulting included',
         footerText:
-          'You can also reach us directly at rasabin1103@gmail.com or connect on LinkedIn with Roberto Arce Sabín.',
+          'You can also reach us directly at contact@arcesabinengineering.com or connect on LinkedIn with Roberto Arce Sabín.',
         sendTitle: 'Send a message',
         sendSubtitle: 'We’ll reply within 1–2 business days.',
         fields: {
@@ -1006,7 +1006,7 @@ export const translations = {
         trust2: 'Sin compromiso',
         trust3: 'Para planes Enterprise, consultoría incluida',
         footerText:
-          'También puedes escribirnos directamente a rasabin1103@gmail.com o conectar en LinkedIn con Roberto Arce Sabín.',
+          'También puedes escribirnos directamente a contact@arcesabinengineering.com o conectar en LinkedIn con Roberto Arce Sabín.',
         sendTitle: 'Enviar mensaje',
         sendSubtitle: 'Respondemos en 1–2 días laborables.',
         fields: {

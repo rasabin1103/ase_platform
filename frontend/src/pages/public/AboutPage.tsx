@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { BrandLogo } from '../../components/brand/BrandLogo'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -34,7 +33,6 @@ export function AboutPage() {
           <div className="grid gap-12 lg:grid-cols-12 lg:items-start lg:gap-16">
             <div className="lg:col-span-6">
               <Eyebrow>{t('aboutPage.hero.badge')}</Eyebrow>
-              <BrandLogo variant="dark" size="lg" showText className="mt-6 opacity-95" />
 
               <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight text-ase-text sm:text-5xl lg:text-6xl">
                 {t('aboutPage.hero.title')}

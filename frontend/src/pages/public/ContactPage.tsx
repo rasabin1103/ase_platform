@@ -27,7 +27,7 @@ export function ContactPage() {
         values.message || '',
       ].join('\n'),
     )
-    return `mailto:contact@arcesabin.engineering?subject=${subject}&body=${body}`
+    return `mailto:contact@arcesabinengineering.com?subject=${subject}&body=${body}`
   }, [values, t])
 
   return (
@@ -99,9 +99,9 @@ export function ContactPage() {
             <a href={mailto} className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto">{t('pages.contact.openClient')}</Button>
             </a>
-            <a href="mailto:contact@arcesabin.engineering" className="w-full sm:w-auto">
+            <a href="mailto:contact@arcesabinengineering.com" className="w-full sm:w-auto">
               <Button variant="secondary" className="w-full sm:w-auto">
-                contact@arcesabin.engineering
+                contact@arcesabinengineering.com
               </Button>
             </a>
           </div>

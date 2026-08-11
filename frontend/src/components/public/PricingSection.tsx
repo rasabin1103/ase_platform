@@ -7,6 +7,7 @@ import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import type { Plan } from '../../types/plan.types'
 import {
   catalogPlansForBilling,
@@ -41,6 +42,7 @@ function cardTone(plan: Plan): TierTone {
 
 export function PricingSection({ compact }: { compact?: boolean }) {
   const { t } = useI18n()
+  const auth = useAuth()
   const [billing, setBilling] = useState<Billing>('monthly')
 
   const plansQuery = useQuery({
@@ -156,6 +158,9 @@ export function PricingSection({ compact }: { compact?: boolean }) {
               const features = planFeatureLines(plan)
               const description = planMarketingDescription(t, plan)
               const cta = plan.cta_label || (t('pricing.plans.pro.cta') as string)
+              const planTier = tierFromPlanCode(plan.code)
+              const isSelfServeTier = planTier === 'free' || planTier === 'pro'
+              const ctaHref = isSelfServeTier ? (auth.isAuthenticated ? '/dashboard' : '/register') : '/contact'
 
               return (
                 <Card
@@ -188,7 +193,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   </div>
 
                   <div className="mt-6">
-                    <Link to="/contact">
+                    <Link to={ctaHref}>
                       <Button
                         size="lg"
                         variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}

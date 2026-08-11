@@ -56,7 +56,7 @@ export function PublicFooter() {
             <div className="flex flex-col gap-3">
               <FooterLink to="/about">{t('footer.link5')}</FooterLink>
               <FooterLink to="/contact">{t('footer.link6')}</FooterLink>
-              <FooterMailLink href="mailto:rasabin1103@gmail.com">rasabin1103@gmail.com</FooterMailLink>
+              <FooterMailLink href="mailto:contact@arcesabinengineering.com">contact@arcesabinengineering.com</FooterMailLink>
               <p className="text-sm text-ase-muted">{t('footer.response')}</p>
             </div>
           </div>
