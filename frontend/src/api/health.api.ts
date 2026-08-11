@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client'
+
 export type HealthResponse = {
   status?: string
 }
@@ -12,12 +14,20 @@ export type PlatformHealth = {
   dbOk: boolean
 }
 
+/**
+ * `/health` and `/health/db` live at the API origin, not under `/api/v1`.
+ * Derive that origin from the same `VITE_API_URL` the rest of the app uses
+ * (relative `/api/v1` in dev — proxied by Vite; an absolute URL in
+ * production) instead of the separate, dev-only `VITE_API_BACKEND` var,
+ * which is never set on Vercel and made this check always report "down".
+ */
+function healthOrigin(): string {
+  const base = API_BASE_URL.replace(/\/$/, '')
+  return base.replace(/\/api\/v1$/, '')
+}
+
 function healthRequestUrl(path: '/health' | '/health/db'): string {
-  const backend = import.meta.env.VITE_API_BACKEND?.replace(/\/$/, '')
-  if (import.meta.env.DEV || !backend) {
-    return path
-  }
-  return `${backend}${path}`
+  return `${healthOrigin()}${path}`
 }
 
 async function fetchHealthJson<T>(path: '/health' | '/health/db'): Promise<T> {
