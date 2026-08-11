@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getAdminAnalytics, getAdminStats } from '../../api/adminDashboard.api'
 import { Card } from '../../components/ui/Card'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
 import {
   InsightBar,
@@ -13,8 +14,8 @@ import {
   PremiumOrb,
   PremiumSplitStat,
 } from '../../components/admin/premium/PremiumAdminUi'
+import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { useI18n } from '../../i18n'
-import { useAuth } from '../../auth/AuthProvider'
 
 const QUICK_LINKS = [
   { to: '/admin/catalog', labelKey: 'adminDashboard.actions.manageCatalog', icon: '◇' },
@@ -26,12 +27,10 @@ const QUICK_LINKS = [
 
 export function AdminDashboardPage() {
   const { t } = useI18n()
-  const { currentUser } = useAuth()
   const statsQuery = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats })
   const analyticsQuery = useQuery({ queryKey: ['admin-analytics'], queryFn: getAdminAnalytics })
   const stats = statsQuery.data
   const analytics = analyticsQuery.data
-  const name = currentUser?.display_name || currentUser?.email || ''
 
   const catalogTotal = stats?.catalog_total ?? 0
   const byType = analytics?.catalog_by_type ?? stats?.catalog_by_type ?? {}
@@ -41,8 +40,9 @@ export function AdminDashboardPage() {
       <PremiumHero
         accent="cyan"
         badge={t('adminDashboard.heroBadge')}
-        title={`${t('adminDashboard.title')}${name ? `, ${name}` : ''}`}
+        title={t('adminDashboard.title')}
         subtitle={t('adminDashboard.subtitle')}
+        leading={<WelcomeBanner variant="lead" />}
         contextChips={
           <>
             <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-ase-text2">
@@ -70,6 +70,13 @@ export function AdminDashboardPage() {
 
       {statsQuery.isLoading ? (
         <Skeleton className="h-28 w-full rounded-2xl" />
+      ) : statsQuery.isError ? (
+        <EmptyState
+          title={t('private.common.couldNotLoad')}
+          description={t('adminDashboard.loadError')}
+          actionLabel={t('adminDashboard.retry')}
+          onAction={() => void statsQuery.refetch()}
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <PremiumMetricCard
@@ -108,6 +115,15 @@ export function AdminDashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           {analyticsQuery.isLoading ? (
             <Skeleton className="h-64 rounded-[2rem] lg:col-span-2" />
+          ) : analyticsQuery.isError ? (
+            <div className="lg:col-span-2">
+              <EmptyState
+                title={t('private.common.couldNotLoad')}
+                description={t('adminDashboard.loadError')}
+                actionLabel={t('adminDashboard.retry')}
+                onAction={() => void analyticsQuery.refetch()}
+              />
+            </div>
           ) : (
             <>
               <PremiumChartCard
@@ -172,6 +188,15 @@ export function AdminDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         {analyticsQuery.isLoading ? (
           <Skeleton className="h-72 rounded-[2rem] xl:col-span-4" />
+        ) : analyticsQuery.isError ? (
+          <div className="xl:col-span-4">
+            <EmptyState
+              title={t('private.common.couldNotLoad')}
+              description={t('adminDashboard.loadError')}
+              actionLabel={t('adminDashboard.retry')}
+              onAction={() => void analyticsQuery.refetch()}
+            />
+          </div>
         ) : (
           <>
             <PremiumBreakdownCard

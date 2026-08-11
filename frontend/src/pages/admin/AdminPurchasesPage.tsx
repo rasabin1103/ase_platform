@@ -1,8 +1,13 @@
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import { getAdminPurchasesSummary, listAdminPurchases } from '../../api/adminDashboard.api'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { Input } from '../../components/ui/Input'
+import { Button } from '../../components/ui/Button'
+import { Pagination } from '../../components/ui/Pagination'
 import {
   PremiumHero,
   PremiumInsightsCard,
@@ -10,6 +15,9 @@ import {
   PremiumOrb,
 } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
+import { downloadCsv } from '../../utils/csv'
+
+const LIMIT = 50
 
 function fmtDate(iso: string) {
   try {
@@ -21,9 +29,46 @@ function fmtDate(iso: string) {
 
 export function AdminPurchasesPage() {
   const { t } = useI18n()
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [offset, setOffset] = useState(0)
+
   const summaryQuery = useQuery({ queryKey: ['admin-purchases-summary'], queryFn: getAdminPurchasesSummary })
-  const listQuery = useQuery({ queryKey: ['admin-purchases'], queryFn: () => listAdminPurchases({ limit: 50 }) })
+  const filters = useMemo(
+    () => ({
+      limit: LIMIT,
+      offset,
+      search: search.trim() || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    }),
+    [search, dateFrom, dateTo, offset],
+  )
+  const listQuery = useQuery({ queryKey: ['admin-purchases', filters], queryFn: () => listAdminPurchases(filters) })
   const summary = summaryQuery.data
+  const items = listQuery.data?.items ?? []
+
+  const hasFilters = Boolean(search || dateFrom || dateTo)
+  const clearFilters = () => {
+    setSearch('')
+    setDateFrom('')
+    setDateTo('')
+    setOffset(0)
+  }
+
+  const handleExport = () => {
+    downloadCsv(
+      'purchases',
+      items.map((row) => ({
+        id: row.id,
+        user_email: row.user_email,
+        item_title: row.item_title,
+        item_type: row.item_type,
+        created_at: row.created_at,
+      })),
+    )
+  }
 
   return (
     <div className="space-y-8 pb-16">
@@ -76,7 +121,40 @@ export function AdminPurchasesPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div>
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="lg:col-span-2">
+                <Input
+                  placeholder={t('adminPurchases.filters.search')}
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setOffset(0) }}
+                />
+              </div>
+              <Input
+                type="date"
+                aria-label={t('adminPurchases.filters.dateFrom')}
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }}
+              />
+              <Input
+                type="date"
+                aria-label={t('adminPurchases.filters.dateTo')}
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setOffset(0) }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <Button variant="ghost" size="sm" onClick={clearFilters} disabled={!hasFilters}>
+                {t('adminPurchases.filters.clear')}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleExport} disabled={items.length === 0}>
+                <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+                {t('private.common.exportCsv')}
+              </Button>
+            </div>
+          </Card>
+
           {listQuery.isLoading ? (
             <Skeleton className="h-64 rounded-[2rem]" />
           ) : listQuery.isError ? (
@@ -89,7 +167,7 @@ export function AdminPurchasesPage() {
                 <span>{t('adminPurchases.colType')}</span>
                 <span>{t('adminPurchases.colDate')}</span>
               </div>
-              {(listQuery.data?.items ?? []).map((row) => (
+              {items.map((row) => (
                 <div
                   key={row.id}
                   className="grid grid-cols-[1fr_1fr_100px_160px] gap-2 px-4 py-3 text-sm text-ase-text2"
@@ -100,6 +178,7 @@ export function AdminPurchasesPage() {
                   <span>{fmtDate(row.created_at)}</span>
                 </div>
               ))}
+              <Pagination limit={LIMIT} offset={offset} total={listQuery.data?.total ?? 0} onOffsetChange={setOffset} />
             </Card>
           )}
         </div>
@@ -116,7 +195,7 @@ export function AdminPurchasesPage() {
           <section>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminPurchases.recent')}</div>
             <div className="mt-3 space-y-2">
-              {(listQuery.data?.items ?? []).slice(0, 5).map((row) => (
+              {items.slice(0, 5).map((row) => (
                 <div key={row.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
                   <div className="truncate text-sm font-medium text-ase-text">{row.item_title}</div>
                   <div className="mt-1 truncate text-xs text-ase-muted">{row.user_email}</div>

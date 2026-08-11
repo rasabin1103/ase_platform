@@ -12,6 +12,7 @@ export function PremiumHero({
   contextChips,
   actions,
   sidePanel,
+  leading,
 }: {
   badge: string
   title: string
@@ -19,15 +20,21 @@ export function PremiumHero({
   contextChips?: ReactNode
   actions?: ReactNode
   sidePanel?: ReactNode
+  /** Optional slot rendered above everything else (e.g. the account avatar + greeting),
+   * so it's the first, most prominent thing in the header. */
+  leading?: ReactNode
   accent?: 'cyan' | 'violet' | 'emerald' | 'amber'
 }) {
   return (
     <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
       <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
         <div>
-          <Badge variant="info" className="mb-5">
-            {badge}
-          </Badge>
+          {leading ? <div className="mb-5">{leading}</div> : null}
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <Badge variant="info" className="mb-0">
+              {badge}
+            </Badge>
+          </div>
           <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{title}</h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ase-text2 md:text-base">{subtitle}</p>
           {contextChips ? <div className="mt-6 flex flex-wrap items-center gap-3">{contextChips}</div> : null}

@@ -5,6 +5,7 @@ import type {
   MeResponse,
   RegisterRequest,
   RegisterResponse,
+  UserLink,
 } from '../types/auth.types'
 
 export async function login(payload: LoginRequest) {
@@ -54,6 +55,18 @@ export type WorkspaceListResponse = {
   items: Workspace[]
   default_workspace_uuid: string | null
 }
+
+export type UserLinkInput = {
+  label: string
+  url: string
+}
+
+export async function replaceMyLinks(items: UserLinkInput[]) {
+  const { data } = await apiClient.put<MeResponse>('/auth/me/links', { items })
+  return data
+}
+
+export type { UserLink }
 
 export async function listWorkspaces() {
   const { data } = await apiClient.get<WorkspaceListResponse>('/auth/workspaces')

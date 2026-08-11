@@ -46,6 +46,8 @@ const defaults = (type: CatalogItemType): FormValues => ({
   benefits: [],
   requirements: [],
   included_items: [],
+  repo_url: null,
+  repo_redeem_code: null,
 })
 
 type Props = {
@@ -114,6 +116,8 @@ export function AdminCatalogItemModal({
         benefits: initial.benefits ?? [],
         requirements: initial.requirements ?? [],
         included_items: initial.included_items ?? [],
+        repo_url: initial.repo_url,
+        repo_redeem_code: initial.repo_redeem_code,
       })
     } else {
       form.reset(defaults(defaultType))
@@ -129,6 +133,7 @@ export function AdminCatalogItemModal({
   }, [open, initial, defaultType, form])
 
   const titleWatch = form.watch('title')
+  const typeWatch = form.watch('type')
 
   return (
     <Modal
@@ -149,6 +154,13 @@ export function AdminCatalogItemModal({
             const isSlugConflict = /slug/i.test(parsed.message) && /exist/i.test(parsed.message)
             if (isSlugConflict) {
               form.setError('slug', { type: 'server', message: t('adminCatalog.slugExists') as string })
+            }
+            const isCodeConflict = /redeem code/i.test(parsed.message) && /use/i.test(parsed.message)
+            if (isCodeConflict) {
+              form.setError('repo_redeem_code', {
+                type: 'server',
+                message: t('adminCatalog.repoRedeemCodeExists') as string,
+              })
             }
             for (const [field, message] of Object.entries(parsed.fieldErrors)) {
               form.setError(field as keyof FormValues, { type: 'server', message })
@@ -342,6 +354,21 @@ export function AdminCatalogItemModal({
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.duration')}</span>
             <Input {...form.register('duration')} />
           </label>
+          {typeWatch === 'book' ? (
+            <>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoUrl')}</span>
+                <Input placeholder="https://github.com/tu-org/tu-repo" {...form.register('repo_url')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoUrlHint')}</p>
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoRedeemCode')}</span>
+                <Input placeholder="ASE-BOOK-2026" {...form.register('repo_redeem_code')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoRedeemCodeHint')}</p>
+                <FieldError message={errors.repo_redeem_code?.message as string | undefined} />
+              </label>
+            </>
+          ) : null}
         </div>
         <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
           <Button type="button" variant="secondary" onClick={onClose}>

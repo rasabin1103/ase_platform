@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
+from app.core.rate_limit import limiter
 
 # Routers kept for future multi-tenant; omitted from app when MVP_MODE is on.
 _MVP_HIDDEN_ROUTERS: tuple[str, ...] = (
@@ -21,6 +25,7 @@ _MVP_HIDDEN_ROUTERS: tuple[str, ...] = (
     "resource_assignments",
     "onboarding",
     "org_catalog",
+    "org_membership",
 )
 from app.modules.health.router import router as health_router
 from app.modules.users.router import router as users_router
@@ -41,6 +46,7 @@ from app.modules.audit_logs.router import router as audit_logs_router
 from app.modules.auth.router import router as auth_router
 from app.modules.onboarding.router import router as onboarding_router
 from app.modules.org_catalog.router import router as org_catalog_router
+from app.modules.org_membership.router import router as org_membership_router
 from app.modules.services.router import router as services_router
 from app.modules.access_requests.router import router as access_requests_router
 from app.modules.mvp_access_requests.router_admin import router as admin_access_requests_router
@@ -53,6 +59,7 @@ from app.modules.media.router import router as media_router
 from app.modules.public_catalog.router import router as public_catalog_router
 from app.modules.notifications.router import router as notifications_router
 from app.modules.suggestions.router import router as suggestions_router
+from app.modules.book_redemption.router import router as book_redemption_router
 
 
 def create_app() -> FastAPI:
@@ -72,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(public_catalog_router)
     app.include_router(notifications_router)
     app.include_router(suggestions_router)
+    app.include_router(book_redemption_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)
@@ -92,10 +100,15 @@ def create_app() -> FastAPI:
         app.include_router(onboarding_router)
         app.include_router(resource_assignments_router)
         app.include_router(org_catalog_router)
+        app.include_router(org_membership_router)
     return app
 
 
 app = create_app()
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

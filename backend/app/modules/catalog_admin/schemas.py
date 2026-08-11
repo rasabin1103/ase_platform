@@ -27,6 +27,10 @@ class CatalogItemAdminBase(BaseModel):
     benefits: list[str] = []
     requirements: list[str] = []
     included_items: list[str] = []
+    # Book repo-access redemption: repo_redeem_code is the code printed
+    # inside the book; repo_url is revealed once a reader redeems it.
+    repo_url: str | None = Field(default=None, max_length=2048)
+    repo_redeem_code: str | None = Field(default=None, max_length=64)
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -49,6 +53,8 @@ class CatalogItemAdminUpdate(BaseModel):
     benefits: list[str] | None = None
     requirements: list[str] | None = None
     included_items: list[str] | None = None
+    repo_url: str | None = None
+    repo_redeem_code: str | None = None
 
 
 class CatalogItemImageRead(BaseModel):

@@ -48,3 +48,10 @@ class UserListResponse(BaseModel):
     offset: int
     total: int
 
+
+class ImpersonationTokenRead(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in_minutes: int
+    target_email: EmailStr
+

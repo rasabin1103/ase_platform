@@ -29,6 +29,8 @@ export type CatalogItemAdmin = {
   benefits: string[]
   requirements: string[]
   included_items: string[]
+  repo_url: string | null
+  repo_redeem_code: string | null
   has_stored_image?: boolean
   created_at: string
   updated_at: string
@@ -59,6 +61,8 @@ export type CatalogItemAdminPayload = {
   benefits?: string[]
   requirements?: string[]
   included_items?: string[]
+  repo_url?: string | null
+  repo_redeem_code?: string | null
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>

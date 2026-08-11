@@ -50,6 +50,10 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     benefits_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     requirements_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     included_items_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    # Book repo-access redemption (see BookRepoRedemption): readers enter
+    # `repo_redeem_code` (printed inside the book) to reveal `repo_url`.
+    repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    repo_redeem_code: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
 
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",

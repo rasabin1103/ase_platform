@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # MVP: hide multi-tenant org routes and use two-role RBAC seeds.
     MVP_MODE: bool = True
 
+    # Personal access token used to auto-invite readers as collaborators on
+    # private book repos when they redeem a code (see app/core/github_client.py).
+    # Needs admin rights on the target repos: a classic PAT with the `repo`
+    # scope, or a fine-grained PAT with "Administration: write" on those repos.
+    GITHUB_ACCESS_TOKEN: str | None = None
+
     @property
     def sqlalchemy_database_url(self) -> str:
         if self.DATABASE_URL:

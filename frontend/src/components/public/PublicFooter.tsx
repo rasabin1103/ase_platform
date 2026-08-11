@@ -48,6 +48,7 @@ export function PublicFooter() {
               <FooterLink to="/platform">{t('footer.link2')}</FooterLink>
               <FooterLink to="/pricing">{t('footer.link3')}</FooterLink>
               <FooterLink to="/dashboard">{t('footer.link4')}</FooterLink>
+              <FooterLink to="/redeem">{t('footer.linkRedeem')}</FooterLink>
             </div>
           </div>
 

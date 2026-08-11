@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.invitation import Invitation
     from app.models.organization import Organization
     from app.models.organization_member import OrganizationMember
+    from app.models.user_link import UserLink
 
 
 class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
@@ -69,6 +70,12 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     sent_invitations: Mapped[list["Invitation"]] = relationship(back_populates="invited_by_user")
 
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="actor_user")
+
+    links: Mapped[list["UserLink"]] = relationship(
+        cascade="all,delete-orphan",
+        passive_deletes=True,
+        order_by="UserLink.display_order",
+    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} uuid={self.uuid} email={self.email!r} status={self.status.value}>"

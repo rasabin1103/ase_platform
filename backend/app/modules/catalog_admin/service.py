@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,8 @@ class CatalogAdminService:
             benefits=item.benefits_json or [],
             requirements=item.requirements_json or [],
             included_items=item.included_items_json or [],
+            repo_url=item.repo_url,
+            repo_redeem_code=item.repo_redeem_code,
             created_at=item.created_at,
             updated_at=item.updated_at,
         )
@@ -74,6 +77,15 @@ class CatalogAdminService:
         if item is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Catalog item not found")
         return item
+
+    def _check_redeem_code_available(self, code: str | None, *, exclude_item_id: int | None = None) -> None:
+        if not code:
+            return
+        stmt = select(CatalogItem.id).where(CatalogItem.repo_redeem_code == code)
+        if exclude_item_id is not None:
+            stmt = stmt.where(CatalogItem.id != exclude_item_id)
+        if self.db.execute(stmt).scalar_one_or_none() is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Redeem code already in use")
 
     def _sync_cover_image(self, item: CatalogItem) -> None:
         """Mirror the legacy single-image fields (``image_data``/``image_mime``
@@ -127,6 +139,10 @@ class CatalogAdminService:
     def create(self, payload: CatalogItemAdminCreate) -> CatalogItemAdminRead:
         if self.repo.get_by_slug(payload.slug):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
+        # Normalize blank -> NULL so the DB unique constraint never treats two
+        # "no code set" books as a conflicting pair of empty strings.
+        payload.repo_redeem_code = (payload.repo_redeem_code or "").strip() or None
+        self._check_redeem_code_available(payload.repo_redeem_code)
         item = CatalogItem(
             title=payload.title,
             slug=payload.slug,
@@ -145,6 +161,8 @@ class CatalogAdminService:
             benefits_json=payload.benefits,
             requirements_json=payload.requirements,
             included_items_json=payload.included_items,
+            repo_url=payload.repo_url,
+            repo_redeem_code=payload.repo_redeem_code,
         )
         self.db.add(item)
         self.db.commit()
@@ -195,6 +213,9 @@ class CatalogAdminService:
             item.requirements_json = data.pop("requirements")
         if "included_items" in data:
             item.included_items_json = data.pop("included_items")
+        if "repo_redeem_code" in data:
+            data["repo_redeem_code"] = (data["repo_redeem_code"] or "").strip() or None
+            self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)
         for key, value in data.items():
             setattr(item, key, value)
         self.db.commit()

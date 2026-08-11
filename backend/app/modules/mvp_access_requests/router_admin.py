@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.core.audit import record_audit_log
 from app.core.database import get_db
 from app.models.enums import AccessRequestStatus
 from app.models.user import User
@@ -43,7 +44,17 @@ def list_admin_access_requests(
 def review_access_request(
     request_id: int,
     payload: AdminAccessRequestReview,
+    db: Session = Depends(get_db),
     reviewer: User = Depends(get_current_user),
     svc: MvpAccessRequestsService = Depends(get_service),
 ) -> AdminAccessRequestRead:
-    return svc.review(request_id=request_id, reviewer=reviewer, payload=payload)
+    result = svc.review(request_id=request_id, reviewer=reviewer, payload=payload)
+    record_audit_log(
+        db,
+        actor_user_id=reviewer.id,
+        action=f"access_request.{payload.status}",
+        entity_type="access_request",
+        entity_id=str(request_id),
+        metadata={"title": result.title},
+    )
+    return result

@@ -20,59 +20,65 @@ from app.models.user import User
 
 
 def _month_buckets(months: int = 6) -> list[str]:
+    """Return the last `months` calendar-month keys ("YYYY-MM"), oldest first,
+    ending with the current month. Uses exact month arithmetic (not day-count
+    subtraction) so it never drifts into the wrong month regardless of how
+    many days each intervening month has."""
     now = datetime.now(timezone.utc)
     keys: list[str] = []
     for i in range(months - 1, -1, -1):
-        d = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(days=30 * i)
-        keys.append(f"{d.year:04d}-{d.month:02d}")
+        total_month_index = now.year * 12 + (now.month - 1) - i
+        year, month = divmod(total_month_index, 12)
+        keys.append(f"{year:04d}-{month + 1:02d}")
     return keys
 
 
 def _series_from_rows(rows: list[tuple], buckets: list[str]) -> list[dict]:
-    mapping = {str(k): int(v) for k, v in rows}
-    return [{"month": m, "value": mapping.get(m, 0)} for m in buckets]
+    mapping = {str(k): float(v) for k, v in rows}
+    return [{"month": m, "value": mapping.get(m, 0.0)} for m in buckets]
 
 
 def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
     buckets = _month_buckets(months)
     since = datetime.now(timezone.utc) - timedelta(days=31 * months)
 
+    def _month_key(column):
+        # Postgres requires the GROUP BY / ORDER BY expression to be
+        # syntactically identical to the SELECT expression it "covers" — it
+        # does not infer that to_char(date_trunc(x)) is functionally
+        # determined by date_trunc(x). Building the expression once and
+        # reusing the same object in select/group_by/order_by guarantees
+        # SQLAlchemy renders identical SQL text in all three places.
+        return func.to_char(func.date_trunc("month", column), "YYYY-MM")
+
+    user_month = _month_key(User.created_at)
     user_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", User.created_at), "YYYY-MM"),
-            func.count(),
-        )
+        select(user_month, func.count())
         .where(User.created_at >= since)
-        .group_by(func.date_trunc("month", User.created_at))
-        .order_by(func.date_trunc("month", User.created_at))
+        .group_by(user_month)
+        .order_by(user_month)
     ).all()
 
+    catalog_month = _month_key(CatalogItem.created_at)
     catalog_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", CatalogItem.created_at), "YYYY-MM"),
-            func.count(),
-        )
+        select(catalog_month, func.count())
         .where(CatalogItem.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogItem.created_at))
+        .group_by(catalog_month)
     ).all()
 
+    purchase_month = _month_key(CatalogPurchase.created_at)
     purchase_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", CatalogPurchase.created_at), "YYYY-MM"),
-            func.count(),
-        )
+        select(purchase_month, func.count())
         .where(CatalogPurchase.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogPurchase.created_at))
+        .group_by(purchase_month)
     ).all()
 
+    revenue_month = _month_key(CatalogPurchase.created_at)
     revenue_rows = db.execute(
-        select(
-            func.to_char(func.date_trunc("month", CatalogPurchase.created_at), "YYYY-MM"),
-            func.coalesce(func.sum(CatalogItem.price), 0),
-        )
+        select(revenue_month, func.coalesce(func.sum(CatalogItem.price), 0))
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
         .where(CatalogPurchase.created_at >= since)
-        .group_by(func.date_trunc("month", CatalogPurchase.created_at))
+        .group_by(revenue_month)
     ).all()
 
     by_type: dict[str, int] = {}
@@ -145,7 +151,7 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         "catalog_growth": _series_from_rows(catalog_rows, buckets),
         "purchases_growth": _series_from_rows(purchase_rows, buckets),
         "revenue_growth": _series_from_rows(
-            [(k, float(v) if v is not None else 0.0) for k, v in revenue_rows],
+            revenue_rows,
             buckets,
         ),
         "catalog_by_type": by_type,

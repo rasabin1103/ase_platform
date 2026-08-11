@@ -5,6 +5,7 @@ import { CatalogPremiumStrip } from '../../components/catalog/CatalogPremiumStri
 import { RecommendedForYouStrip } from '../../components/catalog/RecommendedForYouStrip'
 import { IndependentProgressPanel } from '../../components/private/dashboard/IndependentProgressPanel'
 import { CategoryBarCharts } from '../../components/private/dashboard/CategoryBarCharts'
+import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
@@ -20,7 +21,6 @@ const QUICK_LINKS = [
 export function IndependentDashboardPage() {
   const { t } = useI18n()
   const { currentUser } = useAuth()
-  const name = currentUser?.display_name || currentUser?.email || ''
   const canCreate = Boolean(currentUser?.can_create_content)
 
   return (
@@ -29,10 +29,12 @@ export function IndependentDashboardPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_0%,rgba(56,189,248,0.12),transparent_55%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:34px_34px]" />
         <div className="relative z-[1] max-w-3xl">
+          <div className="mb-5">
+            <WelcomeBanner variant="lead" />
+          </div>
           <Eyebrow>{t('independentDashboard.heroBadge')}</Eyebrow>
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
             {t('independentDashboard.title')}
-            {name ? `, ${name}` : ''}
           </h1>
           <p className="mt-3 text-base leading-relaxed text-ase-text2">{t('independentDashboard.subtitle')}</p>
         </div>

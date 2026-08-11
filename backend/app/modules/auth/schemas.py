@@ -10,6 +10,40 @@ from app.core.phone import normalize_phone_e164
 from app.models.enums import CreatorStatus, UserStatus
 
 
+class UserLinkIn(BaseModel):
+    label: str = Field(min_length=1, max_length=100)
+    url: str = Field(min_length=1, max_length=2048)
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        v = value.strip()
+        if not (v.startswith("http://") or v.startswith("https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
+
+    @field_validator("label")
+    @classmethod
+    def validate_label(cls, value: str) -> str:
+        v = value.strip()
+        if not v:
+            raise ValueError("Label cannot be empty")
+        return v
+
+
+class UserLinkRead(BaseModel):
+    id: int
+    label: str
+    url: str
+    display_order: int
+
+    model_config = {"from_attributes": True}
+
+
+class UserLinksReplaceRequest(BaseModel):
+    items: list[UserLinkIn] = Field(default_factory=list, max_length=20)
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     plain_password: str = Field(min_length=8, max_length=72)
@@ -76,6 +110,7 @@ class MeResponse(BaseModel):
     is_independent_user: bool = False
     consumer_mode: bool = False
     active_workspace_uuid: UUID | None = None
+    links: list[UserLinkRead] = []
 
     model_config = {"from_attributes": True}
 

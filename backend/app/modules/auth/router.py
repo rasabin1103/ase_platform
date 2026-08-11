@@ -5,12 +5,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.exc import IntegrityError
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.media_storage import validate_image_upload
 from app.core.media_urls import resolve_user_avatar_url, user_has_stored_avatar
+from app.core.rate_limit import limiter
 from app.models.enums import MembershipStatus, OrganizationStatus, OrganizationType
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
@@ -29,6 +30,7 @@ from app.modules.auth.dependencies import (
     is_independent_user,
     user_has_role_assigned,
 )
+from app.models.user_link import UserLink
 from app.modules.auth.schemas import (
     LoginRequest,
     MeResponse,
@@ -36,6 +38,8 @@ from app.modules.auth.schemas import (
     RefreshRequest,
     RegisterRequest,
     TokenPair,
+    UserLinkRead,
+    UserLinksReplaceRequest,
     WorkspaceListResponse,
     WorkspaceRead,
 )
@@ -49,12 +53,14 @@ def get_service(db: Session = Depends(get_db)) -> AuthService:
 
 
 @router.post("/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, svc: AuthService = Depends(get_service)):
+@limiter.limit("5/hour")
+def register(request: Request, payload: RegisterRequest, svc: AuthService = Depends(get_service)):
     return svc.register(payload)
 
 
 @router.post("/login", response_model=TokenPair)
-def login(payload: LoginRequest, svc: AuthService = Depends(get_service)):
+@limiter.limit("10/minute")
+def login(request: Request, payload: LoginRequest, svc: AuthService = Depends(get_service)):
     return svc.login(payload)
 
 
@@ -119,6 +125,7 @@ def me(
 
     is_superuser = user_has_role_assigned(db, user_id=user.id, role_code="super_admin")
     active_workspace_uuid = get_default_organization_uuid(db, user)
+    links = [UserLinkRead.model_validate(link) for link in user.links]
     return profile.model_copy(
         update={
             "avatar_url": resolve_user_avatar_url(user),
@@ -128,6 +135,7 @@ def me(
             "organization_uuid": organization_uuid,
             "active_workspace_uuid": active_workspace_uuid,
             "is_superuser": is_superuser,
+            "links": links,
             **rbac,
         }
     )
@@ -204,6 +212,25 @@ def update_me(
         if "phone_e164" in str(exc.orig).lower() or "ix_users_phone_e164" in str(exc.orig).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone number already in use") from exc
         raise
+    db.refresh(user)
+    return me(request, user, db)
+
+
+@router.put(
+    "/me/links",
+    response_model=MeResponse,
+    dependencies=[Depends(require_permission("profile.update_self"))],
+)
+def replace_my_links(
+    payload: UserLinksReplaceRequest,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.execute(delete(UserLink).where(UserLink.user_id == user.id))
+    for i, item in enumerate(payload.items):
+        db.add(UserLink(user_id=user.id, label=item.label, url=item.url, display_order=i))
+    db.commit()
     db.refresh(user)
     return me(request, user, db)
 
