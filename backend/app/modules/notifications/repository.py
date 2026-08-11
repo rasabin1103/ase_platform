@@ -34,6 +34,13 @@ class NotificationsRepository:
     def get(self, notification_id: int) -> Notification | None:
         return self.db.get(Notification, notification_id)
 
+    def create_for_user(
+        self, *, user_id: int, type: str, title: str, body: str | None, link: str | None,
+    ) -> Notification:
+        item = Notification(user_id=user_id, type=type, title=title, body=body, link=link)
+        self.db.add(item)
+        return item
+
     def mark_all_read(self, *, user_id: int) -> None:
         rows = self.db.execute(
             select(Notification).where(Notification.user_id == user_id, Notification.is_read.is_(False))
@@ -56,14 +63,16 @@ class NotificationsRepository:
 
     def bulk_create_for_all_non_superadmin(
         self, *, type: str, title: str, body: str | None, link: str | None,
-    ) -> None:
+    ) -> int:
         """Insert one notification per non-superadmin account — used for
         broadcast events like "new catalog item published" that every
-        independent user and every organization member/owner/admin should see."""
+        independent user and every organization member/owner/admin should see.
+        Returns the number of recipients notified."""
         superadmin_ids = self._superadmin_user_ids_subquery()
         user_ids = self.db.execute(select(User.id).where(User.id.notin_(superadmin_ids))).scalars().all()
         for uid in user_ids:
             self.db.add(Notification(user_id=uid, type=type, title=title, body=body, link=link))
+        return len(user_ids)
 
     def bulk_create_for_superadmins(
         self, *, type: str, title: str, body: str | None, link: str | None,

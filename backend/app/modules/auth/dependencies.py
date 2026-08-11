@@ -43,6 +43,22 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
     return user
 
 
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Like `get_current_user`, but never raises — returns `None` for
+    anonymous/unauthenticated requests instead of a 401. For endpoints that
+    work both logged-out (public) and logged-in (tied to the account)."""
+    if not token:
+        return None
+    try:
+        user_uuid = get_token_subject_uuid(token, expected_type="access")
+    except ValueError:
+        return None
+    return UsersRepository(db).get_by_uuid(user_uuid)
+
+
 def get_current_organization(
     x_organization_uuid: str | None = Header(default=None, alias="X-Organization-UUID"),
     db: Session = Depends(get_db),

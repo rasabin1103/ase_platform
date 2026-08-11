@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AdminStatsRead(BaseModel):
@@ -68,3 +68,73 @@ class AdminPurchasesSummaryRead(BaseModel):
     purchases_total: int
     revenue_total: float
     top_users: list[TopUserPurchases]
+
+
+class AdminBookRedemptionRead(BaseModel):
+    id: int
+    user_id: int | None
+    user_email: str | None
+    catalog_item_id: int
+    book_title: str
+    github_username: str | None
+    created_at: datetime
+
+
+class AdminBookRedemptionListResponse(BaseModel):
+    items: list[AdminBookRedemptionRead]
+    limit: int
+    offset: int
+    total: int
+
+
+class AdminSearchUserHit(BaseModel):
+    uuid: str
+    email: str
+    display_name: str | None = None
+    status: str
+
+
+class AdminSearchCatalogHit(BaseModel):
+    id: int
+    slug: str
+    title: str
+    type: str
+
+
+class AdminSearchResponse(BaseModel):
+    users: list[AdminSearchUserHit]
+    catalog_items: list[AdminSearchCatalogHit]
+
+
+class AdminBroadcastRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    body: str | None = Field(default=None, max_length=2000)
+    link: str | None = Field(default=None, max_length=500)
+
+
+class AdminBroadcastResponse(BaseModel):
+    recipients: int
+
+
+class SystemStatusDatabase(BaseModel):
+    status: str
+    latency_ms: float | None = None
+    message: str | None = None
+
+
+class SystemStatusCounts(BaseModel):
+    users_total: int
+    catalog_total: int
+    requests_pending: int
+
+
+class SystemStatusRead(BaseModel):
+    api_status: str
+    uptime_seconds: float
+    environment: str
+    mvp_mode: bool
+    database: SystemStatusDatabase
+    github_integration_configured: bool
+    rate_limiting_enabled: bool
+    counts: SystemStatusCounts
+    checked_at: datetime

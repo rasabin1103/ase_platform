@@ -26,7 +26,9 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def create_token(*, token_type: TokenType, user_uuid: UUID, expires_delta: timedelta) -> str:
+def create_token(
+    *, token_type: TokenType, user_uuid: UUID, expires_delta: timedelta, extra_claims: dict[str, Any] | None = None,
+) -> str:
     now = _now()
     payload: dict[str, Any] = {
         "sub": str(user_uuid),
@@ -34,6 +36,8 @@ def create_token(*, token_type: TokenType, user_uuid: UUID, expires_delta: timed
         "iat": int(now.timestamp()),
         "exp": int((now + expires_delta).timestamp()),
     }
+    if extra_claims:
+        payload.update(extra_claims)
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
@@ -42,6 +46,22 @@ def create_access_token(*, user_uuid: UUID) -> str:
         token_type="access",
         user_uuid=user_uuid,
         expires_delta=timedelta(minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES)),
+    )
+
+
+# Support/admin "login as user" tokens: short-lived (30 min, not renewable —
+# there is no matching refresh token, so the session simply expires and the
+# admin has to re-issue one) and tagged with `imp_by` so it's traceable back
+# to the admin who started the session if ever inspected.
+IMPERSONATION_TOKEN_MINUTES = 30
+
+
+def create_impersonation_token(*, target_user_uuid: UUID, actor_user_uuid: UUID) -> str:
+    return create_token(
+        token_type="access",
+        user_uuid=target_user_uuid,
+        expires_delta=timedelta(minutes=IMPERSONATION_TOKEN_MINUTES),
+        extra_claims={"imp_by": str(actor_user_uuid)},
     )
 
 

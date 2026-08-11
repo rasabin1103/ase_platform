@@ -30,6 +30,10 @@ from app.models.organization_catalog_item import OrganizationCatalogItem
 from app.models.team_member import TeamMember
 from app.models.testimonial import Testimonial
 from app.models.case_study import CaseStudy
+from app.models.user_link import UserLink
+from app.models.organization_join_request import OrganizationJoinRequest
+from app.models.organization_member_invite import OrganizationMemberInvite
+from app.models.book_repo_redemption import BookRepoRedemption
 
 __all__ = [
     "User",
@@ -64,5 +68,9 @@ __all__ = [
     "TeamMember",
     "Testimonial",
     "CaseStudy",
+    "UserLink",
+    "OrganizationJoinRequest",
+    "OrganizationMemberInvite",
+    "BookRepoRedemption",
 ]
 

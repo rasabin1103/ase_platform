@@ -21,3 +21,15 @@ export async function deleteUser(user_uuid: string) {
   return data
 }
 
+export type ImpersonationToken = {
+  access_token: string
+  token_type: string
+  expires_in_minutes: number
+  target_email: string
+}
+
+export async function impersonateUser(user_uuid: string) {
+  const { data } = await apiClient.post<ImpersonationToken>(`/users/${user_uuid}/impersonate`)
+  return data
+}
+

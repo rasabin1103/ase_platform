@@ -39,9 +39,18 @@ class NotificationsService:
         self.repo.mark_all_read(user_id=user_id)
         self.db.commit()
 
-    def notify_all_non_superadmin(self, *, type: str, title: str, body: str | None = None, link: str | None = None) -> None:
-        self.repo.bulk_create_for_all_non_superadmin(type=type, title=title, body=body, link=link)
+    def notify_user(
+        self, *, user_id: int, type: str, title: str, body: str | None = None, link: str | None = None,
+    ) -> None:
+        """Send a single in-app notification to one specific user — used for
+        1:1 events like a join-request decision or a member invite."""
+        self.repo.create_for_user(user_id=user_id, type=type, title=title, body=body, link=link)
         self.db.commit()
+
+    def notify_all_non_superadmin(self, *, type: str, title: str, body: str | None = None, link: str | None = None) -> int:
+        count = self.repo.bulk_create_for_all_non_superadmin(type=type, title=title, body=body, link=link)
+        self.db.commit()
+        return count
 
     def notify_superadmins(self, *, type: str, title: str, body: str | None = None, link: str | None = None) -> None:
         self.repo.bulk_create_for_superadmins(type=type, title=title, body=body, link=link)

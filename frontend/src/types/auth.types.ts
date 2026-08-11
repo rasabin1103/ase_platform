@@ -9,6 +9,13 @@ export type LoginResponse = {
   token_type?: 'bearer' | string
 }
 
+export type UserLink = {
+  id: number
+  label: string
+  url: string
+  display_order: number
+}
+
 export type MeResponse = {
   uuid: string
   email: string
@@ -35,6 +42,7 @@ export type MeResponse = {
   is_independent_user?: boolean
   consumer_mode?: boolean
   active_workspace_uuid?: string | null
+  links?: UserLink[]
 }
 
 export type RegisterRequest = {

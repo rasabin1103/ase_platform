@@ -11,13 +11,23 @@ import {
   CatalogListPage,
   IndependentDashboardPage,
   ProfilePage,
+  RedeemCodePage,
 } from '../pages/independent'
 import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
+import { AdminAuditLogPage } from '../pages/admin/AdminAuditLogPage'
+import { AdminBookRedemptionsPage } from '../pages/admin/AdminBookRedemptionsPage'
+import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage'
+import { AdminSystemStatusPage } from '../pages/admin/AdminSystemStatusPage'
 import { ServicesAdminPage } from '../pages/admin/ServicesAdminPage'
 import { AdminSuggestionsPage } from '../pages/admin/AdminSuggestionsPage'
-import { OrganizationDashboardPage, OrganizationCatalogPage, OrganizationGrantPage } from '../pages/organization'
+import {
+  OrganizationDashboardPage,
+  OrganizationCatalogPage,
+  OrganizationGrantPage,
+  OrganizationMembersPage,
+} from '../pages/organization'
 import { OrganizationsPage } from '../pages/OrganizationsPage'
 import { PlansPage } from '../pages/PlansPage'
 import { useRbac } from '../rbac/useRbac'
@@ -34,6 +44,7 @@ import { ServicesPage } from '../pages/public/ServicesPage'
 import { PlatformPage } from '../pages/public/PlatformPage'
 import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
+import { RedeemCodePage as PublicRedeemCodePage } from '../pages/public/RedeemCodePage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -47,6 +58,7 @@ export const router = createBrowserRouter([
       { path: '/platform', element: <PlatformPage /> },
       { path: '/story', element: <StoryPage /> },
       { path: '/pricing', element: <PricingPage /> },
+      { path: '/redeem', element: <PublicRedeemCodePage /> },
     ],
   },
   {
@@ -83,6 +95,7 @@ export const router = createBrowserRouter([
               { path: '/my-courses', element: <MyCoursesPage /> },
               { path: '/my-books', element: <MyBooksPage /> },
               { path: '/my-resources', element: <MyResourcesPage /> },
+              { path: '/redeem-code', element: <RedeemCodePage /> },
             ],
           },
           { path: '/profile', element: <ProfilePage /> },
@@ -92,8 +105,13 @@ export const router = createBrowserRouter([
           { path: '/admin/services', element: <ServicesAdminPage /> },
           { path: '/admin/plans', element: <PlansPage /> },
           { path: '/admin/suggestions', element: <AdminSuggestionsPage /> },
+          { path: '/admin/audit-log', element: <AdminAuditLogPage /> },
+          { path: '/admin/book-redemptions', element: <AdminBookRedemptionsPage /> },
+          { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
+          { path: '/admin/system-status', element: <AdminSystemStatusPage /> },
           { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
           { path: '/organization/grant', element: <OrganizationGrantPage /> },
+          { path: '/organization/members', element: <OrganizationMembersPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '/requests', element: <RequestsPage /> },
         ],

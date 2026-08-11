@@ -151,6 +151,20 @@ class InvitationStatus(str, Enum):
     expired = "expired"
 
 
+class OrganizationJoinRequestStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    cancelled = "cancelled"
+
+
+class OrganizationMemberInviteStatus(str, Enum):
+    pending = "pending"
+    accepted = "accepted"
+    declined = "declined"
+    cancelled = "cancelled"
+
+
 class ServiceCategory(str, Enum):
     platform_engineering = "platform_engineering"
     qa_automation = "qa_automation"

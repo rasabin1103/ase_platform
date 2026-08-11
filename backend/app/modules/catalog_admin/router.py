@@ -4,12 +4,14 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.core.audit import record_audit_log
 from app.core.database import get_db
 from app.core.media_storage import validate_image_upload
 from app.core.media_urls import catalog_has_stored_image
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
-from app.modules.auth.dependencies import require_permission
+from app.models.user import User
+from app.modules.auth.dependencies import get_current_user, require_permission
 from app.modules.catalog_admin.schemas import (
     AddCatalogItemImageUrlRequest,
     CatalogItemAdminCreate,
@@ -136,15 +138,58 @@ def get_catalog_admin_item(item_id: int, svc: CatalogAdminService = Depends(get_
 
 
 @router.post("", response_model=CatalogItemAdminRead, status_code=201, dependencies=[Depends(require_permission("catalog.manage"))])
-def create_catalog_item(payload: CatalogItemAdminCreate, svc: CatalogAdminService = Depends(get_service)):
-    return svc.create(payload)
+def create_catalog_item(
+    payload: CatalogItemAdminCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: CatalogAdminService = Depends(get_service),
+):
+    item = svc.create(payload)
+    record_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        action="catalog_item.create",
+        entity_type="catalog_item",
+        entity_id=str(item.id),
+        metadata={"title": item.title, "type": item.type.value if hasattr(item.type, "value") else str(item.type)},
+    )
+    return item
 
 
 @router.patch("/{item_id}", response_model=CatalogItemAdminRead, dependencies=[Depends(require_permission("catalog.manage"))])
-def update_catalog_item(item_id: int, payload: CatalogItemAdminUpdate, svc: CatalogAdminService = Depends(get_service)):
-    return svc.update(item_id, payload)
+def update_catalog_item(
+    item_id: int,
+    payload: CatalogItemAdminUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: CatalogAdminService = Depends(get_service),
+):
+    item = svc.update(item_id, payload)
+    record_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        action="catalog_item.update",
+        entity_type="catalog_item",
+        entity_id=str(item.id),
+        metadata={"fields": sorted(payload.model_dump(exclude_unset=True).keys())},
+    )
+    return item
 
 
 @router.delete("/{item_id}", status_code=204, dependencies=[Depends(require_permission("catalog.manage"))])
-def delete_catalog_item(item_id: int, svc: CatalogAdminService = Depends(get_service)):
+def delete_catalog_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: CatalogAdminService = Depends(get_service),
+):
+    item = svc.get(item_id)
     svc.delete(item_id)
+    record_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        action="catalog_item.delete",
+        entity_type="catalog_item",
+        entity_id=str(item_id),
+        metadata={"title": item.title},
+    )

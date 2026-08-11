@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { updateProfile, uploadAvatar } from '../../api/auth.api'
+import { updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
+import type { UserLink } from '../../types/auth.types'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { Card } from '../../components/ui/Card'
@@ -85,6 +86,25 @@ export function ProfilePage() {
         t('profilePage.saveError')
       setSaveError(typeof msg === 'string' ? msg : t('profilePage.saveError'))
     },
+  })
+
+  const [links, setLinks] = useState<Array<{ label: string; url: string }>>([])
+  const [linksSaved, setLinksSaved] = useState(false)
+  const [linksError, setLinksError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLinks((currentUser?.links ?? []).map((l: UserLink) => ({ label: l.label, url: l.url })))
+  }, [currentUser?.links])
+
+  const linksMut = useMutation({
+    mutationFn: replaceMyLinks,
+    onSuccess: (me) => {
+      applyCurrentUser(me)
+      setLinksError(null)
+      setLinksSaved(true)
+      setTimeout(() => setLinksSaved(false), 3000)
+    },
+    onError: () => setLinksError(t('orgMembership.profileLinks.saveError') as string),
   })
 
   const isAdmin = isSuperuser || primaryRole === 'super_admin'
@@ -233,6 +253,75 @@ export function ProfilePage() {
             {saved ? <span className="text-sm text-emerald-300">{t('profilePage.saved')}</span> : null}
           </div>
         </form>
+
+        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <h2 className="text-lg font-semibold text-ase-text">{t('orgMembership.profileLinks.title')}</h2>
+          <p className="mt-1 text-sm text-ase-text2">{t('orgMembership.profileLinks.subtitle')}</p>
+
+          <div className="mt-4 space-y-3">
+            {links.length === 0 ? (
+              <p className="text-sm text-ase-muted">{t('orgMembership.profileLinks.empty')}</p>
+            ) : (
+              links.map((link, i) => (
+                <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    value={link.label}
+                    onChange={(e) => {
+                      const next = [...links]
+                      next[i] = { ...next[i], label: e.target.value }
+                      setLinks(next)
+                    }}
+                    placeholder={t('orgMembership.profileLinks.labelPlaceholder') as string}
+                    className="rounded-xl border-white/10 bg-ase-bg2/50 sm:w-48"
+                  />
+                  <Input
+                    value={link.url}
+                    onChange={(e) => {
+                      const next = [...links]
+                      next[i] = { ...next[i], url: e.target.value }
+                      setLinks(next)
+                    }}
+                    placeholder={t('orgMembership.profileLinks.urlPlaceholder') as string}
+                    className="rounded-xl border-white/10 bg-ase-bg2/50 sm:flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLinks(links.filter((_, idx) => idx !== i))}
+                  >
+                    {t('orgMembership.profileLinks.remove')}
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setLinks([...links, { label: '', url: '' }])}
+            >
+              {t('orgMembership.profileLinks.addButton')}
+            </Button>
+            <Button
+              type="button"
+              disabled={linksMut.isPending}
+              onClick={() =>
+                linksMut.mutate(
+                  links
+                    .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+                    .filter((l) => l.label && l.url),
+                )
+              }
+            >
+              {t('orgMembership.profileLinks.save')}
+            </Button>
+            {linksSaved ? <span className="text-sm text-emerald-300">{t('orgMembership.profileLinks.saved')}</span> : null}
+          </div>
+          {linksError ? <p className="mt-2 text-sm text-ase-error">{linksError}</p> : null}
+        </Card>
       </div>
 
       <AccessRequestModal

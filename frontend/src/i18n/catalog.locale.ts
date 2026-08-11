@@ -144,6 +144,8 @@ export const adminDashboardEn = {
   emptyOrganizations: 'No organizations yet',
   emptyRequests: 'No requests yet',
   emptyRoles: 'No role assignments yet',
+  loadError: 'Could not load platform metrics. Check your connection and try again.',
+  retry: 'Retry',
 }
 
 export const adminDashboardEs = {
@@ -213,6 +215,8 @@ export const adminDashboardEs = {
   emptyOrganizations: 'Todavía no hay organizaciones',
   emptyRequests: 'Todavía no hay solicitudes',
   emptyRoles: 'Todavía no hay roles asignados',
+  loadError: 'No se pudieron cargar las métricas de la plataforma. Comprueba tu conexión e inténtalo de nuevo.',
+  retry: 'Reintentar',
 }
 
 export const adminCatalogEn = {
@@ -241,6 +245,9 @@ export const adminCatalogEn = {
   saveError: 'Could not save the item. Check the highlighted fields.',
   slugExists: 'This slug is already in use — choose another one.',
   statusNotifyHint: 'Users are notified only when the item is Published, Coming soon or Request only — not while it stays in Draft.',
+  repoRedeemCodeExists: 'This redeem code is already used by another book — choose another one.',
+  repoUrlHint: 'Must be the URL of a private GitHub repo (https://github.com/owner/repo). Readers who redeem the code below are automatically invited as a collaborator — the repo does not need to be public.',
+  repoRedeemCodeHint: 'The code printed inside the book. Shared by all copies — any registered user who enters it gets the repo link, no purchase required.',
   validation: {
     required: 'This field is required.',
     priceMin: 'Price must be 0 or greater.',
@@ -261,6 +268,8 @@ export const adminCatalogEn = {
     duration: 'Duration',
     author: 'Author',
     photo: 'Product photo',
+    repoUrl: 'Repository URL',
+    repoRedeemCode: 'Redeem code',
   },
   uploadPhoto: 'Upload photo',
   uploadPhotoHint: 'JPEG, PNG or WebP up to 2 MB. Stored in the database.',
@@ -305,6 +314,9 @@ export const adminCatalogEs = {
   saveError: 'No se pudo guardar el ítem. Revisa los campos marcados.',
   slugExists: 'Este slug ya está en uso — elige otro.',
   statusNotifyHint: 'A los usuarios solo les llega notificación cuando el ítem está en Publicado, Próximamente o Solo solicitud — no mientras está en Borrador.',
+  repoRedeemCodeExists: 'Este código de canje ya lo usa otro libro — elige otro.',
+  repoUrlHint: 'Debe ser la URL de un repositorio privado de GitHub (https://github.com/owner/repo). Al canjear el código de abajo, el lector se invita automáticamente como colaborador — el repo no necesita ser público.',
+  repoRedeemCodeHint: 'El código impreso dentro del libro. Es el mismo en todas las copias — cualquier usuario registrado que lo introduzca obtiene el enlace al repo, sin necesidad de haberlo comprado aquí.',
   validation: {
     required: 'Este campo es obligatorio.',
     priceMin: 'El precio debe ser 0 o mayor.',
@@ -325,6 +337,8 @@ export const adminCatalogEs = {
     duration: 'Duración',
     author: 'Autor',
     photo: 'Foto del producto',
+    repoUrl: 'URL del repositorio',
+    repoRedeemCode: 'Código de canje',
   },
   uploadPhoto: 'Subir foto',
   uploadPhotoHint: 'JPEG, PNG o WebP hasta 2 MB. Se guarda en la base de datos.',
@@ -356,6 +370,210 @@ export const adminPurchasesEn = {
   purchasesCount: 'purchases',
   insights: 'Purchase insights',
   recent: 'Recent purchases',
+  filters: {
+    search: 'Search user or item…',
+    dateFrom: 'From',
+    dateTo: 'To',
+    clear: 'Clear filters',
+  },
+}
+
+export const adminAuditLogEn = {
+  heroBadge: 'Activity log',
+  title: 'Platform activity log',
+  subtitle: 'Who changed what, and when — catalog edits, user management, and access request reviews.',
+  loadError: 'Could not load the activity log.',
+  empty: 'No activity recorded yet',
+  emptyHint: 'Actions like editing the catalog, managing users or reviewing requests will show up here.',
+  filters: {
+    entityType: 'Entity',
+    action: 'Action',
+    from: 'From',
+    to: 'To',
+    all: 'All',
+  },
+  columns: {
+    date: 'Date',
+    actor: 'Actor',
+    action: 'Action',
+    entity: 'Entity',
+    details: 'Details',
+  },
+}
+
+export const adminAuditLogEs = {
+  heroBadge: 'Registro de actividad',
+  title: 'Registro de actividad de la plataforma',
+  subtitle: 'Quién cambió qué y cuándo — ediciones de catálogo, gestión de usuarios y revisión de solicitudes.',
+  loadError: 'No se pudo cargar el registro de actividad.',
+  empty: 'Todavía no hay actividad registrada',
+  emptyHint: 'Acciones como editar el catálogo, gestionar usuarios o revisar solicitudes aparecerán aquí.',
+  filters: {
+    entityType: 'Entidad',
+    action: 'Acción',
+    from: 'Desde',
+    to: 'Hasta',
+    all: 'Todas',
+  },
+  columns: {
+    date: 'Fecha',
+    actor: 'Actor',
+    action: 'Acción',
+    entity: 'Entidad',
+    details: 'Detalles',
+  },
+}
+
+export const adminBookRedemptionsEn = {
+  heroBadge: 'Book redemptions',
+  title: 'Book code redemptions',
+  subtitle: 'Everyone who has redeemed a code from your books to access a private repo — signed-in and anonymous.',
+  loadError: 'Could not load book redemptions.',
+  empty: 'No redemptions yet',
+  emptyHint: 'When a reader redeems a code, it will show up here.',
+  filters: {
+    search: 'Search user, book or GitHub username…',
+    dateFrom: 'From',
+    dateTo: 'To',
+    clear: 'Clear filters',
+  },
+  columns: {
+    date: 'Date',
+    user: 'User',
+    book: 'Book',
+    githubUsername: 'GitHub username',
+  },
+  anonymous: 'Anonymous',
+}
+
+export const adminBookRedemptionsEs = {
+  heroBadge: 'Canjeos de libros',
+  title: 'Canjeos de código de libros',
+  subtitle: 'Todos los que han canjeado un código de tus libros para acceder a un repo privado — con y sin sesión iniciada.',
+  loadError: 'No se pudieron cargar los canjeos.',
+  empty: 'Todavía no hay canjeos',
+  emptyHint: 'Cuando un lector canjee un código, aparecerá aquí.',
+  filters: {
+    search: 'Buscar usuario, libro o usuario de GitHub…',
+    dateFrom: 'Desde',
+    dateTo: 'Hasta',
+    clear: 'Limpiar filtros',
+  },
+  columns: {
+    date: 'Fecha',
+    user: 'Usuario',
+    book: 'Libro',
+    githubUsername: 'Usuario de GitHub',
+  },
+  anonymous: 'Anónimo',
+}
+
+export const adminAnnouncementsEn = {
+  heroBadge: 'Announcements',
+  title: 'Broadcast an announcement',
+  subtitle: 'Send an in-app notification to every user on the platform (independent users and organization members).',
+  fields: { title: 'Title', body: 'Message (optional)', link: 'Link (optional)' },
+  placeholders: {
+    title: 'e.g. Scheduled maintenance this weekend',
+    body: 'Add more detail for readers…',
+    link: 'https://…',
+  },
+  send: 'Send announcement',
+  sending: 'Sending…',
+  error: 'Could not send the announcement. Try again.',
+  aboutTitle: 'How it works',
+  aboutBody: 'Every non-superadmin account receives an in-app notification instantly. Super admins are never included.',
+  recipientsSent: 'Sent to {{count}} users',
+}
+
+export const adminAnnouncementsEs = {
+  heroBadge: 'Anuncios',
+  title: 'Enviar un anuncio',
+  subtitle: 'Envía una notificación dentro de la app a todos los usuarios de la plataforma (usuarios independientes y miembros de organizaciones).',
+  fields: { title: 'Título', body: 'Mensaje (opcional)', link: 'Enlace (opcional)' },
+  placeholders: {
+    title: 'ej. Mantenimiento programado este fin de semana',
+    body: 'Añade más detalle para los lectores…',
+    link: 'https://…',
+  },
+  send: 'Enviar anuncio',
+  sending: 'Enviando…',
+  error: 'No se pudo enviar el anuncio. Inténtalo de nuevo.',
+  aboutTitle: 'Cómo funciona',
+  aboutBody: 'Cada cuenta que no sea super admin recibe una notificación al instante. Los super admins nunca se incluyen.',
+  recipientsSent: 'Enviado a {{count}} usuarios',
+}
+
+export const adminSystemStatusEn = {
+  heroBadge: 'System status',
+  title: 'System status',
+  subtitle: 'A live, read-only snapshot of the API, database, and integrations.',
+  loadError: 'Could not load system status.',
+  refresh: 'Refresh',
+  lastChecked: 'Last checked',
+  status: { ok: 'Operational', error: 'Error', configured: 'Configured', notConfigured: 'Not configured', enabled: 'Enabled', disabled: 'Disabled' },
+  cards: {
+    api: 'API',
+    apiHint: 'Uptime',
+    database: 'Database',
+    databaseHint: 'Query latency',
+    githubIntegration: 'GitHub integration',
+    githubIntegrationHint: 'Book repo auto-invite',
+    rateLimiting: 'Rate limiting',
+    rateLimitingHint: 'Public/sensitive endpoints',
+    environment: 'Environment',
+    mvpMode: 'MVP mode',
+  },
+  counts: {
+    title: 'Platform counts',
+    users: 'Users',
+    catalog: 'Catalog items',
+    requestsPending: 'Pending requests',
+  },
+}
+
+export const adminSystemStatusEs = {
+  heroBadge: 'Estado del sistema',
+  title: 'Estado del sistema',
+  subtitle: 'Una foto en vivo, de solo lectura, de la API, la base de datos y las integraciones.',
+  loadError: 'No se pudo cargar el estado del sistema.',
+  refresh: 'Actualizar',
+  lastChecked: 'Última comprobación',
+  status: { ok: 'Operativo', error: 'Error', configured: 'Configurado', notConfigured: 'Sin configurar', enabled: 'Activado', disabled: 'Desactivado' },
+  cards: {
+    api: 'API',
+    apiHint: 'Tiempo activo',
+    database: 'Base de datos',
+    databaseHint: 'Latencia de consulta',
+    githubIntegration: 'Integración con GitHub',
+    githubIntegrationHint: 'Invitación automática a repos de libros',
+    rateLimiting: 'Límite de peticiones',
+    rateLimitingHint: 'Endpoints públicos/sensibles',
+    environment: 'Entorno',
+    mvpMode: 'Modo MVP',
+  },
+  counts: {
+    title: 'Recuentos de la plataforma',
+    users: 'Usuarios',
+    catalog: 'Artículos del catálogo',
+    requestsPending: 'Solicitudes pendientes',
+  },
+}
+
+export const adminSearchEn = {
+  placeholder: 'Search users, catalog…',
+  searching: 'Searching…',
+  noResults: 'No results',
+  groupUsers: 'Users',
+  groupCatalog: 'Catalog items',
+}
+
+export const adminSearchEs = {
+  placeholder: 'Buscar usuarios, catálogo…',
+  searching: 'Buscando…',
+  noResults: 'Sin resultados',
+  groupUsers: 'Usuarios',
+  groupCatalog: 'Artículos del catálogo',
 }
 
 export const adminPurchasesEs = {
@@ -371,6 +589,12 @@ export const adminPurchasesEs = {
   purchasesCount: 'compras',
   insights: 'Insights de compras',
   recent: 'Compras recientes',
+  filters: {
+    search: 'Buscar usuario o ítem…',
+    dateFrom: 'Desde',
+    dateTo: 'Hasta',
+    clear: 'Limpiar filtros',
+  },
 }
 
 export const catalogEs = {

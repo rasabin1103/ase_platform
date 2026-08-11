@@ -1,10 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
+import { Download, LogIn } from 'lucide-react'
 import { z } from 'zod'
-import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api'
+import { createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
+import { downloadCsv } from '../utils/csv'
 import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -57,11 +60,15 @@ function displayName(u: User) {
 export function UsersPage() {
   const queryClient = useQueryClient()
   const { t } = useI18n()
-  const { currentUser } = useAuth()
+  const navigate = useNavigate()
+  const auth = useAuth()
+  const { currentUser } = auth
   const [editing, setEditing] = useState<User | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
+  const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [statusFilter, setStatusFilter] = useState('')
   const [viewMode, setViewMode] = useState<UsersViewMode>('cards')
   const [statsOpen, setStatsOpen] = useState(false)
@@ -180,6 +187,15 @@ export function UsersPage() {
     },
   })
 
+  const impersonateMutation = useMutation({
+    mutationFn: (user_uuid: string) => impersonateUser(user_uuid),
+    onSuccess: async (data) => {
+      setConfirmImpersonate(null)
+      await auth.startImpersonation(data.access_token)
+      navigate('/dashboard')
+    },
+  })
+
   const editTitle = useMemo(
     () => (editing ? `${t('usersPage.edit.title')} — ${editing.email}` : (t('usersPage.edit.title') as string)),
     [editing, t],
@@ -193,6 +209,20 @@ export function UsersPage() {
       return `${displayName(u)} ${u.email}`.toLowerCase().includes(query)
     })
   }, [items, search, statusFilter])
+
+  const handleExport = () => {
+    downloadCsv(
+      'users',
+      filteredItems.map((u) => ({
+        uuid: u.uuid,
+        email: u.email,
+        display_name: displayName(u),
+        status: u.status ?? '',
+        email_verified: u.email_verified_at ? 'yes' : 'no',
+        created_at: u.created_at,
+      })),
+    )
+  }
 
   return (
     <div className="space-y-8 pb-16">
@@ -268,6 +298,12 @@ export function UsersPage() {
                 </button>
               </div>
             </div>
+            <div className="mt-3 flex justify-end">
+              <Button size="sm" variant="secondary" onClick={handleExport} disabled={filteredItems.length === 0}>
+                <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+                {t('private.common.exportCsv')}
+              </Button>
+            </div>
           </Card>
 
           {usersQuery.isLoading ? (
@@ -299,6 +335,7 @@ export function UsersPage() {
                     })
                   }}
                   onDelete={() => setConfirmDelete(u)}
+                  onImpersonate={isSuperAdmin && u.uuid !== currentUser?.uuid ? () => setConfirmImpersonate(u) : undefined}
                 />
               ))}
             </div>
@@ -359,6 +396,11 @@ export function UsersPage() {
                             {t('usersPage.actions.edit')}
                           </Button>
                           <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setConfirmDelete(u)}>{t('usersPage.actions.delete')}</Button>
+                          {isSuperAdmin && u.uuid !== currentUser?.uuid ? (
+                            <Button size="sm" variant="ghost" onClick={() => setConfirmImpersonate(u)} title={t('impersonation.action') as string}>
+                              <LogIn className="h-4 w-4" strokeWidth={1.75} />
+                            </Button>
+                          ) : null}
                         </div>
                       </TD>
                     </TR>
@@ -502,6 +544,38 @@ export function UsersPage() {
         </div>
       </Modal>
 
+      <Modal
+        open={!!confirmImpersonate}
+        title={t('impersonation.confirmTitle') as string}
+        closeLabel={t('impersonation.cancel')}
+        onClose={() => setConfirmImpersonate(null)}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="primary"
+              disabled={impersonateMutation.isPending}
+              onClick={() => {
+                if (!confirmImpersonate) return
+                impersonateMutation.mutate(confirmImpersonate.uuid)
+              }}
+            >
+              {impersonateMutation.isPending ? t('usersPage.edit.saving') : t('impersonation.confirmAction')}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2">
+          <div className="text-sm text-ase-text">
+            {String(t('impersonation.confirmBody')).replace('{{email}}', String(confirmImpersonate?.email ?? ''))}
+          </div>
+          {impersonateMutation.isError && (
+            <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+              {t('impersonation.error')}
+            </div>
+          )}
+        </div>
+      </Modal>
+
       <MemberCatalogStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} />
     </div>
   )
@@ -571,12 +645,14 @@ function UserPremiumCard({
   catalogStat,
   onEdit,
   onDelete,
+  onImpersonate,
 }: {
   user: User
   t: (k: string) => string
   catalogStat?: MemberCatalogStat
   onEdit: () => void
   onDelete: () => void
+  onImpersonate?: () => void
 }) {
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
@@ -615,6 +691,12 @@ function UserPremiumCard({
         <Button size="sm" variant="outline" className="border-ase-error/30" onClick={onDelete}>
           {t('usersPage.actions.delete')}
         </Button>
+        {onImpersonate ? (
+          <Button size="sm" variant="ghost" onClick={onImpersonate}>
+            <LogIn className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+            {t('impersonation.action')}
+          </Button>
+        ) : null}
       </div>
     </Card>
   )

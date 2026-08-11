@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   addCatalogItemImage,
   addCatalogItemImageUrl,
@@ -45,7 +46,8 @@ export function AdminCatalogPage() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<TabKey>('all')
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
