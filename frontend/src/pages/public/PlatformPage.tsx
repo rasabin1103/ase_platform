@@ -12,9 +12,11 @@ import { BillingEntitlementsVisual } from '../../components/public/platform/Bill
 import { AuditGovernanceVisual } from '../../components/public/platform/AuditGovernanceVisual'
 import { AutomationWorkflowVisual } from '../../components/public/platform/AutomationWorkflowVisual'
 import { AdminDashboardPreview } from '../../components/public/platform/AdminDashboardPreview'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 export function PlatformPage() {
   const { t } = useI18n()
+  usePageTitle(t('platformPage.hero.title') as string, t('platformPage.hero.subtitle') as string)
 
   const previewPills = useMemo(() => tStringArray(t, 'platformPage.hero.preview.pills'), [t])
 

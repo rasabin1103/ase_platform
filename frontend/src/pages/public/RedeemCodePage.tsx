@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { RedeemCodeForm } from '../../components/catalog/RedeemCodeForm'
 import { useI18n } from '../../i18n'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 export function RedeemCodePage() {
   const { t } = useI18n()
+  usePageTitle(t('redeemCode.title') as string, t('redeemCode.subtitle') as string)
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-14">

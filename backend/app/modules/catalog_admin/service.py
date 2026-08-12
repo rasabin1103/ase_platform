@@ -66,6 +66,7 @@ class CatalogAdminService:
             benefits=item.benefits_json or [],
             requirements=item.requirements_json or [],
             included_items=item.included_items_json or [],
+            tags=item.tags_json or [],
             repo_url=item.repo_url,
             repo_redeem_code=item.repo_redeem_code,
             created_at=item.created_at,
@@ -120,6 +121,7 @@ class CatalogAdminService:
         offset: int,
         type_filter: CatalogItemType | None = None,
         search: str | None = None,
+        tags: list[str] | None = None,
     ) -> CatalogItemAdminListResponse:
         items, total = self.repo.list(
             limit=limit,
@@ -128,6 +130,7 @@ class CatalogAdminService:
             category=None,
             search=search,
             status=None,
+            tags=tags,
         )
         return CatalogItemAdminListResponse(
             items=[self._to_read(i) for i in items],
@@ -135,6 +138,9 @@ class CatalogAdminService:
             offset=offset,
             total=total,
         )
+
+    def list_tags(self) -> list[str]:
+        return self.repo.distinct_tags()
 
     def create(self, payload: CatalogItemAdminCreate) -> CatalogItemAdminRead:
         if self.repo.get_by_slug(payload.slug):
@@ -161,6 +167,7 @@ class CatalogAdminService:
             benefits_json=payload.benefits,
             requirements_json=payload.requirements,
             included_items_json=payload.included_items,
+            tags_json=payload.tags,
             repo_url=payload.repo_url,
             repo_redeem_code=payload.repo_redeem_code,
         )
@@ -213,6 +220,8 @@ class CatalogAdminService:
             item.requirements_json = data.pop("requirements")
         if "included_items" in data:
             item.included_items_json = data.pop("included_items")
+        if "tags" in data:
+            item.tags_json = data.pop("tags")
         if "repo_redeem_code" in data:
             data["repo_redeem_code"] = (data["repo_redeem_code"] or "").strip() or None
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)

@@ -7,6 +7,7 @@ import {
   createAdminCatalogItem,
   deleteAdminCatalogItem,
   listAdminCatalog,
+  listAdminCatalogTags,
   setCatalogItemCoverImage,
   updateAdminCatalogItem,
   uploadCatalogItemImage,
@@ -19,6 +20,7 @@ import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
+import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Badge } from '../../components/ui/Badge'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
@@ -48,6 +50,7 @@ export function AdminCatalogPage() {
   const [tab, setTab] = useState<TabKey>('all')
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
+  const [tagFilter, setTagFilter] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
@@ -55,14 +58,16 @@ export function AdminCatalogPage() {
 
   const typeFilter = tab === 'all' ? undefined : tab
   const query = useQuery({
-    queryKey: ['admin-catalog', typeFilter, search],
+    queryKey: ['admin-catalog', typeFilter, search, tagFilter],
     queryFn: () =>
       listAdminCatalog({
         limit: 200,
         type: typeFilter,
         search: search.trim() || undefined,
+        tags: tagFilter.length ? tagFilter : undefined,
       }),
   })
+  const tagsQuery = useQuery({ queryKey: ['admin-catalog-tags'], queryFn: listAdminCatalogTags })
 
   const items = query.data?.items ?? []
   const invalidate = () => {
@@ -213,6 +218,17 @@ export function AdminCatalogPage() {
           </div>
         </div>
       </Card>
+
+      <TagFilterBar
+        tags={tagsQuery.data ?? []}
+        selected={tagFilter}
+        onToggle={(tg) =>
+          setTagFilter((prev) => (prev.includes(tg) ? prev.filter((x) => x !== tg) : [...prev, tg]))
+        }
+        onClear={() => setTagFilter([])}
+        label={t('adminCatalog.filters.tagsLabel')}
+        clearLabel={t('adminCatalog.filters.clearTags')}
+      />
 
       {query.isLoading ? (
         <Skeleton className="h-56 rounded-[2rem]" />

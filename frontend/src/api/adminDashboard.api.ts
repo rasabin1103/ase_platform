@@ -155,6 +155,11 @@ export type SystemStatus = {
   database: { status: string; latency_ms: number | null; message: string | null }
   github_integration_configured: boolean
   rate_limiting_enabled: boolean
+  smtp_configured: boolean
+  sentry_configured: boolean
+  redis_configured: boolean
+  email_verified_pct: number
+  two_factor_adoption_pct: number
   counts: { users_total: number; catalog_total: number; requests_pending: number }
   checked_at: string
 }

@@ -36,9 +36,17 @@ def list_catalog_admin(
     offset: int = Query(default=0, ge=0),
     type: CatalogItemType | None = None,
     search: str | None = None,
+    tags: list[str] | None = Query(default=None),
     svc: CatalogAdminService = Depends(get_service),
 ):
-    return svc.list(limit=limit, offset=offset, type_filter=type, search=search)
+    return svc.list(limit=limit, offset=offset, type_filter=type, search=search, tags=tags)
+
+
+@router.get("/tags", response_model=list[str], dependencies=[Depends(require_permission("catalog.manage"))])
+def list_catalog_admin_tags(svc: CatalogAdminService = Depends(get_service)):
+    """Distinct tags across every catalog item (any status) — powers the
+    admin filter chips."""
+    return svc.list_tags()
 
 
 @router.post("/{item_id}/image", dependencies=[Depends(require_permission("catalog.manage"))])

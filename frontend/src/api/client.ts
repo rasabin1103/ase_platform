@@ -5,6 +5,11 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  // Serialize array query params (e.g. `tags: string[]`) as repeated
+  // `key=a&key=b` pairs instead of axios's default `key[]=a&key[]=b` —
+  // FastAPI's `Query(default=None)` on a `list[str]` param only recognizes
+  // the repeated-key form.
+  paramsSerializer: { indexes: null },
 })
 
 apiClient.interceptors.request.use((config) => {

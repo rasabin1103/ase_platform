@@ -282,6 +282,29 @@ def system_status(db: Session = Depends(get_db)):
         ).scalar_one()
     )
 
+    # Adoption metrics are computed over non-deleted users only — a deleted
+    # account's PII (including email_verified_at/two_factor_enabled state)
+    # is irrelevant noise for a "how ready is this platform" reading.
+    active_users_total = int(
+        db.execute(select(func.count()).select_from(User).where(User.status != UserStatus.deleted)).scalar_one()
+    )
+    email_verified_count = int(
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(User.status != UserStatus.deleted, User.email_verified_at.is_not(None))
+        ).scalar_one()
+    )
+    two_factor_count = int(
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(User.status != UserStatus.deleted, User.two_factor_enabled.is_(True))
+        ).scalar_one()
+    )
+    email_verified_pct = round(100 * email_verified_count / active_users_total, 1) if active_users_total else 0.0
+    two_factor_adoption_pct = round(100 * two_factor_count / active_users_total, 1) if active_users_total else 0.0
+
     return SystemStatusRead(
         api_status="ok",
         uptime_seconds=round(time_module.time() - STARTED_AT, 1),
@@ -290,6 +313,11 @@ def system_status(db: Session = Depends(get_db)):
         database=SystemStatusDatabase(status=db_status, latency_ms=db_latency_ms, message=db_message),
         github_integration_configured=bool(settings.GITHUB_ACCESS_TOKEN),
         rate_limiting_enabled=True,
+        smtp_configured=bool(settings.SMTP_HOST),
+        sentry_configured=bool(settings.SENTRY_DSN),
+        redis_configured=bool(settings.REDIS_URL),
+        email_verified_pct=email_verified_pct,
+        two_factor_adoption_pct=two_factor_adoption_pct,
         counts=SystemStatusCounts(
             users_total=users_total, catalog_total=catalog_total, requests_pending=requests_pending
         ),

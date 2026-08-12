@@ -1,18 +1,53 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
+
 from sqlalchemy.orm import Session
 
+from app.models.catalog_item import CatalogItem
 from app.models.plan import Plan
-from app.models.plan_feature import PlanFeature
+from app.models.plan_catalog_item import PlanCatalogItem
 from app.modules.plans.repository import PlansRepository
-from app.modules.plans.schemas import PlanCreate, PlanFeatureCreate, PlanUpdate
+from app.modules.plans.schemas import PlanCreate, PlanUpdate
 
 
 class PlansService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = PlansRepository(db)
+
+    def _resolve_catalog_items(self, catalog_item_ids: list[int]) -> list[CatalogItem]:
+        if not catalog_item_ids:
+            return []
+        rows = {
+            row.id: row
+            for row in self.db.execute(select(CatalogItem).where(CatalogItem.id.in_(catalog_item_ids))).scalars()
+        }
+        missing = [cid for cid in catalog_item_ids if cid not in rows]
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Catalog item id(s) not found: {', '.join(str(m) for m in missing)}",
+            )
+        # Preserve the order the admin picked them in, de-duplicated.
+        seen: set[int] = set()
+        ordered: list[CatalogItem] = []
+        for cid in catalog_item_ids:
+            if cid in seen:
+                continue
+            seen.add(cid)
+            ordered.append(rows[cid])
+        return ordered
+
+    def _set_included_catalog_items(self, plan: Plan, catalog_item_ids: list[int]) -> None:
+        items = self._resolve_catalog_items(catalog_item_ids)
+        plan.included_catalog_items.clear()
+        self.db.flush()
+        for order, item in enumerate(items):
+            plan.included_catalog_items.append(
+                PlanCatalogItem(catalog_item_id=item.id, display_order=order)
+            )
 
     def create(self, payload: PlanCreate) -> Plan:
         if self.repo.get_by_code(payload.code) is not None:
@@ -35,9 +70,8 @@ class PlansService:
         self.repo.add(plan)
         self.db.flush()
 
-        if payload.features:
-            for row in payload.features:
-                self._append_feature(plan, row)
+        if payload.catalog_item_ids:
+            self._set_included_catalog_items(plan, payload.catalog_item_ids)
 
         self.db.commit()
         return self.repo.get(plan.id)  # type: ignore[arg-type]
@@ -80,11 +114,8 @@ class PlansService:
         if payload.cta_label is not None:
             plan.cta_label = payload.cta_label
 
-        if payload.features is not None:
-            plan.features.clear()
-            self.db.flush()
-            for row in payload.features:
-                self._append_feature(plan, row)
+        if payload.catalog_item_ids is not None:
+            self._set_included_catalog_items(plan, payload.catalog_item_ids)
 
         self.db.commit()
         return self.repo.get(plan_id)  # type: ignore[arg-type]
@@ -94,13 +125,3 @@ class PlansService:
         plan.is_active = False
         self.db.commit()
         return self.repo.get(plan_id)  # type: ignore[arg-type]
-
-    @staticmethod
-    def _append_feature(plan: Plan, row: PlanFeatureCreate) -> None:
-        plan.features.append(
-            PlanFeature(
-                blurb=row.text,
-                display_order=row.display_order,
-                is_active=row.is_active,
-            )
-        )

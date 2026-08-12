@@ -28,6 +28,7 @@ export type CatalogItem = {
   benefits?: string[]
   requirements?: string[]
   includedItems?: string[]
+  tags?: string[]
   isFavorite: boolean
   isPurchased: boolean
   upvotes: number

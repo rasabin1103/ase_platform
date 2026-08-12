@@ -10,6 +10,16 @@ export type PlanFeature = {
   updated_at: string
 }
 
+export type PlanCatalogItem = {
+  id: number
+  catalog_item_id: number
+  display_order: number
+  title: string
+  slug: string
+  type: string
+  short_description: string
+}
+
 export type Plan = {
   id: number
   code: string
@@ -27,7 +37,9 @@ export type Plan = {
   cta_label?: string | null
   /** Annual price when catalog API exposes monthly + annual on one row (Railway public catalog). */
   annual_price?: string | null
+  /** Deprecated free-text bullets — only populated for plans created before the catalog picker existed. */
   features?: PlanFeature[]
+  included_catalog_items?: PlanCatalogItem[]
 }
 
 export type PlanListResponse = {
@@ -55,7 +67,7 @@ export type PlanCreateRequest = {
   display_order?: number
   is_recommended?: boolean
   cta_label?: string | null
-  features?: PlanFeatureCreateRequest[] | null
+  catalog_item_ids?: number[] | null
 }
 
 export type PlanUpdateRequest = Partial<PlanCreateRequest>

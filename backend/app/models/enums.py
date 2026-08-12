@@ -10,6 +10,16 @@ class UserStatus(str, Enum):
     deleted = "deleted"
 
 
+class SuspensionReason(str, Enum):
+    """Why an automated account-lifecycle sweep suspended a user (see
+    app/core/account_lifecycle.py). ``None`` on the user row means either
+    never suspended, or suspended manually by an admin (pre-existing
+    behavior, unrelated to this policy)."""
+
+    two_factor_required = "two_factor_required"
+    inactivity = "inactivity"
+
+
 class OrganizationType(str, Enum):
     individual = "individual"
     business = "business"
@@ -188,3 +198,11 @@ class ServicePriceType(str, Enum):
     fixed = "fixed"
     subscription = "subscription"
     custom = "custom"
+
+
+class UserTokenPurpose(str, Enum):
+    """What a `UserVerificationToken` row is for — kept as a single table
+    with a purpose column instead of two near-identical tables."""
+
+    password_reset = "password_reset"
+    email_verification = "email_verification"

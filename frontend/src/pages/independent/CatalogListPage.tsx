@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   listConsumerCatalog,
+  listConsumerCatalogTags,
   purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
 import { CatalogItemCard } from '../../components/catalog/CatalogItemCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { useI18n } from '../../i18n'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 
@@ -38,11 +40,12 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [topRated, setTopRated] = useState(false)
+  const [tagFilter, setTagFilter] = useState<string[]>([])
   const [pendingSlug, setPendingSlug] = useState<string | null>(null)
 
   const queryKey = useMemo(
-    () => ['consumer-catalog', mode, type, search, topRated],
-    [mode, type, search, topRated],
+    () => ['consumer-catalog', mode, type, search, topRated, tagFilter],
+    [mode, type, search, topRated, tagFilter],
   )
 
   const query = useQuery({
@@ -61,11 +64,14 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
                   ? 'resource'
                   : undefined,
         search: search.trim() || undefined,
+        tags: tagFilter.length ? tagFilter : undefined,
         favorites_only: mode === 'favorites',
         purchased_only: mode === 'purchases' || mode === 'myCourses' || mode === 'myBooks' || mode === 'myResources',
         sort: topRated ? 'top_rated' : undefined,
       }),
   })
+
+  const tagsQuery = useQuery({ queryKey: ['consumer-catalog-tags'], queryFn: listConsumerCatalogTags })
 
   const favMutation = useMutation({
     mutationFn: toggleCatalogFavorite,
@@ -115,6 +121,14 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
           {t('catalog.rating.sortTopRated')}
         </button>
       </div>
+      <TagFilterBar
+        tags={tagsQuery.data ?? []}
+        selected={tagFilter}
+        onToggle={(tg) => setTagFilter((prev) => (prev.includes(tg) ? prev.filter((x) => x !== tg) : [...prev, tg]))}
+        onClear={() => setTagFilter([])}
+        label={t('catalog.tags.filterLabel')}
+        clearLabel={t('catalog.tags.clear')}
+      />
       {query.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (

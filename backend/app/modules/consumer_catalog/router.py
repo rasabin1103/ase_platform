@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -61,6 +61,7 @@ def list_catalog(
     type: CatalogItemType | None = None,
     category: str | None = None,
     search: str | None = None,
+    tags: list[str] | None = Query(default=None),
     favorites_only: bool = False,
     purchased_only: bool = False,
     sort: str | None = Query(default=None, description="Set to 'top_rated' to sort by net rating score"),
@@ -77,7 +78,15 @@ def list_catalog(
         favorites_only=favorites_only,
         purchased_only=purchased_only,
         sort=sort,
+        tags=tags,
     )
+
+
+@router.get("/tags", response_model=list[str], dependencies=[Depends(require_permission("catalog.read"))])
+def list_consumer_catalog_tags(svc: ConsumerCatalogService = Depends(get_service)):
+    """Distinct tags across visible catalog items — powers the tag-filter
+    chips on the consumer catalog browser."""
+    return svc.list_tags()
 
 
 @router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own"))])
@@ -87,6 +96,11 @@ def toggle_favorite(slug: str, user: User = Depends(get_current_user), svc: Cons
 
 @router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own"))])
 def purchase_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    if user.email_verified_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Verify your email before purchasing. Check your inbox or resend the verification email from your profile.",
+        )
     return svc.purchase(slug, user_id=user.id)
 
 

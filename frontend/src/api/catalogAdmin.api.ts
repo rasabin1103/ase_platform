@@ -29,6 +29,7 @@ export type CatalogItemAdmin = {
   benefits: string[]
   requirements: string[]
   included_items: string[]
+  tags: string[]
   repo_url: string | null
   repo_redeem_code: string | null
   has_stored_image?: boolean
@@ -61,6 +62,7 @@ export type CatalogItemAdminPayload = {
   benefits?: string[]
   requirements?: string[]
   included_items?: string[]
+  tags?: string[]
   repo_url?: string | null
   repo_redeem_code?: string | null
 }
@@ -72,8 +74,14 @@ export async function listAdminCatalog(params?: {
   offset?: number
   type?: CatalogItemType
   search?: string
+  tags?: string[]
 }) {
   const { data } = await apiClient.get<CatalogAdminListResponse>('/admin/catalog', { params })
+  return data
+}
+
+export async function listAdminCatalogTags() {
+  const { data } = await apiClient.get<string[]>('/admin/catalog/tags')
   return data
 }
 

@@ -5,11 +5,15 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import BillingCycle
+from app.models.enums import BillingCycle, CatalogItemType
 
 
 class PlanFeatureCreate(BaseModel):
-    """Create payload for a plan feature line (API field ``text`` maps to DB column ``text``)."""
+    """Create payload for a plan feature line (API field ``text`` maps to DB column ``text``).
+
+    Deprecated: kept only so old data can still be read back via
+    ``PlanRead.features``. New/updated plans express what's included via
+    ``catalog_item_ids`` instead — see ``PlanCatalogItemRead`` below."""
 
     text: str = Field(min_length=1)
     display_order: int = 0
@@ -28,6 +32,23 @@ class PlanFeatureRead(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class PlanCatalogItemRead(BaseModel):
+    """A single "what's included" line, formatted from a real catalog item
+    rather than typed by hand — the id/slug let the frontend link straight
+    to the item; title/type/short_description are enough to render the
+    bullet without a second request."""
+
+    id: int
+    catalog_item_id: int
+    display_order: int
+    title: str
+    slug: str
+    type: CatalogItemType
+    short_description: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PlanCreate(BaseModel):
     code: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=200)
@@ -40,7 +61,7 @@ class PlanCreate(BaseModel):
     display_order: int = 0
     is_recommended: bool = False
     cta_label: str | None = Field(default=None, max_length=200)
-    features: list[PlanFeatureCreate] | None = None
+    catalog_item_ids: list[int] | None = None
 
 
 class PlanUpdate(BaseModel):
@@ -55,7 +76,7 @@ class PlanUpdate(BaseModel):
     display_order: int | None = None
     is_recommended: bool | None = None
     cta_label: str | None = Field(default=None, max_length=200)
-    features: list[PlanFeatureCreate] | None = None
+    catalog_item_ids: list[int] | None = None
 
 
 class PlanRead(BaseModel):
@@ -73,7 +94,11 @@ class PlanRead(BaseModel):
     display_order: int = 0
     is_recommended: bool = False
     cta_label: str | None = None
+    # Deprecated free-text bullets — only ever populated for plans created
+    # before the catalog-item picker existed. New/edited plans always use
+    # included_catalog_items instead.
     features: list[PlanFeatureRead] = Field(default_factory=list)
+    included_catalog_items: list[PlanCatalogItemRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
