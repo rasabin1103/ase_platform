@@ -68,6 +68,7 @@ class ConsumerCatalogService:
             benefits=item.benefits_json or [],
             requirements=item.requirements_json or [],
             includedItems=item.included_items_json or [],
+            tags=item.tags_json or [],
             isFavorite=item.slug in favorite_slugs,
             isPurchased=item.slug in purchased_slugs,
             upvotes=summary.upvotes if summary else 0,
@@ -113,6 +114,7 @@ class ConsumerCatalogService:
         favorites_only: bool = False,
         purchased_only: bool = False,
         sort: str | None = None,
+        tags: list[str] | None = None,
     ) -> CatalogItemListResponse:
         fav = self.favorite_slugs(user_id)
         pur = self.purchased_slugs(user_id)
@@ -124,6 +126,7 @@ class ConsumerCatalogService:
             search=search,
             statuses=CONSUMER_LIST_STATUSES,
             sort=sort,
+            tags=tags,
         )
         reads = self._to_reads_with_ratings(items, user_id=user_id, favorite_slugs=fav, purchased_slugs=pur)
         if favorites_only:
@@ -133,6 +136,9 @@ class ConsumerCatalogService:
             reads = [r for r in reads if r.isPurchased]
             total = len(reads)
         return CatalogItemListResponse(items=reads, limit=limit, offset=offset, total=total)
+
+    def list_tags(self) -> list[str]:
+        return self.repo.distinct_tags(statuses=CONSUMER_LIST_STATUSES)
 
     def get_by_slug(self, slug: str, *, user_id: int) -> CatalogItemRead:
         item = self.repo.get_by_slug(slug)

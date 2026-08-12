@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from app.core.user_anonymize import anonymize_user_pii
 from app.models.enums import UserStatus
 from app.models.user import User
 from app.modules.users.repository import UsersRepository
@@ -38,6 +40,10 @@ class UsersService:
             last_name=payload.last_name,
             display_name=payload.display_name,
             status=UserStatus.active,
+            # An admin creating this account already vouches for the email
+            # address — only self-registration needs the confirm-your-email
+            # step, since that's the flow where nobody has verified it yet.
+            email_verified_at=datetime.now(timezone.utc),
         )
         self.repo.add(user)
         self.db.commit()
@@ -84,6 +90,11 @@ class UsersService:
             user.avatar_url = payload.avatar_url
         if payload.status is not None:
             user.status = payload.status
+        if payload.two_factor_enabled is False and user.two_factor_enabled:
+            # Support recovery path for a lost authenticator device — see
+            # UserUpdate.two_factor_enabled docstring.
+            user.two_factor_enabled = False
+            user.two_factor_secret = None
 
         self.db.commit()
         self.db.refresh(user)
@@ -92,6 +103,7 @@ class UsersService:
     def soft_delete_user(self, user_uuid: UUID) -> User:
         user = self.get_user(user_uuid)
         user.status = UserStatus.deleted
+        anonymize_user_pii(self.db, user)
         self.db.commit()
         self.db.refresh(user)
         return user

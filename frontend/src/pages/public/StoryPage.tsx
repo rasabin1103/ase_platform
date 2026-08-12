@@ -3,6 +3,7 @@ import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { useI18n } from '../../i18n'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 const milestones = [
   {
@@ -21,6 +22,7 @@ const milestones = [
 
 export function StoryPage() {
   const { t } = useI18n()
+  usePageTitle(t('pages.story.title') as string, t('pages.story.body') as string)
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-14">
       <Eyebrow>{t('pages.story.badge')}</Eyebrow>

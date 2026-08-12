@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useI18n } from '../../i18n'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 type ContactValues = {
   name: string
@@ -15,6 +16,7 @@ type ContactValues = {
 export function ContactPage() {
   const [values, setValues] = useState<ContactValues>({ name: '', email: '', company: '', message: '' })
   const { t } = useI18n()
+  usePageTitle(t('pages.contact.title') as string, t('pages.contact.body') as string)
 
   const mailto = useMemo(() => {
     const subject = encodeURIComponent(String(t('pages.contact.subject')))

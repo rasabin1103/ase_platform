@@ -7,6 +7,7 @@ export type ListCatalogParams = {
   type?: CatalogItemType
   category?: string
   search?: string
+  tags?: string[]
   favorites_only?: boolean
   purchased_only?: boolean
   sort?: 'top_rated'
@@ -14,6 +15,11 @@ export type ListCatalogParams = {
 
 export async function listConsumerCatalog(params?: ListCatalogParams) {
   const { data } = await apiClient.get<CatalogItemListResponse>('/consumer-catalog', { params })
+  return data
+}
+
+export async function listConsumerCatalogTags() {
+  const { data } = await apiClient.get<string[]>('/consumer-catalog/tags')
   return data
 }
 

@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+Disallow: /app
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /organization
+Disallow: /catalog/
+Disallow: /my-purchases
+Disallow: /my-courses
+Disallow: /my-books
+Disallow: /my-resources
+Disallow: /favorites
+Disallow: /redeem-code
+Disallow: /onboarding
+Disallow: /select-organization
+Disallow: /users
+Disallow: /requests
+
+Sitemap: https://www.arcesabinengineering.com/sitemap.xml

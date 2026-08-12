@@ -24,6 +24,11 @@ class UserUpdate(BaseModel):
     display_name: str | None = Field(default=None, max_length=150)
     avatar_url: str | None = Field(default=None, max_length=2048)
     status: UserStatus | None = None
+    # Admin escape hatch: force-disable 2FA for a user who lost their
+    # authenticator device and has no other way back in. Only ever accepts
+    # `False` in practice — an admin can't turn 2FA *on* for someone else
+    # this way, since that would need the user's own secret/QR scan.
+    two_factor_enabled: bool | None = None
 
 
 class UserRead(BaseModel):

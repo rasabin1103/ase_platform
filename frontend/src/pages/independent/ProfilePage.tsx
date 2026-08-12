@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { TwoFactorPanel } from '../../components/profile/TwoFactorPanel'
 import { useAuth } from '../../auth/AuthProvider'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
@@ -224,24 +225,7 @@ export function ProfilePage() {
                 </Button>
               </div>
 
-              <div className="lg:border-l lg:border-white/10 lg:pl-6">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-ase-text">{t('profilePage.twoFactor')}</span>
-                  <Badge variant={currentUser?.two_factor_enabled ? 'success' : 'default'}>
-                    {currentUser?.two_factor_enabled
-                      ? t('profilePage.twoFactorEnabled')
-                      : t('profilePage.twoFactorDisabled')}
-                  </Badge>
-                </div>
-                <p className="text-xs text-ase-muted">
-                  {hasPhone && phoneVerified
-                    ? t('profilePage.twoFactorSoon')
-                    : t('profilePage.twoFactorRequiresPhone')}
-                </p>
-                <Button type="button" variant="outline" className="mt-3" disabled>
-                  {t('profilePage.twoFactorSoon')}
-                </Button>
-              </div>
+              <TwoFactorPanel />
             </div>
           </Card>
 

@@ -40,6 +40,7 @@ class CatalogItemRead(BaseModel):
     benefits: list[str] = []
     requirements: list[str] = []
     includedItems: list[str] = []
+    tags: list[str] = []
     isFavorite: bool = False
     isPurchased: bool = False
     upvotes: int = 0

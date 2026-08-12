@@ -7,6 +7,21 @@ export type LoginResponse = {
   access_token: string
   refresh_token: string
   token_type?: 'bearer' | string
+  // True when the account authenticated successfully but is still
+  // suspended pending mandatory 2FA setup — the app should route straight
+  // to the forced 2FA setup gate instead of the normal dashboard.
+  requires_two_factor_setup?: boolean
+}
+
+export type TwoFactorChallengeResponse = {
+  two_factor_required: true
+  challenge_token: string
+}
+
+export type TwoFactorSetupResponse = {
+  secret: string
+  otpauth_uri: string
+  qr_code_data_uri: string
 }
 
 export type UserLink = {
@@ -30,6 +45,10 @@ export type MeResponse = {
   can_create_content?: boolean
   creator_status?: 'none' | 'pending' | 'approved' | 'rejected' | string
   status: 'active' | 'suspended' | 'deleted' | string
+  // Only meaningful when status === 'suspended'. 'two_factor_required' or
+  // 'inactivity' means an automated policy did it (self-recoverable); null
+  // means either never suspended or suspended manually by an admin.
+  suspension_reason?: 'two_factor_required' | 'inactivity' | string | null
   email_verified_at: string | null
   last_login_at: string | null
   created_at: string

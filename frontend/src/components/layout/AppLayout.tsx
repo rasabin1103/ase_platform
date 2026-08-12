@@ -6,6 +6,9 @@ import { ScrollToTop } from './ScrollToTop'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { ImpersonationBanner } from './ImpersonationBanner'
+import { UnverifiedEmailBanner } from './UnverifiedEmailBanner'
+import { TwoFactorGraceModal } from './TwoFactorGraceModal'
+import { SuspendedAccountGate } from './SuspendedAccountGate'
 
 export function AppLayout() {
   const { currentUser } = useAuth()
@@ -16,6 +19,13 @@ export function AppLayout() {
     }
   }, [currentUser?.active_workspace_uuid])
 
+  // A suspended account is already rejected by nearly every API endpoint
+  // server-side — show the dedicated recovery/explanation screen instead of
+  // the normal shell full of broken widgets.
+  if (currentUser?.status === 'suspended') {
+    return <SuspendedAccountGate />
+  }
+
   return (
     <div className="relative flex h-full overflow-x-hidden bg-ase-bg">
       <ScrollToTop />
@@ -23,6 +33,8 @@ export function AppLayout() {
       <div className="relative flex min-w-0 flex-1 flex-col">
         <Header />
         <ImpersonationBanner />
+        <UnverifiedEmailBanner />
+        <TwoFactorGraceModal />
         <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
           <div className="w-full min-w-0">
             <Outlet />

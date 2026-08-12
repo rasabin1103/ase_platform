@@ -11,6 +11,7 @@ from app.models.enums import BillingCycle
 from app.models.mixins import IdPkMixin, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.plan_catalog_item import PlanCatalogItem
     from app.models.plan_feature import PlanFeature
     from app.models.plan_product import PlanProduct
     from app.models.subscription import Subscription
@@ -49,6 +50,16 @@ class Plan(Base, IdPkMixin, TimestampMixin):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="PlanFeature.display_order",
+    )
+    # What the plan includes, as real catalog items — replaces the old
+    # free-text features bullets for anything created going forward.
+    # `features` above is kept only so any pre-existing plan data still
+    # reads back without breaking.
+    included_catalog_items: Mapped[list["PlanCatalogItem"]] = relationship(
+        back_populates="plan",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="PlanCatalogItem.display_order",
     )
 
     def __repr__(self) -> str:

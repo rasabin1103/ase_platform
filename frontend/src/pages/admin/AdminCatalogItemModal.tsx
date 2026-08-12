@@ -46,6 +46,7 @@ const defaults = (type: CatalogItemType): FormValues => ({
   benefits: [],
   requirements: [],
   included_items: [],
+  tags: [],
   repo_url: null,
   repo_redeem_code: null,
 })
@@ -87,6 +88,7 @@ export function AdminCatalogItemModal({
   const [pendingGallery, setPendingGallery] = useState<PendingGalleryImage[]>([])
   const [pendingCoverKey, setPendingCoverKey] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [tagsInput, setTagsInput] = useState('')
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
   const { errors } = form.formState
 
@@ -116,11 +118,14 @@ export function AdminCatalogItemModal({
         benefits: initial.benefits ?? [],
         requirements: initial.requirements ?? [],
         included_items: initial.included_items ?? [],
+        tags: initial.tags ?? [],
         repo_url: initial.repo_url,
         repo_redeem_code: initial.repo_redeem_code,
       })
+      setTagsInput((initial.tags ?? []).join(', '))
     } else {
       form.reset(defaults(defaultType))
+      setTagsInput('')
     }
     setImageFile(null)
     setPendingGallery((prev) => {
@@ -146,8 +151,16 @@ export function AdminCatalogItemModal({
         className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
         onSubmit={form.handleSubmit(async (values) => {
           setServerError(null)
+          const tags = Array.from(
+            new Set(
+              tagsInput
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            ),
+          )
           try {
-            await onSubmit(values, imageFile, pendingGallery, pendingCoverKey)
+            await onSubmit({ ...values, tags }, imageFile, pendingGallery, pendingCoverKey)
             onClose()
           } catch (err) {
             const parsed = parseApiError(err, t('adminCatalog.saveError') as string)
@@ -353,6 +366,15 @@ export function AdminCatalogItemModal({
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.duration')}</span>
             <Input {...form.register('duration')} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.tags')}</span>
+            <Input
+              placeholder={t('adminCatalog.placeholders.tags') as string}
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+            />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.tagsHint')}</p>
           </label>
           {typeWatch === 'book' ? (
             <>

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.enums import BillingCycle
 from app.models.plan import Plan
+from app.models.plan_catalog_item import PlanCatalogItem
 
 
 class PlansRepository:
@@ -12,7 +13,10 @@ class PlansRepository:
         self.db = db
 
     def _plan_options(self):
-        return (selectinload(Plan.features),)
+        return (
+            selectinload(Plan.features),
+            selectinload(Plan.included_catalog_items).selectinload(PlanCatalogItem.catalog_item),
+        )
 
     def get(self, plan_id: int) -> Plan | None:
         stmt = select(Plan).options(*self._plan_options()).where(Plan.id == plan_id)

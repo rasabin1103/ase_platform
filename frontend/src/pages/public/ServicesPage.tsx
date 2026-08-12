@@ -14,6 +14,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { useI18n } from '../../i18n'
+import { usePageTitle } from '../../hooks/usePageTitle'
 import type { ServiceCategory } from '../../types/service.types'
 
 const PILLAR_CATEGORIES: ServiceCategory[] = ['platform_engineering', 'qa_automation', 'ai_automation']
@@ -26,6 +27,7 @@ function categoryLabel(t: (k: string) => string, cat: ServiceCategory): string {
 
 export function ServicesPage() {
   const { t } = useI18n()
+  usePageTitle(t('servicesPage.hero.title') as string, t('servicesPage.hero.subtitle') as string)
 
   const servicesQuery = useQuery({
     queryKey: ['services', 'public'],

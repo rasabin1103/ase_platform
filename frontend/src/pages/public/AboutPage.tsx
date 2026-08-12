@@ -7,12 +7,14 @@ import { cn } from '../../components/ui/cn'
 import { tStringArray, useI18n } from '../../i18n'
 import { CountUpInView } from '../../components/micro/CountUpInView'
 import { BlueprintDivider } from '../../components/micro/BlueprintDivider'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 type HeroCardId = 'architecture' | 'automation' | 'quality' | 'scale'
 const HERO_CARDS: HeroCardId[] = ['architecture', 'automation', 'quality', 'scale']
 
 export function AboutPage() {
   const { t } = useI18n()
+  usePageTitle(t('aboutPage.hero.title') as string, t('aboutPage.hero.subtitle') as string)
 
   const differentiators = useMemo(() => tStringArray(t, 'aboutPage.differentiators.items'), [t])
   const philosophy = useMemo(() => tStringArray(t, 'aboutPage.principles.cards.philosophy.bullets'), [t])

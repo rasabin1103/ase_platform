@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 from uuid import UUID
@@ -11,7 +13,7 @@ from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-TokenType = Literal["access", "refresh"]
+TokenType = Literal["access", "refresh", "two_factor_pending"]
 
 
 def hash_password(plain_password: str) -> str:
@@ -73,6 +75,22 @@ def create_refresh_token(*, user_uuid: UUID) -> str:
     )
 
 
+# A password check that passes for a 2FA-enabled account doesn't issue real
+# access/refresh tokens yet — only this short-lived, single-purpose token,
+# which is only ever accepted by /auth/2fa/verify-login and nothing else
+# (distinct `typ` claim), so it can't be replayed as a real session token
+# even if intercepted.
+TWO_FACTOR_PENDING_TOKEN_MINUTES = 5
+
+
+def create_two_factor_pending_token(*, user_uuid: UUID) -> str:
+    return create_token(
+        token_type="two_factor_pending",
+        user_uuid=user_uuid,
+        expires_delta=timedelta(minutes=TWO_FACTOR_PENDING_TOKEN_MINUTES),
+    )
+
+
 def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
 
@@ -94,4 +112,23 @@ def get_token_subject_uuid(token: str, *, expected_type: TokenType) -> UUID:
         return UUID(str(sub))
     except Exception as e:
         raise ValueError("Invalid subject") from e
+
+
+# --- One-time action tokens (password reset / email verification) ---------
+# Deliberately NOT JWTs: these back a single-use link emailed to the user, so
+# they need to be individually revocable and checkable against "already
+# used" — a stateless JWT can't do that without extra bookkeeping anyway, so
+# a plain random token, stored only as a hash, is simpler and just as safe.
+
+
+def generate_raw_token() -> str:
+    """A high-entropy, URL-safe token — only ever transmitted once, inside
+    the emailed link. Never stored in the database in this form."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_action_token(raw_token: str) -> str:
+    """One-way hash used to look the token up in the DB, so a database leak
+    alone never yields a usable reset/verification link."""
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import case, func, or_, select
+from sqlalchemy.dialects.postgresql import array as pg_array
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.catalog_item import CatalogItem
@@ -28,6 +29,7 @@ class ConsumerCatalogRepository:
         status: CatalogItemStatus | None,
         statuses: tuple[CatalogItemStatus, ...] | None = None,
         sort: str | None = None,
+        tags: list[str] | None = None,
     ) -> tuple[list[CatalogItem], int]:
         base = select(CatalogItem).options(selectinload(CatalogItem.images))
         if type_filter is not None:
@@ -38,6 +40,10 @@ class ConsumerCatalogRepository:
             base = base.where(CatalogItem.status.in_(statuses))
         elif status is not None:
             base = base.where(CatalogItem.status == status)
+        if tags:
+            # JSONB "any key exists" (?|): tags_json must include at least
+            # one of the selected tags (OR semantics across the selection).
+            base = base.where(CatalogItem.tags_json.has_any(pg_array(tags)))
         if search:
             q = f"%{search}%"
             base = base.where(
@@ -78,6 +84,7 @@ class ConsumerCatalogRepository:
         search: str | None,
         statuses: tuple[CatalogItemStatus, ...],
         sort: str | None = None,
+        tags: list[str] | None = None,
     ) -> tuple[list[CatalogItem], int]:
         return self.list(
             limit=limit,
@@ -88,4 +95,20 @@ class ConsumerCatalogRepository:
             status=None,
             statuses=statuses,
             sort=sort,
+            tags=tags,
         )
+
+    def distinct_tags(self, *, statuses: tuple[CatalogItemStatus, ...] | None = None) -> list[str]:
+        """Flatten every catalog item's tags_json into a sorted, de-duplicated
+        list — powers the tag-filter chips on both the admin and consumer
+        catalog listings. Cheap enough to compute on demand at this scale
+        (a handful of hundred items at most)."""
+        stmt = select(CatalogItem.tags_json).where(CatalogItem.tags_json.is_not(None))
+        if statuses is not None:
+            stmt = stmt.where(CatalogItem.status.in_(statuses))
+        rows = self.db.execute(stmt).scalars().all()
+        tags: set[str] = set()
+        for row in rows:
+            if row:
+                tags.update(row)
+        return sorted(tags, key=str.casefold)

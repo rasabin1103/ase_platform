@@ -20,6 +20,7 @@ import { AdminAuditLogPage } from '../pages/admin/AdminAuditLogPage'
 import { AdminBookRedemptionsPage } from '../pages/admin/AdminBookRedemptionsPage'
 import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage'
 import { AdminSystemStatusPage } from '../pages/admin/AdminSystemStatusPage'
+import { AdminErrorLogsPage } from '../pages/admin/AdminErrorLogsPage'
 import { ServicesAdminPage } from '../pages/admin/ServicesAdminPage'
 import { AdminSuggestionsPage } from '../pages/admin/AdminSuggestionsPage'
 import {
@@ -35,6 +36,9 @@ import { LoginPage } from '../pages/LoginPage'
 import { RequestsPage } from '../pages/RequestsPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { RegisterPage } from '../pages/RegisterPage'
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/ResetPasswordPage'
+import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { SelectOrganizationPage } from '../pages/SelectOrganizationPage'
 import { UsersPage } from '../pages/UsersPage'
 import { HomePage } from '../pages/public/HomePage'
@@ -45,6 +49,8 @@ import { PlatformPage } from '../pages/public/PlatformPage'
 import { StoryPage } from '../pages/public/StoryPage'
 import { PricingPage } from '../pages/public/PricingPage'
 import { RedeemCodePage as PublicRedeemCodePage } from '../pages/public/RedeemCodePage'
+import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage'
+import { TermsPage } from '../pages/public/TermsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -59,6 +65,8 @@ export const router = createBrowserRouter([
       { path: '/story', element: <StoryPage /> },
       { path: '/pricing', element: <PricingPage /> },
       { path: '/redeem', element: <PublicRedeemCodePage /> },
+      { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
+      { path: '/terms-of-service', element: <TermsPage /> },
     ],
   },
   {
@@ -66,6 +74,9 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
     ],
   },
   {
@@ -109,6 +120,7 @@ export const router = createBrowserRouter([
           { path: '/admin/book-redemptions', element: <AdminBookRedemptionsPage /> },
           { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
           { path: '/admin/system-status', element: <AdminSystemStatusPage /> },
+          { path: '/admin/error-logs', element: <AdminErrorLogsPage /> },
           { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
           { path: '/organization/grant', element: <OrganizationGrantPage /> },
           { path: '/organization/members', element: <OrganizationMembersPage /> },

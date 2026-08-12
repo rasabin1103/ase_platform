@@ -50,6 +50,11 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     benefits_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     requirements_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     included_items_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    # Free-form filter tags (e.g. "skill, claude, qa"), entered as a
+    # comma-separated field in the admin form and stored as a JSON array —
+    # same pattern as benefits/requirements/included_items above. Used by
+    # both the admin catalog list and the consumer catalog browser to filter.
+    tags_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     # Book repo-access redemption (see BookRepoRedemption): readers enter
     # `repo_redeem_code` (printed inside the book) to reveal `repo_url`.
     repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

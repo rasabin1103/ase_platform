@@ -61,10 +61,60 @@ class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    # True when the account is still suspended pending mandatory 2FA setup
+    # (see AuthService.login) — a real session is issued so the frontend can
+    # reach /auth/2fa/setup + /auth/2fa/confirm, but every other endpoint
+    # keeps rejecting the account until 2FA is confirmed.
+    requires_two_factor_setup: bool = False
+
+
+class TwoFactorRequiredResponse(BaseModel):
+    """Returned by POST /auth/login instead of TokenPair when the account
+    has 2FA enabled — no real session token is issued until the code in
+    `challenge_token` is verified via POST /auth/2fa/verify-login."""
+
+    two_factor_required: bool = True
+    challenge_token: str
 
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class TwoFactorSetupResponse(BaseModel):
+    secret: str
+    otpauth_uri: str
+    qr_code_data_uri: str
+
+
+class TwoFactorConfirmSchema(BaseModel):
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class TwoFactorDisableSchema(BaseModel):
+    password: str = Field(min_length=1, max_length=72)
+
+
+class TwoFactorVerifyLoginSchema(BaseModel):
+    challenge_token: str
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class PasswordResetRequestSchema(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmSchema(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+class EmailVerificationConfirmSchema(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+
+
+class SimpleMessageResponse(BaseModel):
+    ok: bool = True
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -96,6 +146,10 @@ class MeResponse(BaseModel):
     can_create_content: bool = False
     creator_status: CreatorStatus = CreatorStatus.none
     status: UserStatus
+    # Only meaningful when status == 'suspended' — distinguishes an
+    # automated lifecycle suspension (see app/core/account_lifecycle.py)
+    # from a manual admin suspension (null in that case).
+    suspension_reason: str | None = None
     email_verified_at: datetime | None
     last_login_at: datetime | None
     created_at: datetime

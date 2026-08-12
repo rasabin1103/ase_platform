@@ -32,12 +32,21 @@ from app.modules.auth.dependencies import (
 )
 from app.models.user_link import UserLink
 from app.modules.auth.schemas import (
+    EmailVerificationConfirmSchema,
     LoginRequest,
     MeResponse,
+    PasswordResetConfirmSchema,
+    PasswordResetRequestSchema,
     ProfileUpdateRequest,
     RefreshRequest,
     RegisterRequest,
+    SimpleMessageResponse,
     TokenPair,
+    TwoFactorConfirmSchema,
+    TwoFactorDisableSchema,
+    TwoFactorRequiredResponse,
+    TwoFactorSetupResponse,
+    TwoFactorVerifyLoginSchema,
     UserLinkRead,
     UserLinksReplaceRequest,
     WorkspaceListResponse,
@@ -58,15 +67,82 @@ def register(request: Request, payload: RegisterRequest, svc: AuthService = Depe
     return svc.register(payload)
 
 
-@router.post("/login", response_model=TokenPair)
+@router.post("/login", response_model=TokenPair | TwoFactorRequiredResponse)
 @limiter.limit("10/minute")
 def login(request: Request, payload: LoginRequest, svc: AuthService = Depends(get_service)):
     return svc.login(payload)
 
 
+@router.post("/2fa/verify-login", response_model=TokenPair)
+@limiter.limit("10/minute")
+def verify_login_two_factor(
+    request: Request, payload: TwoFactorVerifyLoginSchema, svc: AuthService = Depends(get_service),
+):
+    return svc.verify_login_two_factor(challenge_token=payload.challenge_token, code=payload.code)
+
+
 @router.post("/refresh", response_model=TokenPair)
 def refresh(payload: RefreshRequest, svc: AuthService = Depends(get_service)):
     return svc.refresh(payload.refresh_token)
+
+
+@router.post("/2fa/setup", response_model=TwoFactorSetupResponse)
+def setup_two_factor(user: User = Depends(get_current_user), svc: AuthService = Depends(get_service)):
+    return svc.setup_two_factor(user)
+
+
+@router.post("/2fa/confirm", response_model=SimpleMessageResponse)
+def confirm_two_factor(
+    payload: TwoFactorConfirmSchema, user: User = Depends(get_current_user), svc: AuthService = Depends(get_service),
+):
+    svc.confirm_two_factor(user, code=payload.code)
+    return SimpleMessageResponse()
+
+
+@router.post("/2fa/disable", response_model=SimpleMessageResponse)
+def disable_two_factor(
+    payload: TwoFactorDisableSchema, user: User = Depends(get_current_user), svc: AuthService = Depends(get_service),
+):
+    svc.disable_two_factor(user, password=payload.password)
+    return SimpleMessageResponse()
+
+
+@router.post("/password-reset/request", response_model=SimpleMessageResponse)
+@limiter.limit("5/hour")
+def request_password_reset(
+    request: Request, payload: PasswordResetRequestSchema, svc: AuthService = Depends(get_service),
+):
+    """Always returns ok — whether or not the email exists — so this can
+    never be used to check which addresses are registered."""
+    svc.request_password_reset(str(payload.email))
+    return SimpleMessageResponse()
+
+
+@router.post("/password-reset/confirm", response_model=SimpleMessageResponse)
+@limiter.limit("10/hour")
+def confirm_password_reset(
+    request: Request, payload: PasswordResetConfirmSchema, svc: AuthService = Depends(get_service),
+):
+    svc.confirm_password_reset(raw_token=payload.token, new_password=payload.new_password)
+    return SimpleMessageResponse()
+
+
+@router.post("/email-verification/resend", response_model=SimpleMessageResponse)
+@limiter.limit("5/hour")
+def resend_email_verification(
+    request: Request, user: User = Depends(get_current_user), svc: AuthService = Depends(get_service),
+):
+    svc.resend_verification_email(user)
+    return SimpleMessageResponse()
+
+
+@router.post("/email-verification/confirm", response_model=SimpleMessageResponse)
+@limiter.limit("20/hour")
+def confirm_email_verification(
+    request: Request, payload: EmailVerificationConfirmSchema, svc: AuthService = Depends(get_service),
+):
+    svc.confirm_email_verification(payload.token)
+    return SimpleMessageResponse()
 
 
 @router.get("/me", response_model=MeResponse)

@@ -34,6 +34,9 @@ from app.models.user_link import UserLink
 from app.models.organization_join_request import OrganizationJoinRequest
 from app.models.organization_member_invite import OrganizationMemberInvite
 from app.models.book_repo_redemption import BookRepoRedemption
+from app.models.user_verification_token import UserVerificationToken
+from app.models.error_log import ErrorLog
+from app.models.plan_catalog_item import PlanCatalogItem
 
 __all__ = [
     "User",
@@ -72,5 +75,8 @@ __all__ = [
     "OrganizationJoinRequest",
     "OrganizationMemberInvite",
     "BookRepoRedemption",
+    "UserVerificationToken",
+    "ErrorLog",
+    "PlanCatalogItem",
 ]
 

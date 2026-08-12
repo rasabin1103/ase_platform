@@ -29,6 +29,9 @@ class UsersRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def get_by_id(self, user_id: int) -> User | None:
+        return self.db.get(User, user_id)
+
     def get_by_uuid(self, user_uuid: UUID) -> User | None:
         stmt = select(User).where(User.uuid == user_uuid)
         return self.db.execute(stmt).scalar_one_or_none()

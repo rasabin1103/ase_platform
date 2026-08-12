@@ -136,5 +136,10 @@ class SystemStatusRead(BaseModel):
     database: SystemStatusDatabase
     github_integration_configured: bool
     rate_limiting_enabled: bool
+    smtp_configured: bool
+    sentry_configured: bool
+    redis_configured: bool
+    email_verified_pct: float
+    two_factor_adoption_pct: float
     counts: SystemStatusCounts
     checked_at: datetime

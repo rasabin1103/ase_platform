@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createPlan, deletePlan, listPlans, updatePlan } from '../api/plans.api'
+import { listAdminCatalog } from '../api/catalogAdmin.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
@@ -13,7 +14,8 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { Badge } from '../components/ui/Badge'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
-import type { BillingCycle, Plan, PlanFeatureCreateRequest } from '../types/plan.types'
+import { CatalogItemPicker } from '../components/admin/premium/CatalogItemPicker'
+import type { BillingCycle, Plan } from '../types/plan.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { Switch } from '../components/ui/Switch'
@@ -31,7 +33,6 @@ type CreateValues = {
   is_recommended: boolean
   is_active: boolean
   cta_label?: string | ''
-  features?: Array<{ text: string }>
 }
 
 type EditValues = {
@@ -62,7 +63,14 @@ export function PlansPage() {
   const [editing, setEditing] = useState<Plan | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null)
   const [createFocus, setCreateFocus] = useState<boolean>(false)
-  const [featureDraft, setFeatureDraft] = useState<string>('')
+  const [createCatalogItemIds, setCreateCatalogItemIds] = useState<number[]>([])
+  const [editCatalogItemIds, setEditCatalogItemIds] = useState<number[]>([])
+
+  const catalogQuery = useQuery({
+    queryKey: ['admin-catalog', 'for-plan-picker'],
+    queryFn: () => listAdminCatalog({ limit: 200 }),
+  })
+  const catalogItems = catalogQuery.data?.items ?? []
 
   const billingCycles = useMemo<Array<{ value: BillingCycle; label: string }>>(
     () => [
@@ -185,7 +193,7 @@ export function PlansPage() {
         is_active: true,
         cta_label: '',
       })
-      setFeatureDraft('')
+      setCreateCatalogItemIds([])
       await queryClient.invalidateQueries({ queryKey: ['plans'] })
     },
   })
@@ -378,6 +386,7 @@ export function PlansPage() {
                                 is_active: p.is_active,
                                 cta_label: p.cta_label ?? '',
                               })
+                              setEditCatalogItemIds((p.included_catalog_items ?? []).map((ci) => ci.catalog_item_id))
                             }}
                           >
                             {t('plansPage.actions.edit')}
@@ -416,7 +425,7 @@ export function PlansPage() {
                   description: values.description ? values.description : null,
                   display_order: values.display_order ? Number(values.display_order) : undefined,
                   cta_label: values.cta_label ? values.cta_label : null,
-                  features: values.features ? (values.features as unknown as PlanFeatureCreateRequest[]) : undefined,
+                  catalog_item_ids: createCatalogItemIds,
                 }),
               )}
             >
@@ -497,44 +506,13 @@ export function PlansPage() {
               </div>
 
               <div>
-                <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.features')}</div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder={t('plansPage.create.placeholders.featureInput') as string}
-                    value={featureDraft}
-                    onChange={(e) => setFeatureDraft(String(e.target.value ?? ''))}
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      const v = featureDraft.trim()
-                      if (!v) return
-                      const prev = (createForm.getValues('features') as any) ?? []
-                      createForm.setValue('features' as any, [...prev, { text: v }])
-                      setFeatureDraft('')
-                    }}
-                  >
-                    {t('plansPage.create.helpers.addFeature')}
-                  </Button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {(((createForm.getValues('features') as any) ?? []) as Array<{ text: string }>).map((f, idx) => (
-                    <div key={idx} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-ase-text2">
-                      <span className="truncate">{f.text}</span>
-                      <button
-                        type="button"
-                        className="rounded-full border border-white/10 bg-white/[0.02] px-2 py-1 text-[11px] font-semibold text-ase-text2 hover:bg-white/[0.05]"
-                        onClick={() => {
-                          const prev = (((createForm.getValues('features') as any) ?? []) as Array<{ text: string }>).slice()
-                          prev.splice(idx, 1)
-                          createForm.setValue('features' as any, prev)
-                        }}
-                      >
-                        {t('plansPage.create.helpers.remove')}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.catalogItems')}</div>
+                <p className="mb-2 text-[11px] text-ase-muted">{t('plansPage.create.helpers.catalogItemsHint')}</p>
+                <CatalogItemPicker
+                  items={catalogItems}
+                  selectedIds={createCatalogItemIds}
+                  onChange={setCreateCatalogItemIds}
+                />
               </div>
 
               {createMutation.isError && (
@@ -579,6 +557,7 @@ export function PlansPage() {
                     is_recommended: typeof values.is_recommended === 'boolean' ? values.is_recommended : null,
                     is_active: typeof values.is_active === 'boolean' ? values.is_active : null,
                     cta_label: values.cta_label ? values.cta_label : null,
+                    catalog_item_ids: editCatalogItemIds,
                   },
                 })
               })}
@@ -662,6 +641,12 @@ export function PlansPage() {
                 onCheckedChange={(v) => editForm.setValue('is_recommended', v)}
               />
             </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.catalogItems')}</div>
+            <p className="mb-2 text-[11px] text-ase-muted">{t('plansPage.create.helpers.catalogItemsHint')}</p>
+            <CatalogItemPicker items={catalogItems} selectedIds={editCatalogItemIds} onChange={setEditCatalogItemIds} />
           </div>
 
           {updateMutation.isError && (
@@ -757,7 +742,20 @@ function PricingCard({ plan }: { plan: Plan }) {
           {plan.short_description ?? plan.description}
         </div>
       ) : null}
-      {(plan.features?.length ?? 0) > 0 ? (
+      {(plan.included_catalog_items?.length ?? 0) > 0 ? (
+        <ul className="mt-4 space-y-2 text-sm text-ase-text2">
+          {(plan.included_catalog_items ?? []).slice(0, 4).map((ci) => (
+            <li key={ci.id} className="flex items-start gap-2">
+              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-ase-accent/80" />
+              <span className="line-clamp-1" title={ci.title}>
+                {ci.title}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (plan.features?.length ?? 0) > 0 ? (
+        // Legacy fallback — only reached for plans created before the
+        // catalog-item picker existed and never re-saved since.
         <ul className="mt-4 space-y-2 text-sm text-ase-text2">
           {(plan.features ?? []).slice(0, 4).map((f) => (
             <li key={f.id} className="flex items-start gap-2">

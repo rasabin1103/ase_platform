@@ -24,6 +24,7 @@ import {
   PackageCheck,
   Receipt,
   Activity,
+  AlertTriangle,
   ShoppingBag,
   Users,
   Wrench,
@@ -98,6 +99,7 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
       { to: '/admin/book-redemptions', labelKey: 'private.nav.bookRedemptions', icon: Gift, anyPermission: ['catalog.manage'] },
       { to: '/admin/announcements', labelKey: 'private.nav.announcements', icon: Megaphone, anyPermission: ['platform.read'] },
       { to: '/admin/system-status', labelKey: 'private.nav.systemStatus', icon: Activity, anyPermission: ['platform.read'] },
+      { to: '/admin/error-logs', labelKey: 'private.nav.errorLogs', icon: AlertTriangle, anyPermission: ['platform.read'] },
     ],
   },
   {
@@ -148,6 +150,7 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/admin/book-redemptions',
     '/admin/announcements',
     '/admin/system-status',
+    '/admin/error-logs',
     '/profile',
   ],
   org_owner: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/requests', '/profile'],

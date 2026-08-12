@@ -5,11 +5,33 @@ import type {
   MeResponse,
   RegisterRequest,
   RegisterResponse,
+  TwoFactorChallengeResponse,
+  TwoFactorSetupResponse,
   UserLink,
 } from '../types/auth.types'
 
 export async function login(payload: LoginRequest) {
-  const { data } = await apiClient.post<LoginResponse>('/auth/login', payload)
+  const { data } = await apiClient.post<LoginResponse | TwoFactorChallengeResponse>('/auth/login', payload)
+  return data
+}
+
+export async function verifyLoginTwoFactor(challenge_token: string, code: string) {
+  const { data } = await apiClient.post<LoginResponse>('/auth/2fa/verify-login', { challenge_token, code })
+  return data
+}
+
+export async function setupTwoFactor() {
+  const { data } = await apiClient.post<TwoFactorSetupResponse>('/auth/2fa/setup')
+  return data
+}
+
+export async function confirmTwoFactor(code: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/2fa/confirm', { code })
+  return data
+}
+
+export async function disableTwoFactor(password: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/2fa/disable', { password })
   return data
 }
 
@@ -70,6 +92,26 @@ export type { UserLink }
 
 export async function listWorkspaces() {
   const { data } = await apiClient.get<WorkspaceListResponse>('/auth/workspaces')
+  return data
+}
+
+export async function requestPasswordReset(email: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/password-reset/request', { email })
+  return data
+}
+
+export async function confirmPasswordReset(token: string, new_password: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/password-reset/confirm', { token, new_password })
+  return data
+}
+
+export async function resendVerificationEmail() {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/email-verification/resend')
+  return data
+}
+
+export async function confirmEmailVerification(token: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/email-verification/confirm', { token })
   return data
 }
 
