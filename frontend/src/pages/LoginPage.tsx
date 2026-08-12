@@ -42,7 +42,7 @@ export function LoginPage() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: async (data) => {
-      if ('two_factor_required' in data && data.two_factor_required) {
+      if ('two_factor_required' in data) {
         setChallengeToken(data.challenge_token)
         return
       }
