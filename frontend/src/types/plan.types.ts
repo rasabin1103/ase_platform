@@ -70,5 +70,23 @@ export type PlanCreateRequest = {
   catalog_item_ids?: number[] | null
 }
 
-export type PlanUpdateRequest = Partial<PlanCreateRequest>
+
+/** Matches backend PlanUpdate (app/modules/plans/schemas.py): every field is
+ * independently nullable, not just optional — sending an explicit `null`
+ * clears it, distinct from omitting the key entirely (unlike
+ * PlanCreateRequest, where `code`/`name` are required strings). */
+export type PlanUpdateRequest = {
+  code?: string | null
+  name?: string | null
+  billing_cycle?: BillingCycle | null
+  price?: number | string | null
+  currency?: string | null
+  is_active?: boolean | null
+  description?: string | null
+  short_description?: string | null
+  display_order?: number | null
+  is_recommended?: boolean | null
+  cta_label?: string | null
+  catalog_item_ids?: number[] | null
+}
 

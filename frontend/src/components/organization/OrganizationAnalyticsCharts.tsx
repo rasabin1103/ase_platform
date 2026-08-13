@@ -244,7 +244,13 @@ function EmptyChart({ label }: { label: string }) {
   )
 }
 
-function PieTooltip({ active, payload }: any) {
+function PieTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean
+  payload?: Array<{ name?: string; value?: number }>
+}) {
   if (!active || !payload?.length) return null
   const p = payload[0]
   return (

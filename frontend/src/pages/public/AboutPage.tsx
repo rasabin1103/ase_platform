@@ -19,9 +19,9 @@ export function AboutPage() {
   const differentiators = useMemo(() => tStringArray(t, 'aboutPage.differentiators.items'), [t])
   const philosophy = useMemo(() => tStringArray(t, 'aboutPage.principles.cards.philosophy.bullets'), [t])
 
-  const history = useMemo(() => t('aboutPage.history.items') as Array<{ year: string; body: string }>, [t])
+  const history = useMemo(() => t<Array<{ year: string; body: string }>>('aboutPage.history.items'), [t])
   const whyTimeline = useMemo(
-    () => t('aboutPage.why.timeline.items') as Array<{ title: string; desc: string }>,
+    () => t<Array<{ title: string; desc: string }>>('aboutPage.why.timeline.items'),
     [t],
   )
 

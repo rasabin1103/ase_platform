@@ -8,7 +8,7 @@ type LegalSection = { heading: string; body: string }
 export function TermsPage() {
   const { t } = useI18n()
   usePageTitle(t('legal.terms.title') as string, t('legal.terms.intro') as string)
-  const sections = useMemo(() => t('legal.terms.sections') as LegalSection[], [t])
+  const sections = useMemo(() => t<LegalSection[]>('legal.terms.sections'), [t])
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-14 sm:py-20">

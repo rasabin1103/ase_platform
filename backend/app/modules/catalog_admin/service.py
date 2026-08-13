@@ -69,6 +69,7 @@ class CatalogAdminService:
             tags=item.tags_json or [],
             repo_url=item.repo_url,
             repo_redeem_code=item.repo_redeem_code,
+            custom_fields=item.custom_fields_json or {},
             created_at=item.created_at,
             updated_at=item.updated_at,
         )
@@ -170,6 +171,7 @@ class CatalogAdminService:
             tags_json=payload.tags,
             repo_url=payload.repo_url,
             repo_redeem_code=payload.repo_redeem_code,
+            custom_fields_json=payload.custom_fields,
         )
         self.db.add(item)
         self.db.commit()
@@ -222,6 +224,8 @@ class CatalogAdminService:
             item.included_items_json = data.pop("included_items")
         if "tags" in data:
             item.tags_json = data.pop("tags")
+        if "custom_fields" in data:
+            item.custom_fields_json = data.pop("custom_fields")
         if "repo_redeem_code" in data:
             data["repo_redeem_code"] = (data["repo_redeem_code"] or "").strip() or None
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)

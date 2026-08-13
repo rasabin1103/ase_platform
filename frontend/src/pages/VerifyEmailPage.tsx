@@ -31,7 +31,7 @@ export function VerifyEmailPage() {
           badge={t('auth.verifyEmail.badge')}
           title={t('auth.verifyEmail.title')}
           body={t('auth.verifyEmail.body')}
-          bullets={t('auth.bullets')}
+          bullets={t<string[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

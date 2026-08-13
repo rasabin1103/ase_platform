@@ -1,5 +1,6 @@
 import { Eyebrow } from '../ui/Eyebrow'
 import { ServiceFeatureBlock } from './ServiceFeatureBlock'
+import type { ServiceStat } from './ServiceFeatureBlock'
 import { useI18n } from '../../i18n'
 
 function Icon({ children }: { children: React.ReactNode }) {
@@ -29,16 +30,16 @@ export function ServicesSection() {
             index={1}
             title={t('services.blocks.s1.title')}
             description={t('services.blocks.s1.description')}
-            bullets={t('services.blocks.s1.bullets')}
-            stats={t('services.blocks.s1.stats')}
+            bullets={t<string[]>('services.blocks.s1.bullets')}
+            stats={t<ServiceStat[]>('services.blocks.s1.stats')}
           />
           <ServiceFeatureBlock
             icon={<Icon>◆</Icon>}
             index={2}
             title={t('services.blocks.s2.title')}
             description={t('services.blocks.s2.description')}
-            bullets={t('services.blocks.s2.bullets')}
-            stats={t('services.blocks.s2.stats')}
+            bullets={t<string[]>('services.blocks.s2.bullets')}
+            stats={t<ServiceStat[]>('services.blocks.s2.stats')}
             reverse
           />
           <ServiceFeatureBlock
@@ -46,16 +47,16 @@ export function ServicesSection() {
             index={3}
             title={t('services.blocks.s3.title')}
             description={t('services.blocks.s3.description')}
-            bullets={t('services.blocks.s3.bullets')}
-            stats={t('services.blocks.s3.stats')}
+            bullets={t<string[]>('services.blocks.s3.bullets')}
+            stats={t<ServiceStat[]>('services.blocks.s3.stats')}
           />
           <ServiceFeatureBlock
             icon={<Icon>▲</Icon>}
             index={4}
             title={t('services.blocks.s4.title')}
             description={t('services.blocks.s4.description')}
-            bullets={t('services.blocks.s4.bullets')}
-            stats={t('services.blocks.s4.stats')}
+            bullets={t<string[]>('services.blocks.s4.bullets')}
+            stats={t<ServiceStat[]>('services.blocks.s4.stats')}
             reverse
           />
         </div>

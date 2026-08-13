@@ -17,11 +17,11 @@ import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import type { OrganizationType } from '../types/organization.types'
 import type { Organization } from '../types/organization.types'
 import { cn } from '../components/ui/cn'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
 import { useI18n } from '../i18n'
 import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../auth/auth.store'
-import { useAuth } from '../auth/AuthProvider'
+import { useAuth } from '../hooks/useAuth'
 import { OrganizationTopologyMap } from '../components/private/organizations/OrganizationTopologyMap'
 
 type FormValues = {
@@ -101,10 +101,10 @@ export function OrganizationsPage() {
     },
   })
 
-  const orgName = form.watch('organization_name')
+  const orgName = useWatch({ control: form.control, name: 'organization_name' })
   const computedSlug = useMemo(() => slugify(orgName ?? ''), [orgName])
 
-  const items = orgsQuery.data?.items ?? []
+  const items = useMemo(() => orgsQuery.data?.items ?? [], [orgsQuery.data])
   const activeCount = useMemo(() => items.filter((o) => o.status === 'active').length, [items])
   const suspendedCount = useMemo(() => items.filter((o) => o.status === 'suspended').length, [items])
   const managedCount = useMemo(

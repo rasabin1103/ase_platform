@@ -2,6 +2,12 @@
 
 Enterprise multi-tenant RBAC for the ASE platform. Roles and permissions are stored in PostgreSQL and enforced on the API; the SPA uses the same matrix for navigation and action visibility.
 
+## MVP mode
+
+With `MVP_MODE=true` (the default — see [DEPLOYMENT.md](DEPLOYMENT.md)), only two roles are actually reachable in the product: `super_admin` and `independent_user`, defined in `backend/app/core/rbac_mvp.py` (`MVP_ROLE_CODES`, `MVP_ROLE_PERMISSIONS`) rather than the full matrix below. The multi-tenant roles (`org_owner`, `org_admin`, `member`, `content_creator`, `viewer`) and their routes still exist in the codebase — `backend/app/core/rbac.py` remains the source of truth for them — but the routes that expose them are omitted from the app entirely when `MVP_MODE=true` (see the `_MVP_HIDDEN_ROUTERS` list in `app/main.py`), not just permission-gated. Everything in this document past this section describes the full (non-MVP) matrix.
+
+Newer admin-only modules added after this document was first written — blog management, catalog categories, account-lifecycle sweeps, error-log viewing — all reuse existing permission codes rather than introducing new ones: blog and catalog categories are gated by `catalog.manage` (there's no dedicated `blog.manage`, since `require_permission()` bypasses the specific code entirely for `super_admin`, and in MVP mode only `super_admin`/`independent_user` exist anyway). Two-factor authentication (`/auth/2fa/*`) is per-user, not role-gated — any authenticated user can enable it for their own account.
+
 ## Scopes
 
 | Scope | Description |
@@ -22,7 +28,7 @@ Enterprise multi-tenant RBAC for the ASE platform. Roles and permissions are sto
 | `content_creator` | personal_workspace | Approved creator: draft own courses/products; publication requires super admin review. |
 | `viewer` | organization | **Legacy only** — not assigned by new seeds; kept for existing data. |
 
-Source of truth: `ase_backend/app/core/rbac.py` (`ROLE_PERMISSIONS`, `ROLE_DEFINITIONS`).
+Source of truth: `backend/app/core/rbac.py` (`ROLE_PERMISSIONS`, `ROLE_DEFINITIONS`) for the full matrix; `backend/app/core/rbac_mvp.py` for the two roles actually active under `MVP_MODE=true` — see "MVP mode" above.
 
 ## Permissions
 
@@ -68,7 +74,7 @@ Generic assignments (`resource_type`, `resource_id`) to users within an organiza
 
 ## Frontend
 
-- `ase_frontend/src/rbac/config.ts` — nav routes per role, action → permission map.
+- `frontend/src/rbac/config.ts` — nav routes per role, action → permission map.
 - `useRbac()` — exposes `can(action)`, filtered `navGroups`, `primary_role` from `/auth/me`.
 - `<Can action="…">` — hides buttons without permission.
 
@@ -77,7 +83,7 @@ Generic assignments (`resource_type`, `resource_id`) to users within an organiza
 ## Demo seed
 
 ```bash
-cd ase_backend
+cd backend
 python scripts/seed_initial_data.py
 python scripts/seed_demo_rbac.py
 ```

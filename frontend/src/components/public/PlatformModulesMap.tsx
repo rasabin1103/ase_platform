@@ -5,15 +5,16 @@ import { useI18n } from '../../i18n'
 
 export function PlatformModulesMap() {
   const { t } = useI18n()
-  const modules = [
-    t('modules.cards.auth'),
-    t('modules.cards.orgs'),
-    t('modules.cards.roles'),
-    t('modules.cards.plans'),
-    t('modules.cards.products'),
-    t('modules.cards.courses'),
-    t('modules.cards.audit'),
-  ] as Array<{ title: string; desc: string }>
+  type ModuleCardContent = { title: string; desc: string }
+  const modules: ModuleCardContent[] = [
+    t<ModuleCardContent>('modules.cards.auth'),
+    t<ModuleCardContent>('modules.cards.orgs'),
+    t<ModuleCardContent>('modules.cards.roles'),
+    t<ModuleCardContent>('modules.cards.plans'),
+    t<ModuleCardContent>('modules.cards.products'),
+    t<ModuleCardContent>('modules.cards.courses'),
+    t<ModuleCardContent>('modules.cards.audit'),
+  ]
 
   return (
     <section className="relative border-t border-white/5">

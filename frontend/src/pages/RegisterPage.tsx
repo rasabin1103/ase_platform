@@ -53,7 +53,7 @@ export function RegisterPage() {
           badge={t('auth.register.badge')}
           title={t('auth.register.title')}
           body={t('auth.register.body')}
-          bullets={t('auth.bullets')}
+          bullets={t<string[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

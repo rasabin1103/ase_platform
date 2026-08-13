@@ -1,19 +1,31 @@
 # ASE — Arce Sabin Engineering
 
-MVP marketplace platform: **independent users** browse catalog, favorites, purchases, and access requests; **super admins** manage catalog, users, and review requests.
+MVP marketplace platform: **independent users** browse the catalog (courses, books, products, resources, services) and the public blog, manage favorites/purchases, and submit access requests; **super admins** manage the catalog (including dynamic categories with custom fields), the blog, users, account lifecycle, and error logs.
 
 ## Repository layout
 
 ```
-ase/
+ase_platform/
 ├── frontend/          # React + Vite + TypeScript
 ├── backend/           # FastAPI + SQLAlchemy + Alembic
 ├── supabase/
 │   ├── migrations/      # Reference SQL (core tables)
 │   └── seed.sql         # Optional reference seed
-├── docs/                # Database & deployment guides
-└── scripts/             # Legacy helpers → prefer ase_backend/scripts/database
+├── docs/                # Database, RBAC & deployment guides
+└── scripts/             # Legacy helpers → prefer backend/scripts/database
 ```
+
+## Feature highlights
+
+- **Catalog** — courses, books, products, resources, services; admin-managed dynamic categories with per-category custom field schemas (`/admin/catalog-categories`).
+- **Blog** — public blog with a TipTap-based rich text editor in the admin panel; published content is HTML-sanitized server-side on every write.
+- **Auth** — JWT access/refresh tokens, email verification, password reset, optional TOTP-based 2FA, per-account brute-force lockout, and an automated account-lifecycle policy (2FA grace period → inactivity suspension → soft-delete) that runs on a daily in-process scheduler.
+- **Observability** — every unhandled backend error is logged to an in-app `error_logs` table (visible from the admin panel) and, if configured, forwarded to Sentry (backend and frontend). Optional Redis-backed rate limiting for multi-replica deploys.
+- **Security** — HTTP security headers (HSTS, X-Frame-Options, X-Content-Type-Options, CSP) on every response.
+- **Performance** — the frontend is code-split per route; the main bundle is ~190 KB gzipped rather than one monolithic bundle.
+- **Tests** — pytest (backend, isolated `TEST_DATABASE_URL`) and Vitest + React Testing Library (frontend).
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for how to configure SMTP, Sentry, Redis, and the account-lifecycle policy in a real deployment.
 
 ## Tech stack
 
@@ -84,18 +96,25 @@ npm run dev
 
 ### Backend (`backend/.env`)
 
-See [backend/.env.example](ase_backend/.env.example):
+See [backend/.env.example](backend/.env.example):
 
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_SECRET_KEY` — **required** strong secret in production
 - `MVP_MODE` — `true` hides legacy multi-tenant routes
 - `DEMO_SEED_PASSWORD` — local demo user password for seed scripts only
+- `SMTP_*` — transactional email (password reset, email verification, account-lifecycle notices). Optional; sending is skipped if `SMTP_HOST` is empty.
+- `SENTRY_DSN` — optional backend error monitoring.
+- `REDIS_URL` — optional shared storage for the login/register rate limiter (needed once you run more than one backend replica).
+- `TWO_FACTOR_GRACE_DAYS`, `INACTIVITY_SUSPEND_DAYS`, `SUSPENDED_DELETE_DAYS`, `ACCOUNT_LIFECYCLE_SWEEP_ENABLED` — the automated account-lifecycle policy.
+
+Full reference, including what each optional integration does when left unset: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Frontend (`frontend/.env`)
 
-See [frontend/.env.example](ase_frontend/.env.example):
+See [frontend/.env.example](frontend/.env.example):
 
 - `VITE_API_URL` — e.g. `http://localhost:8000/api/v1`
+- `VITE_SENTRY_DSN` — optional frontend error monitoring.
 
 Never commit `.env` files. Do not put real `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, or production DB URLs in the repo.
 
@@ -117,7 +136,20 @@ cd backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 .\.venv\Scripts\alembic.exe upgrade head
 .\.venv\Scripts\alembic.exe revision --autogenerate -m "description"
+```
+
+### Tests
+
+```powershell
+# Backend — requires a disposable TEST_DATABASE_URL (never the real DATABASE_URL,
+# the suite truncates every table before each test)
+cd backend
+$env:TEST_DATABASE_URL = "postgresql+psycopg://ase:ase@localhost:5432/ase_test"
 .\.venv\Scripts\pytest.exe
+
+# Frontend — Vitest + React Testing Library, no external services needed
+cd frontend
+npm test
 ```
 
 ### Docker (Postgres + pgAdmin)
@@ -142,12 +174,14 @@ From `backend`:
 .\.venv\Scripts\python.exe scripts\database\seed_all.py
 ```
 
-Details: [backend/scripts/database/README.md](ase_backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
+Details: [backend/scripts/database/README.md](backend/scripts/database/README.md), [docs/DATABASE.md](docs/DATABASE.md).
 
 ## MVP roles
 
-- **super_admin** — catalog, users, purchases overview, access request review  
-- **independent_user** — catalog, favorites, purchases, requests, profile  
+- **super_admin** — catalog (incl. categories), blog, users, account lifecycle, error logs, purchases overview, access request review
+- **independent_user** — catalog, blog (read-only), favorites, purchases, requests, profile, optional 2FA
+
+Full role/permission matrix (including the legacy multi-tenant roles used when `MVP_MODE=false`): [docs/rbac-architecture.md](docs/rbac-architecture.md).
 
 Legacy organization/multi-tenant code remains in the repo but is disabled when `MVP_MODE=true` (default).
 

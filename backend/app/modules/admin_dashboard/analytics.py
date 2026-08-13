@@ -81,10 +81,10 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         .group_by(revenue_month)
     ).all()
 
-    by_type: dict[str, int] = {}
-    for t in CatalogItemType:
-        n = int(db.execute(select(func.count()).select_from(CatalogItem).where(CatalogItem.type == t)).scalar_one())
-        by_type[t.value] = n
+    by_type: dict[str, int] = {t.value: 0 for t in CatalogItemType}
+    type_rows = db.execute(select(CatalogItem.type, func.count()).group_by(CatalogItem.type)).all()
+    for t_val, n in type_rows:
+        by_type[t_val.value if isinstance(t_val, CatalogItemType) else t_val] = int(n)
 
     revenue_total = db.execute(
         select(func.coalesce(func.sum(CatalogItem.price), 0))
@@ -104,24 +104,16 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         .limit(5)
     ).all()
 
-    organizations_by_type: dict[str, int] = {}
-    for org_type in OrganizationType:
-        n = int(
-            db.execute(
-                select(func.count()).select_from(Organization).where(Organization.type == org_type)
-            ).scalar_one()
-        )
-        organizations_by_type[org_type.value] = n
+    organizations_by_type: dict[str, int] = {ot.value: 0 for ot in OrganizationType}
+    org_type_rows = db.execute(select(Organization.type, func.count()).group_by(Organization.type)).all()
+    for ot_val, n in org_type_rows:
+        organizations_by_type[ot_val.value if isinstance(ot_val, OrganizationType) else ot_val] = int(n)
     organizations_total = sum(organizations_by_type.values())
 
-    requests_by_status: dict[str, int] = {}
-    for req_status in AccessRequestStatus:
-        n = int(
-            db.execute(
-                select(func.count()).select_from(AccessRequest).where(AccessRequest.status == req_status)
-            ).scalar_one()
-        )
-        requests_by_status[req_status.value] = n
+    requests_by_status: dict[str, int] = {rs.value: 0 for rs in AccessRequestStatus}
+    req_status_rows = db.execute(select(AccessRequest.status, func.count()).group_by(AccessRequest.status)).all()
+    for rs_val, n in req_status_rows:
+        requests_by_status[rs_val.value if isinstance(rs_val, AccessRequestStatus) else rs_val] = int(n)
 
     ratings_total = int(db.execute(select(func.count()).select_from(CatalogItemRating)).scalar_one())
     ratings_upvotes = int(

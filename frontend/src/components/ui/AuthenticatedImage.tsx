@@ -16,10 +16,20 @@ export function AuthenticatedImage({ src, alt = '', className, fallback, cacheKe
   const [failed, setFailed] = useState(false)
   const direct = src && !isApiMediaPath(src) ? resolveMediaUrl(src) : null
 
-  useEffect(() => {
+  // Reset transient fetch state whenever the image identity changes, during
+  // render (React's blessed pattern for resetting state from a changed
+  // prop) rather than as a synchronous setState at the top of the effect
+  // below — the effect's job is just to perform the fetch.
+  const identityKey = `${src ?? ''}::${cacheKey ?? ''}`
+  const [prevIdentityKey, setPrevIdentityKey] = useState(identityKey)
+  if (identityKey !== prevIdentityKey) {
+    setPrevIdentityKey(identityKey)
     setFailed(false)
+    setBlobUrl(null)
+  }
+
+  useEffect(() => {
     if (!src || !isApiMediaPath(src)) {
-      setBlobUrl(null)
       return
     }
     let revoked: string | null = null

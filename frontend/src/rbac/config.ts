@@ -25,7 +25,10 @@ import {
   Receipt,
   Activity,
   AlertTriangle,
+  ListTree,
+  Newspaper,
   ShoppingBag,
+  Trash2,
   Users,
   Wrench,
 } from 'lucide-react'
@@ -88,6 +91,8 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
     labelKey: 'private.nav.groups.admin',
     items: [
       { to: '/admin/catalog', labelKey: 'private.nav.catalogManage', icon: Boxes, anyPermission: ['catalog.manage'] },
+      { to: '/admin/blog', labelKey: 'private.nav.blogManage', icon: Newspaper, anyPermission: ['catalog.manage'] },
+      { to: '/admin/catalog-categories', labelKey: 'private.nav.catalogCategories', icon: ListTree, anyPermission: ['catalog.manage'] },
       { to: '/users', labelKey: 'private.nav.users', icon: Users, anyPermission: ['users.read'] },
       { to: '/admin/purchases', labelKey: 'private.nav.purchasesAdmin', icon: Receipt, anyPermission: ['purchases.read_all'] },
       { to: '/requests', labelKey: 'private.nav.requestsReview', icon: ClipboardCheck, anyPermission: ['requests.read'] },
@@ -100,6 +105,7 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
       { to: '/admin/announcements', labelKey: 'private.nav.announcements', icon: Megaphone, anyPermission: ['platform.read'] },
       { to: '/admin/system-status', labelKey: 'private.nav.systemStatus', icon: Activity, anyPermission: ['platform.read'] },
       { to: '/admin/error-logs', labelKey: 'private.nav.errorLogs', icon: AlertTriangle, anyPermission: ['platform.read'] },
+      { to: '/admin/data-reset', labelKey: 'private.nav.dataReset', icon: Trash2 },
     ],
   },
   {
@@ -139,6 +145,8 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
   super_admin: [
     '/dashboard',
     '/admin/catalog',
+    '/admin/blog',
+    '/admin/catalog-categories',
     '/users',
     '/admin/purchases',
     '/requests',
@@ -151,6 +159,7 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/admin/announcements',
     '/admin/system-status',
     '/admin/error-logs',
+    '/admin/data-reset',
     '/profile',
   ],
   org_owner: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/requests', '/profile'],

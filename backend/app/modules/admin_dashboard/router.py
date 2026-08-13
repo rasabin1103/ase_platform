@@ -46,12 +46,9 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin-dashboard"])
 @router.get("/stats", response_model=AdminStatsRead, dependencies=[Depends(require_permission("platform.read"))])
 def admin_stats(db: Session = Depends(get_db)):
     catalog_total = int(db.execute(select(func.count()).select_from(CatalogItem)).scalar_one())
-    by_type: dict[str, int] = {}
-    for t in CatalogItemType:
-        n = int(
-            db.execute(select(func.count()).select_from(CatalogItem).where(CatalogItem.type == t)).scalar_one()
-        )
-        by_type[t.value] = n
+    by_type: dict[str, int] = {t.value: 0 for t in CatalogItemType}
+    for t_val, n in db.execute(select(CatalogItem.type, func.count()).group_by(CatalogItem.type)).all():
+        by_type[t_val.value if isinstance(t_val, CatalogItemType) else t_val] = int(n)
     users_total = int(db.execute(select(func.count()).select_from(User)).scalar_one())
     users_active = int(
         db.execute(select(func.count()).select_from(User).where(User.status == UserStatus.active)).scalar_one()

@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ScrollToTop } from '../layout/ScrollToTop'
+import { RouteLoadingFallback } from '../layout/RouteLoadingFallback'
 import { PublicHeader } from './PublicHeader'
 import { PublicFooter } from './PublicFooter'
 
@@ -17,7 +19,9 @@ export function AuthPublicLayout() {
 
       <PublicHeader />
       <main className="relative">
-        <Outlet />
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <PublicFooter />
     </div>

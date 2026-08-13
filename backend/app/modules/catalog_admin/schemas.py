@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -34,6 +35,10 @@ class CatalogItemAdminBase(BaseModel):
     # inside the book; repo_url is revealed once a reader redeems it.
     repo_url: str | None = Field(default=None, max_length=2048)
     repo_redeem_code: str | None = Field(default=None, max_length=64)
+    # Answers to the selected category's custom-field "questionnaire" (see
+    # app/modules/catalog_categories) — free-form key -> value, no
+    # server-side schema validation against the category (MVP scope).
+    custom_fields: dict[str, Any] = {}
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -59,6 +64,7 @@ class CatalogItemAdminUpdate(BaseModel):
     tags: list[str] | None = None
     repo_url: str | None = None
     repo_redeem_code: str | None = None
+    custom_fields: dict[str, Any] | None = None
 
 
 class CatalogItemImageRead(BaseModel):

@@ -32,7 +32,7 @@ export function IndependentProgressPanel() {
     staleTime: 30_000,
   })
 
-  const purchasedItems = purchasedQuery.data?.items ?? []
+  const purchasedItems = useMemo(() => purchasedQuery.data?.items ?? [], [purchasedQuery.data])
   const favoritesCount = favoritesQuery.data?.total ?? favoritesQuery.data?.items.length ?? 0
 
   const { chartData, totalSpent, currency } = useMemo(() => {
@@ -148,7 +148,13 @@ function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string
   )
 }
 
-function DonutTooltip({ active, payload }: any) {
+function DonutTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean
+  payload?: Array<{ payload?: { name?: string; count?: number } }>
+}) {
   if (!active || !payload?.length) return null
   const p = payload[0]?.payload
   if (!p) return null
