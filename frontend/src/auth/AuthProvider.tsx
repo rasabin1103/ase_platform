@@ -1,6 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { MeResponse } from '../types/auth.types'
 import { me } from '../api/auth.api'
+import { AuthContext } from './AuthContext'
+import type { AuthContextValue } from './AuthContext'
 import {
   clearActiveOrganizationUuid,
   clearImpersonatorTokens,
@@ -14,21 +16,6 @@ import {
   setRefreshToken,
   stashImpersonatorTokens,
 } from './auth.store'
-
-export type AuthContextValue = {
-  currentUser: MeResponse | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  isImpersonating: boolean
-  login: (tokens: { access_token: string; refresh_token: string }) => Promise<void>
-  logout: () => void
-  loadCurrentUser: () => Promise<void>
-  applyCurrentUser: (user: MeResponse) => void
-  startImpersonation: (accessToken: string) => Promise<void>
-  stopImpersonation: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null)
@@ -58,7 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void loadCurrentUser()
+    // Deferred to a microtask so the state updates inside loadCurrentUser
+    // (setIsLoading/setCurrentUser) never happen synchronously within this
+    // effect's own call stack — same outcome (runs immediately after mount,
+    // before paint), just structured the way React's effect rules expect.
+    void Promise.resolve().then(() => loadCurrentUser())
   }, [loadCurrentUser])
 
   const login = useCallback(
@@ -142,11 +133,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }
 

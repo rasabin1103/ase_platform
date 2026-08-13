@@ -6,7 +6,7 @@ export function AuditGovernanceVisual() {
   const { t } = useI18n()
   const indicators = useMemo(() => tStringArray(t, 'platformPage.audit.indicators.items'), [t])
   const rows = useMemo(
-    () => t('platformPage.audit.stream.rows') as Array<{ event: string; actor: string; meta: string }>,
+    () => t<Array<{ event: string; actor: string; meta: string }>>('platformPage.audit.stream.rows'),
     [t],
   )
 

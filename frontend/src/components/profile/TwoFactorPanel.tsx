@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { confirmTwoFactor, disableTwoFactor, setupTwoFactor } from '../../api/auth.api'
-import { useAuth } from '../../auth/AuthProvider'
+import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'

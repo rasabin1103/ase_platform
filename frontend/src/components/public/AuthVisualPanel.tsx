@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '../ui/Badge'
 import { Card } from '../ui/Card'
 
@@ -7,10 +8,10 @@ export function AuthVisualPanel({
   body,
   bullets,
 }: {
-  badge: any
-  title: any
-  body: any
-  bullets: any
+  badge: ReactNode
+  title: ReactNode
+  body: ReactNode
+  bullets: string[]
 }) {
   return (
     <div className="relative">
@@ -25,7 +26,7 @@ export function AuthVisualPanel({
         <p className="mt-5 max-w-xl text-base leading-relaxed text-ase-text2 sm:text-lg">{body}</p>
 
         <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
-          {(bullets as string[]).map((b) => (
+          {bullets.map((b) => (
             <Card key={b} className="rounded-3xl border-white/10 bg-white/[0.03] p-5 backdrop-blur" interactive>
               <div className="flex items-start gap-3">
                 <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-ase-primary shadow-[0_0_18px_rgba(56,189,248,0.30)]" />

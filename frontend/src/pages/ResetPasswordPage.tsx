@@ -44,7 +44,7 @@ export function ResetPasswordPage() {
           badge={t('auth.resetPassword.badge')}
           title={t('auth.resetPassword.title')}
           body={t('auth.resetPassword.body')}
-          bullets={t('auth.bullets')}
+          bullets={t<string[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

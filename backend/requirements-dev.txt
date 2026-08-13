@@ -1,0 +1,5 @@
+# Development-only dependencies (test suite). Production installs only need
+# requirements.txt — this file adds what's needed to run `pytest`.
+-r requirements.txt
+
+pytest>=8.2

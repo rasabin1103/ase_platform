@@ -8,7 +8,7 @@ type LegalSection = { heading: string; body: string }
 export function PrivacyPolicyPage() {
   const { t } = useI18n()
   usePageTitle(t('legal.privacy.title') as string, t('legal.privacy.intro') as string)
-  const sections = useMemo(() => t('legal.privacy.sections') as LegalSection[], [t])
+  const sections = useMemo(() => t<LegalSection[]>('legal.privacy.sections'), [t])
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-14 sm:py-20">

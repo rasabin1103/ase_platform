@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { WorkspaceContextGate } from '../auth/WorkspaceContextGate'
 import { PostLoginGate } from '../auth/PostLoginGate'
@@ -6,52 +6,71 @@ import { ConsumerRouteGuard } from '../auth/ConsumerRouteGuard'
 import { AppLayout } from '../components/layout/AppLayout'
 import { PublicLayout } from '../components/public/PublicLayout'
 import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
+// Every leaf page is React.lazy()'d in lazyPages.tsx so the initial bundle
+// only ships the app shell (layouts, guards, router) plus whichever page
+// the user actually requested — the route tree used to load as a single
+// ~1.5MB bundle regardless of which page was visited. Kept in its own
+// module since a file mixing component exports with the non-component
+// `router` export below breaks Fast Refresh.
 import {
+  AboutPage,
+  AdminAnnouncementsPage,
+  AdminAuditLogPage,
+  AdminBlogEditorPage,
+  AdminBlogPage,
+  AdminBookRedemptionsPage,
+  AdminCatalogCategoriesPage,
+  AdminCatalogPage,
+  AdminDataResetPage,
+  AdminErrorLogsPage,
+  AdminPurchasesPage,
+  AdminSuggestionsPage,
+  AdminSystemStatusPage,
+  BlogListPage,
+  BlogPostPage,
   CatalogDetailPage,
-  CatalogListPage,
-  IndependentDashboardPage,
-  ProfilePage,
-  RedeemCodePage,
-} from '../pages/independent'
-import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage'
-import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
-import { AdminPurchasesPage } from '../pages/admin/AdminPurchasesPage'
-import { AdminAuditLogPage } from '../pages/admin/AdminAuditLogPage'
-import { AdminBookRedemptionsPage } from '../pages/admin/AdminBookRedemptionsPage'
-import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage'
-import { AdminSystemStatusPage } from '../pages/admin/AdminSystemStatusPage'
-import { AdminErrorLogsPage } from '../pages/admin/AdminErrorLogsPage'
-import { ServicesAdminPage } from '../pages/admin/ServicesAdminPage'
-import { AdminSuggestionsPage } from '../pages/admin/AdminSuggestionsPage'
-import {
-  OrganizationDashboardPage,
+  ContactPage,
+  ForgotPasswordPage,
+  HomePage,
+  LoginPage,
+  NotFoundPage,
+  OnboardingPage,
   OrganizationCatalogPage,
   OrganizationGrantPage,
   OrganizationMembersPage,
-} from '../pages/organization'
-import { OrganizationsPage } from '../pages/OrganizationsPage'
-import { PlansPage } from '../pages/PlansPage'
-import { useRbac } from '../rbac/useRbac'
-import { LoginPage } from '../pages/LoginPage'
-import { RequestsPage } from '../pages/RequestsPage'
-import { OnboardingPage } from '../pages/OnboardingPage'
-import { RegisterPage } from '../pages/RegisterPage'
-import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
-import { ResetPasswordPage } from '../pages/ResetPasswordPage'
-import { VerifyEmailPage } from '../pages/VerifyEmailPage'
-import { SelectOrganizationPage } from '../pages/SelectOrganizationPage'
-import { UsersPage } from '../pages/UsersPage'
-import { HomePage } from '../pages/public/HomePage'
-import { AboutPage } from '../pages/public/AboutPage'
-import { ContactPage } from '../pages/public/ContactPage'
-import { ServicesPage } from '../pages/public/ServicesPage'
-import { PlatformPage } from '../pages/public/PlatformPage'
-import { StoryPage } from '../pages/public/StoryPage'
-import { PricingPage } from '../pages/public/PricingPage'
-import { RedeemCodePage as PublicRedeemCodePage } from '../pages/public/RedeemCodePage'
-import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage'
-import { TermsPage } from '../pages/public/TermsPage'
-import { NotFoundPage } from '../pages/NotFoundPage'
+  OrganizationsPage,
+  PlansPage,
+  PlatformPage,
+  PricingPage,
+  PrivacyPolicyPage,
+  ProfilePage,
+  PublicRedeemCodePage,
+  RedeemCodePage,
+  RegisterPage,
+  RequestsPage,
+  ResetPasswordPage,
+  SelectOrganizationPage,
+  ServicesAdminPage,
+  ServicesPage,
+  StoryPage,
+  TermsPage,
+  UsersPage,
+  VerifyEmailPage,
+} from './lazyPages'
+// Small role/param-dispatch wrappers around lazy pages — see routeHelpers.tsx
+// for why these live in their own module too.
+import {
+  CatalogBooksPage,
+  CatalogCoursesPage,
+  CatalogProductsPage,
+  CatalogResourcesPage,
+  FavoritesPage,
+  MyBooksPage,
+  MyCoursesPage,
+  MyPurchasesPage,
+  MyResourcesPage,
+  RoleAwareDashboard,
+} from './routeHelpers'
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +84,8 @@ export const router = createBrowserRouter([
       { path: '/story', element: <StoryPage /> },
       { path: '/pricing', element: <PricingPage /> },
       { path: '/redeem', element: <PublicRedeemCodePage /> },
+      { path: '/blog', element: <BlogListPage /> },
+      { path: '/blog/:slug', element: <BlogPostPage /> },
       { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
       { path: '/terms-of-service', element: <TermsPage /> },
     ],
@@ -111,6 +132,10 @@ export const router = createBrowserRouter([
           },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/admin/catalog', element: <AdminCatalogPage /> },
+          { path: '/admin/blog', element: <AdminBlogPage /> },
+          { path: '/admin/blog/new', element: <AdminBlogEditorPage /> },
+          { path: '/admin/blog/:id/edit', element: <AdminBlogEditorPage /> },
+          { path: '/admin/catalog-categories', element: <AdminCatalogCategoriesPage /> },
           { path: '/admin/purchases', element: <AdminPurchasesPage /> },
           { path: '/admin/organizations', element: <OrganizationsPage /> },
           { path: '/admin/services', element: <ServicesAdminPage /> },
@@ -121,6 +146,7 @@ export const router = createBrowserRouter([
           { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
           { path: '/admin/system-status', element: <AdminSystemStatusPage /> },
           { path: '/admin/error-logs', element: <AdminErrorLogsPage /> },
+          { path: '/admin/data-reset', element: <AdminDataResetPage /> },
           { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
           { path: '/organization/grant', element: <OrganizationGrantPage /> },
           { path: '/organization/members', element: <OrganizationMembersPage /> },
@@ -132,110 +158,3 @@ export const router = createBrowserRouter([
   },
   { path: '*', element: <NotFoundPage /> },
 ])
-
-function RoleAwareDashboard() {
-  const { isConsumerMode, isOrgWorkspace, primaryRole, isSuperuser } = useRbac()
-  if (isSuperuser || primaryRole === 'super_admin') return <AdminDashboardPage />
-  if (isOrgWorkspace) return <OrganizationDashboardPage />
-  if (isConsumerMode) return <IndependentDashboardPage />
-  return <Navigate to="/dashboard" replace />
-}
-
-function CatalogProductsPage() {
-  return (
-    <CatalogListPage
-      type="product"
-      titleKey="catalog.pages.products.title"
-      subtitleKey="catalog.pages.products.subtitle"
-      catalogBasePath="/catalog/products"
-    />
-  )
-}
-
-function CatalogCoursesPage() {
-  return (
-    <CatalogListPage
-      type="course"
-      titleKey="catalog.pages.courses.title"
-      subtitleKey="catalog.pages.courses.subtitle"
-      catalogBasePath="/catalog/courses"
-    />
-  )
-}
-
-function CatalogBooksPage() {
-  return (
-    <CatalogListPage
-      type="book"
-      titleKey="catalog.pages.books.title"
-      subtitleKey="catalog.pages.books.subtitle"
-      catalogBasePath="/catalog/books"
-    />
-  )
-}
-
-function CatalogResourcesPage() {
-  return (
-    <CatalogListPage
-      type="resource"
-      titleKey="catalog.pages.resources.title"
-      subtitleKey="catalog.pages.resources.subtitle"
-      catalogBasePath="/catalog/resources"
-    />
-  )
-}
-
-function FavoritesPage() {
-  return (
-    <CatalogListPage
-      mode="favorites"
-      titleKey="catalog.pages.favorites.title"
-      subtitleKey="catalog.pages.favorites.subtitle"
-      catalogBasePath="/favorites"
-    />
-  )
-}
-
-function MyPurchasesPage() {
-  return (
-    <CatalogListPage
-      mode="purchases"
-      titleKey="catalog.pages.purchases.title"
-      subtitleKey="catalog.pages.purchases.subtitle"
-      catalogBasePath="/my-purchases"
-    />
-  )
-}
-
-function MyCoursesPage() {
-  return (
-    <CatalogListPage
-      mode="myCourses"
-      titleKey="catalog.pages.myCourses.title"
-      subtitleKey="catalog.pages.myCourses.subtitle"
-      catalogBasePath="/my-courses"
-    />
-  )
-}
-
-function MyBooksPage() {
-  return (
-    <CatalogListPage
-      mode="myBooks"
-      titleKey="catalog.pages.myBooks.title"
-      subtitleKey="catalog.pages.myBooks.subtitle"
-      catalogBasePath="/my-books"
-    />
-  )
-}
-
-function MyResourcesPage() {
-  return (
-    <CatalogListPage
-      mode="myResources"
-      titleKey="catalog.pages.myResources.title"
-      subtitleKey="catalog.pages.myResources.subtitle"
-      catalogBasePath="/my-resources"
-    />
-  )
-}

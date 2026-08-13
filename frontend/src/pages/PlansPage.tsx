@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { createPlan, deletePlan, listPlans, updatePlan } from '../api/plans.api'
+import type { PlanUpdateRequest } from '../types/plan.types'
 import { listAdminCatalog } from '../api/catalogAdmin.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -138,7 +139,7 @@ export function PlansPage() {
     queryFn: () => listPlans({ limit: 50, offset: 0 }),
   })
 
-  const items = plansQuery.data?.items ?? []
+  const items = useMemo(() => plansQuery.data?.items ?? [], [plansQuery.data])
   const activeCount = useMemo(() => items.filter((p) => p.is_active).length, [items])
   const recommendedPlan = useMemo(() => items.find((p) => p.is_recommended) ?? null, [items])
   const cycles = useMemo(() => Array.from(new Set(items.map((p) => p.billing_cycle))).length, [items])
@@ -160,6 +161,9 @@ export function PlansPage() {
     },
   })
 
+  const createFormIsActive = useWatch({ control: createForm.control, name: 'is_active' })
+  const createFormIsRecommended = useWatch({ control: createForm.control, name: 'is_recommended' })
+
   const editForm = useForm<EditValues>({
     resolver: zodResolver(editSchema),
     defaultValues: {
@@ -176,6 +180,9 @@ export function PlansPage() {
       cta_label: '',
     },
   })
+
+  const editFormIsActive = useWatch({ control: editForm.control, name: 'is_active' })
+  const editFormIsRecommended = useWatch({ control: editForm.control, name: 'is_recommended' })
 
   const createMutation = useMutation({
     mutationFn: createPlan,
@@ -199,7 +206,7 @@ export function PlansPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ plan_id, payload }: { plan_id: number; payload: any }) => updatePlan(plan_id, payload),
+    mutationFn: ({ plan_id, payload }: { plan_id: number; payload: PlanUpdateRequest }) => updatePlan(plan_id, payload),
     onSuccess: async () => {
       setEditing(null)
       await queryClient.invalidateQueries({ queryKey: ['plans'] })
@@ -378,7 +385,7 @@ export function PlansPage() {
                                 name: p.name,
                                 short_description: p.short_description ?? '',
                                 description: p.description ?? '',
-                                billing_cycle: p.billing_cycle as any,
+                                billing_cycle: p.billing_cycle,
                                 price: p.price ?? '',
                                 currency: p.currency,
                                 display_order: typeof p.display_order === 'number' ? String(p.display_order) : '',
@@ -497,11 +504,11 @@ export function PlansPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isActive')}</div>
-                  <Switch checked={Boolean(createForm.watch('is_active'))} onCheckedChange={(v) => createForm.setValue('is_active', v)} />
+                  <Switch checked={Boolean(createFormIsActive)} onCheckedChange={(v) => createForm.setValue('is_active', v)} />
                 </div>
                 <div>
                   <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isRecommended')}</div>
-                  <Switch checked={Boolean(createForm.watch('is_recommended'))} onCheckedChange={(v) => createForm.setValue('is_recommended', v)} />
+                  <Switch checked={Boolean(createFormIsRecommended)} onCheckedChange={(v) => createForm.setValue('is_recommended', v)} />
                 </div>
               </div>
 
@@ -630,14 +637,14 @@ export function PlansPage() {
             <div>
               <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isActive')}</div>
               <Switch
-                checked={Boolean(editForm.watch('is_active'))}
+                checked={Boolean(editFormIsActive)}
                 onCheckedChange={(v) => editForm.setValue('is_active', v)}
               />
             </div>
             <div>
               <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isRecommended')}</div>
               <Switch
-                checked={Boolean(editForm.watch('is_recommended'))}
+                checked={Boolean(editFormIsRecommended)}
                 onCheckedChange={(v) => editForm.setValue('is_recommended', v)}
               />
             </div>

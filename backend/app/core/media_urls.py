@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from app.models.blog_post import BlogPost
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_image import CatalogItemImage
 from app.models.user import User
@@ -72,3 +73,23 @@ def resolve_catalog_cover_url(item: CatalogItem) -> str:
     if ordered:
         return resolve_gallery_image_url(ordered[0])
     return resolve_catalog_image_url(item)
+
+
+# --- Blog cover image (public, unauthenticated) -----------------------------
+# Served from a dedicated public path (not /api/v1/media/...) because that
+# router is gated behind `catalog.read`, while the blog is meant to be
+# readable by anyone with no login at all.
+
+
+def blog_has_stored_image(post: BlogPost) -> bool:
+    return bool(post.cover_image_data)
+
+
+def blog_cover_image_api_path(post_id: int) -> str:
+    return f"/api/v1/public/blog-cover/{post_id}"
+
+
+def resolve_blog_cover_url(post: BlogPost) -> str | None:
+    if blog_has_stored_image(post):
+        return blog_cover_image_api_path(post.id)
+    return post.cover_image_url

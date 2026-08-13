@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import { TwoFactorPanel } from '../../components/profile/TwoFactorPanel'
-import { useAuth } from '../../auth/AuthProvider'
+import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
 import { avatarDisplayPath } from '../../utils/mediaUrls'
@@ -93,9 +93,16 @@ export function ProfilePage() {
   const [linksSaved, setLinksSaved] = useState(false)
   const [linksError, setLinksError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // `links` starts from currentUser.links but is then locally editable
+  // (add/remove/edit rows below) before saving — so it can't be pure
+  // derived state. Re-sync it when the underlying data identity changes,
+  // during render (React's blessed pattern for this) rather than via a
+  // synchronous setState inside an effect.
+  const [prevUserLinks, setPrevUserLinks] = useState(currentUser?.links)
+  if (currentUser?.links !== prevUserLinks) {
+    setPrevUserLinks(currentUser?.links)
     setLinks((currentUser?.links ?? []).map((l: UserLink) => ({ label: l.label, url: l.url })))
-  }, [currentUser?.links])
+  }
 
   const linksMut = useMutation({
     mutationFn: replaceMyLinks,

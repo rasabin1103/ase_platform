@@ -7,6 +7,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { Download, LogIn } from 'lucide-react'
 import { z } from 'zod'
 import { createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
+import type { UserUpdateRequest } from '../types/user.types'
 import { downloadCsv } from '../utils/csv'
 import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
 import { Card } from '../components/ui/Card'
@@ -22,7 +23,7 @@ import { MemberCatalogStatsModal } from '../components/organization/MemberCatalo
 import type { User, UserStatus } from '../types/user.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
-import { useAuth } from '../auth/AuthProvider'
+import { useAuth } from '../hooks/useAuth'
 import { Can } from '../rbac/Can'
 
 type CreateValues = {
@@ -114,7 +115,7 @@ export function UsersPage() {
     queryFn: () => listUsers({ limit: 50, offset: 0 }),
   })
 
-  const items = usersQuery.data?.items ?? []
+  const items = useMemo(() => usersQuery.data?.items ?? [], [usersQuery.data])
   const activeCount = useMemo(() => items.filter((u) => u.status === 'active').length, [items])
   const suspendedCount = useMemo(() => items.filter((u) => u.status === 'suspended').length, [items])
   const invitedCount = useMemo(() => items.filter((u) => !u.email_verified_at).length, [items])
@@ -171,7 +172,7 @@ export function UsersPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ user_uuid, payload }: { user_uuid: string; payload: any }) =>
+    mutationFn: ({ user_uuid, payload }: { user_uuid: string; payload: UserUpdateRequest }) =>
       updateUser(user_uuid, payload),
     onSuccess: async () => {
       setEditing(null)
@@ -331,7 +332,7 @@ export function UsersPage() {
                       first_name: u.first_name ?? '',
                       last_name: u.last_name ?? '',
                       display_name: u.display_name ?? '',
-                      status: (u.status as any) ?? 'active',
+                      status: (u.status as 'active' | 'suspended' | 'deleted') ?? 'active',
                     })
                   }}
                   onDelete={() => setConfirmDelete(u)}
@@ -389,7 +390,7 @@ export function UsersPage() {
                                 first_name: u.first_name ?? '',
                                 last_name: u.last_name ?? '',
                                 display_name: u.display_name ?? '',
-                                status: (u.status as any) ?? 'active',
+                                status: (u.status as 'active' | 'suspended' | 'deleted') ?? 'active',
                               })
                             }}
                           >

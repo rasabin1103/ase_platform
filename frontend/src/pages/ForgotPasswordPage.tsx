@@ -29,7 +29,7 @@ export function ForgotPasswordPage() {
           badge={t('auth.forgotPassword.badge')}
           title={t('auth.forgotPassword.title')}
           body={t('auth.forgotPassword.body')}
-          bullets={t('auth.bullets')}
+          bullets={t<string[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

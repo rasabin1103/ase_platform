@@ -34,7 +34,7 @@ export function useRbac() {
 
   const roleCodes = currentUser?.role_codes ?? []
 
-  const permissions = currentUser?.permissions ?? []
+  const permissions = useMemo(() => currentUser?.permissions ?? [], [currentUser])
 
   const isSuperuser = Boolean(currentUser?.is_superuser)
 

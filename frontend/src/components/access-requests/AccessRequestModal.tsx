@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   createMyAccessRequest,
   type AccessRequestType,
@@ -36,12 +36,18 @@ export function AccessRequestModal({
   const { t } = useI18n()
   const [message, setMessage] = useState('')
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    setMessage('')
-    setError(null)
-  }, [open])
+  // Reset the form fields whenever the modal transitions to open, without an
+  // effect: this "adjust state while rendering" pattern is what React
+  // recommends for resetting state based on a changing prop — it runs as
+  // part of this render (no extra commit), unlike setState inside useEffect.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setMessage('')
+      setError(null)
+    }
+  }
 
   const mutation = useMutation({
     mutationFn: () =>

@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react'
 import type { Language } from './translations'
 import { translations } from './translations'
 
@@ -8,7 +8,11 @@ const DEFAULT_LANGUAGE: Language = 'es'
 export type I18nContextValue = {
   language: Language
   setLanguage: (lang: Language) => void
-  t: (key: string) => any
+  /** Generic so call sites reading structured content (arrays/objects from
+   * the translation dictionaries, e.g. t<Item[]>('faq.items')) get a real
+   * type instead of `any`, while the overwhelming majority of call sites
+   * (plain UI strings) keep working unchanged via the `string` default. */
+  t: <T = string>(key: string) => T
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null)
@@ -19,13 +23,13 @@ function getStoredLanguage(): Language {
   return DEFAULT_LANGUAGE
 }
 
-function getValueByPath(obj: any, path: string): any {
+function getValueByPath(obj: unknown, path: string): unknown {
   if (!path) return obj
   const parts = path.split('.')
-  let cur = obj
+  let cur: unknown = obj
   for (const p of parts) {
-    if (cur == null) return undefined
-    cur = cur[p]
+    if (cur == null || typeof cur !== 'object') return undefined
+    cur = (cur as Record<string, unknown>)[p]
   }
   return cur
 }
@@ -55,22 +59,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    try {
-      const stored = getStoredLanguage()
-      if (stored !== language) setLanguageState(stored)
-    } catch {
-      // ignore
-    }
-  }, [])
-
   const t = useCallback(
-    (key: string) => {
+    <T = string,>(key: string): T => {
       const dict = translations[language]
       const hit = getValueByPath(dict, key)
-      if (hit !== undefined) return hit
+      if (hit !== undefined) return hit as T
       const fallback = getValueByPath(translations[DEFAULT_LANGUAGE], key)
-      return fallback !== undefined ? fallback : key
+      return (fallback !== undefined ? fallback : key) as T
     },
     [language],
   )

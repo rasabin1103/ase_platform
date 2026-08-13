@@ -38,8 +38,8 @@ export function CategoryBarCharts() {
     staleTime: 30_000,
   })
 
-  const purchasedItems = purchasedQuery.data?.items ?? []
-  const favoriteItems = favoritesQuery.data?.items ?? []
+  const purchasedItems = useMemo(() => purchasedQuery.data?.items ?? [], [purchasedQuery.data])
+  const favoriteItems = useMemo(() => favoritesQuery.data?.items ?? [], [favoritesQuery.data])
 
   const { spendData, currency } = useMemo(() => {
     const byType = new Map<CatalogItemType, number>()

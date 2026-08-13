@@ -200,6 +200,11 @@ class ServicePriceType(str, Enum):
     custom = "custom"
 
 
+class BlogPostStatus(str, Enum):
+    draft = "draft"
+    published = "published"
+
+
 class UserTokenPurpose(str, Enum):
     """What a `UserVerificationToken` row is for — kept as a single table
     with a purpose column instead of two near-identical tables."""

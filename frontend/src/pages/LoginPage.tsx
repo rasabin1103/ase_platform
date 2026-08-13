@@ -67,7 +67,7 @@ export function LoginPage() {
             badge={t('auth.login.badge')}
             title={t('auth.login.title')}
             body={t('auth.login.body')}
-            bullets={t('auth.bullets')}
+            bullets={t<string[]>('auth.bullets')}
           />
           <div className="flex items-center justify-center lg:justify-end">
             <AuthCard>
@@ -138,7 +138,7 @@ export function LoginPage() {
           badge={t('auth.login.badge')}
           title={t('auth.login.title')}
           body={t('auth.login.body')}
-          bullets={t('auth.bullets')}
+          bullets={t<string[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

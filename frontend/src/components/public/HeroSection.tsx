@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
@@ -57,7 +58,7 @@ export function HeroSection() {
   )
 }
 
-function TrustPill({ label, value }: { label: any; value: any }) {
+function TrustPill({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5">
       <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{label}</div>

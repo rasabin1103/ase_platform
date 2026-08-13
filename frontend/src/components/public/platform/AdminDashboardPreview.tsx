@@ -10,7 +10,7 @@ export function AdminDashboardPreview() {
   const { t } = useI18n()
   const legend = useMemo(() => tStringArray(t, 'platformPage.dashboard.charts.legend'), [t])
   const headers = useMemo(() => tStringArray(t, 'platformPage.dashboard.table.headers'), [t])
-  const rows = useMemo(() => t('platformPage.dashboard.table.rows') as string[][], [t])
+  const rows = useMemo(() => t<string[][]>('platformPage.dashboard.table.rows'), [t])
 
   return (
     <section className="relative border-t border-white/[0.06] py-16 sm:py-24 lg:py-32">

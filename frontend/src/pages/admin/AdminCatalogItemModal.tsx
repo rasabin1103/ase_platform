@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { CatalogGalleryManager } from '../../components/admin/premium/CatalogGalleryManager'
 import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
+import { listCatalogCategories } from '../../api/catalogCategories.api'
 import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../../types/catalog.types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
+import { Switch } from '../../components/ui/Switch'
 import { cn } from '../../components/ui/cn'
 import { useI18n } from '../../i18n'
 import { parseApiError } from '../../utils/apiError'
@@ -89,56 +93,79 @@ export function AdminCatalogItemModal({
   const [pendingCoverKey, setPendingCoverKey] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [tagsInput, setTagsInput] = useState('')
+  const [customFields, setCustomFields] = useState<Record<string, unknown>>({})
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
   const { errors } = form.formState
+  const categoriesQuery = useQuery({
+    queryKey: ['admin-catalog-categories-active'],
+    queryFn: () => listCatalogCategories({ active_only: true }),
+    enabled: open,
+  })
 
   const requiredMsg = t('adminCatalog.validation.required') as string
   const inputErrClass = (hasError: boolean) =>
     hasError ? 'border-ase-error focus-visible:border-ase-error focus-visible:ring-ase-error/30' : ''
 
-  useEffect(() => {
-    if (!open) return
-    setServerError(null)
-    if (initial) {
-      form.reset({
-        title: initial.title,
-        slug: initial.slug,
-        type: initial.type,
-        category: initial.category,
-        short_description: initial.short_description,
-        long_description: initial.long_description,
-        image_url: initial.image_url,
-        preview_url: initial.preview_url,
-        price: Number(initial.price),
-        currency: initial.currency,
-        status: initial.status,
-        level: initial.level,
-        duration: initial.duration,
-        author: initial.author,
-        benefits: initial.benefits ?? [],
-        requirements: initial.requirements ?? [],
-        included_items: initial.included_items ?? [],
-        tags: initial.tags ?? [],
-        repo_url: initial.repo_url,
-        repo_redeem_code: initial.repo_redeem_code,
+  // Reset all local/form state whenever the modal (re)opens or the item being
+  // edited changes, without an effect: this "adjust state while rendering"
+  // pattern runs as part of this render (no extra commit), unlike setState
+  // inside useEffect.
+  const resetKey = `${open}:${initial?.id ?? 'new'}:${defaultType}`
+  const [prevResetKey, setPrevResetKey] = useState(resetKey)
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey)
+    if (open) {
+      setServerError(null)
+      if (initial) {
+        form.reset({
+          title: initial.title,
+          slug: initial.slug,
+          type: initial.type,
+          category: initial.category,
+          short_description: initial.short_description,
+          long_description: initial.long_description,
+          image_url: initial.image_url,
+          preview_url: initial.preview_url,
+          price: Number(initial.price),
+          currency: initial.currency,
+          status: initial.status,
+          level: initial.level,
+          duration: initial.duration,
+          author: initial.author,
+          benefits: initial.benefits ?? [],
+          requirements: initial.requirements ?? [],
+          included_items: initial.included_items ?? [],
+          tags: initial.tags ?? [],
+          repo_url: initial.repo_url,
+          repo_redeem_code: initial.repo_redeem_code,
+        })
+        setTagsInput((initial.tags ?? []).join(', '))
+        setCustomFields(initial.custom_fields ?? {})
+      } else {
+        form.reset(defaults(defaultType))
+        setTagsInput('')
+        setCustomFields({})
+      }
+      setImageFile(null)
+      setPendingGallery((prev) => {
+        prev.forEach((img) => {
+          if (img.kind === 'file') URL.revokeObjectURL(img.previewUrl)
+        })
+        return []
       })
-      setTagsInput((initial.tags ?? []).join(', '))
-    } else {
-      form.reset(defaults(defaultType))
-      setTagsInput('')
+      setPendingCoverKey(null)
     }
-    setImageFile(null)
-    setPendingGallery((prev) => {
-      prev.forEach((img) => {
-        if (img.kind === 'file') URL.revokeObjectURL(img.previewUrl)
-      })
-      return []
-    })
-    setPendingCoverKey(null)
-  }, [open, initial, defaultType, form])
+  }
 
-  const titleWatch = form.watch('title')
-  const typeWatch = form.watch('type')
+  const titleWatch = useWatch({ control: form.control, name: 'title' })
+  const typeWatch = useWatch({ control: form.control, name: 'type' })
+  const categoryWatch = useWatch({ control: form.control, name: 'category' })
+  const categoryOptions = categoriesQuery.data ?? []
+  const selectedCategory = categoryOptions.find((c) => c.name === categoryWatch)
+  // Item might carry a category value that isn't (or no longer is) a
+  // managed category — keep it selectable so editing never silently
+  // changes the stored value.
+  const categorySelectValues = categoryWatch && !selectedCategory ? [categoryWatch, ...categoryOptions.map((c) => c.name)] : categoryOptions.map((c) => c.name)
 
   return (
     <Modal
@@ -160,7 +187,7 @@ export function AdminCatalogItemModal({
             ),
           )
           try {
-            await onSubmit({ ...values, tags }, imageFile, pendingGallery, pendingCoverKey)
+            await onSubmit({ ...values, tags, custom_fields: customFields }, imageFile, pendingGallery, pendingCoverKey)
             onClose()
           } catch (err) {
             const parsed = parseApiError(err, t('adminCatalog.saveError') as string)
@@ -252,14 +279,32 @@ export function AdminCatalogItemModal({
             </Select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-ase-muted">
-              {t('adminCatalog.fields.category')}
-              <RequiredMark />
+            <span className="mb-1 flex items-center justify-between text-xs text-ase-muted">
+              <span>
+                {t('adminCatalog.fields.category')}
+                <RequiredMark />
+              </span>
+              <Link to="/admin/catalog-categories" className="text-cyan-300 hover:underline">
+                {t('adminCatalog.manageCategories')}
+              </Link>
             </span>
-            <Input
-              className={cn(inputErrClass(Boolean(errors.category)))}
-              {...form.register('category', { required: requiredMsg })}
-            />
+            {categorySelectValues.length > 0 ? (
+              <Select
+                className={cn(inputErrClass(Boolean(errors.category)))}
+                {...form.register('category', { required: requiredMsg })}
+              >
+                {categorySelectValues.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Input
+                className={cn(inputErrClass(Boolean(errors.category)))}
+                {...form.register('category', { required: requiredMsg })}
+              />
+            )}
             <FieldError message={errors.category?.message as string | undefined} />
           </label>
           <label className="block">
@@ -376,6 +421,57 @@ export function AdminCatalogItemModal({
             />
             <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.tagsHint')}</p>
           </label>
+          {selectedCategory && selectedCategory.fields.length > 0 ? (
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                {t('adminCatalog.customFields.title')} · {selectedCategory.name}
+              </span>
+              {selectedCategory.fields.map((f) => (
+                <label key={f.key} className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">
+                    {f.label}
+                    {f.required ? <RequiredMark /> : null}
+                  </span>
+                  {f.type === 'textarea' ? (
+                    <textarea
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+                      rows={3}
+                      value={String(customFields[f.key] ?? '')}
+                      onChange={(e) => setCustomFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    />
+                  ) : f.type === 'boolean' ? (
+                    <Switch
+                      checked={Boolean(customFields[f.key])}
+                      onCheckedChange={(v) => setCustomFields((prev) => ({ ...prev, [f.key]: v }))}
+                    />
+                  ) : f.type === 'select' ? (
+                    <Select
+                      value={String(customFields[f.key] ?? '')}
+                      onChange={(e) => setCustomFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    >
+                      <option value="">—</option>
+                      {(f.options ?? []).map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Input
+                      type={f.type === 'number' ? 'number' : f.type === 'url' ? 'url' : 'text'}
+                      value={String(customFields[f.key] ?? '')}
+                      onChange={(e) =>
+                        setCustomFields((prev) => ({
+                          ...prev,
+                          [f.key]: f.type === 'number' ? Number(e.target.value) : e.target.value,
+                        }))
+                      }
+                    />
+                  )}
+                </label>
+              ))}
+            </div>
+          ) : null}
           {typeWatch === 'book' ? (
             <>
               <label className="block sm:col-span-2">

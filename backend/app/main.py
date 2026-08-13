@@ -16,6 +16,7 @@ from app.core.database import SessionLocal
 from app.core.error_logging import record_error_log
 from app.core.monitoring import init_sentry
 from app.core.rate_limit import limiter
+from app.core.security_headers import install_security_headers
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,10 @@ from app.modules.notifications.router import router as notifications_router
 from app.modules.suggestions.router import router as suggestions_router
 from app.modules.book_redemption.router import router as book_redemption_router
 from app.modules.admin_account_lifecycle.router import router as admin_account_lifecycle_router
+from app.modules.blog_admin.router import router as blog_admin_router
+from app.modules.public_blog.router import router as public_blog_router
+from app.modules.catalog_categories.router import router as catalog_categories_router
+from app.modules.admin_data_reset.router import router as admin_data_reset_router
 
 
 def create_app() -> FastAPI:
@@ -136,9 +141,13 @@ def create_app() -> FastAPI:
     app.include_router(admin_account_lifecycle_router)
     app.include_router(media_router)
     app.include_router(public_catalog_router)
+    app.include_router(blog_admin_router)
+    app.include_router(public_blog_router)
+    app.include_router(catalog_categories_router)
     app.include_router(notifications_router)
     app.include_router(suggestions_router)
     app.include_router(book_redemption_router)
+    app.include_router(admin_data_reset_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)
@@ -199,3 +208,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Registered last so it's the outermost middleware — every response
+# (including CORS preflights and rate-limit 429s) gets the security headers.
+install_security_headers(app)

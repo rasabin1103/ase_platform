@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../../auth/auth.store'
 import { useAuth } from '../../hooks/useAuth'
 import { ScrollToTop } from './ScrollToTop'
@@ -9,6 +9,7 @@ import { ImpersonationBanner } from './ImpersonationBanner'
 import { UnverifiedEmailBanner } from './UnverifiedEmailBanner'
 import { TwoFactorGraceModal } from './TwoFactorGraceModal'
 import { SuspendedAccountGate } from './SuspendedAccountGate'
+import { RouteLoadingFallback } from './RouteLoadingFallback'
 
 export function AppLayout() {
   const { currentUser } = useAuth()
@@ -37,7 +38,9 @@ export function AppLayout() {
         <TwoFactorGraceModal />
         <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
           <div className="w-full min-w-0">
-            <Outlet />
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

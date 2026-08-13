@@ -4,11 +4,8 @@ import { useI18n } from '../../i18n'
 
 export function WhyPillarsSection() {
   const { t } = useI18n()
-  const pillars = [t('why.pillars.p1'), t('why.pillars.p2'), t('why.pillars.p3')] as Array<{
-    title: string
-    desc: string
-    detail: string
-  }>
+  type Pillar = { title: string; desc: string; detail: string }
+  const pillars = [t<Pillar>('why.pillars.p1'), t<Pillar>('why.pillars.p2'), t<Pillar>('why.pillars.p3')]
 
   return (
     <section className="relative border-t border-white/5">

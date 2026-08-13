@@ -55,6 +55,11 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # same pattern as benefits/requirements/included_items above. Used by
     # both the admin catalog list and the consumer catalog browser to filter.
     tags_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # Answers to the selected category's custom-field "questionnaire" (see
+    # CatalogCategory.fields_json), keyed by field key. Free-form — no FK to
+    # a category row, so this stays valid even if the category is later
+    # renamed or removed.
+    custom_fields_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     # Book repo-access redemption (see BookRepoRedemption): readers enter
     # `repo_redeem_code` (printed inside the book) to reveal `repo_url`.
     repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

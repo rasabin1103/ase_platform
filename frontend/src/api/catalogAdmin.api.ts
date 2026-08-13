@@ -32,6 +32,7 @@ export type CatalogItemAdmin = {
   tags: string[]
   repo_url: string | null
   repo_redeem_code: string | null
+  custom_fields: Record<string, unknown>
   has_stored_image?: boolean
   created_at: string
   updated_at: string
@@ -65,6 +66,7 @@ export type CatalogItemAdminPayload = {
   tags?: string[]
   repo_url?: string | null
   repo_redeem_code?: string | null
+  custom_fields?: Record<string, unknown>
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>
@@ -82,11 +84,6 @@ export async function listAdminCatalog(params?: {
 
 export async function listAdminCatalogTags() {
   const { data } = await apiClient.get<string[]>('/admin/catalog/tags')
-  return data
-}
-
-export async function getAdminCatalogItem(itemId: number) {
-  const { data } = await apiClient.get<CatalogItemAdmin>(`/admin/catalog/${itemId}`)
   return data
 }
 
