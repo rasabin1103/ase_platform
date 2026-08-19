@@ -70,6 +70,7 @@ class OrgCatalogService:
             item.id,
             granted_by_user_id=granted_by_user_id,
             organization_id=organization_id,
+            source="admin_grant",
         )
         self.db.commit()
         item_read = self.consumer_service.get_by_slug(catalog_item_slug, user_id=target_user.id)

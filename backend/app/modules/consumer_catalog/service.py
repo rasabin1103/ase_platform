@@ -16,6 +16,9 @@ from app.modules.consumer_catalog.schemas import (
     CatalogItemListResponse,
     CatalogItemRead,
     MyRatingRead,
+    MyReviewRead,
+    ReviewListResponse,
+    ReviewRead,
 )
 
 CONSUMER_LIST_STATUSES = (CatalogItemStatus.published, CatalogItemStatus.coming_soon, CatalogItemStatus.request_only)
@@ -44,9 +47,11 @@ class ConsumerCatalogService:
         purchased_slugs: set[str],
         rating_summaries: dict[int, RatingSummary] | None = None,
         my_ratings: dict[int, object] | None = None,
+        review_summaries: dict[int, tuple[float, int]] | None = None,
     ) -> CatalogItemRead:
         summary = (rating_summaries or {}).get(item.id)
         my_rating = (my_ratings or {}).get(item.id)
+        review_summary = (review_summaries or {}).get(item.id)
         return CatalogItemRead(
             id=str(item.uuid),
             uuid=item.uuid,
@@ -75,7 +80,18 @@ class ConsumerCatalogService:
             downvotes=summary.downvotes if summary else 0,
             netScore=summary.net_score if summary else 0,
             topTags=summary.top_tags if summary else [],
-            myRating=MyRatingRead(isPositive=my_rating.is_positive, tags=my_rating.tags_json or []) if my_rating else None,
+            myRating=(
+                MyRatingRead(isPositive=my_rating.is_positive, tags=my_rating.tags_json or [])
+                if my_rating and my_rating.is_positive is not None
+                else None
+            ),
+            averageRating=review_summary[0] if review_summary else None,
+            reviewCount=review_summary[1] if review_summary else 0,
+            myReview=(
+                MyReviewRead(rating=my_rating.rating, comment=my_rating.comment)
+                if my_rating and my_rating.rating is not None
+                else None
+            ),
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )
@@ -91,6 +107,7 @@ class ConsumerCatalogService:
         item_ids = [i.id for i in items]
         summaries = self.ratings.summaries_for_items(catalog_item_ids=item_ids)
         my_ratings = self.ratings.my_ratings_for_items(user_id=user_id, catalog_item_ids=item_ids)
+        review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
         return [
             self._to_read(
                 i,
@@ -98,6 +115,7 @@ class ConsumerCatalogService:
                 purchased_slugs=purchased_slugs,
                 rating_summaries=summaries,
                 my_ratings=my_ratings,
+                review_summaries=review_summaries,
             )
             for i in items
         ]
@@ -159,6 +177,13 @@ class ConsumerCatalogService:
         return self.get_by_slug(slug, user_id=user_id)
 
     def purchase(self, slug: str, *, user_id: int) -> CatalogItemRead:
+        """Grants free access. Only valid for items with no price — anything
+        with `price > 0` must go through Stripe Checkout instead (see
+        BillingService.create_catalog_checkout_session), which is the only
+        path that actually charges the card and grants access via the
+        checkout.session.completed webhook. This split is what prevents a
+        user from getting a priced item for free by hitting this endpoint
+        directly."""
         item = self._require_item(slug)
         if item.status == CatalogItemStatus.request_only:
             raise HTTPException(
@@ -167,7 +192,12 @@ class ConsumerCatalogService:
             )
         if item.status == CatalogItemStatus.coming_soon:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item is not available for purchase yet")
-        self.purchases.add(user_id, item.id)
+        if item.price is not None and item.price > 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This item has a price and must be purchased via Stripe Checkout, not granted directly.",
+            )
+        self.purchases.add(user_id, item.id, source="free")
         self.db.commit()
         return self.get_by_slug(slug, user_id=user_id)
 
@@ -188,6 +218,53 @@ class ConsumerCatalogService:
         self.ratings.remove(user_id=user_id, catalog_item_id=item.id)
         self.db.commit()
         return self.get_by_slug(slug, user_id=user_id)
+
+    def submit_review(self, slug: str, *, user_id: int, rating: int, comment: str | None) -> CatalogItemRead:
+        """Star review (1-5 + optional comment). Gated to users who actually
+        own the item — same ownership check as billing's catalog checkout
+        entitlement, read via `purchased_slugs` so plan-granted access
+        counts too, not just direct purchases."""
+        if is_super_admin(self.db, self._require_user(user_id)):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Super admin accounts do not review catalog items",
+            )
+        item = self._require_item(slug)
+        if item.slug not in self.purchased_slugs(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must own this item before leaving a review",
+            )
+        clean_comment = comment.strip() if comment and comment.strip() else None
+        self.ratings.upsert_review(user_id=user_id, catalog_item_id=item.id, rating=rating, comment=clean_comment)
+        self.db.commit()
+        return self.get_by_slug(slug, user_id=user_id)
+
+    def remove_review(self, slug: str, *, user_id: int) -> CatalogItemRead:
+        item = self._require_item(slug)
+        self.ratings.remove_review(user_id=user_id, catalog_item_id=item.id)
+        self.db.commit()
+        return self.get_by_slug(slug, user_id=user_id)
+
+    def list_reviews(self, slug: str, *, limit: int, offset: int) -> ReviewListResponse:
+        """Public, newest-first page of everyone's reviews for one item —
+        no ownership check here, reading reviews (unlike writing one) isn't
+        gated to purchasers."""
+        item = self._require_item(slug)
+        rows = self.ratings.reviews_for_item(catalog_item_id=item.id, limit=limit, offset=offset)
+        avg, count = self.ratings.review_summaries_for_items(catalog_item_ids=[item.id]).get(item.id, (None, 0))
+        reviews = [
+            ReviewRead(
+                userDisplayName=(
+                    display_name or " ".join(p for p in (first, last) if p).strip() or "Usuario ASE"
+                ),
+                rating=rating_row.rating,
+                comment=rating_row.comment,
+                createdAt=rating_row.created_at,
+            )
+            for rating_row, display_name, first, last in rows
+        ]
+        return ReviewListResponse(items=reviews, averageRating=avg, reviewCount=count, limit=limit, offset=offset)
 
     def _require_item(self, slug: str) -> CatalogItem:
         item = self.repo.get_by_slug(slug)

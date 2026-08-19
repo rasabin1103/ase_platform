@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
-import { listOrganizations } from '../api/organizations.api'
+import { deleteOrganization, listOrganizations, updateOrganization } from '../api/organizations.api'
 import { createOrganization } from '../api/onboarding.api'
 import type { CreateOrganizationResponse } from '../api/onboarding.api'
 import { Card } from '../components/ui/Card'
@@ -12,6 +12,7 @@ import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import type { OrganizationType } from '../types/organization.types'
@@ -152,6 +153,47 @@ export function OrganizationsPage() {
     setActiveOrganizationUuid(uuid)
     setActiveUuid(uuid)
   }
+
+  const [confirmDeleteOrg, setConfirmDeleteOrg] = useState<Organization | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+
+  const extractDetail = (err: unknown): string | null => {
+    const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+    return typeof detail === 'string' ? detail : null
+  }
+
+  const friendlyOrgError = (err: unknown): string => {
+    const detail = extractDetail(err)
+    if (detail && detail.toLowerCase().includes('cannot deactivate or delete your own organization')) {
+      return t('organizationsPage.errors.ownOrganization') as string
+    }
+    return t('organizationsPage.errors.statusUpdate') as string
+  }
+
+  const statusMutation = useMutation({
+    mutationFn: ({ uuid, status: nextStatus }: { uuid: string; status: 'active' | 'suspended' }) =>
+      updateOrganization(uuid, { status: nextStatus }),
+    onSuccess: () => {
+      setStatusError(null)
+      queryClient.invalidateQueries({ queryKey: ['organizations'] })
+    },
+    onError: (err: unknown) => setStatusError(friendlyOrgError(err)),
+  })
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: (uuid: string) => deleteOrganization(uuid),
+    onSuccess: () => {
+      setStatusError(null)
+      setConfirmDeleteOrg(null)
+      queryClient.invalidateQueries({ queryKey: ['organizations'] })
+    },
+  })
+
+  const toggleOrgStatus = (org: Organization) => {
+    statusMutation.mutate({ uuid: org.uuid, status: org.status === 'suspended' ? 'active' : 'suspended' })
+  }
+
+  const isOwnOrganization = (org: Organization) => Boolean(currentUser?.uuid) && org.owner_user_uuid === currentUser?.uuid
 
   if (isSuperAdmin) {
     return (
@@ -302,6 +344,10 @@ export function OrganizationsPage() {
                     t={t}
                     onDetails={() => setDetailsOrg(org)}
                     onSetActive={() => activateOrganization(org.uuid)}
+                    onToggleStatus={() => toggleOrgStatus(org)}
+                    onDelete={() => setConfirmDeleteOrg(org)}
+                    statusPending={statusMutation.isPending}
+                    disableDangerActions={isOwnOrganization(org)}
                   />
                 ))}
               </div>
@@ -356,7 +402,63 @@ export function OrganizationsPage() {
           </div>
         ) : null}
 
-        {detailsOrg && renderDetailsDrawer({ org: detailsOrg, t, activeUuid, activateOrganization, onClose: () => setDetailsOrg(null) })}
+        {detailsOrg &&
+          renderDetailsDrawer({
+            org: detailsOrg,
+            t,
+            activeUuid,
+            activateOrganization,
+            onClose: () => setDetailsOrg(null),
+            onToggleStatus: () => toggleOrgStatus(detailsOrg),
+            onDelete: () => {
+              setDetailsOrg(null)
+              setConfirmDeleteOrg(detailsOrg)
+            },
+            statusPending: statusMutation.isPending,
+            disableDangerActions: isOwnOrganization(detailsOrg),
+          })}
+
+        {statusError ? (
+          <div className="fixed bottom-6 right-6 z-[60] max-w-sm rounded-2xl border border-ase-error/30 bg-ase-bg2 p-4 text-sm text-ase-error shadow-soft">
+            {statusError}
+            <button type="button" className="ml-3 text-ase-muted hover:text-ase-text" onClick={() => setStatusError(null)}>
+              ×
+            </button>
+          </div>
+        ) : null}
+
+        <Modal
+          open={!!confirmDeleteOrg}
+          title={t('organizationsPage.delete.title') as string}
+          closeLabel={t('organizationsPage.actions.close')}
+          onClose={() => setConfirmDeleteOrg(null)}
+          footer={
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="danger"
+                disabled={deleteOrgMutation.isPending}
+                onClick={() => {
+                  if (!confirmDeleteOrg) return
+                  deleteOrgMutation.mutate(confirmDeleteOrg.uuid)
+                }}
+              >
+                {deleteOrgMutation.isPending ? t('organizationsPage.delete.deleting') : t('organizationsPage.delete.confirm')}
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-2">
+            <div className="text-sm text-ase-text">
+              {String(t('organizationsPage.delete.body')).replace('{{name}}', String(confirmDeleteOrg?.name ?? ''))}
+            </div>
+            <div className="text-sm text-ase-text2">{t('organizationsPage.delete.note')}</div>
+            {deleteOrgMutation.isError && (
+              <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                {friendlyOrgError(deleteOrgMutation.error)}
+              </div>
+            )}
+          </div>
+        </Modal>
       </div>
     )
   }
@@ -504,6 +606,23 @@ export function OrganizationsPage() {
                                 {t('organizationsPage.actions.setActive')}
                               </Button>
                             )}
+                            {isSuperAdmin && o.status !== 'deleted' ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isOwnOrganization(o) || statusMutation.isPending}
+                                onClick={() => toggleOrgStatus(o)}
+                              >
+                                {o.status === 'suspended'
+                                  ? t('organizationsPage.superAdmin.actions.reactivate')
+                                  : t('organizationsPage.superAdmin.actions.suspend')}
+                              </Button>
+                            ) : null}
+                            {isSuperAdmin && o.status !== 'deleted' ? (
+                              <Button size="sm" variant="danger" disabled={isOwnOrganization(o)} onClick={() => setConfirmDeleteOrg(o)}>
+                                {t('organizationsPage.superAdmin.actions.delete')}
+                              </Button>
+                            ) : null}
                           </div>
                         </TD>
                       </TR>
@@ -699,6 +818,10 @@ function OrganizationPremiumCard({
   t,
   onDetails,
   onSetActive,
+  onToggleStatus,
+  onDelete,
+  statusPending,
+  disableDangerActions,
 }: {
   org: Organization
   activeUuid: string | null
@@ -706,6 +829,10 @@ function OrganizationPremiumCard({
   t: (k: string) => string
   onDetails: () => void
   onSetActive: () => void
+  onToggleStatus: () => void
+  onDelete: () => void
+  statusPending: boolean
+  disableDangerActions: boolean
 }) {
   const isActive = activeUuid === org.uuid
   const members = Math.max(1, (org.slug.length % 7) + (isManagedOrganization(org, currentUserUuid) ? 3 : 1))
@@ -763,9 +890,16 @@ function OrganizationPremiumCard({
             {t('organizationsPage.superAdmin.actions.setActive')}
           </Button>
         )}
-        <Button size="sm" variant="outline" disabled>
-          {org.status === 'suspended' ? t('organizationsPage.superAdmin.actions.reactivate') : t('organizationsPage.superAdmin.actions.suspend')}
-        </Button>
+        {org.status !== 'deleted' ? (
+          <Button size="sm" variant="outline" disabled={disableDangerActions || statusPending} onClick={onToggleStatus}>
+            {org.status === 'suspended' ? t('organizationsPage.superAdmin.actions.reactivate') : t('organizationsPage.superAdmin.actions.suspend')}
+          </Button>
+        ) : null}
+        {org.status !== 'deleted' ? (
+          <Button size="sm" variant="danger" disabled={disableDangerActions} onClick={onDelete}>
+            {t('organizationsPage.superAdmin.actions.delete')}
+          </Button>
+        ) : null}
       </div>
     </Card>
   )
@@ -942,12 +1076,20 @@ function renderDetailsDrawer({
   activeUuid,
   activateOrganization,
   onClose,
+  onToggleStatus,
+  onDelete,
+  statusPending,
+  disableDangerActions,
 }: {
   org: Organization
   t: (k: string) => string
   activeUuid: string | null
   activateOrganization: (uuid: string) => void
   onClose: () => void
+  onToggleStatus: () => void
+  onDelete: () => void
+  statusPending: boolean
+  disableDangerActions: boolean
 }) {
   return (
     <div className="fixed inset-0 z-50">
@@ -973,6 +1115,21 @@ function renderDetailsDrawer({
               {t('organizationsPage.actions.setActive')}
             </Button>
           )}
+          {org.status !== 'deleted' ? (
+            <Button className="w-full" variant="outline" disabled={disableDangerActions || statusPending} onClick={onToggleStatus}>
+              {org.status === 'suspended'
+                ? t('organizationsPage.superAdmin.actions.reactivate')
+                : t('organizationsPage.superAdmin.actions.suspend')}
+            </Button>
+          ) : null}
+          {org.status !== 'deleted' ? (
+            <Button className="w-full" variant="danger" disabled={disableDangerActions} onClick={onDelete}>
+              {t('organizationsPage.superAdmin.actions.delete')}
+            </Button>
+          ) : null}
+          {disableDangerActions ? (
+            <p className="text-center text-[11px] text-ase-muted">{t('organizationsPage.errors.ownOrganizationHint')}</p>
+          ) : null}
         </div>
       </div>
     </div>

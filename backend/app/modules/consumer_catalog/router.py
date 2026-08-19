@@ -15,6 +15,8 @@ from app.modules.consumer_catalog.schemas import (
     CatalogItemListResponse,
     CatalogItemRead,
     RateItemRequest,
+    ReviewListResponse,
+    ReviewRequest,
     UserCatalogStateRead,
     UserCatalogStateUpdate,
 )
@@ -126,3 +128,34 @@ def remove_catalog_item_rating(
     svc: ConsumerCatalogService = Depends(get_service),
 ):
     return svc.remove_rating(slug, user_id=user.id)
+
+
+@router.get("/{slug}/reviews", response_model=ReviewListResponse, dependencies=[Depends(require_permission("catalog.read"))])
+def list_catalog_item_reviews(
+    slug: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    """Public — anyone who can browse the catalog can read what others
+    thought of an item, not just the people who bought it."""
+    return svc.list_reviews(slug, limit=limit, offset=offset)
+
+
+@router.post("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+def submit_catalog_item_review(
+    slug: str,
+    payload: ReviewRequest,
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    return svc.submit_review(slug, user_id=user.id, rating=payload.rating, comment=payload.comment)
+
+
+@router.delete("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+def remove_catalog_item_review(
+    slug: str,
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    return svc.remove_review(slug, user_id=user.id)

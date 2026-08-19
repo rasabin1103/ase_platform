@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Sparkles } from 'lucide-react'
+import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
 import {
   listConsumerCatalog,
-  purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
 import { CatalogItemCard } from './CatalogItemCard'
@@ -45,7 +45,10 @@ export function RecommendedForYouStrip() {
   })
 
   const buyMutation = useMutation({
-    mutationFn: purchaseCatalogItem,
+    mutationFn: (slug: string) => {
+      const target = catalogQuery.data?.items.find((i) => i.slug === slug)
+      return buyOrCheckoutCatalogItem(slug, target?.price)
+    },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {
       setPendingSlug(null)

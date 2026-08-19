@@ -11,7 +11,7 @@ from app.models.access_request import AccessRequest
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_rating import CatalogItemRating
 from app.models.catalog_purchase import CatalogPurchase
-from app.models.enums import AccessRequestStatus, CatalogItemType, OrganizationType
+from app.models.enums import AccessRequestStatus, CatalogItemType, OrganizationType, UserStatus
 from app.models.member_role import MemberRole
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
@@ -51,10 +51,13 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         # SQLAlchemy renders identical SQL text in all three places.
         return func.to_char(func.date_trunc("month", column), "YYYY-MM")
 
+    # Deleted (soft-delete, row kept for referential integrity) and
+    # suspended accounts shouldn't keep showing up in the growth chart once
+    # removed or deactivated.
     user_month = _month_key(User.created_at)
     user_rows = db.execute(
         select(user_month, func.count())
-        .where(User.created_at >= since)
+        .where(User.created_at >= since, User.status.notin_([UserStatus.deleted, UserStatus.suspended]))
         .group_by(user_month)
         .order_by(user_month)
     ).all()
@@ -115,13 +118,22 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
     for rs_val, n in req_status_rows:
         requests_by_status[rs_val.value if isinstance(rs_val, AccessRequestStatus) else rs_val] = int(n)
 
-    ratings_total = int(db.execute(select(func.count()).select_from(CatalogItemRating)).scalar_one())
+    # Thumbs up/down + tags is one independent half of CatalogItemRating;
+    # star reviews (rating/comment) are the other — a row can have either,
+    # both, or (after this feature) just the review half, so every count
+    # here must filter on is_positive explicitly rather than counting all
+    # rows, or a review-only row would silently inflate the thumbs totals.
     ratings_upvotes = int(
         db.execute(
             select(func.count()).select_from(CatalogItemRating).where(CatalogItemRating.is_positive.is_(True))
         ).scalar_one()
     )
-    ratings_downvotes = ratings_total - ratings_upvotes
+    ratings_downvotes = int(
+        db.execute(
+            select(func.count()).select_from(CatalogItemRating).where(CatalogItemRating.is_positive.is_(False))
+        ).scalar_one()
+    )
+    ratings_total = ratings_upvotes + ratings_downvotes
     tag_rows = db.execute(select(CatalogItemRating.tags_json).where(CatalogItemRating.tags_json.isnot(None))).all()
     tag_counter: Counter[str] = Counter()
     for (tags,) in tag_rows:
@@ -129,11 +141,34 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
             tag_counter[str(tag)] += 1
     top_tags = [{"tag": tag, "count": count} for tag, count in tag_counter.most_common(8)]
 
+    # Star reviews (1-5 + comment) — separate from the thumbs data above.
+    reviews_total = int(
+        db.execute(
+            select(func.count()).select_from(CatalogItemRating).where(CatalogItemRating.rating.isnot(None))
+        ).scalar_one()
+    )
+    reviews_average_rating = db.execute(
+        select(func.avg(CatalogItemRating.rating)).where(CatalogItemRating.rating.isnot(None))
+    ).scalar_one()
+    reviews_average_rating = round(float(reviews_average_rating), 1) if reviews_average_rating is not None else None
+    review_distribution_rows = db.execute(
+        select(CatalogItemRating.rating, func.count())
+        .where(CatalogItemRating.rating.isnot(None))
+        .group_by(CatalogItemRating.rating)
+    ).all()
+    reviews_distribution = {str(stars): 0 for stars in range(1, 6)}
+    for stars, count in review_distribution_rows:
+        reviews_distribution[str(int(stars))] = int(count)
+
     users_by_role_rows = db.execute(
         select(Role.code, func.count(func.distinct(OrganizationMember.user_id)))
         .select_from(MemberRole)
         .join(Role, Role.id == MemberRole.role_id)
         .join(OrganizationMember, OrganizationMember.id == MemberRole.organization_member_id)
+        # Join back to User so a deleted/suspended account's leftover
+        # membership rows don't keep counting toward its role's total.
+        .join(User, User.id == OrganizationMember.user_id)
+        .where(User.status.notin_([UserStatus.deleted, UserStatus.suspended]))
         .group_by(Role.code)
     ).all()
     users_by_role = {code: int(cnt) for code, cnt in users_by_role_rows}
@@ -157,4 +192,7 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         "ratings_downvotes": ratings_downvotes,
         "ratings_top_tags": top_tags,
         "users_by_role": users_by_role,
+        "reviews_total": reviews_total,
+        "reviews_average_rating": reviews_average_rating,
+        "reviews_distribution": reviews_distribution,
     }

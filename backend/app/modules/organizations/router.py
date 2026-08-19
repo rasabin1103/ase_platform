@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.enums import MembershipStatus
+from app.models.enums import MembershipStatus, OrganizationStatus
 from app.models.member_role import MemberRole
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
@@ -27,6 +27,18 @@ router = APIRouter(prefix="/api/v1/organizations", tags=["organizations"])
 
 def get_organizations_service(db: Session = Depends(get_db)) -> OrganizationsService:
     return OrganizationsService(db)
+
+
+def _guard_not_self_organization(org: Organization, current_user: User) -> None:
+    """Refuses to suspend/delete the organization the acting admin owns —
+    a super admin locking themselves out of their own workspace has no
+    recovery path short of a database edit, so it's blocked outright
+    rather than merely warned about."""
+    if org.owner_user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot deactivate or delete your own organization.",
+        )
 
 
 def _current_user_relationship(db: Session, *, org_id: int, user_id: int) -> tuple[MembershipStatus | None, list[str]]:
@@ -61,6 +73,7 @@ def _to_read(org: Organization, *, db: Session, current_user_id: int) -> Organiz
         owner_user_uuid=org.owner.uuid,
         current_user_membership_status=membership_status,
         current_user_role_codes=role_codes,
+        newsletter_subscribed=org.newsletter_subscribed,
         created_at=org.created_at,
         updated_at=org.updated_at,
     )
@@ -128,6 +141,9 @@ def update_organization(
     db: Session = Depends(get_db),
     svc: OrganizationsService = Depends(get_organizations_service),
 ):
+    if payload.status is not None and payload.status != OrganizationStatus.active:
+        org = svc.get_for_admin(organization_uuid)
+        _guard_not_self_organization(org, user)
     return _to_read(svc.update(organization_uuid, payload), db=db, current_user_id=user.id)
 
 
@@ -142,5 +158,7 @@ def delete_organization(
     db: Session = Depends(get_db),
     svc: OrganizationsService = Depends(get_organizations_service),
 ):
+    org = svc.get_for_admin(organization_uuid)
+    _guard_not_self_organization(org, user)
     return _to_read(svc.soft_delete(organization_uuid), db=db, current_user_id=user.id)
 

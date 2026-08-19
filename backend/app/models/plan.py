@@ -22,6 +22,14 @@ class Plan(Base, IdPkMixin, TimestampMixin):
 
     code: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # English mirror of name/short_description/description/cta_label, so the
+    # public site can show a real translation instead of Spanish text when
+    # the visitor's language is English. Auto-filled by app.core.translation
+    # (DeepL API, free "Developer" tier) on create/update when
+    # DEEPL_API_KEY is configured — see PlansService._ensure_english_fields;
+    # the admin can always override any of them by hand from the Plans edit
+    # form.
+    name_en: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     billing_cycle: Mapped[BillingCycle] = mapped_column(
         Enum(BillingCycle, name="billing_cycle", native_enum=True),
@@ -34,10 +42,18 @@ class Plan(Base, IdPkMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
 
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description_en: Mapped[str | None] = mapped_column(Text, nullable=True)
     short_description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    short_description_en: Mapped[str | None] = mapped_column(String(500), nullable=True)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0", index=True)
     is_recommended: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     cta_label: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    cta_label_en: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    # Stripe Price id (e.g. "price_...") this plan's subscription checkout
+    # should use. Null means the plan isn't (yet) sellable via Stripe — the
+    # billing module falls back to a clear error rather than guessing.
+    stripe_price_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="plan")
     products: Mapped[list["PlanProduct"]] = relationship(

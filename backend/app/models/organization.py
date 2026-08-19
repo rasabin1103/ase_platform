@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, ForeignKey, String
+from sqlalchemy import Boolean, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -41,6 +41,16 @@ class Organization(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
         nullable=False,
         default=OrganizationStatus.active,
     )
+
+    # Stripe Customer id (e.g. "cus_...") — created lazily on first checkout
+    # so an org never gets one until it actually starts a subscription.
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+
+    # Opt-in (default False) — when True, every active member of this
+    # organization receives the weekly newsletter (see
+    # app/core/newsletter.py), regardless of their own individual
+    # User.newsletter_subscribed setting. Toggled by org_owner/org_admin.
+    newsletter_subscribed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     owner: Mapped["User"] = relationship(back_populates="owned_organizations")
     members: Mapped[list["OrganizationMember"]] = relationship(

@@ -45,12 +45,25 @@ class OrganizationsService:
 
     def get(self, organization_uuid: UUID) -> Organization:
         org = self.repo.get_by_uuid(organization_uuid)
-        if org is None or org.status == OrganizationStatus.suspended:
+        if org is None or org.status in (OrganizationStatus.suspended, OrganizationStatus.deleted):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+        return org
+
+    def get_for_admin(self, organization_uuid: UUID) -> Organization:
+        """Same lookup as `get()` but never hides suspended/deleted orgs —
+        used by the admin mutation endpoints (update/deactivate/reactivate/
+        delete). `get()` hiding suspended orgs is correct for normal reads,
+        but was previously reused inside `update()` too, which made it
+        impossible to ever reactivate an org: the moment it was suspended,
+        the very endpoint meant to flip it back to active would 404 before
+        even loading the row."""
+        org = self.repo.get_by_uuid(organization_uuid)
+        if org is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
         return org
 
     def update(self, organization_uuid: UUID, payload: OrganizationUpdate) -> Organization:
-        org = self.get(organization_uuid)
+        org = self.get_for_admin(organization_uuid)
 
         if payload.slug is not None and payload.slug != org.slug:
             if self.repo.get_by_slug(payload.slug) is not None:
@@ -70,13 +83,22 @@ class OrganizationsService:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Owner user not found")
             org.owner_user_id = owner.id
 
+        if payload.newsletter_subscribed is not None:
+            org.newsletter_subscribed = payload.newsletter_subscribed
+
         self.db.commit()
         self.db.refresh(org)
         return org
 
     def soft_delete(self, organization_uuid: UUID) -> Organization:
-        org = self.get(organization_uuid)
-        org.status = OrganizationStatus.suspended
+        """Distinct from suspending: this is the "borrar" action — sets
+        status to `deleted` (hidden from every normal listing, but the row
+        and its data survive for referential integrity, same soft-delete
+        philosophy as user deletion). Suspending/reactivating an org is a
+        separate, reversible action — see `update()` with
+        `status=suspended`/`status=active`."""
+        org = self.get_for_admin(organization_uuid)
+        org.status = OrganizationStatus.deleted
         self.db.commit()
         self.db.refresh(org)
         return org

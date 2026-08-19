@@ -8,8 +8,10 @@ import { register } from '../api/auth.api'
 import { getAccessToken } from '../auth/auth.store'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
 import { AuthCard } from '../components/public/AuthCard'
 import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { COUNTRIES } from '../data/countries'
 import { useI18n } from '../i18n'
 import { useAuth } from '../hooks/useAuth'
 
@@ -19,13 +21,14 @@ const schema = z.object({
   first_name: z.string().max(100).optional().or(z.literal('')),
   last_name: z.string().max(100).optional().or(z.literal('')),
   display_name: z.string().max(150).optional().or(z.literal('')),
+  country: z.string().length(2, 'Please select your country'),
 })
 
 type FormValues = z.infer<typeof schema>
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const auth = useAuth()
 
   useEffect(() => {
@@ -35,14 +38,17 @@ export function RegisterPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', plain_password: '', first_name: '', last_name: '', display_name: '' },
+    defaultValues: { email: '', plain_password: '', first_name: '', last_name: '', display_name: '', country: '' },
   })
 
   const mutation = useMutation({
     mutationFn: register,
     onSuccess: () => {
       void auth.loadCurrentUser()
-      navigate('/login', { replace: true })
+      // `registered=1` tells LoginPage to show the "check your email to
+      // confirm your account" banner — registration never auto-verifies,
+      // so without this the user has no idea a confirmation email exists.
+      navigate('/login?registered=1', { replace: true })
     },
   })
 
@@ -72,6 +78,10 @@ export function RegisterPage() {
                   first_name: values.first_name || null,
                   last_name: values.last_name || null,
                   display_name: values.display_name || null,
+                  country: values.country,
+                  // The language the form was filled in — every future
+                  // transactional email goes out in this language.
+                  preferred_language: language,
                 }),
               )}
             >
@@ -105,6 +115,21 @@ export function RegisterPage() {
                   <label className="mb-1 block text-xs font-medium text-ase-muted">Last name</label>
                   <Input autoComplete="family-name" {...form.register('last_name')} />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.register.country')}</label>
+                <Select autoComplete="country" {...form.register('country')}>
+                  <option value="">{t('auth.register.countryPlaceholder')}</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+                {form.formState.errors.country && (
+                  <p className="mt-1 text-sm text-ase-error">{t('auth.register.countryRequired')}</p>
+                )}
               </div>
 
               {mutation.isError && (

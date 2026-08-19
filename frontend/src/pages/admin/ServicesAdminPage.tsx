@@ -15,6 +15,7 @@ import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { Textarea } from '../../components/ui/Textarea'
 import { cn } from '../../components/ui/cn'
 import { PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PricingEngineSection, type DimensionSelection } from '../../components/admin/premium/PricingEngineSection'
 import { useI18n } from '../../i18n'
 
 const CATEGORIES: ServiceCategory[] = [
@@ -40,12 +41,15 @@ type FormState = {
   category: ServiceCategory
   service_type: ServiceKind
   price_type: ServicePriceType
+  price: string
   is_featured: boolean
   is_active: boolean
   display_order: string
   icon: string
   hero_title: string
   hero_subtitle: string
+  dimension_selections: DimensionSelection[]
+  estimated_hours: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -57,12 +61,15 @@ const EMPTY_FORM: FormState = {
   category: 'platform_engineering',
   service_type: 'service',
   price_type: 'custom',
+  price: '',
   is_featured: false,
   is_active: true,
   display_order: '',
   icon: '',
   hero_title: '',
   hero_subtitle: '',
+  dimension_selections: [],
+  estimated_hours: '',
 }
 
 function slugify(input: string) {
@@ -83,6 +90,7 @@ function formToPayload(values: FormState, extra: { features: string[] }) {
     category: values.category,
     service_type: values.service_type,
     price_type: values.price_type,
+    price: values.price.trim() ? Number(values.price) : null,
     is_featured: values.is_featured,
     is_active: values.is_active,
     display_order: values.display_order ? Number(values.display_order) : 0,
@@ -90,6 +98,8 @@ function formToPayload(values: FormState, extra: { features: string[] }) {
     hero_title: values.hero_title.trim() || null,
     hero_subtitle: values.hero_subtitle.trim() || null,
     features: extra.features.length > 0 ? extra.features.map((text, i) => ({ text, display_order: i })) : undefined,
+    dimension_selections: values.dimension_selections,
+    estimated_hours: values.estimated_hours.trim() ? Number(values.estimated_hours) : null,
   }
 }
 
@@ -171,12 +181,15 @@ export function ServicesAdminPage() {
       category: service.category,
       service_type: service.service_type,
       price_type: service.price_type,
+      price: service.price != null ? String(service.price) : '',
       is_featured: service.is_featured,
       is_active: service.is_active,
       display_order: String(service.display_order ?? 0),
       icon: service.icon ?? '',
       hero_title: service.hero_title ?? '',
       hero_subtitle: service.hero_subtitle ?? '',
+      dimension_selections: service.dimension_selections ?? [],
+      estimated_hours: service.estimated_hours != null ? String(service.estimated_hours) : '',
     })
   }
 
@@ -422,6 +435,25 @@ export function ServicesAdminPage() {
               </div>
             </div>
             <div>
+              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={createForm.price}
+                onChange={(e) => setCreateForm((f) => ({ ...f, price: e.target.value }))}
+                placeholder="0.00"
+              />
+            </div>
+            <PricingEngineSection
+              pillarCode="service"
+              dimensionSelections={createForm.dimension_selections}
+              onDimensionSelectionsChange={(next) => setCreateForm((f) => ({ ...f, dimension_selections: next }))}
+              quantity={createForm.estimated_hours.trim() ? Number(createForm.estimated_hours) : null}
+              onQuantityChange={(n) => setCreateForm((f) => ({ ...f, estimated_hours: n != null ? String(n) : '' }))}
+              onUseRecommended={(price) => setCreateForm((f) => ({ ...f, price: String(price) }))}
+            />
+            <div>
               <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.icon')}</label>
               <Input
                 value={createForm.icon}
@@ -570,6 +602,25 @@ export function ServicesAdminPage() {
               <Input value={editForm.display_order} onChange={(e) => setEditForm((f) => ({ ...f, display_order: e.target.value }))} />
             </div>
           </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
+            <Input
+              type="number"
+              min={0}
+              step="0.01"
+              value={editForm.price}
+              onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+              placeholder="0.00"
+            />
+          </div>
+          <PricingEngineSection
+            pillarCode="service"
+            dimensionSelections={editForm.dimension_selections}
+            onDimensionSelectionsChange={(next) => setEditForm((f) => ({ ...f, dimension_selections: next }))}
+            quantity={editForm.estimated_hours.trim() ? Number(editForm.estimated_hours) : null}
+            onQuantityChange={(n) => setEditForm((f) => ({ ...f, estimated_hours: n != null ? String(n) : '' }))}
+            onUseRecommended={(price) => setEditForm((f) => ({ ...f, price: String(price) }))}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="mb-1 text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.isActive')}</div>

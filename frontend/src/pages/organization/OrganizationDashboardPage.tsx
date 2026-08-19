@@ -1,17 +1,21 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Boxes, Gift, Users } from 'lucide-react'
 import { listOrgCatalogItems } from '../../api/orgCatalog.api'
-import { listOrganizations } from '../../api/organizations.api'
+import { listOrganizations, updateOrganization } from '../../api/organizations.api'
 import { Card } from '../../components/ui/Card'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Button } from '../../components/ui/Button'
+import { Switch } from '../../components/ui/Switch'
 import { OrganizationAnalyticsCharts } from '../../components/organization/OrganizationAnalyticsCharts'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { useI18n } from '../../i18n'
+import { Can } from '../../rbac/Can'
 
 export function OrganizationDashboardPage() {
   const { t } = useI18n()
+  const queryClient = useQueryClient()
 
   const orgsQuery = useQuery({ queryKey: ['organizations'], queryFn: listOrganizations })
   const catalogQuery = useQuery({
@@ -21,6 +25,19 @@ export function OrganizationDashboardPage() {
 
   const myOrg = orgsQuery.data?.items?.[0]
   const associatedCount = catalogQuery.data?.total ?? 0
+
+  const [newsletterSaved, setNewsletterSaved] = useState(false)
+  const [newsletterError, setNewsletterError] = useState<string | null>(null)
+  const newsletterMut = useMutation({
+    mutationFn: (next: boolean) => updateOrganization(myOrg!.uuid, { newsletter_subscribed: next }),
+    onSuccess: () => {
+      setNewsletterError(null)
+      setNewsletterSaved(true)
+      setTimeout(() => setNewsletterSaved(false), 3000)
+      void queryClient.invalidateQueries({ queryKey: ['organizations'] })
+    },
+    onError: () => setNewsletterError(t('organizationWorkspace.dashboard.newsletter.error') as string),
+  })
 
   return (
     <div className="space-y-8">
@@ -93,6 +110,27 @@ export function OrganizationDashboardPage() {
           </Card>
         </Link>
       </div>
+
+      <Can permission="organizations.update">
+        {myOrg ? (
+          <Card className="p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-ase-text">{t('organizationWorkspace.dashboard.newsletter.title')}</h2>
+            <p className="mt-1.5 text-sm text-ase-text2">{t('organizationWorkspace.dashboard.newsletter.subtitle')}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Switch
+                checked={Boolean(myOrg.newsletter_subscribed)}
+                onCheckedChange={(next) => newsletterMut.mutate(next)}
+                disabled={newsletterMut.isPending}
+                label={t('organizationWorkspace.dashboard.newsletter.toggleLabel') as string}
+              />
+              {newsletterSaved ? (
+                <span className="text-sm text-emerald-300">{t('organizationWorkspace.dashboard.newsletter.saved')}</span>
+              ) : null}
+            </div>
+            {newsletterError ? <p className="mt-2 text-sm text-ase-error">{newsletterError}</p> : null}
+          </Card>
+        ) : null}
+      </Can>
 
       <OrganizationAnalyticsCharts />
     </div>

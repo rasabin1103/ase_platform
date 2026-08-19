@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { ArrowLeft, Check, ExternalLink, Heart, ListChecks, Package, ShieldCheck, ShoppingCart } from 'lucide-react'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import type { AccessTargetType } from '../../api/access_requests.api'
+import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
 import {
   getConsumerCatalogItem,
-  purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
 import { Button } from '../../components/ui/Button'
@@ -18,6 +18,8 @@ import { cn } from '../../components/ui/cn'
 import { catalogImageAspectClass } from '../../components/catalog/catalogCardShape'
 import { ImageCarousel } from '../../components/catalog/ImageCarousel'
 import { RatingWidget } from '../../components/catalog/RatingWidget'
+import { ReviewWidget } from '../../components/catalog/ReviewWidget'
+import { ShareButton } from '../../components/catalog/ShareButton'
 import { useI18n } from '../../i18n'
 import type { CatalogItemType } from '../../types/catalog.types'
 
@@ -93,7 +95,7 @@ export function CatalogDetailPage() {
   })
 
   const buyMutation = useMutation({
-    mutationFn: () => purchaseCatalogItem(slug!),
+    mutationFn: () => buyOrCheckoutCatalogItem(slug!, query.data?.price),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['consumer-catalog', slug] }),
   })
 
@@ -205,6 +207,7 @@ export function CatalogDetailPage() {
                   </Button>
                 </a>
               ) : null}
+              <ShareButton title={item.title} text={item.shortDescription} url={typeof window !== 'undefined' ? window.location.href : ''} />
             </div>
 
             {!item.isPurchased ? (
@@ -225,6 +228,10 @@ export function CatalogDetailPage() {
 
           <Card className="p-5">
             <RatingWidget item={item} />
+          </Card>
+
+          <Card className="p-5">
+            <ReviewWidget item={item} />
           </Card>
         </div>
       </div>

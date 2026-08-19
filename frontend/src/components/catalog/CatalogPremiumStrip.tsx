@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
 import {
   listConsumerCatalog,
-  purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
 import { CatalogPremiumCard } from './CatalogPremiumCard'
@@ -42,7 +42,10 @@ export function CatalogPremiumStrip({ type, titleKey, subtitleKey, catalogPath, 
   })
 
   const buyMutation = useMutation({
-    mutationFn: purchaseCatalogItem,
+    mutationFn: (slug: string) => {
+      const target = query.data?.items.find((i) => i.slug === slug)
+      return buyOrCheckoutCatalogItem(slug, target?.price)
+    },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {
       setPendingSlug(null)

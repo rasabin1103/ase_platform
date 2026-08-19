@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from uuid import uuid4
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.enums import AccessRequestType, MembershipStatus, OrganizationType
+from app.models.enums import AccessRequestType, MembershipStatus, OrganizationStatus, OrganizationType
 from app.models.member_role import MemberRole
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.role import Role
+from app.models.user import User
 
 CREATOR_APPROVAL_REQUIRED_MSG = (
     "You need creator approval before creating courses or products."
@@ -48,6 +52,54 @@ def get_personal_workspace_member(db: Session, *, user_id: int) -> OrganizationM
         .limit(1)
     )
     return db.execute(stmt).scalar_one_or_none()
+
+
+def ensure_personal_workspace(db: Session, *, user_id: int) -> OrganizationMember:
+    """Every individual (non-org) user needs exactly one personal
+    Organization + membership + `independent_user` role to use anything
+    org-scoped — billing (Stripe checkout resolves the customer's workspace
+    via this), catalog entitlements, permissions, etc. Registration didn't
+    provision one historically (AuthService.register only ever created the
+    User row), so this is called both there for new signups and lazily here
+    for any pre-existing account that's missing it — idempotent either way,
+    safe to call as often as needed."""
+    existing = get_personal_workspace_member(db, user_id=user_id)
+    if existing is not None:
+        return existing
+
+    user = db.get(User, user_id)
+    if user is None:
+        raise ValueError(f"No user with id={user_id}")
+
+    role = db.execute(select(Role).where(Role.code == "independent_user")).scalar_one_or_none()
+    if role is None:
+        raise ValueError("Role 'independent_user' is not seeded")
+
+    org = Organization(
+        name=user.display_name or user.email,
+        # Short, collision-proof, and never derived from user-editable data
+        # (email/name changes never orphan the slug).
+        slug=f"user-{uuid4().hex[:16]}",
+        type=OrganizationType.individual,
+        owner_user_id=user.id,
+        status=OrganizationStatus.active,
+    )
+    db.add(org)
+    db.flush()
+
+    member = OrganizationMember(
+        organization_id=org.id,
+        user_id=user.id,
+        membership_status=MembershipStatus.active,
+        joined_at=datetime.now(timezone.utc),
+    )
+    db.add(member)
+    db.flush()
+
+    db.add(MemberRole(organization_member_id=member.id, role_id=role.id, assigned_by_user_id=user.id))
+    db.flush()
+
+    return member
 
 
 def assign_content_creator_role(

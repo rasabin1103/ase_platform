@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { getSystemStatus } from '../../api/adminDashboard.api'
 import { getErrorLogsSummary } from '../../api/errorLogs.api'
 import { getAccountLifecycleSummary, runAccountLifecycleSweep } from '../../api/accountLifecycle.api'
@@ -9,7 +8,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
-import { PremiumHero, PremiumOrb } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumOrb } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 
 function fmtUptime(seconds: number) {
@@ -53,7 +52,7 @@ function StatusCard({
   )
 }
 
-export function AdminSystemStatusPage() {
+export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => void } = {}) {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const query = useQuery({
@@ -83,14 +82,7 @@ export function AdminSystemStatusPage() {
   })
 
   return (
-    <div className="space-y-8 pb-16">
-      <PremiumHero
-        accent="emerald"
-        badge={t('adminSystemStatus.heroBadge')}
-        title={t('adminSystemStatus.title')}
-        subtitle={t('adminSystemStatus.subtitle')}
-      />
-
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-3">
         <div className="text-xs text-ase-muted">
           {data ? `${t('adminSystemStatus.lastChecked')}: ${fmtDate(data.checked_at)}` : null}
@@ -192,11 +184,11 @@ export function AdminSystemStatusPage() {
           <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminSystemStatus.errors.title')}</div>
-              <Link to="/admin/error-logs">
-                <Button variant="secondary" size="sm">
+              {onViewErrors && (
+                <Button variant="secondary" size="sm" onClick={onViewErrors}>
                   {t('adminSystemStatus.errors.viewAll')}
                 </Button>
-              </Link>
+              )}
             </div>
             {errors ? (
               <div className="mt-4 grid grid-cols-2 gap-3">

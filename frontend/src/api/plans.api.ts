@@ -25,3 +25,12 @@ export async function deletePlan(plan_id: number) {
   const { data } = await apiClient.delete<Plan>(`/plans/${plan_id}`)
   return data
 }
+
+/** Whether DEEPL_API_KEY is configured on the backend — when it isn't,
+ * saving a plan silently mirrors the Spanish text into the English fields
+ * instead of translating, which the admin UI should surface rather than
+ * let look like a bug. */
+export async function getTranslationStatus() {
+  const { data } = await apiClient.get<{ enabled: boolean }>('/plans/meta/translation-status')
+  return data
+}

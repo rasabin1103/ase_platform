@@ -30,8 +30,9 @@ def test_register_creates_user_and_email_verification_token():
         assert body["email"] == email
 
         user = db.execute(select(User).where(User.email == email)).scalar_one()
-        # Self-registration must never auto-verify — only an admin-created
-        # account (UsersService.create_user) is allowed to skip this step.
+        # Self-registration must never auto-verify — and neither does an
+        # admin-created account anymore (UsersService.create_user sends the
+        # same verification email instead of trusting the admin's word for it).
         assert user.email_verified_at is None
         assert user.status == UserStatus.active
 
@@ -158,5 +159,34 @@ def test_password_reset_confirm_changes_password():
             json={"token": raw_token, "new_password": "AnotherPassword789!"},
         )
         assert res2.status_code == 400
+    finally:
+        db.close()
+
+
+def test_admin_created_user_is_not_auto_verified():
+    """UsersService.create_user (the admin "New user" form) must not skip
+    email verification — an admin typing in an address doesn't confirm the
+    mailbox exists, so this account gets the same unverified start and the
+    same confirmation email as a self-registered one."""
+    from app.modules.users.schemas import UserCreate
+    from app.modules.users.service import UsersService
+
+    db = SessionLocal()
+    try:
+        email = f"admincreated_{secrets.token_hex(6)}@example.com"
+        user = UsersService(db).create_user(
+            UserCreate(email=email, plain_password="Password123!", first_name="Admin", last_name="Created"),
+        )
+        assert user.email_verified_at is None
+        assert user.status == UserStatus.active
+
+        token = db.execute(
+            select(UserVerificationToken).where(
+                UserVerificationToken.user_id == user.id,
+                UserVerificationToken.purpose == UserTokenPurpose.email_verification,
+            )
+        ).scalar_one()
+        assert token.used_at is None
+        assert token.expires_at > datetime.now(timezone.utc)
     finally:
         db.close()

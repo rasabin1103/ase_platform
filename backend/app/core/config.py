@@ -88,6 +88,43 @@ class Settings(BaseSettings):
     INACTIVITY_SUSPEND_DAYS: int = 180
     SUSPENDED_DELETE_DAYS: int = 180
 
+    # Daily sweep that thanks users for every 6-month tenure milestone (see
+    # app/core/anniversary.py). Independent of ACCOUNT_LIFECYCLE_SWEEP_ENABLED.
+    ANNIVERSARY_SWEEP_ENABLED: bool = True
+
+    # Daily sweep that promotes subscribers to their next loyalty tier
+    # (Silver/Gold/Platinum/Infinite — see app/core/loyalty.py). Independent
+    # of the other sweeps; issuing Stripe discount codes on upgrade still
+    # requires STRIPE_SECRET_KEY to be configured (skipped, not blocked, if
+    # it's missing).
+    LOYALTY_SWEEP_ENABLED: bool = True
+
+    # Weekly Friday-morning digest (see app/core/newsletter.py) — new
+    # signups, new catalog/blog content, thank-you note. Only reaches
+    # opted-in users/organizations regardless of this flag; this just turns
+    # the whole feature off without redeploying code.
+    NEWSLETTER_SWEEP_ENABLED: bool = True
+
+    # Stripe billing (subscriptions on Plans only, for now). If
+    # STRIPE_SECRET_KEY is left empty, the billing module's endpoints return
+    # a clear "not configured" error instead of failing with an unclear
+    # Stripe SDK exception — so local dev/tests keep working without an
+    # account configured. STRIPE_WEBHOOK_SECRET verifies that incoming
+    # webhook requests genuinely came from Stripe (signature check) — get it
+    # from the webhook endpoint's settings in the Stripe Dashboard.
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str | None = None
+    STRIPE_PUBLISHABLE_KEY: str | None = None
+
+    # Auto-translates plan marketing copy (name/description/CTA) from
+    # Spanish to English on create/update via the DeepL API — see
+    # app/core/translation.py. Free "Developer" API keys (from
+    # deepl.com/pro-api, no credit card needed) end in ":fx" and are
+    # auto-routed to the free endpoint. If left empty, English fields
+    # simply mirror the Spanish text instead of failing, so plan creation
+    # always works with or without this key.
+    DEEPL_API_KEY: str | None = None
+
     @property
     def sqlalchemy_database_url(self) -> str:
         if self.DATABASE_URL:

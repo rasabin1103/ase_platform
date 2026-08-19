@@ -68,6 +68,7 @@ export function UsersPage() {
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
+  const [verificationSentEmail, setVerificationSentEmail] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [statusFilter, setStatusFilter] = useState('')
@@ -157,7 +158,7 @@ export function UsersPage() {
 
   const createMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       createForm.reset({
         email: '',
         plain_password: '',
@@ -167,6 +168,7 @@ export function UsersPage() {
         status: 'active',
       })
       setCreateOpen(false)
+      setVerificationSentEmail(variables.email)
       await queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })
@@ -578,6 +580,19 @@ export function UsersPage() {
       </Modal>
 
       <MemberCatalogStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} />
+
+      {verificationSentEmail ? (
+        <div className="fixed bottom-6 right-6 z-[60] max-w-sm rounded-2xl border border-emerald-300/25 bg-ase-bg2 p-4 text-sm text-emerald-100 shadow-soft">
+          {String(t('usersPage.create.verificationSent')).replace('{{email}}', verificationSentEmail)}
+          <button
+            type="button"
+            className="ml-3 text-ase-muted hover:text-ase-text"
+            onClick={() => setVerificationSentEmail(null)}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -788,6 +803,14 @@ function InsightBar({ label, value, total }: { label: string; value: number; tot
   )
 }
 
+function friendlyCreateUserError(t: (k: string) => string, error: unknown): string {
+  const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+  if (detail === 'Email already exists') {
+    return t('usersPage.create.duplicateEmail')
+  }
+  return t('usersPage.create.error')
+}
+
 function CreateUserForm({
   t,
   form,
@@ -801,6 +824,7 @@ function CreateUserForm({
     mutate: (payload: Parameters<typeof createUser>[0]) => void
     isError: boolean
     isPending: boolean
+    error: unknown
   }
 }) {
   return (
@@ -849,7 +873,11 @@ function CreateUserForm({
           ))}
         </Select>
       </div>
-      {createMutation.isError && <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">{t('usersPage.create.error')}</div>}
+      {createMutation.isError && (
+        <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+          {friendlyCreateUserError(t, createMutation.error)}
+        </div>
+      )}
       <Button type="submit" className="w-full" disabled={createMutation.isPending} leftIcon={<span className="text-xs">+</span>}>
         {createMutation.isPending ? t('usersPage.create.creating') : t('usersPage.create.button')}
       </Button>

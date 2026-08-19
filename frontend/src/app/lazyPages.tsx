@@ -37,6 +37,9 @@ export const ResetPasswordPage = lazy(() =>
   import('../pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
 )
 export const VerifyEmailPage = lazy(() => import('../pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })))
+export const NewsletterUnsubscribePage = lazy(() =>
+  import('../pages/NewsletterUnsubscribePage').then((m) => ({ default: m.NewsletterUnsubscribePage })),
+)
 
 // --- Independent / consumer ---
 export const CatalogListPage = lazy(() =>
@@ -75,8 +78,8 @@ export const AdminBlogPage = lazy(() => import('../pages/admin/AdminBlogPage').t
 export const AdminBlogEditorPage = lazy(() =>
   import('../pages/admin/AdminBlogEditorPage').then((m) => ({ default: m.AdminBlogEditorPage })),
 )
-export const AdminCatalogCategoriesPage = lazy(() =>
-  import('../pages/admin/AdminCatalogCategoriesPage').then((m) => ({ default: m.AdminCatalogCategoriesPage })),
+export const AdminCatalogSettingsPage = lazy(() =>
+  import('../pages/admin/AdminCatalogSettingsPage').then((m) => ({ default: m.AdminCatalogSettingsPage })),
 )
 export const AdminDashboardPage = lazy(() =>
   import('../pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),
@@ -93,14 +96,8 @@ export const AdminBookRedemptionsPage = lazy(() =>
 export const AdminAnnouncementsPage = lazy(() =>
   import('../pages/admin/AdminAnnouncementsPage').then((m) => ({ default: m.AdminAnnouncementsPage })),
 )
-export const AdminSystemStatusPage = lazy(() =>
-  import('../pages/admin/AdminSystemStatusPage').then((m) => ({ default: m.AdminSystemStatusPage })),
-)
-export const AdminErrorLogsPage = lazy(() =>
-  import('../pages/admin/AdminErrorLogsPage').then((m) => ({ default: m.AdminErrorLogsPage })),
-)
-export const AdminDataResetPage = lazy(() =>
-  import('../pages/admin/AdminDataResetPage').then((m) => ({ default: m.AdminDataResetPage })),
+export const AdminSystemPage = lazy(() =>
+  import('../pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })),
 )
 export const ServicesAdminPage = lazy(() =>
   import('../pages/admin/ServicesAdminPage').then((m) => ({ default: m.ServicesAdminPage })),

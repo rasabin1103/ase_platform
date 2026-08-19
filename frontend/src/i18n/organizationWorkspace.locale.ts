@@ -13,6 +13,13 @@ export const organizationWorkspaceEn = {
       body: 'Pick one of your organization\'s members and gift them a product, paid for by your organization.',
       cta: 'Send product',
     },
+    newsletter: {
+      title: 'Weekly newsletter for your organization',
+      subtitle: 'When enabled, every active member of your organization receives the Friday digest — regardless of their own individual subscription.',
+      toggleLabel: 'Subscribe the whole organization',
+      saved: 'Preference saved.',
+      error: 'Could not update the preference. Try again.',
+    },
   },
   catalog: {
     title: 'Organization catalog',
@@ -103,6 +110,13 @@ export const organizationWorkspaceEs = {
       title: 'Enviar un producto',
       body: 'Elige a uno de los miembros de tu organización y regálale un producto, pagado por tu organización.',
       cta: 'Enviar producto',
+    },
+    newsletter: {
+      title: 'Newsletter semanal de la organización',
+      subtitle: 'Si la activas, todos los miembros activos de tu organización recibirán el resumen de los viernes, sin importar su suscripción individual.',
+      toggleLabel: 'Suscribir a toda la organización',
+      saved: 'Preferencia guardada.',
+      error: 'No se pudo actualizar la preferencia. Inténtalo de nuevo.',
     },
   },
   catalog: {

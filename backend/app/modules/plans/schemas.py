@@ -62,6 +62,15 @@ class PlanCreate(BaseModel):
     is_recommended: bool = False
     cta_label: str | None = Field(default=None, max_length=200)
     catalog_item_ids: list[int] | None = None
+    stripe_price_id: str | None = Field(default=None, max_length=255)
+    # English overrides — optional. Left blank, the backend auto-translates
+    # name/short_description/description/cta_label from Spanish (see
+    # app.core.translation); set any of these to skip auto-translation for
+    # that specific field and use the admin's own English text instead.
+    name_en: str | None = Field(default=None, max_length=200)
+    short_description_en: str | None = Field(default=None, max_length=500)
+    description_en: str | None = None
+    cta_label_en: str | None = Field(default=None, max_length=200)
 
 
 class PlanUpdate(BaseModel):
@@ -77,6 +86,11 @@ class PlanUpdate(BaseModel):
     is_recommended: bool | None = None
     cta_label: str | None = Field(default=None, max_length=200)
     catalog_item_ids: list[int] | None = None
+    stripe_price_id: str | None = Field(default=None, max_length=255)
+    name_en: str | None = Field(default=None, max_length=200)
+    short_description_en: str | None = Field(default=None, max_length=500)
+    description_en: str | None = None
+    cta_label_en: str | None = Field(default=None, max_length=200)
 
 
 class PlanRead(BaseModel):
@@ -94,6 +108,16 @@ class PlanRead(BaseModel):
     display_order: int = 0
     is_recommended: bool = False
     cta_label: str | None = None
+    stripe_price_id: str | None = None
+    name_en: str | None = None
+    short_description_en: str | None = None
+    description_en: str | None = None
+    cta_label_en: str | None = None
+    # Computed, not stored: 12 * monthly price, discounted on a ladder that
+    # runs from 3% (cheapest paid plan) to 7% (most expensive paid plan) —
+    # see PlansService._paid_discount_ladder. None for the free plan and for
+    # custom-priced plans (e.g. Enterprise) with no fixed price to discount.
+    annual_price: Decimal | None = None
     # Deprecated free-text bullets — only ever populated for plans created
     # before the catalog-item picker existed. New/edited plans always use
     # included_catalog_items instead.
@@ -108,3 +132,7 @@ class PlanListResponse(BaseModel):
     limit: int
     offset: int
     total: int
+
+
+class TranslationStatus(BaseModel):
+    enabled: bool

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { CatalogGalleryManager } from '../../components/admin/premium/CatalogGalleryManager'
 import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
+import { PricingEngineSection } from '../../components/admin/premium/PricingEngineSection'
 import { useForm, useWatch } from 'react-hook-form'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
 import { listCatalogCategories } from '../../api/catalogCategories.api'
@@ -53,6 +54,8 @@ const defaults = (type: CatalogItemType): FormValues => ({
   tags: [],
   repo_url: null,
   repo_redeem_code: null,
+  dimension_selections: [],
+  page_count: null,
 })
 
 type Props = {
@@ -138,6 +141,8 @@ export function AdminCatalogItemModal({
           tags: initial.tags ?? [],
           repo_url: initial.repo_url,
           repo_redeem_code: initial.repo_redeem_code,
+          dimension_selections: initial.dimension_selections ?? [],
+          page_count: initial.page_count ?? null,
         })
         setTagsInput((initial.tags ?? []).join(', '))
         setCustomFields(initial.custom_fields ?? {})
@@ -160,6 +165,8 @@ export function AdminCatalogItemModal({
   const titleWatch = useWatch({ control: form.control, name: 'title' })
   const typeWatch = useWatch({ control: form.control, name: 'type' })
   const categoryWatch = useWatch({ control: form.control, name: 'category' })
+  const dimensionSelectionsWatch = useWatch({ control: form.control, name: 'dimension_selections' })
+  const pageCountWatch = useWatch({ control: form.control, name: 'page_count' })
   const categoryOptions = categoriesQuery.data ?? []
   const selectedCategory = categoryOptions.find((c) => c.name === categoryWatch)
   // Item might carry a category value that isn't (or no longer is) a
@@ -167,15 +174,28 @@ export function AdminCatalogItemModal({
   // changes the stored value.
   const categorySelectValues = categoryWatch && !selectedCategory ? [categoryWatch, ...categoryOptions.map((c) => c.name)] : categoryOptions.map((c) => c.name)
 
+  const formId = 'admin-catalog-item-form'
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={isEdit ? t('adminCatalog.formEdit') : t('adminCatalog.formCreate')}
       className="max-w-2xl"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {t('adminCatalog.cancel')}
+          </Button>
+          <Button type="submit" form={formId} disabled={isSubmitting}>
+            {t('adminCatalog.save')}
+          </Button>
+        </div>
+      }
     >
       <form
-        className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
+        id={formId}
+        className="space-y-4"
         onSubmit={form.handleSubmit(async (values) => {
           setServerError(null)
           const tags = Array.from(
@@ -284,7 +304,7 @@ export function AdminCatalogItemModal({
                 {t('adminCatalog.fields.category')}
                 <RequiredMark />
               </span>
-              <Link to="/admin/catalog-categories" className="text-cyan-300 hover:underline">
+              <Link to="/admin/catalog-settings" className="text-cyan-300 hover:underline">
                 {t('adminCatalog.manageCategories')}
               </Link>
             </span>
@@ -487,14 +507,15 @@ export function AdminCatalogItemModal({
               </label>
             </>
           ) : null}
-        </div>
-        <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {t('adminCatalog.cancel')}
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {t('adminCatalog.save')}
-          </Button>
+
+          <PricingEngineSection
+            pillarCode={typeWatch}
+            dimensionSelections={dimensionSelectionsWatch ?? []}
+            onDimensionSelectionsChange={(next) => form.setValue('dimension_selections', next)}
+            quantity={typeWatch === 'book' ? (pageCountWatch ?? null) : null}
+            onQuantityChange={(n) => form.setValue('page_count', n)}
+            onUseRecommended={(price) => form.setValue('price', price)}
+          />
         </div>
       </form>
     </Modal>

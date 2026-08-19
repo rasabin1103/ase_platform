@@ -20,7 +20,6 @@ import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Switch } from '../../components/ui/Switch'
 import { Textarea } from '../../components/ui/Textarea'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { parseApiError } from '../../utils/apiError'
 
@@ -46,7 +45,7 @@ function fieldKeySlug(text: string) {
 
 const emptyField: CategoryFieldDef = { key: '', label: '', type: 'text', required: false, options: [] }
 
-export function AdminCatalogCategoriesPage() {
+export function AdminCatalogCategoriesPanel() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const query = useQuery({ queryKey: ['admin-catalog-categories'], queryFn: () => listCatalogCategories() })
@@ -66,18 +65,13 @@ export function AdminCatalogCategoriesPage() {
   const categories = query.data ?? []
 
   return (
-    <div className="space-y-8 pb-16">
-      <PremiumHero
-        accent="cyan"
-        badge={t('adminCatalogCategories.premium.badge')}
-        title={t('adminCatalogCategories.title')}
-        subtitle={t('adminCatalogCategories.subtitle')}
-        actions={
-          <Button size="sm" onClick={() => setEditing('new')} leftIcon={<Plus className="h-4 w-4" />}>
-            {t('adminCatalogCategories.create')}
-          </Button>
-        }
-      />
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-sm text-ase-text2">{t('adminCatalogCategories.subtitle')}</p>
+        <Button size="sm" onClick={() => setEditing('new')} leftIcon={<Plus className="h-4 w-4" />}>
+          {t('adminCatalogCategories.create')}
+        </Button>
+      </div>
 
       {query.isLoading ? (
         <Skeleton className="h-56 rounded-[2rem]" />
@@ -207,7 +201,7 @@ function CategoryEditorModal({
         </div>
       }
     >
-      <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+      <div className="space-y-4">
         <label className="block">
           <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalogCategories.fields.name')}</span>
           <Input

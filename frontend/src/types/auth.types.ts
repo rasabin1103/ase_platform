@@ -39,6 +39,7 @@ export type MeResponse = {
   display_name: string | null
   avatar_url?: string | null
   has_avatar?: boolean
+  country?: string | null
   phone_e164?: string | null
   phone_verified?: boolean
   two_factor_enabled?: boolean
@@ -62,6 +63,15 @@ export type MeResponse = {
   consumer_mode?: boolean
   active_workspace_uuid?: string | null
   links?: UserLink[]
+  // Current plan on the user's default workspace — null for free/no-plan accounts.
+  plan_code?: string | null
+  plan_name?: string | null
+  plan_name_en?: string | null
+  subscription_status?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | string | null
+  // Loyalty reward tier from subscriber tenure — null means no tier yet.
+  loyalty_tier?: 'silver' | 'gold' | 'platinum' | 'infinite' | string | null
+  // Opt-in weekly digest — off by default (GDPR-safe), user activates it.
+  newsletter_subscribed?: boolean
 }
 
 export type RegisterRequest = {
@@ -70,6 +80,12 @@ export type RegisterRequest = {
   first_name?: string | null
   last_name?: string | null
   display_name?: string | null
+  /** ISO 3166-1 alpha-2 code, e.g. "ES" — required by the backend. */
+  country: string
+  /** 'es' | 'en' — the UI language active on the registration form, so
+   * transactional emails (verification, password reset, etc.) go out in
+   * the language the person actually reads. */
+  preferred_language?: string
 }
 
 export type RegisterResponse = {

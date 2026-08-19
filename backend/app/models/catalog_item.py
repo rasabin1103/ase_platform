@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from typing import Any
 
-from sqlalchemy import Enum, LargeBinary, Numeric, String, Text
+from sqlalchemy import Enum, Integer, LargeBinary, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -65,10 +65,29 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     repo_redeem_code: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
 
+    # --- Pricing engine (see app/core/pricing_engine.py) --------------------
+    # Every "subelemento" (subtipo, complejidad, funcionalidad, páginas...)
+    # is just a PricingDimensionType for this item's pillar — there is no
+    # separate subcategory concept. Selections (a pillar can have several
+    # dimension types) live in CatalogItemDimensionSelection, one row per
+    # type — see that model.
+    # Book pillar only — drives auto-matching against PricingDimensionLevel
+    # page-count ranges. Unused (null) for the other three catalog pillars.
+    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Snapshot of the last calculated recommendation — purely informational,
+    # never enforced; `price` above is the actual price and is always set
+    # directly by the admin, matching the "advisory suggestion" design.
+    recommended_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",
         back_populates="catalog_item",
         order_by="CatalogItemImage.display_order",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    dimension_selections: Mapped[list["CatalogItemDimensionSelection"]] = relationship(
+        "CatalogItemDimensionSelection",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

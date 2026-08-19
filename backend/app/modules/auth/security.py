@@ -13,7 +13,7 @@ from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-TokenType = Literal["access", "refresh", "two_factor_pending"]
+TokenType = Literal["access", "refresh", "two_factor_pending", "newsletter_unsubscribe"]
 
 
 def hash_password(plain_password: str) -> str:
@@ -72,6 +72,19 @@ def create_refresh_token(*, user_uuid: UUID) -> str:
         token_type="refresh",
         user_uuid=user_uuid,
         expires_delta=timedelta(days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS)),
+    )
+
+
+def create_newsletter_unsubscribe_token(*, user_uuid: UUID) -> str:
+    """A one-click unsubscribe link must work indefinitely (someone opening
+    a 6-month-old email should still be able to opt out), so this is
+    deliberately long-lived rather than a short expiring window like the
+    other action tokens — 10 years, i.e. effectively "doesn't expire" in
+    practice without adding no-expiry special-casing to `create_token`."""
+    return create_token(
+        token_type="newsletter_unsubscribe",
+        user_uuid=user_uuid,
+        expires_delta=timedelta(days=3650),
     )
 
 

@@ -31,7 +31,7 @@ class OrganizationsRepository:
     def list(self, *, limit: int, offset: int, include_suspended: bool = False) -> tuple[list[Organization], int]:
         base = select(Organization)
         if not include_suspended:
-            base = base.where(Organization.status != OrganizationStatus.suspended)
+            base = base.where(Organization.status.notin_([OrganizationStatus.suspended, OrganizationStatus.deleted]))
 
         total_stmt = select(func.count()).select_from(base.subquery())
         total = int(self.db.execute(total_stmt).scalar_one())

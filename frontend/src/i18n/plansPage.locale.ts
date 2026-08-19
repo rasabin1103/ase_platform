@@ -52,6 +52,11 @@ export const plansPageEn = {
       features: 'Benefits',
       featureInput: 'Add a benefit',
       catalogItems: 'What is included',
+      stripePriceId: 'Stripe Price ID',
+      nameEn: 'Name (English) — optional',
+      shortDescriptionEn: 'Short description (English) — optional',
+      descriptionEn: 'Commercial description (English) — optional',
+      ctaLabelEn: 'Action button label (English) — optional',
     },
     placeholders: {
       code: 'pro-monthly',
@@ -63,6 +68,11 @@ export const plansPageEn = {
       ctaLabel: 'Start Pro',
       featureInput: 'Unlimited projects',
       catalogSearch: 'Search catalog items…',
+      stripePriceId: 'price_1AbCdEfGh...',
+      nameEn: 'Auto-translated if left empty',
+      shortDescriptionEn: 'Auto-translated if left empty',
+      descriptionEn: 'Auto-translated if left empty',
+      ctaLabelEn: 'Auto-translated if left empty',
     },
     helpers: {
       customPrice: 'Custom',
@@ -71,6 +81,8 @@ export const plansPageEn = {
       catalogItemsHint: 'Pick real catalog items — they render as the plan’s included benefits, formatted automatically.',
       noCatalogItems: 'No catalog items match your search.',
       selectedCount: '{{count}} selected',
+      stripePriceIdHint: 'Paste the Price ID from Stripe (Product → Pricing). Leave empty if this plan is not sold via Stripe Checkout.',
+      englishFieldsHint: 'These fields are auto-translated from the Spanish text above when left empty (requires AI translation to be configured). Fill them in to override the automatic translation.',
     },
     button: 'Create plan',
     creating: 'Creating…',
@@ -121,6 +133,10 @@ export const plansPageEn = {
     save: 'Save',
     cancel: 'Cancel',
     error: 'Could not update the plan.',
+  },
+  translationWarning: {
+    title: 'Automatic translation is not configured.',
+    body: 'Saving a plan currently copies the Spanish text into the English fields as-is instead of translating it — set DEEPL_API_KEY on the backend (free DeepL Developer plan, no credit card) to enable real translation, or fill in the English fields manually.',
   },
 } as const
 
@@ -174,6 +190,11 @@ export const plansPageEs = {
       features: 'Beneficios',
       featureInput: 'Añadir beneficio',
       catalogItems: 'Qué incluye',
+      stripePriceId: 'ID de Precio de Stripe',
+      nameEn: 'Nombre (inglés) — opcional',
+      shortDescriptionEn: 'Descripción corta (inglés) — opcional',
+      descriptionEn: 'Descripción comercial (inglés) — opcional',
+      ctaLabelEn: 'Texto del botón de acción (inglés) — opcional',
     },
     placeholders: {
       code: 'pro-mensual',
@@ -185,6 +206,11 @@ export const plansPageEs = {
       ctaLabel: 'Empezar Pro',
       featureInput: 'Proyectos ilimitados',
       catalogSearch: 'Buscar elementos del catálogo…',
+      stripePriceId: 'price_1AbCdEfGh...',
+      nameEn: 'Se traduce automáticamente si lo dejas vacío',
+      shortDescriptionEn: 'Se traduce automáticamente si lo dejas vacío',
+      descriptionEn: 'Se traduce automáticamente si lo dejas vacío',
+      ctaLabelEn: 'Se traduce automáticamente si lo dejas vacío',
     },
     helpers: {
       customPrice: 'Custom',
@@ -192,7 +218,9 @@ export const plansPageEs = {
       remove: 'Quitar',
       catalogItemsHint: 'Elige elementos reales del catálogo — se muestran como lo que incluye el plan, formateados automáticamente.',
       noCatalogItems: 'Ningún elemento del catálogo coincide con tu búsqueda.',
+      stripePriceIdHint: 'Pega el Price ID de Stripe (Producto → Precios). Déjalo vacío si este plan no se vende por Stripe Checkout.',
       selectedCount: '{{count}} seleccionados',
+      englishFieldsHint: 'Estos campos se traducen automáticamente del texto en español de arriba si los dejas vacíos (requiere tener la traducción por IA configurada). Rellénalos para anular la traducción automática.',
     },
     button: 'Crear plan',
     creating: 'Creando…',
@@ -243,6 +271,10 @@ export const plansPageEs = {
     save: 'Guardar',
     cancel: 'Cancelar',
     error: 'No se pudo actualizar el plan.',
+  },
+  translationWarning: {
+    title: 'La traducción automática no está configurada.',
+    body: 'Al guardar un plan, el texto en inglés se está copiando del español tal cual, sin traducir — configura DEEPL_API_KEY en el backend (plan gratuito Developer de DeepL, sin tarjeta) para activar la traducción real, o rellena los campos en inglés manualmente.',
   },
 } as const
 

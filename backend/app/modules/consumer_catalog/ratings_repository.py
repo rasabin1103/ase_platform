@@ -108,6 +108,76 @@ class CatalogItemRatingsRepository:
 
         return summaries
 
+    # --- Star reviews (rating 1-5 + comment) -------------------------------
+    # Independent half of the same row as the thumbs-up/down feedback above
+    # — see CatalogItemRating's class docstring. Gated to purchasers at the
+    # service layer, not here.
+
+    def upsert_review(
+        self, *, user_id: int, catalog_item_id: int, rating: int, comment: str | None
+    ) -> CatalogItemRating:
+        row = self.get(user_id=user_id, catalog_item_id=catalog_item_id)
+        if row is None:
+            row = CatalogItemRating(
+                user_id=user_id,
+                catalog_item_id=catalog_item_id,
+                rating=rating,
+                comment=comment,
+            )
+            self.db.add(row)
+        else:
+            row.rating = rating
+            row.comment = comment
+        self.db.flush()
+        return row
+
+    def remove_review(self, *, user_id: int, catalog_item_id: int) -> bool:
+        """Clears just the review half (rating/comment). If the legacy
+        thumbs-up/down half is also empty, the row itself is deleted rather
+        than left as a dangling all-null row."""
+        row = self.get(user_id=user_id, catalog_item_id=catalog_item_id)
+        if row is None or row.rating is None:
+            return False
+        row.rating = None
+        row.comment = None
+        if row.is_positive is None and not row.tags_json:
+            self.db.delete(row)
+        self.db.flush()
+        return True
+
+    def reviews_for_item(self, *, catalog_item_id: int, limit: int = 20, offset: int = 0) -> list[tuple]:
+        """Newest-first page of reviews for one item, each row paired with
+        the reviewer's display_name/first_name/last_name so the service
+        layer can compute a display name without a second query."""
+        from app.models.user import User  # local import avoids a model-level import cycle
+
+        stmt = (
+            select(CatalogItemRating, User.display_name, User.first_name, User.last_name)
+            .join(User, User.id == CatalogItemRating.user_id)
+            .where(CatalogItemRating.catalog_item_id == catalog_item_id, CatalogItemRating.rating.isnot(None))
+            .order_by(CatalogItemRating.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return self.db.execute(stmt).all()
+
+    def review_summaries_for_items(self, *, catalog_item_ids: list[int]) -> dict[int, tuple[float, int]]:
+        """{catalog_item_id: (average rating rounded to 1 decimal, review count)} — only items with at least one review are present."""
+        if not catalog_item_ids:
+            return {}
+        stmt = (
+            select(
+                CatalogItemRating.catalog_item_id,
+                func.avg(CatalogItemRating.rating),
+                func.count(CatalogItemRating.rating),
+            )
+            .where(CatalogItemRating.catalog_item_id.in_(catalog_item_ids), CatalogItemRating.rating.isnot(None))
+            .group_by(CatalogItemRating.catalog_item_id)
+        )
+        return {
+            item_id: (round(float(avg), 1), int(count)) for item_id, avg, count in self.db.execute(stmt).all()
+        }
+
     def net_score_subquery(self):
         """Subquery of (catalog_item_id, net_score) for ORDER BY use in the main catalog query."""
         return (

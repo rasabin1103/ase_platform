@@ -78,6 +78,8 @@ export const usersPageEn = {
     button: 'Create user',
     creating: 'Creating…',
     error: 'Could not create the user. Check validations or duplicated email.',
+    duplicateEmail: 'An account with this email already exists.',
+    verificationSent: 'User created. A confirmation email was sent to {{email}} — ask them to check their inbox.',
   },
   edit: {
     title: 'Edit user',
@@ -197,6 +199,8 @@ export const usersPageEs = {
     button: 'Crear usuario',
     creating: 'Creando…',
     error: 'No se pudo crear el usuario. Revisa validaciones o email duplicado.',
+    duplicateEmail: 'Ya existe una cuenta con este correo.',
+    verificationSent: 'Usuario creado. Se ha enviado un correo de confirmación a {{email}} — pídele que revise su bandeja de entrada.',
   },
   edit: {
     title: 'Editar usuario',

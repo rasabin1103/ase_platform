@@ -21,6 +21,11 @@ export type ServiceFeature = {
   updated_at: string
 }
 
+export type DimensionSelection = {
+  dimension_type_id: number
+  dimension_level_id: number
+}
+
 export type ServiceHighlight = {
   id: number
   service_id: number
@@ -43,6 +48,9 @@ export type Service = {
   category: ServiceCategory
   service_type: ServiceKind
   price_type: ServicePriceType
+  // Optional — historically null meant "custom quote". Set when the admin
+  // picks a concrete price, typically from the pricing engine.
+  price?: number | string | null
   is_featured: boolean
   is_active: boolean
   display_order: number
@@ -53,6 +61,9 @@ export type Service = {
   updated_at: string
   features: ServiceFeature[]
   highlights: ServiceHighlight[]
+  dimension_selections?: DimensionSelection[]
+  estimated_hours?: number | null
+  recommended_price?: number | string | null
 }
 
 export type ServiceListResponse = {
@@ -84,6 +95,7 @@ export type ServiceCreateRequest = {
   category: ServiceCategory
   service_type: ServiceKind
   price_type?: ServicePriceType
+  price?: number | null
   is_featured?: boolean
   is_active?: boolean
   display_order?: number
@@ -92,6 +104,8 @@ export type ServiceCreateRequest = {
   hero_subtitle?: string | null
   features?: ServiceFeatureCreateRequest[]
   highlights?: ServiceHighlightCreateRequest[]
+  dimension_selections?: DimensionSelection[]
+  estimated_hours?: number | null
 }
 
 export type ServiceUpdateRequest = Partial<ServiceCreateRequest>

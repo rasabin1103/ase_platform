@@ -1,11 +1,28 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import ServiceCategory, ServiceKind, ServicePriceType
+
+
+class DimensionSelectionInput(BaseModel):
+    """One (dimension type, level) pick — a pillar can have several
+    dimension types, so a service's full selection is a list of these. See
+    app/core/pricing_engine.py."""
+
+    dimension_type_id: int
+    dimension_level_id: int
+
+
+class DimensionSelectionRead(BaseModel):
+    dimension_type_id: int
+    dimension_level_id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ServiceFeatureCreate(BaseModel):
@@ -55,6 +72,9 @@ class ServiceCreate(BaseModel):
     category: ServiceCategory
     service_type: ServiceKind
     price_type: ServicePriceType = ServicePriceType.custom
+    # Optional — services historically had no concrete price ("custom" meant
+    # "contact us"). Set this to show a real number instead.
+    price: Decimal | None = Field(default=None, ge=0)
     is_featured: bool = False
     is_active: bool = True
     display_order: int = 0
@@ -63,6 +83,13 @@ class ServiceCreate(BaseModel):
     hero_subtitle: str | None = Field(default=None, max_length=500)
     features: list[ServiceFeatureCreate] | None = None
     highlights: list[ServiceHighlightCreate] | None = None
+    # --- Pricing engine (see app/core/pricing_engine.py) — optional. Every
+    # "subelemento" (subtipo, complejidad, especialización...) is just a
+    # PricingDimensionType, no separate subcategory concept.
+    dimension_selections: list[DimensionSelectionInput] = []
+    # Drives auto-matching of the range-based "Horas" dimension type —
+    # same role as CatalogItem.page_count for books.
+    estimated_hours: int | None = Field(default=None, ge=1)
 
 
 class ServiceUpdate(BaseModel):
@@ -74,6 +101,7 @@ class ServiceUpdate(BaseModel):
     category: ServiceCategory | None = None
     service_type: ServiceKind | None = None
     price_type: ServicePriceType | None = None
+    price: Decimal | None = Field(default=None, ge=0)
     is_featured: bool | None = None
     is_active: bool | None = None
     display_order: int | None = None
@@ -82,6 +110,8 @@ class ServiceUpdate(BaseModel):
     hero_subtitle: str | None = Field(default=None, max_length=500)
     features: list[ServiceFeatureCreate] | None = None
     highlights: list[ServiceHighlightCreate] | None = None
+    dimension_selections: list[DimensionSelectionInput] | None = None
+    estimated_hours: int | None = Field(default=None, ge=1)
 
 
 class ServiceRead(BaseModel):
@@ -95,6 +125,7 @@ class ServiceRead(BaseModel):
     category: ServiceCategory
     service_type: ServiceKind
     price_type: ServicePriceType
+    price: Decimal | None = None
     is_featured: bool
     is_active: bool
     display_order: int
@@ -105,6 +136,9 @@ class ServiceRead(BaseModel):
     updated_at: datetime
     features: list[ServiceFeatureRead] = Field(default_factory=list)
     highlights: list[ServiceHighlightRead] = Field(default_factory=list)
+    dimension_selections: list[DimensionSelectionRead] = Field(default_factory=list)
+    estimated_hours: int | None = None
+    recommended_price: Decimal | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

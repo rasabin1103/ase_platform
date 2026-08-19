@@ -12,9 +12,11 @@ from app.core.database import get_db
 from app.core.media_storage import validate_image_upload
 from app.core.media_urls import resolve_user_avatar_url, user_has_stored_avatar
 from app.core.rate_limit import limiter
-from app.models.enums import MembershipStatus, OrganizationStatus, OrganizationType
+from app.models.enums import MembershipStatus, OrganizationStatus, OrganizationType, SubscriptionStatus
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
+from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.user import User
 from app.core.rbac import resolve_primary_role
 from app.models.role import Role
@@ -202,6 +204,29 @@ def me(
     is_superuser = user_has_role_assigned(db, user_id=user.id, role_code="super_admin")
     active_workspace_uuid = get_default_organization_uuid(db, user)
     links = [UserLinkRead.model_validate(link) for link in user.links]
+
+    # Plan badge — resolved from the latest active/trialing Subscription on
+    # the user's default workspace. Free/no-plan accounts get all-None here.
+    plan_code = plan_name = plan_name_en = subscription_status = None
+    plan_org_id = get_default_organization_id(db, user)
+    if plan_org_id is not None:
+        plan_row = db.execute(
+            select(Plan, Subscription.status)
+            .join(Subscription, Subscription.plan_id == Plan.id)
+            .where(
+                Subscription.organization_id == plan_org_id,
+                Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]),
+            )
+            .order_by(Subscription.created_at.desc())
+            .limit(1)
+        ).first()
+        if plan_row is not None:
+            plan, sub_status = plan_row
+            plan_code = plan.code
+            plan_name = plan.name
+            plan_name_en = plan.name_en
+            subscription_status = sub_status.value
+
     return profile.model_copy(
         update={
             "avatar_url": resolve_user_avatar_url(user),
@@ -212,6 +237,11 @@ def me(
             "active_workspace_uuid": active_workspace_uuid,
             "is_superuser": is_superuser,
             "links": links,
+            "plan_code": plan_code,
+            "plan_name": plan_name,
+            "plan_name_en": plan_name_en,
+            "subscription_status": subscription_status,
+            "loyalty_tier": user.loyalty_tier,
             **rbac,
         }
     )

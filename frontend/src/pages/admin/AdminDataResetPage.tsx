@@ -14,12 +14,11 @@ import { Badge } from '../../components/ui/Badge'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Modal } from '../../components/ui/Modal'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 
 type PendingTarget = { kind: 'domain'; domain: DataDomain } | { kind: 'all' }
 
-export function AdminDataResetPage() {
+export function AdminDataResetPanel() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const query = useQuery({ queryKey: ['admin-data-reset-domains'], queryFn: listDataResetDomains })
@@ -69,14 +68,7 @@ export function AdminDataResetPage() {
   const canConfirm = phraseInput.trim() === expectedPhrase && password.length > 0 && !submitting
 
   return (
-    <div className="space-y-8 pb-16">
-      <PremiumHero
-        accent="amber"
-        badge={t('adminDataReset.heroBadge')}
-        title={t('adminDataReset.title')}
-        subtitle={t('adminDataReset.subtitle')}
-      />
-
+    <div className="space-y-8">
       {banner && (
         <div
           className={
