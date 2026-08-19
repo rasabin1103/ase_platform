@@ -94,6 +94,8 @@ export const organizationsPageEn = {
       manage: 'Manage',
       suspend: 'Suspend',
       reactivate: 'Reactivate',
+      delete: 'Delete',
+      deleting: 'Deleting…',
     },
     insights: {
       title: 'Platform insights',
@@ -137,6 +139,16 @@ export const organizationsPageEn = {
     nameRequired: 'Name is required',
     slugRequired: 'Public identifier is required',
     slugInvalid: 'Use a URL-friendly identifier with lowercase letters, numbers and hyphens',
+    statusUpdate: 'Could not update the organization. Try again.',
+    ownOrganization: "You can't deactivate or delete your own organization.",
+    ownOrganizationHint: "You can't deactivate or delete your own organization.",
+  },
+  delete: {
+    title: 'Delete organization',
+    body: 'Delete "{{name}}"? Members lose access and it disappears from every listing.',
+    note: 'This is reversible from the database, but not from the app — treat it as permanent.',
+    confirm: 'Delete',
+    deleting: 'Deleting…',
   },
   actions: {
     viewDetails: 'View details',
@@ -251,6 +263,8 @@ export const organizationsPageEs = {
       manage: 'Gestionar',
       suspend: 'Suspender',
       reactivate: 'Reactivar',
+      delete: 'Eliminar',
+      deleting: 'Eliminando…',
     },
     insights: {
       title: 'Insights de plataforma',
@@ -294,6 +308,16 @@ export const organizationsPageEs = {
     nameRequired: 'Nombre requerido',
     slugRequired: 'Identificador público requerido',
     slugInvalid: 'Usa un identificador compatible con URL: minúsculas, números y guiones',
+    statusUpdate: 'No se pudo actualizar la organización. Inténtalo de nuevo.',
+    ownOrganization: 'No puedes desactivar ni eliminar tu propia organización.',
+    ownOrganizationHint: 'No puedes desactivar ni eliminar tu propia organización.',
+  },
+  delete: {
+    title: 'Eliminar organización',
+    body: '¿Eliminar "{{name}}"? Sus miembros pierden acceso y desaparece de todos los listados.',
+    note: 'Es reversible desde la base de datos, pero no desde la app — trátalo como permanente.',
+    confirm: 'Eliminar',
+    deleting: 'Eliminando…',
   },
   actions: {
     viewDetails: 'Ver detalles',

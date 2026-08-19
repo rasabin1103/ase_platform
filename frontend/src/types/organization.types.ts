@@ -9,6 +9,8 @@ export type Organization = {
   current_user_role_codes?: string[]
   created_at?: string
   updated_at?: string
+  // Opt-in: when true, every active member of the org gets the weekly newsletter.
+  newsletter_subscribed?: boolean
 }
 
 export type OrganizationType = 'individual' | 'business' | 'enterprise' | 'academy'

@@ -12,7 +12,6 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { Pagination } from '../../components/ui/Pagination'
 import { Modal } from '../../components/ui/Modal'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { downloadCsv } from '../../utils/csv'
 
@@ -28,7 +27,7 @@ function fmtDate(iso: string) {
   }
 }
 
-export function AdminErrorLogsPage() {
+export function AdminErrorLogsPanel() {
   const { t } = useI18n()
   const [errorType, setErrorType] = useState('')
   const [path, setPath] = useState('')
@@ -71,14 +70,7 @@ export function AdminErrorLogsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-16">
-      <PremiumHero
-        accent="amber"
-        badge={t('adminErrorLogs.heroBadge')}
-        title={t('adminErrorLogs.title')}
-        subtitle={t('adminErrorLogs.subtitle')}
-      />
-
+    <div className="space-y-8">
       <Card className="p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>

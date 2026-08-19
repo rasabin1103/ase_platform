@@ -49,7 +49,17 @@ def admin_stats(db: Session = Depends(get_db)):
     by_type: dict[str, int] = {t.value: 0 for t in CatalogItemType}
     for t_val, n in db.execute(select(CatalogItem.type, func.count()).group_by(CatalogItem.type)).all():
         by_type[t_val.value if isinstance(t_val, CatalogItemType) else t_val] = int(n)
-    users_total = int(db.execute(select(func.count()).select_from(User)).scalar_one())
+    # Deleted accounts are a soft delete (row kept for referential integrity —
+    # see app/core/user_anonymize.py) and suspended ones are inactive, so
+    # neither should keep inflating "registered accounts" once removed or
+    # deactivated.
+    users_total = int(
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(User.status.notin_([UserStatus.deleted, UserStatus.suspended]))
+        ).scalar_one()
+    )
     users_active = int(
         db.execute(select(func.count()).select_from(User).where(User.status == UserStatus.active)).scalar_one()
     )

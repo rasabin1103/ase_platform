@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -14,9 +15,14 @@ from app.core.media_urls import (
     resolve_catalog_cover_url,
     resolve_gallery_image_url,
 )
+from app.core.pricing_engine import calculate_recommended_price, match_dimension_level_for_quantity
 from app.models.catalog_item import CatalogItem
+from app.models.catalog_item_dimension_selection import CatalogItemDimensionSelection
 from app.models.catalog_item_image import CatalogItemImage
-from app.models.enums import CatalogItemStatus, CatalogItemType
+from app.models.enums import CatalogItemStatus, CatalogItemType, PricingPillarCode
+from app.models.pricing_dimension_level import PricingDimensionLevel
+from app.models.pricing_dimension_type import PricingDimensionType
+from app.models.pricing_pillar import PricingPillar
 from app.modules.notifications.service import NotificationsService
 from app.modules.catalog_admin.schemas import (
     CatalogItemAdminCreate,
@@ -25,6 +31,8 @@ from app.modules.catalog_admin.schemas import (
     CatalogItemAdminUpdate,
     CatalogItemImageListResponse,
     CatalogItemImageRead,
+    DimensionSelectionInput,
+    DimensionSelectionRead,
 )
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
 
@@ -70,8 +78,106 @@ class CatalogAdminService:
             repo_url=item.repo_url,
             repo_redeem_code=item.repo_redeem_code,
             custom_fields=item.custom_fields_json or {},
+            dimension_selections=[
+                DimensionSelectionRead(dimension_type_id=s.dimension_type_id, dimension_level_id=s.dimension_level_id)
+                for s in item.dimension_selections
+            ],
+            page_count=item.page_count,
+            recommended_price=item.recommended_price,
             created_at=item.created_at,
             updated_at=item.updated_at,
+        )
+
+    def _sync_dimension_selections(self, item: CatalogItem, selections: list[DimensionSelectionInput]) -> None:
+        """Replaces the item's manually-picked dimension selections with
+        `selections` — one per dimension type of the item's pillar, at most.
+        Range-based types (book "Páginas") are never accepted here; those
+        are auto-matched from page_count in _apply_pricing instead."""
+        try:
+            pillar_code = PricingPillarCode(item.type.value if hasattr(item.type, "value") else item.type)
+        except ValueError:
+            return
+        valid_type_ids = {
+            t.id
+            for t in self.db.execute(
+                select(PricingDimensionType).where(
+                    PricingDimensionType.pillar_code == pillar_code,
+                    PricingDimensionType.is_range_based.is_(False),
+                )
+            ).scalars().all()
+        }
+        item.dimension_selections = [
+            sel for sel in item.dimension_selections if sel.dimension_type_id not in valid_type_ids
+        ]
+        seen: set[int] = set()
+        for inp in selections:
+            if inp.dimension_type_id not in valid_type_ids or inp.dimension_type_id in seen:
+                continue
+            seen.add(inp.dimension_type_id)
+            item.dimension_selections.append(
+                CatalogItemDimensionSelection(
+                    dimension_type_id=inp.dimension_type_id, dimension_level_id=inp.dimension_level_id
+                )
+            )
+
+    def _apply_pricing(self, item: CatalogItem) -> None:
+        """Recomputes and snapshots `recommended_price` from whatever
+        dimension_selections/page_count are currently set on `item` —
+        best-effort: any missing/invalid reference just clears the
+        recommendation instead of blocking the save, since the
+        recommended price is purely advisory. Every "subelemento" (subtipo,
+        complejidad, funcionalidad, páginas...) is a PricingDimensionType;
+        every selected level's multiplier that resolves participates in
+        the product — see app/core/pricing_engine.py."""
+        item.recommended_price = None
+        try:
+            pillar_code = PricingPillarCode(item.type.value if hasattr(item.type, "value") else item.type)
+        except ValueError:
+            return
+
+        pillar = self.db.execute(
+            select(PricingPillar).where(PricingPillar.code == pillar_code)
+        ).scalar_one_or_none()
+        if pillar is None:
+            return
+
+        dimension_types = list(
+            self.db.execute(
+                select(PricingDimensionType).where(PricingDimensionType.pillar_code == pillar_code)
+            ).scalars().all()
+        )
+
+        # Range-based types (book "Páginas") auto-match from page_count,
+        # overriding whatever the client selected for that type.
+        if item.page_count:
+            for dtype in dimension_types:
+                if not dtype.is_range_based:
+                    continue
+                levels = list(
+                    self.db.execute(
+                        select(PricingDimensionLevel)
+                        .where(PricingDimensionLevel.dimension_type_id == dtype.id, PricingDimensionLevel.is_active.is_(True))
+                        .order_by(PricingDimensionLevel.min_value)
+                    ).scalars().all()
+                )
+                matched = match_dimension_level_for_quantity(levels, item.page_count)
+                item.dimension_selections = [
+                    sel for sel in item.dimension_selections if sel.dimension_type_id != dtype.id
+                ]
+                if matched is not None:
+                    item.dimension_selections.append(
+                        CatalogItemDimensionSelection(dimension_type_id=dtype.id, dimension_level_id=matched.id)
+                    )
+
+        dimension_multipliers: list[Decimal] = []
+        for sel in item.dimension_selections:
+            level = self.db.get(PricingDimensionLevel, sel.dimension_level_id)
+            if level is not None and level.is_active:
+                dimension_multipliers.append(level.multiplier)
+
+        item.recommended_price = calculate_recommended_price(
+            base_price=pillar.base_price,
+            dimension_multipliers=dimension_multipliers,
         )
 
     def _require_item(self, item_id: int) -> CatalogItem:
@@ -172,7 +278,10 @@ class CatalogAdminService:
             repo_url=payload.repo_url,
             repo_redeem_code=payload.repo_redeem_code,
             custom_fields_json=payload.custom_fields,
+            page_count=payload.page_count,
         )
+        self._sync_dimension_selections(item, payload.dimension_selections)
+        self._apply_pricing(item)
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
@@ -226,11 +335,15 @@ class CatalogAdminService:
             item.tags_json = data.pop("tags")
         if "custom_fields" in data:
             item.custom_fields_json = data.pop("custom_fields")
+        if "dimension_selections" in data:
+            data.pop("dimension_selections")
+            self._sync_dimension_selections(item, payload.dimension_selections or [])
         if "repo_redeem_code" in data:
             data["repo_redeem_code"] = (data["repo_redeem_code"] or "").strip() or None
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)
         for key, value in data.items():
             setattr(item, key, value)
+        self._apply_pricing(item)
         self.db.commit()
         self.db.refresh(item)
         try:

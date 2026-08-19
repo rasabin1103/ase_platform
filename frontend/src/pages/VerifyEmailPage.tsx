@@ -1,27 +1,32 @@
-import { useEffect, useRef } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { AlertCircle, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { confirmEmailVerification } from '../api/auth.api'
 import { AuthCard } from '../components/public/AuthCard'
 import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
+
+type VerifyStatus = 'pending' | 'success' | 'error'
 
 export function VerifyEmailPage() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
   const attempted = useRef(false)
-
-  const mutation = useMutation({
-    mutationFn: () => confirmEmailVerification(token),
-  })
+  // Plain state driven by a manual promise chain — deliberately not
+  // useMutation here. The confirm request only ever fires once (guarded by
+  // `attempted`), so there's no retry/cache/dedup value from React Query,
+  // and a bare useState is much easier to reason about than trusting a
+  // mutation object's internal status transitions to always re-render this
+  // one-shot flow correctly.
+  const [status, setStatus] = useState<VerifyStatus>('pending')
 
   useEffect(() => {
-    if (token && !attempted.current) {
-      attempted.current = true
-      mutation.mutate()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!token || attempted.current) return
+    attempted.current = true
+    confirmEmailVerification(token)
+      .then(() => setStatus('success'))
+      .catch(() => setStatus('error'))
   }, [token])
 
   return (
@@ -38,16 +43,19 @@ export function VerifyEmailPage() {
           <AuthCard>
             {!token ? (
               <div className="space-y-4">
+                <AlertCircle className="h-10 w-10 text-amber-400" strokeWidth={1.75} />
                 <div className="text-lg font-bold text-ase-text">{t('auth.verifyEmail.invalidTitle')}</div>
                 <p className="text-sm text-ase-text2">{t('auth.verifyEmail.invalidBody')}</p>
               </div>
-            ) : mutation.isPending || mutation.isIdle ? (
+            ) : status === 'pending' ? (
               <div className="space-y-4">
+                <Loader2 className="h-10 w-10 animate-spin text-ase-primary" strokeWidth={1.75} />
                 <div className="text-lg font-bold text-ase-text">{t('auth.verifyEmail.pendingTitle')}</div>
                 <p className="text-sm text-ase-text2">{t('auth.verifyEmail.pendingBody')}</p>
               </div>
-            ) : mutation.isSuccess ? (
+            ) : status === 'success' ? (
               <div className="space-y-4">
+                <CheckCircle2 className="h-10 w-10 text-emerald-400" strokeWidth={1.75} />
                 <div className="text-lg font-bold text-ase-text">{t('auth.verifyEmail.doneTitle')}</div>
                 <p className="text-sm text-ase-text2">{t('auth.verifyEmail.doneBody')}</p>
                 <Link
@@ -59,6 +67,7 @@ export function VerifyEmailPage() {
               </div>
             ) : (
               <div className="space-y-4">
+                <XCircle className="h-10 w-10 text-rose-400" strokeWidth={1.75} />
                 <div className="text-lg font-bold text-ase-text">{t('auth.verifyEmail.errorTitle')}</div>
                 <p className="text-sm text-ase-text2">{t('auth.verifyEmail.errorBody')}</p>
                 <Link

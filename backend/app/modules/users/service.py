@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from app.core.email_verification import issue_and_send_verification_email
 from app.core.user_anonymize import anonymize_user_pii
 from app.models.enums import UserStatus
 from app.models.user import User
@@ -40,14 +40,18 @@ class UsersService:
             last_name=payload.last_name,
             display_name=payload.display_name,
             status=UserStatus.active,
-            # An admin creating this account already vouches for the email
-            # address — only self-registration needs the confirm-your-email
-            # step, since that's the flow where nobody has verified it yet.
-            email_verified_at=datetime.now(timezone.utc),
+            # Same verify-your-email step as self-registration — an admin
+            # typing in an email address doesn't confirm the mailbox exists
+            # or is spelled correctly, so this account starts unverified too
+            # and gets the same confirmation link sent to it.
+            email_verified_at=None,
         )
         self.repo.add(user)
         self.db.commit()
         self.db.refresh(user)
+
+        issue_and_send_verification_email(self.db, user)
+
         return user
 
     def list_users(self, *, limit: int, offset: int) -> tuple[list[User], int]:

@@ -26,6 +26,8 @@ class CatalogPurchasesRepository:
         *,
         granted_by_user_id: int | None = None,
         organization_id: int | None = None,
+        source: str = "free",
+        stripe_checkout_session_id: str | None = None,
     ) -> bool:
         """Returns True if a new purchase row was created, False if the user already owned it."""
         existing = self.db.execute(
@@ -42,6 +44,8 @@ class CatalogPurchasesRepository:
                 catalog_item_id=catalog_item_id,
                 granted_by_user_id=granted_by_user_id,
                 organization_id=organization_id,
+                source=source,
+                stripe_checkout_session_id=stripe_checkout_session_id,
             )
         )
         self.db.flush()

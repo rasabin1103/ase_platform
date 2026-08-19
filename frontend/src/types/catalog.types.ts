@@ -36,6 +36,9 @@ export type CatalogItem = {
   netScore: number
   topTags: string[]
   myRating?: { isPositive: boolean; tags: string[] } | null
+  averageRating?: number | null
+  reviewCount: number
+  myReview?: { rating: number; comment: string | null } | null
   createdAt: string
   updatedAt: string
 }
@@ -45,4 +48,19 @@ export type CatalogItemListResponse = {
   limit: number
   offset: number
   total: number
+}
+
+export type CatalogItemReview = {
+  userDisplayName: string
+  rating: number
+  comment: string | null
+  createdAt: string
+}
+
+export type CatalogItemReviewListResponse = {
+  items: CatalogItemReview[]
+  averageRating: number | null
+  reviewCount: number
+  limit: number
+  offset: number
 }

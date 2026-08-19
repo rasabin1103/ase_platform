@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.enums import CreatorStatus, UserStatus
+from app.models.enums import CreatorStatus, LoyaltyTier, UserStatus
 from app.models.mixins import IdPkMixin, PublicUuidMixin, TimestampMixin
 
 if TYPE_CHECKING:
@@ -32,6 +32,26 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     avatar_url: Mapped[str | None] = mapped_column(String(2048))
     avatar_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     avatar_mime: Mapped[str | None] = mapped_column(String(64))
+
+    # ISO 3166-1 alpha-2 code (e.g. "ES", "MX") — collected at registration
+    # for platform metrics (where signups come from). Nullable because
+    # accounts created before this field existed have no value; enforced as
+    # required going forward at the RegisterRequest schema level, not here.
+    country: Mapped[str | None] = mapped_column(String(2), index=True)
+
+    # 'es' or 'en' — captured from the UI language active at registration
+    # (frontend/src/i18n) so every transactional email (verification,
+    # password reset, account-lifecycle notices) can be sent in the
+    # language the person actually reads, instead of guessing or stacking
+    # both languages in one email. Defaults to 'es' for accounts created
+    # before this field existed.
+    preferred_language: Mapped[str] = mapped_column(String(2), nullable=False, default="es", server_default="es")
+
+    # Opt-in (default False) — weekly Friday-morning digest (new signups,
+    # new catalog/blog content, a thank-you note). See app/core/newsletter.py.
+    # A user can also receive it via an organization's own opt-in (see
+    # Organization.newsletter_subscribed) even if this is False.
+    newsletter_subscribed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     phone_e164: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
     phone_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -72,6 +92,23 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # suspension (pre-existing `status` field, unrelated to this policy).
     suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     suspension_reason: Mapped[str | None] = mapped_column(String(32))
+
+    # Highest 6-month tenure milestone (6, 12, 18, ...) already thanked via
+    # a notification — see app/core/anniversary.py. Null means never
+    # notified (brand new account, or predates this feature).
+    last_anniversary_months_notified: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Current loyalty reward tier, computed from consecutive active-subscriber
+    # tenure — see app/core/loyalty.py. This column doubles as the
+    # tier-upgrade notification/coupon dedup guard: the sweep only notifies
+    # and issues a new Stripe coupon when the freshly computed tier differs
+    # from what's already stored here. Null means no tier yet (brand new
+    # subscriber, or never subscribed).
+    loyalty_tier: Mapped[LoyaltyTier | None] = mapped_column(
+        Enum(LoyaltyTier, name="loyalty_tier", native_enum=True),
+        nullable=True,
+        default=None,
+    )
 
     owned_organizations: Mapped[list["Organization"]] = relationship(
         back_populates="owner",

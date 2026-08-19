@@ -5,6 +5,12 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  // Without this, axios has no timeout at all — if the backend is slow to
+  // wake up (e.g. a cold-started Railway service) or the network stalls,
+  // requests hang indefinitely and the UI (spinners, pending states) never
+  // resolves into a visible error. 20s is generous enough for a cold start
+  // but still turns an indefinite hang into a bounded, user-visible failure.
+  timeout: 20000,
   // Serialize array query params (e.g. `tags: string[]`) as repeated
   // `key=a&key=b` pairs instead of axios's default `key[]=a&key[]=b` —
   // FastAPI's `Query(default=None)` on a `list[str]` param only recognizes

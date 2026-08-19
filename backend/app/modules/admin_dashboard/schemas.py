@@ -62,6 +62,9 @@ class AdminAnalyticsRead(BaseModel):
     ratings_downvotes: int = 0
     ratings_top_tags: list[RatingTagCount] = []
     users_by_role: dict[str, int] = {}
+    reviews_total: int = 0
+    reviews_average_rating: float | None = None
+    reviews_distribution: dict[str, int] = {}
 
 
 class AdminPurchasesSummaryRead(BaseModel):

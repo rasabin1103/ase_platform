@@ -1,7 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
+import { createBillingPortalSession } from '../../api/billing.api'
 import type { UserLink } from '../../types/auth.types'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
@@ -9,8 +11,10 @@ import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { Switch } from '../../components/ui/Switch'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import { TwoFactorPanel } from '../../components/profile/TwoFactorPanel'
+import { localizedPlanText } from '../../components/public/pricingFromPlans'
 import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
@@ -24,7 +28,7 @@ type ProfileForm = {
 }
 
 export function ProfilePage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const { currentUser, applyCurrentUser, loadCurrentUser } = useAuth()
   const { primaryRole, isSuperuser } = useRbac()
   const [creatorModalOpen, setCreatorModalOpen] = useState(false)
@@ -89,6 +93,19 @@ export function ProfilePage() {
     },
   })
 
+  const [newsletterSaved, setNewsletterSaved] = useState(false)
+  const [newsletterError, setNewsletterError] = useState<string | null>(null)
+  const newsletterMut = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (me) => {
+      applyCurrentUser(me)
+      setNewsletterError(null)
+      setNewsletterSaved(true)
+      setTimeout(() => setNewsletterSaved(false), 3000)
+    },
+    onError: () => setNewsletterError(t('profilePage.newsletter.error') as string),
+  })
+
   const [links, setLinks] = useState<Array<{ label: string; url: string }>>([])
   const [linksSaved, setLinksSaved] = useState(false)
   const [linksError, setLinksError] = useState<string | null>(null)
@@ -119,6 +136,26 @@ export function ProfilePage() {
   const name = currentUser?.display_name || currentUser?.email || ''
   const hasPhone = Boolean(currentUser?.phone_e164)
   const phoneVerified = Boolean(currentUser?.phone_verified)
+
+  const planLabel = currentUser?.plan_code
+    ? localizedPlanText(language, currentUser.plan_name, currentUser.plan_name_en)
+    : null
+  const subscriptionStatus = currentUser?.subscription_status ?? null
+  const [billingError, setBillingError] = useState<string | null>(null)
+  const billingPortalMut = useMutation({
+    mutationFn: createBillingPortalSession,
+    onSuccess: (url) => {
+      window.location.href = url
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      const msg =
+        typeof detail === 'string' && detail.toLowerCase().includes('subscribe to a plan first')
+          ? t('profilePage.billing.noAccount')
+          : t('profilePage.billing.error')
+      setBillingError(msg as string)
+    },
+  })
 
   const onSave = form.handleSubmit((values) =>
     saveMut.mutate({
@@ -164,6 +201,56 @@ export function ProfilePage() {
       ) : null}
 
       <div className="w-full space-y-6">
+        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.billing.title')}</h2>
+          <p className="mt-1 text-sm text-ase-text2">{t('profilePage.billing.subtitle')}</p>
+
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-ase-muted">{t('profilePage.billing.currentPlan')}</span>
+                {planLabel ? (
+                  <Badge variant="info" className="uppercase tracking-wide">
+                    {planLabel}
+                  </Badge>
+                ) : (
+                  <Badge variant="default">{t('profilePage.billing.freePlan')}</Badge>
+                )}
+                {subscriptionStatus ? (
+                  <Badge variant={subscriptionStatus === 'past_due' ? 'warning' : 'success'}>
+                    {t(`profilePage.billing.status.${subscriptionStatus}`)}
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+            {currentUser?.plan_code ? (
+              <Button type="button" onClick={() => billingPortalMut.mutate()} disabled={billingPortalMut.isPending}>
+                {billingPortalMut.isPending ? t('profilePage.billing.opening') : t('profilePage.billing.manageButton')}
+              </Button>
+            ) : (
+              <Link to="/pricing">
+                <Button type="button">{t('profilePage.billing.viewPlans')}</Button>
+              </Link>
+            )}
+          </div>
+          {billingError ? <p className="mt-3 text-sm text-ase-error">{billingError}</p> : null}
+        </Card>
+
+        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.newsletter.title')}</h2>
+          <p className="mt-1 text-sm text-ase-text2">{t('profilePage.newsletter.subtitle')}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Switch
+              checked={Boolean(currentUser?.newsletter_subscribed)}
+              onCheckedChange={(next) => newsletterMut.mutate({ newsletter_subscribed: next })}
+              disabled={newsletterMut.isPending}
+              label={t('profilePage.newsletter.toggleLabel') as string}
+            />
+            {newsletterSaved ? <span className="text-sm text-emerald-300">{t('profilePage.newsletter.saved')}</span> : null}
+          </div>
+          {newsletterError ? <p className="mt-2 text-sm text-ase-error">{newsletterError}</p> : null}
+        </Card>
+
         <Card className="w-full space-y-6 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
           <ImageUploadField
             label={t('profilePage.photo')}

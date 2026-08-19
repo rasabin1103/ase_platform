@@ -22,6 +22,9 @@ class OrganizationUpdate(BaseModel):
     type: OrganizationType | None = None
     status: OrganizationStatus | None = None
     owner_user_uuid: UUID | None = None
+    # Opt-in — when True, every active member gets the weekly newsletter.
+    # See app/core/newsletter.py.
+    newsletter_subscribed: bool | None = None
 
 
 class OrganizationRead(BaseModel):
@@ -33,6 +36,7 @@ class OrganizationRead(BaseModel):
     owner_user_uuid: UUID
     current_user_membership_status: MembershipStatus | None = None
     current_user_role_codes: list[str] = Field(default_factory=list)
+    newsletter_subscribed: bool = False
     created_at: datetime
     updated_at: datetime
 

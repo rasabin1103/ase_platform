@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
 import {
   listConsumerCatalog,
   listConsumerCatalogTags,
-  purchaseCatalogItem,
   toggleCatalogFavorite,
 } from '../../api/consumerCatalog.api'
 import { CatalogItemCard } from '../../components/catalog/CatalogItemCard'
@@ -83,7 +83,10 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
   })
 
   const buyMutation = useMutation({
-    mutationFn: purchaseCatalogItem,
+    mutationFn: (slug: string) => {
+      const target = query.data?.items.find((i) => i.slug === slug)
+      return buyOrCheckoutCatalogItem(slug, target?.price)
+    },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {
       setPendingSlug(null)

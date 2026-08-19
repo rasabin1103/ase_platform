@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingBag, GraduationCap, Clock, CircleUser } from 'lucide-react'
+import { Heart, ShoppingBag, GraduationCap, Clock, CircleUser, Sparkles } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
+import { Button } from '../../components/ui/Button'
 import { CatalogPremiumStrip } from '../../components/catalog/CatalogPremiumStrip'
 import { RecommendedForYouStrip } from '../../components/catalog/RecommendedForYouStrip'
 import { IndependentProgressPanel } from '../../components/private/dashboard/IndependentProgressPanel'
@@ -22,6 +23,7 @@ export function IndependentDashboardPage() {
   const { t } = useI18n()
   const { currentUser } = useAuth()
   const canCreate = Boolean(currentUser?.can_create_content)
+  const hasPlan = Boolean(currentUser?.plan_code)
 
   return (
     <div className="space-y-10">
@@ -39,6 +41,23 @@ export function IndependentDashboardPage() {
           <p className="mt-3 text-base leading-relaxed text-ase-text2">{t('independentDashboard.subtitle')}</p>
         </div>
       </section>
+
+      {!hasPlan ? (
+        <Card className="flex flex-col gap-4 border-ase-brand/25 bg-ase-brand/5 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+              <Sparkles className="h-[18px] w-[18px]" strokeWidth={1.75} />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-ase-text">{t('independentDashboard.upsell.title')}</h2>
+              <p className="mt-2 max-w-2xl text-sm text-ase-text2">{t('independentDashboard.upsell.body')}</p>
+            </div>
+          </div>
+          <Link to="/pricing" className="shrink-0 self-start sm:self-center">
+            <Button>{t('independentDashboard.upsell.cta')}</Button>
+          </Link>
+        </Card>
+      ) : null}
 
       {canCreate ? (
         <Card className="border-cyan-300/20 bg-cyan-300/5 p-6">

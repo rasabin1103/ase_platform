@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum, Integer, String, Text
+from sqlalchemy import Boolean, Enum, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -48,6 +49,21 @@ class Service(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     hero_title: Mapped[str | None] = mapped_column(String(300), nullable=True)
     hero_subtitle: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # Services historically had no numeric price (price_type == "custom"
+    # meant "contact us for a quote"). This stays optional/nullable so that
+    # flow keeps working unchanged — it's populated only when an admin sets
+    # a concrete price, typically from the pricing engine's recommendation.
+    price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
+    # --- Pricing engine (see app/core/pricing_engine.py) --------------------
+    # Every "subelemento" (horas, complejidad, especialización...) is just a
+    # PricingDimensionType for the service pillar — no separate subcategory
+    # concept. Selections live in ServiceDimensionSelection, one row per
+    # type — see that model. Drives auto-matching of the range-based "Horas"
+    # dimension type, same role as CatalogItem.page_count for books.
+    estimated_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    recommended_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
     features: Mapped[list["ServiceFeature"]] = relationship(
         back_populates="service",
         cascade="all, delete-orphan",
@@ -59,4 +75,9 @@ class Service(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="ServiceHighlight.display_order",
+    )
+    dimension_selections: Mapped[list["ServiceDimensionSelection"]] = relationship(
+        "ServiceDimensionSelection",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

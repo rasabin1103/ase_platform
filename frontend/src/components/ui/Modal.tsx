@@ -28,12 +28,18 @@ export function Modal({ open, title, onClose, footer, children, className, close
           role="dialog"
           aria-modal="true"
           className={cn(
-            'w-full max-w-lg overflow-hidden rounded-2xl border border-ase-border bg-ase-surface shadow-soft',
+            // flex-col + max-h caps the whole dialog to the viewport (minus
+            // the surrounding p-4) at any zoom level or screen size; header
+            // and footer are shrink-0 so they stay pinned, and only the body
+            // (flex-1 + min-h-0, the classic flexbox-overflow requirement)
+            // scrolls — so action buttons in `footer` are never pushed
+            // off-screen by a long form.
+            'flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-ase-border bg-ase-surface shadow-soft',
             className,
           )}
         >
           {(title ?? null) && (
-            <div className="flex items-center justify-between border-b border-ase-border px-6 py-4">
+            <div className="flex shrink-0 items-center justify-between border-b border-ase-border px-6 py-4">
               <div className="text-sm font-semibold text-ase-text">{title}</div>
               <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
                 {closeLabel}
@@ -41,9 +47,9 @@ export function Modal({ open, title, onClose, footer, children, className, close
             </div>
           )}
 
-          <div className="px-6 py-5">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
 
-          {footer && <div className="border-t border-ase-border px-6 py-4">{footer}</div>}
+          {footer && <div className="shrink-0 border-t border-ase-border px-6 py-4">{footer}</div>}
         </div>
       </div>
     </div>,

@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import record_audit_log
 from app.core.config import settings
+from app.core.creator import ensure_personal_workspace
 from app.core.email import send_email
-from app.core.email_templates import account_reactivated_email, email_verification_email, password_reset_email
+from app.core.email_templates import account_reactivated_email, password_reset_email
+from app.core.email_verification import issue_and_send_verification_email
 from app.core.totp import build_otpauth_uri, generate_qr_code_data_uri, generate_totp_secret, verify_totp_code
 from app.models.enums import SuspensionReason, UserStatus, UserTokenPurpose
 from app.models.user import User
@@ -32,11 +34,11 @@ from app.modules.auth.security import (
 from app.modules.auth.tokens_repository import UserTokensRepository
 from app.modules.users.repository import UsersRepository
 
-# Link lifetimes — generous enough that a busy person can act on the email
+# Link lifetime — generous enough that a busy person can act on the email
 # without racing a timer, short enough that a stale/leaked link stops being
-# useful quickly.
+# useful quickly. Email verification's own lifetime lives alongside its
+# shared helper in app/core/email_verification.py.
 PASSWORD_RESET_TOKEN_MINUTES = 60
-EMAIL_VERIFICATION_TOKEN_MINUTES = 60 * 24
 
 
 class AuthService:
@@ -55,15 +57,24 @@ class AuthService:
             first_name=payload.first_name,
             last_name=payload.last_name,
             display_name=payload.display_name,
+            country=payload.country,
+            preferred_language=payload.preferred_language,
             status=UserStatus.active,
         )
         self.users.add(user)
         self.db.commit()
         self.db.refresh(user)
 
+        # Every independent user needs a personal workspace to use anything
+        # org-scoped (billing, catalog entitlements, permissions) — see
+        # app.core.creator.ensure_personal_workspace for why this wasn't
+        # always true and had to be backfilled for pre-existing accounts.
+        ensure_personal_workspace(self.db, user_id=user.id)
+        self.db.commit()
+
         # Best-effort — a broken/unconfigured mail server must never block
         # registration itself; the user can always hit "resend" later.
-        self._issue_and_send_verification_email(user)
+        issue_and_send_verification_email(self.db, user)
 
         return user
 
@@ -199,13 +210,14 @@ class AuthService:
         user.suspension_reason = None
         user.suspended_at = None
         self.db.commit()
-        html, text = account_reactivated_email(f"{settings.FRONTEND_URL}/login")
-        send_email(
-            to_email=user.email,
-            subject="Tu cuenta ha sido reactivada — Arce Sabin Engineering",
-            html_body=html,
-            text_body=text,
+        language = user.preferred_language
+        html, text = account_reactivated_email(f"{settings.FRONTEND_URL}/login", language=language)
+        subject = (
+            "Your account has been reactivated — Arce Sabin Engineering"
+            if language == "en"
+            else "Tu cuenta ha sido reactivada — Arce Sabin Engineering"
         )
+        send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
         record_audit_log(
             self.db,
             actor_user_id=user.id,
@@ -292,24 +304,14 @@ class AuthService:
         )
 
     # --- Email verification -------------------------------------------------
-
-    def _issue_and_send_verification_email(self, user: User) -> None:
-        raw = generate_raw_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=EMAIL_VERIFICATION_TOKEN_MINUTES)
-        self.tokens.create(
-            user_id=user.id, purpose=UserTokenPurpose.email_verification, token_hash=hash_action_token(raw),
-            expires_at=expires_at,
-        )
-        self.db.commit()
-        verify_url = f"{settings.FRONTEND_URL}/verify-email?token={raw}"
-        html, text = email_verification_email(verify_url, expires_in_minutes=EMAIL_VERIFICATION_TOKEN_MINUTES)
-        send_email(to_email=user.email, subject="Confirma tu correo — Arce Sabin Engineering", html_body=html, text_body=text)
+    # Token issuing/sending itself lives in app/core/email_verification.py so
+    # UsersService (admin-created accounts) can reuse the exact same flow.
 
     def resend_verification_email(self, user: User) -> None:
         if user.email_verified_at is not None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified")
         self.tokens.invalidate_outstanding(user_id=user.id, purpose=UserTokenPurpose.email_verification)
-        self._issue_and_send_verification_email(user)
+        issue_and_send_verification_email(self.db, user)
 
     def confirm_email_verification(self, raw_token: str) -> User:
         token_row = self.tokens.find_valid(
@@ -350,8 +352,16 @@ class AuthService:
         )
         self.db.commit()
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={raw}"
-        html, text = password_reset_email(reset_url, expires_in_minutes=PASSWORD_RESET_TOKEN_MINUTES)
-        send_email(to_email=user.email, subject="Restablece tu contraseña — Arce Sabin Engineering", html_body=html, text_body=text)
+        language = user.preferred_language
+        html, text = password_reset_email(
+            reset_url, expires_in_hours=PASSWORD_RESET_TOKEN_MINUTES // 60, language=language,
+        )
+        subject = (
+            "Reset your password — Arce Sabin Engineering"
+            if language == "en"
+            else "Restablece tu contraseña — Arce Sabin Engineering"
+        )
+        send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
 
     def confirm_password_reset(self, *, raw_token: str, new_password: str) -> None:
         token_row = self.tokens.find_valid(

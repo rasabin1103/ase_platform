@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { createCheckoutSession } from '../../api/billing.api'
 import { listPlansCatalog } from '../../api/plansCatalog.api'
 import { Eyebrow } from '../ui/Eyebrow'
 import { Button } from '../ui/Button'
@@ -11,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth'
 import type { Plan } from '../../types/plan.types'
 import {
   catalogPlansForBilling,
+  localizedPlanText,
   planFeatureLines,
   planPriceView,
   tierFromPlanCode,
@@ -23,12 +25,22 @@ type TierTone = 'basic' | 'pro' | 'robust' | 'premium'
 function planMarketingDescription(
   t: (key: string) => unknown,
   plan: Plan,
+  language: 'en' | 'es',
 ): string {
+  // Whatever the admin actually typed for this plan always wins — the
+  // generic per-tier paragraphs below are only a fallback for plans that
+  // were never given a custom description, so editing a plan's description
+  // in the admin panel is guaranteed to show up here.
+  const es = plan.short_description || plan.description
+  const en = plan.short_description_en || plan.description_en
+  if (es || en) {
+    return localizedPlanText(language, es, en)
+  }
   const tier = tierFromPlanCode(plan.code)
   if (tier === 'free') return t('pricing.starterPara') as string
   if (tier === 'enterprise') return t('pricing.enterprisePara') as string
   if (tier === 'pro' || tier === 'business') return t('pricing.professionalPara') as string
-  return plan.short_description || plan.description || ''
+  return ''
 }
 
 function cardTone(plan: Plan): TierTone {
@@ -41,9 +53,21 @@ function cardTone(plan: Plan): TierTone {
 }
 
 export function PricingSection({ compact }: { compact?: boolean }) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const auth = useAuth()
+  const navigate = useNavigate()
   const [billing, setBilling] = useState<Billing>('monthly')
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  const checkoutMutation = useMutation({
+    mutationFn: (planId: number) => createCheckoutSession(planId),
+    onSuccess: (checkoutUrl) => {
+      window.location.href = checkoutUrl
+    },
+    onError: () => {
+      setCheckoutError(t('pricing.checkoutError') as string)
+    },
+  })
 
   const plansQuery = useQuery({
     queryKey: ['plans', 'public-catalog'],
@@ -122,6 +146,12 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           </div>
         ) : null}
 
+        {checkoutError ? (
+          <div className="mt-8 rounded-2xl border border-ase-error/25 bg-ase-error/5 px-5 py-4 text-center text-sm text-ase-error">
+            {checkoutError}
+          </div>
+        ) : null}
+
         {plansQuery.isLoading ? (
           <div className={cn('mt-12 grid grid-cols-1 gap-6', 'lg:grid-cols-3')} aria-busy="true" aria-live="polite">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -156,25 +186,34 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 billing,
               )
               const features = planFeatureLines(plan)
-              const description = planMarketingDescription(t, plan)
-              const cta = plan.cta_label || (t('pricing.plans.pro.cta') as string)
+              const description = planMarketingDescription(t, plan, language)
+              const planName = localizedPlanText(language, plan.name, plan.name_en)
+              const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
               const planTier = tierFromPlanCode(plan.code)
-              const isSelfServeTier = planTier === 'free' || planTier === 'pro'
+              const isSelfServeTier = planTier === 'free' || planTier === 'pro' || planTier === 'business'
+              const isPaidCheckoutTier = planTier === 'pro' || planTier === 'business'
+              const canCheckout = isPaidCheckoutTier && auth.isAuthenticated && Boolean(plan.stripe_price_id)
               const ctaHref = isSelfServeTier ? (auth.isAuthenticated ? '/dashboard' : '/register') : '/contact'
+              const isCheckingOutThisPlan = checkoutMutation.isPending && checkoutMutation.variables === plan.id
 
               return (
                 <Card
                   key={plan.id}
                   interactive
                   className={cn(
-                    'relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft',
+                    // flex-col + each section below carries a fixed min-height (badge
+                    // slot, description, price row) so name/description length never
+                    // shifts where the price or button land — every card in the grid
+                    // reads at the same height for the same section, regardless of
+                    // how short or long that plan's own copy is.
+                    'relative flex flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft',
                     tone === 'pro' && 'border-ase-gold/35',
                     tone === 'premium' && 'border-white/15',
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
-                      <div className="text-sm font-semibold text-ase-text">{plan.name}</div>
+                      <div className="text-2xl font-extrabold tracking-tight text-ase-text">{planName}</div>
                       {plan.is_recommended ? (
                         <div className="mt-2 inline-flex rounded-full border border-ase-gold/35 bg-ase-gold/10 px-2.5 py-0.5 text-xs font-semibold text-ase-gold">
                           {t('pricing.plans.pro.badge')}
@@ -183,25 +222,39 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                     </div>
                   </div>
 
-                  {description ? (
-                    <div className="mt-4 text-sm leading-relaxed text-ase-text2">{description}</div>
-                  ) : null}
+                  <div className="mt-4 line-clamp-4 min-h-[84px] text-sm leading-relaxed text-ase-text2">
+                    {description}
+                  </div>
 
-                  <div className="mt-6 flex items-end gap-2">
+                  <div className="mt-6 flex min-h-[52px] items-end gap-2">
                     <div className="text-4xl font-extrabold tracking-tight text-ase-text">{priceLabel}</div>
                     {suffix ? <div className="pb-1 text-sm text-ase-text2">{suffix}</div> : null}
                   </div>
 
                   <div className="mt-6">
-                    <Link to={ctaHref}>
+                    {canCheckout ? (
                       <Button
                         size="lg"
                         variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}
                         className="w-full"
+                        disabled={checkoutMutation.isPending}
+                        onClick={() => {
+                          setCheckoutError(null)
+                          checkoutMutation.mutate(plan.id)
+                        }}
+                      >
+                        {isCheckingOutThisPlan ? (t('pricing.checkoutLoading') as string) : cta}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}
+                        className="w-full"
+                        onClick={() => navigate(ctaHref)}
                       >
                         {cta}
                       </Button>
-                    </Link>
+                    )}
                   </div>
 
                   {features.length > 0 ? (

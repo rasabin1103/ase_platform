@@ -59,13 +59,16 @@ def run_two_factor_grace_sweep(db: Session) -> int:
             user.suspension_reason = SuspensionReason.two_factor_required.value
             user.suspended_at = datetime.now(timezone.utc)
             db.commit()
-            html, text = account_suspended_two_factor_email(login_url, grace_days=settings.TWO_FACTOR_GRACE_DAYS)
-            send_email(
-                to_email=user.email,
-                subject="Tu cuenta ha sido desactivada — Arce Sabin Engineering",
-                html_body=html,
-                text_body=text,
+            language = user.preferred_language
+            html, text = account_suspended_two_factor_email(
+                login_url, grace_days=settings.TWO_FACTOR_GRACE_DAYS, language=language,
             )
+            subject = (
+                "Your account has been deactivated — Arce Sabin Engineering"
+                if language == "en"
+                else "Tu cuenta ha sido desactivada — Arce Sabin Engineering"
+            )
+            send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
             record_audit_log(
                 db,
                 actor_user_id=None,
@@ -103,13 +106,16 @@ def run_inactivity_suspend_sweep(db: Session) -> int:
             user.suspension_reason = SuspensionReason.inactivity.value
             user.suspended_at = datetime.now(timezone.utc)
             db.commit()
-            html, text = account_suspended_inactivity_email(login_url, inactivity_days=settings.INACTIVITY_SUSPEND_DAYS)
-            send_email(
-                to_email=user.email,
-                subject="Tu cuenta ha sido desactivada por inactividad — Arce Sabin Engineering",
-                html_body=html,
-                text_body=text,
+            language = user.preferred_language
+            html, text = account_suspended_inactivity_email(
+                login_url, inactivity_days=settings.INACTIVITY_SUSPEND_DAYS, language=language,
             )
+            subject = (
+                "Your account has been deactivated due to inactivity — Arce Sabin Engineering"
+                if language == "en"
+                else "Tu cuenta ha sido desactivada por inactividad — Arce Sabin Engineering"
+            )
+            send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
             record_audit_log(
                 db,
                 actor_user_id=None,
@@ -138,15 +144,16 @@ def run_suspended_expiry_delete_sweep(db: Session) -> int:
     count = 0
     for user in users:
         try:
+            language = user.preferred_language
             html, text = account_deleted_inactivity_email(
-                settings.SMTP_FROM_EMAIL, suspended_days=settings.SUSPENDED_DELETE_DAYS
+                settings.SMTP_FROM_EMAIL, suspended_days=settings.SUSPENDED_DELETE_DAYS, language=language,
             )
-            send_email(
-                to_email=user.email,
-                subject="Tu cuenta ha sido eliminada — Arce Sabin Engineering",
-                html_body=html,
-                text_body=text,
+            subject = (
+                "Your account has been deleted — Arce Sabin Engineering"
+                if language == "en"
+                else "Tu cuenta ha sido eliminada — Arce Sabin Engineering"
             )
+            send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
             previous_reason = user.suspension_reason
             anonymize_user_pii(db, user)
             user.status = UserStatus.deleted

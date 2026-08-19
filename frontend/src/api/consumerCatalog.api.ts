@@ -1,5 +1,10 @@
 import { apiClient } from './client'
-import type { CatalogItem, CatalogItemListResponse, CatalogItemType } from '../types/catalog.types'
+import type {
+  CatalogItem,
+  CatalogItemListResponse,
+  CatalogItemReviewListResponse,
+  CatalogItemType,
+} from '../types/catalog.types'
 
 export type ListCatalogParams = {
   limit?: number
@@ -45,5 +50,20 @@ export async function rateCatalogItem(slug: string, payload: { isPositive: boole
 
 export async function removeCatalogItemRating(slug: string) {
   const { data } = await apiClient.delete<CatalogItem>(`/consumer-catalog/${slug}/rating`)
+  return data
+}
+
+export async function listCatalogItemReviews(slug: string, params?: { limit?: number; offset?: number }) {
+  const { data } = await apiClient.get<CatalogItemReviewListResponse>(`/consumer-catalog/${slug}/reviews`, { params })
+  return data
+}
+
+export async function submitCatalogItemReview(slug: string, payload: { rating: number; comment?: string | null }) {
+  const { data } = await apiClient.post<CatalogItem>(`/consumer-catalog/${slug}/review`, payload)
+  return data
+}
+
+export async function removeCatalogItemReview(slug: string) {
+  const { data } = await apiClient.delete<CatalogItem>(`/consumer-catalog/${slug}/review`)
   return data
 }

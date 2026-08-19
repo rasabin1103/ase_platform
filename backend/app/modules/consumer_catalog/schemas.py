@@ -14,6 +14,26 @@ class MyRatingRead(BaseModel):
     tags: list[str] = []
 
 
+class MyReviewRead(BaseModel):
+    rating: int
+    comment: str | None = None
+
+
+class ReviewRead(BaseModel):
+    userDisplayName: str
+    rating: int
+    comment: str | None = None
+    createdAt: datetime
+
+
+class ReviewListResponse(BaseModel):
+    items: list[ReviewRead]
+    averageRating: float | None = None
+    reviewCount: int = 0
+    limit: int
+    offset: int
+
+
 class CatalogItemImagePublicRead(BaseModel):
     url: str
     isCover: bool
@@ -48,6 +68,9 @@ class CatalogItemRead(BaseModel):
     netScore: int = 0
     topTags: list[str] = []
     myRating: MyRatingRead | None = None
+    averageRating: float | None = None
+    reviewCount: int = 0
+    myReview: MyReviewRead | None = None
     createdAt: datetime
     updatedAt: datetime
 
@@ -55,6 +78,11 @@ class CatalogItemRead(BaseModel):
 class RateItemRequest(BaseModel):
     isPositive: bool
     tags: list[str] = Field(default_factory=list)
+
+
+class ReviewRequest(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    comment: str | None = Field(default=None, max_length=2000)
 
 
 class CatalogItemListResponse(BaseModel):

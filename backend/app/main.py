@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,7 +12,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.account_lifecycle import run_full_sweep
+from app.core.anniversary import run_anniversary_sweep
 from app.core.config import settings
+from app.core.loyalty import run_loyalty_sweep
+from app.core.newsletter import run_weekly_newsletter
 from app.core.database import SessionLocal
 from app.core.error_logging import record_error_log
 from app.core.monitoring import init_sentry
@@ -36,16 +40,55 @@ def _run_account_lifecycle_sweep_job() -> None:
         db.close()
 
 
+def _run_anniversary_sweep_job() -> None:
+    """Daily job body for the 6-month tenure thank-you sweep — same
+    isolated-session, never-raise pattern as the account lifecycle sweep."""
+    db = SessionLocal()
+    try:
+        count = run_anniversary_sweep(db)
+        logger.info("Anniversary sweep completed: %s users notified", count)
+    except Exception:
+        logger.exception("Anniversary sweep failed")
+    finally:
+        db.close()
+
+
+def _run_loyalty_sweep_job() -> None:
+    """Daily job body for the loyalty-tier promotion sweep — same
+    isolated-session, never-raise pattern as the other sweeps."""
+    db = SessionLocal()
+    try:
+        count = run_loyalty_sweep(db)
+        logger.info("Loyalty sweep completed: %s users promoted", count)
+    except Exception:
+        logger.exception("Loyalty sweep failed")
+    finally:
+        db.close()
+
+
+def _run_weekly_newsletter_job() -> None:
+    """Weekly job body for the Friday-morning digest — same isolated-session,
+    never-raise pattern as the other sweeps."""
+    db = SessionLocal()
+    try:
+        count = run_weekly_newsletter(db)
+        logger.info("Weekly newsletter sent: %s recipients", count)
+    except Exception:
+        logger.exception("Weekly newsletter sweep failed")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = BackgroundScheduler(timezone="UTC")
+    # First run shortly after startup (so it's visible without waiting a
+    # full day), then every 24h. In-process and single-instance, like the
+    # in-memory rate-limiter fallback — fine for this app's current
+    # deployment; running with multiple worker processes would run each
+    # sweep once per worker (harmless, since every check is idempotent,
+    # just redundant).
     if settings.ACCOUNT_LIFECYCLE_SWEEP_ENABLED:
-        # First run shortly after startup (so it's visible without waiting a
-        # full day), then every 24h. In-process and single-instance, like
-        # the in-memory rate-limiter fallback — fine for this app's current
-        # deployment; running with multiple worker processes would run the
-        # sweep once per worker (harmless, since every check is idempotent,
-        # just redundant).
         scheduler.add_job(
             _run_account_lifecycle_sweep_job,
             "interval",
@@ -53,6 +96,33 @@ async def lifespan(app: FastAPI):
             next_run_time=datetime.now(timezone.utc) + timedelta(minutes=1),
             id="account_lifecycle_sweep",
         )
+    if settings.ANNIVERSARY_SWEEP_ENABLED:
+        scheduler.add_job(
+            _run_anniversary_sweep_job,
+            "interval",
+            hours=24,
+            next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2),
+            id="anniversary_sweep",
+        )
+    if settings.LOYALTY_SWEEP_ENABLED:
+        scheduler.add_job(
+            _run_loyalty_sweep_job,
+            "interval",
+            hours=24,
+            next_run_time=datetime.now(timezone.utc) + timedelta(minutes=3),
+            id="loyalty_sweep",
+        )
+    if settings.NEWSLETTER_SWEEP_ENABLED:
+        # Cron (not interval) since this must land at a specific wall-clock
+        # moment every week, not "24h after the last run" — the trigger's
+        # own timezone handles CET/CEST automatically, independent of the
+        # scheduler's base UTC timezone.
+        scheduler.add_job(
+            _run_weekly_newsletter_job,
+            CronTrigger(day_of_week="fri", hour=7, minute=0, timezone="Europe/Madrid"),
+            id="weekly_newsletter",
+        )
+    if scheduler.get_jobs():
         scheduler.start()
     yield
     if scheduler.running:
@@ -122,6 +192,11 @@ from app.modules.blog_admin.router import router as blog_admin_router
 from app.modules.public_blog.router import router as public_blog_router
 from app.modules.catalog_categories.router import router as catalog_categories_router
 from app.modules.admin_data_reset.router import router as admin_data_reset_router
+from app.modules.admin_demo_data.router import router as admin_demo_data_router
+from app.modules.billing.router import router as billing_router
+from app.modules.newsletter.router import router as newsletter_router
+from app.modules.admin_newsletter.router import router as admin_newsletter_router
+from app.modules.pricing_admin.router import router as pricing_admin_router
 
 
 def create_app() -> FastAPI:
@@ -148,6 +223,11 @@ def create_app() -> FastAPI:
     app.include_router(suggestions_router)
     app.include_router(book_redemption_router)
     app.include_router(admin_data_reset_router)
+    app.include_router(admin_demo_data_router)
+    app.include_router(billing_router)
+    app.include_router(newsletter_router)
+    app.include_router(admin_newsletter_router)
+    app.include_router(pricing_admin_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)

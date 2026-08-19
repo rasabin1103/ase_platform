@@ -8,6 +8,11 @@ export type CatalogItemImage = {
   display_order: number
 }
 
+export type DimensionSelection = {
+  dimension_type_id: number
+  dimension_level_id: number
+}
+
 export type CatalogItemAdmin = {
   id: number
   uuid: string
@@ -34,6 +39,9 @@ export type CatalogItemAdmin = {
   repo_redeem_code: string | null
   custom_fields: Record<string, unknown>
   has_stored_image?: boolean
+  dimension_selections?: DimensionSelection[]
+  page_count?: number | null
+  recommended_price?: string | number | null
   created_at: string
   updated_at: string
 }
@@ -67,6 +75,8 @@ export type CatalogItemAdminPayload = {
   repo_url?: string | null
   repo_redeem_code?: string | null
   custom_fields?: Record<string, unknown>
+  dimension_selections?: DimensionSelection[]
+  page_count?: number | null
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>

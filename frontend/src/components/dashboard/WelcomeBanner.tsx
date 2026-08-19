@@ -1,8 +1,20 @@
+import { Award } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
+import { Badge } from '../ui/Badge'
+import { localizedPlanText } from '../public/pricingFromPlans'
 import { avatarDisplayPath, isApiMediaPath } from '../../utils/mediaUrls'
 import { cn } from '../ui/cn'
+
+// Tier-specific accents — kept separate from Badge's built-in variants since
+// none of those map to "silver/gold/platinum" colors.
+const LOYALTY_TIER_CLASSES: Record<string, string> = {
+  silver: 'border-slate-300/40 bg-slate-300/10 text-slate-200',
+  gold: 'border-amber-400/40 bg-amber-400/10 text-amber-200',
+  platinum: 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200',
+  infinite: 'border-fuchsia-400/40 bg-fuchsia-400/10 text-fuchsia-200',
+}
 
 type WelcomeBannerProps = {
   /** `stacked` = avatar centered above the name (standalone use).
@@ -18,7 +30,7 @@ type WelcomeBannerProps = {
  * the same mechanism ProfilePage uses, so it stays in sync across logins. */
 export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const { currentUser } = useAuth()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
 
   const name = currentUser?.display_name || currentUser?.email || ''
   const initials = (currentUser?.display_name || currentUser?.email || '?').trim().slice(0, 1).toUpperCase()
@@ -26,6 +38,29 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const cacheKey = `${currentUser?.updated_at ?? ''}-${currentUser?.has_avatar ? '1' : '0'}`
   const size = variant === 'inline' ? 'h-11 w-11' : variant === 'lead' ? 'h-16 w-16' : 'h-20 w-20'
   const fallbackTextSize = variant === 'inline' ? 'text-sm' : variant === 'lead' ? 'text-xl' : 'text-2xl'
+
+  const hasActivePlan =
+    Boolean(currentUser?.plan_code) &&
+    (currentUser?.subscription_status === 'active' || currentUser?.subscription_status === 'trialing')
+  const planLabel = hasActivePlan
+    ? localizedPlanText(language, currentUser?.plan_name, currentUser?.plan_name_en)
+    : null
+  const planBadge = planLabel ? (
+    <Badge variant="info" className="shrink-0 uppercase tracking-wide">
+      {planLabel}
+    </Badge>
+  ) : null
+
+  const loyaltyTier = currentUser?.loyalty_tier ?? null
+  const loyaltyLabel = loyaltyTier ? String(t(`dashboardWelcome.loyalty.${loyaltyTier}`)) : null
+  const loyaltyBadge = loyaltyTier && loyaltyLabel ? (
+    <Badge
+      className={cn('shrink-0 gap-1 uppercase tracking-wide', LOYALTY_TIER_CLASSES[loyaltyTier] ?? '')}
+    >
+      <Award className="h-3 w-3" strokeWidth={2} />
+      {loyaltyLabel}
+    </Badge>
+  ) : null
 
   const avatar = (
     <div className={cn('shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.04] shadow-[0_12px_40px_rgba(0,0,0,0.3)]', size)}>
@@ -46,22 +81,36 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
     </div>
   )
 
-  const greeting = String(t('dashboardWelcome.greeting')).replace('{{name}}', name)
+  // Split the greeting template around the {{name}} placeholder instead of
+  // flattening it into one plain string, so the name itself can be styled
+  // (italic) separately from the rest of the greeting.
+  const [greetingPrefix, greetingSuffix] = String(t('dashboardWelcome.greeting')).split('{{name}}')
+  const greeting = (
+    <>
+      {greetingPrefix}
+      <em className="italic text-ase-text">{name}</em>
+      {greetingSuffix}
+    </>
+  )
 
   if (variant === 'inline') {
     return (
       <div className="flex items-center gap-3">
         {avatar}
         <span className="max-w-[14rem] truncate text-sm font-semibold text-ase-text">{greeting}</span>
+        {planBadge}
+        {loyaltyBadge}
       </div>
     )
   }
 
   if (variant === 'lead') {
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         {avatar}
-        <span className="max-w-md truncate text-xl font-bold text-ase-text sm:text-2xl">{greeting}</span>
+        <span className="text-xl font-bold text-ase-text sm:text-2xl">{greeting}</span>
+        {planBadge}
+        {loyaltyBadge}
       </div>
     )
   }
@@ -69,7 +118,11 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   return (
     <div className="flex flex-col items-center gap-3 pb-2 pt-2 text-center">
       {avatar}
-      <div className="text-lg font-semibold text-ase-text">{greeting}</div>
+      <div className="flex flex-wrap items-center justify-center gap-2 text-lg font-semibold text-ase-text">
+        {greeting}
+        {planBadge}
+        {loyaltyBadge}
+      </div>
     </div>
   )
 }

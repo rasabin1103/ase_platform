@@ -30,6 +30,7 @@ class OrganizationType(str, Enum):
 class OrganizationStatus(str, Enum):
     active = "active"
     suspended = "suspended"
+    deleted = "deleted"
 
 
 class MembershipStatus(str, Enum):
@@ -112,6 +113,24 @@ class CatalogItemLevel(str, Enum):
     advanced = "advanced"
 
 
+class PricingPillarCode(str, Enum):
+    """The 5 structural pillars of the pricing engine — fixed by design
+    (not admin-creatable/deletable), mirroring CatalogItemType plus
+    "service" for the standalone Service model. Each pillar has an
+    admin-configurable base price plus an arbitrary set of
+    PricingDimensionType "subelementos" (subtipo, complejidad,
+    funcionalidad, páginas, horas...) — every one of them just multiplies
+    into the final price, there is no separate subcategory concept — see
+    app/models/pricing_dimension_type.py and
+    app/models/pricing_dimension_level.py."""
+
+    product = "product"
+    course = "course"
+    book = "book"
+    resource = "resource"
+    service = "service"
+
+
 class BillingCycle(str, Enum):
     monthly = "monthly"
     yearly = "yearly"
@@ -129,6 +148,17 @@ class SubscriptionStatus(str, Enum):
     past_due = "past_due"
     canceled = "canceled"
     expired = "expired"
+
+
+class LoyaltyTier(str, Enum):
+    """Reward tier based on how many consecutive 6-month milestones a user
+    has reached as an active subscriber (see app/core/loyalty.py). Ordered
+    low to high — thresholds live alongside the sweep logic, not here."""
+
+    silver = "silver"
+    gold = "gold"
+    platinum = "platinum"
+    infinite = "infinite"
 
 
 class ProductStatus(str, Enum):

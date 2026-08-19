@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { CheckCircle2 } from 'lucide-react'
 import { z } from 'zod'
 import { login, verifyLoginTwoFactor } from '../api/auth.api'
 import { getAccessToken } from '../auth/auth.store'
@@ -26,6 +27,8 @@ export function LoginPage() {
   const navigate = useNavigate()
   const { t } = useI18n()
   const auth = useAuth()
+  const [searchParams] = useSearchParams()
+  const justRegistered = searchParams.get('registered') === '1'
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
   const [otpCode, setOtpCode] = useState('')
 
@@ -147,6 +150,16 @@ export function LoginPage() {
               <div className="text-lg font-bold text-ase-text">{t('auth.login.formTitle')}</div>
               <div className="mt-1 text-sm text-ase-text2">{t('auth.login.formSubtitle')}</div>
             </div>
+
+            {justRegistered ? (
+              <div className="mb-4 flex items-start gap-3 rounded-lg border border-emerald-300/25 bg-emerald-300/10 p-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" strokeWidth={1.75} />
+                <div>
+                  <div className="text-sm font-semibold text-emerald-100">{t('auth.login.registeredBannerTitle')}</div>
+                  <div className="mt-0.5 text-sm text-emerald-100/80">{t('auth.login.registeredBannerBody')}</div>
+                </div>
+              </div>
+            ) : null}
 
             <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
               <div>

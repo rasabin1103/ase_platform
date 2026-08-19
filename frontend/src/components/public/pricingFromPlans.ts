@@ -2,6 +2,19 @@ import type { Plan } from '../../types/plan.types'
 
 export type PricingTier = 'free' | 'pro' | 'business' | 'enterprise'
 
+/** Picks the English mirror of a plan text field when the UI is in English
+ * and a translation actually exists, falling back to the Spanish source
+ * otherwise — so a plan never renders blank just because auto-translation
+ * hasn't run yet or Reverso's unofficial endpoint was unreachable. */
+export function localizedPlanText(
+  language: 'en' | 'es',
+  esValue: string | null | undefined,
+  enValue: string | null | undefined,
+): string {
+  if (language === 'en' && enValue) return enValue
+  return esValue ?? ''
+}
+
 export function tierFromPlanCode(code: string): PricingTier | null {
   const c = code.trim().toLowerCase()
   if (c === 'free' || c.startsWith('free_') || c === 'starter' || c.startsWith('starter_')) return 'free'
@@ -85,7 +98,18 @@ export function planPriceView(
   return { priceLabel, suffix }
 }
 
+/** What a plan's card lists as included — prefers the real "what's included"
+ * catalog items (the same ones that drive actual entitlements when someone
+ * subscribes, configured via the CatalogItemPicker in the admin Plans form)
+ * over the deprecated free-text `features` rows, which only exist for plans
+ * created before that picker did and never re-saved with items since. This
+ * mirrors the admin's own "Pricing preview" fallback logic, so the public
+ * page always shows what a subscriber actually gets. */
 export function planFeatureLines(plan: Plan): string[] {
+  const items = plan.included_catalog_items ?? []
+  if (items.length > 0) {
+    return [...items].sort((a, b) => a.display_order - b.display_order).map((ci) => ci.title)
+  }
   const rows = (plan.features ?? []).filter((f) => f.is_active !== false)
   return [...rows].sort((a, b) => a.display_order - b.display_order).map((f) => f.text)
 }

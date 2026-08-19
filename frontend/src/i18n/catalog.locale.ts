@@ -69,6 +69,25 @@ export const catalogEn = {
       not_worth_price: 'Not worth the price',
     },
   },
+  review: {
+    title: 'Reviews',
+    writeTitle: 'Leave a review',
+    ratingLabel: 'Your rating',
+    commentPlaceholder: 'Share your experience with this item (optional)',
+    submit: 'Submit review',
+    update: 'Update review',
+    remove: 'Delete my review',
+    purchaseRequired: 'Buy this item to leave a review.',
+    empty: 'No reviews yet — be the first to write one.',
+    average: '{{rating}} out of 5 ({{count}} reviews)',
+    averageOne: '{{rating}} out of 5 (1 review)',
+    loadMore: 'Load more reviews',
+  },
+  share: {
+    button: 'Share',
+    copied: 'Link copied to clipboard',
+    error: 'Could not share this item.',
+  },
   pages: {
     products: { title: 'Product catalog', subtitle: 'SaaS tools and platforms for your workflow.' },
     courses: { title: 'Course catalog', subtitle: 'Training paths to level up your team.' },
@@ -374,6 +393,16 @@ export const adminCatalogEs = {
   status: { published: 'Publicado', draft: 'Borrador', coming_soon: 'Próximamente', request_only: 'Solo solicitud' },
 }
 
+export const adminCatalogSettingsEn = {
+  heroBadge: 'Catalog settings',
+  title: 'Catalog settings',
+  subtitle: 'Categories and pricing engine — the two configuration screens behind every catalog item.',
+  tabs: {
+    categories: 'Categories',
+    pricing: 'Pricing engine',
+  },
+}
+
 export const adminCatalogCategoriesEn = {
   premium: { badge: 'Catalog structure' },
   title: 'Catalog categories',
@@ -406,6 +435,16 @@ export const adminCatalogCategoriesEn = {
     fieldLabel: 'Field label',
     optionsPlaceholder: 'option 1, option 2, option 3',
     required: 'Required',
+  },
+}
+
+export const adminCatalogSettingsEs = {
+  heroBadge: 'Configuración del catálogo',
+  title: 'Configuración del catálogo',
+  subtitle: 'Categorías y motor de precios — las dos pantallas de configuración detrás de cada ítem del catálogo.',
+  tabs: {
+    categories: 'Categorías',
+    pricing: 'Motor de precios',
   },
 }
 
@@ -591,6 +630,18 @@ export const adminAnnouncementsEs = {
   recipientsSent: 'Enviado a {{count}} usuarios',
 }
 
+export const adminSystemEn = {
+  heroBadge: 'System',
+  title: 'System',
+  subtitle: 'Status, error logs, data reset, and demo data — all in one place.',
+  tabs: {
+    status: 'Status',
+    errors: 'Error logs',
+    reset: 'Data reset',
+    demo: 'Demo data',
+  },
+}
+
 export const adminSystemStatusEn = {
   heroBadge: 'System status',
   title: 'System status',
@@ -770,6 +821,50 @@ export const adminDataResetEs = {
   preservedNotePrefix: 'Solo permanecerá esta cuenta:',
 }
 
+export const adminDemoDataEn = {
+  heroBadge: 'Demo data',
+  title: 'Paid & free user preview',
+  subtitle: 'Create throwaway test accounts — some with an active paid subscription, one plain independent account with no plan — so you can log in and see exactly what each kind of user sees, upsell included.',
+  actionTitle: 'Create demo Pro / Business / Free accounts',
+  actionSubtitle: 'Safe to run more than once — it never duplicates accounts, only tops up anything missing (e.g. a plan\'s included items changed since last run).',
+  createButton: 'Create demo accounts',
+  creating: 'Creating…',
+  error: 'Could not create the demo accounts.',
+  resultTitle: 'Demo accounts ready',
+  passwordLabel: 'Password for every demo account:',
+  columns: { email: 'Email', plan: 'Plan', itemsGranted: 'Catalog items granted', status: 'Status' },
+  badges: { created: 'Created', existing: 'Already existed' },
+  freePlan: 'No plan',
+}
+
+export const adminDemoDataEs = {
+  heroBadge: 'Datos de demo',
+  title: 'Vista previa de usuario pagado y gratuito',
+  subtitle: 'Crea cuentas de prueba desechables — algunas con una suscripción de pago activa, y una cuenta independiente sin plan — para que puedas entrar y ver exactamente lo que ve cada tipo de usuario, incluida la invitación a suscribirse.',
+  actionTitle: 'Crear cuentas de demo Pro / Business / Gratuita',
+  actionSubtitle: 'Se puede ejecutar más de una vez sin problema — nunca duplica cuentas, solo completa lo que falte (por ejemplo, si cambiaste qué incluye un plan desde la última vez).',
+  createButton: 'Crear cuentas de demo',
+  creating: 'Creando…',
+  error: 'No se pudieron crear las cuentas de demo.',
+  resultTitle: 'Cuentas de demo listas',
+  passwordLabel: 'Contraseña para todas las cuentas de demo:',
+  columns: { email: 'Email', plan: 'Plan', itemsGranted: 'Elementos de catálogo concedidos', status: 'Estado' },
+  badges: { created: 'Creada', existing: 'Ya existía' },
+  freePlan: 'Sin plan',
+}
+
+export const adminSystemEs = {
+  heroBadge: 'Sistema',
+  title: 'Sistema',
+  subtitle: 'Estado, registro de errores, reinicio de datos y datos de demo — todo en un solo lugar.',
+  tabs: {
+    status: 'Estado',
+    errors: 'Registro de errores',
+    reset: 'Reinicio de datos',
+    demo: 'Datos de demo',
+  },
+}
+
 export const adminSystemStatusEs = {
   heroBadge: 'Estado del sistema',
   title: 'Estado del sistema',
@@ -935,6 +1030,25 @@ export const catalogEs = {
       not_worth_price: 'No vale su precio',
     },
   },
+  review: {
+    title: 'Reseñas',
+    writeTitle: 'Deja tu reseña',
+    ratingLabel: 'Tu valoración',
+    commentPlaceholder: 'Cuenta tu experiencia con este ítem (opcional)',
+    submit: 'Enviar reseña',
+    update: 'Actualizar reseña',
+    remove: 'Eliminar mi reseña',
+    purchaseRequired: 'Compra este ítem para poder dejar una reseña.',
+    empty: 'Todavía no hay reseñas — sé el primero en escribir una.',
+    average: '{{rating}} de 5 ({{count}} reseñas)',
+    averageOne: '{{rating}} de 5 (1 reseña)',
+    loadMore: 'Cargar más reseñas',
+  },
+  share: {
+    button: 'Compartir',
+    copied: 'Enlace copiado al portapapeles',
+    error: 'No se pudo compartir este ítem.',
+  },
   pages: {
     products: { title: 'Catálogo de productos', subtitle: 'Herramientas SaaS para tu flujo de trabajo.' },
     courses: { title: 'Catálogo de cursos', subtitle: 'Rutas formativas para tu equipo.' },
@@ -988,6 +1102,11 @@ export const independentDashboardEn = {
     spendEmpty: 'No purchases yet',
     savedEmpty: 'No favorites yet',
   },
+  upsell: {
+    title: 'Get more with a plan',
+    body: 'Subscribe to a plan to unlock a curated set of products, courses, books and resources included at no extra cost.',
+    cta: 'See plans',
+  },
 }
 
 export const independentDashboardEs = {
@@ -1029,6 +1148,11 @@ export const independentDashboardEs = {
     savedTitle: 'Guardados por categoría',
     spendEmpty: 'Aún no hay compras',
     savedEmpty: 'Aún no hay favoritos',
+  },
+  upsell: {
+    title: 'Consigue más con un plan',
+    body: 'Suscríbete a un plan para desbloquear una selección de productos, cursos, libros y recursos incluidos sin coste extra.',
+    cta: 'Ver planes',
   },
 }
 
@@ -1078,6 +1202,31 @@ export const profilePageEn = {
   saveError: 'Could not save your profile. Check the phone format (e.g. +34600111222).',
   independentNote: 'You are an independent user without organization management features.',
   adminNote: 'Platform administrator account. Catalog and user management are in the admin menu.',
+  billing: {
+    title: 'Billing',
+    subtitle: 'Manage your plan, payment method and invoices.',
+    currentPlan: 'Current plan',
+    freePlan: 'Free',
+    manageButton: 'Manage billing',
+    viewPlans: 'See plans',
+    opening: 'Opening…',
+    error: 'Could not open the billing portal. Try again.',
+    noAccount: "You don't have a billing account yet — subscribe to a paid plan first to manage payments and invoices here.",
+    status: {
+      trialing: 'Trial',
+      active: 'Active',
+      past_due: 'Payment overdue',
+      canceled: 'Canceled',
+      expired: 'Expired',
+    },
+  },
+  newsletter: {
+    title: 'Weekly newsletter',
+    subtitle: 'A short Friday digest with new members, new content and platform news. You can unsubscribe anytime.',
+    toggleLabel: 'Receive the weekly newsletter',
+    saved: 'Preference saved.',
+    error: 'Could not update your preference. Try again.',
+  },
 }
 
 export const profilePageEs = {
@@ -1126,6 +1275,31 @@ export const profilePageEs = {
   saveError: 'No se pudo guardar el perfil. Revisa el formato del teléfono (ej. +34600111222).',
   independentNote: 'Eres un usuario independiente sin funciones de gestión organizacional.',
   adminNote: 'Cuenta de administrador de plataforma. Catálogo y usuarios están en el menú de administración.',
+  billing: {
+    title: 'Facturación',
+    subtitle: 'Gestiona tu plan, método de pago y facturas.',
+    currentPlan: 'Plan actual',
+    freePlan: 'Gratuito',
+    manageButton: 'Gestionar facturación',
+    viewPlans: 'Ver planes',
+    opening: 'Abriendo…',
+    error: 'No se pudo abrir el portal de facturación. Inténtalo de nuevo.',
+    noAccount: 'Todavía no tienes una cuenta de facturación — primero debes suscribirte a un plan de pago para poder gestionar aquí tus pagos y facturas.',
+    status: {
+      trialing: 'Prueba',
+      active: 'Activo',
+      past_due: 'Pago pendiente',
+      canceled: 'Cancelado',
+      expired: 'Expirado',
+    },
+  },
+  newsletter: {
+    title: 'Newsletter semanal',
+    subtitle: 'Un resumen breve cada viernes con nuevos miembros, contenido nuevo y noticias de la plataforma. Puedes darte de baja cuando quieras.',
+    toggleLabel: 'Recibir la newsletter semanal',
+    saved: 'Preferencia guardada.',
+    error: 'No se pudo actualizar tu preferencia. Inténtalo de nuevo.',
+  },
 }
 
 export const servicesAdminEn = {
@@ -1194,6 +1368,7 @@ export const servicesAdminEn = {
     category: 'Category',
     type: 'Type',
     priceType: 'Price type',
+    price: 'Price (optional)',
     displayOrder: 'Display order',
     icon: 'Icon (identifier)',
     isActive: 'Active',
@@ -1299,6 +1474,7 @@ export const servicesAdminEs = {
     category: 'Categoría',
     type: 'Tipo',
     priceType: 'Tipo de precio',
+    price: 'Precio (opcional)',
     displayOrder: 'Orden de visualización',
     icon: 'Icono (identificador)',
     isActive: 'Activo',

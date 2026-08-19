@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
-import { createPlan, deletePlan, listPlans, updatePlan } from '../api/plans.api'
+import { createPlan, deletePlan, getTranslationStatus, listPlans, updatePlan } from '../api/plans.api'
 import type { PlanUpdateRequest } from '../types/plan.types'
 import { listAdminCatalog } from '../api/catalogAdmin.api'
 import { Card } from '../components/ui/Card'
@@ -34,6 +34,11 @@ type CreateValues = {
   is_recommended: boolean
   is_active: boolean
   cta_label?: string | ''
+  stripe_price_id?: string | ''
+  name_en?: string | ''
+  short_description_en?: string | ''
+  description_en?: string | ''
+  cta_label_en?: string | ''
 }
 
 type EditValues = {
@@ -48,6 +53,11 @@ type EditValues = {
   is_recommended?: boolean
   is_active?: boolean
   cta_label?: string | ''
+  stripe_price_id?: string | ''
+  name_en?: string | ''
+  short_description_en?: string | ''
+  description_en?: string | ''
+  cta_label_en?: string | ''
 }
 
 function fmtMoney(price: string | null, currency: string) {
@@ -104,6 +114,11 @@ export function PlansPage() {
         is_recommended: z.boolean(),
         is_active: z.boolean(),
         cta_label: z.string().max(80).optional().or(z.literal('')),
+        stripe_price_id: z.string().max(255).optional().or(z.literal('')),
+        name_en: z.string().max(200).optional().or(z.literal('')),
+        short_description_en: z.string().max(240).optional().or(z.literal('')),
+        description_en: z.string().max(4000).optional().or(z.literal('')),
+        cta_label_en: z.string().max(80).optional().or(z.literal('')),
       }),
     [t],
   )
@@ -130,6 +145,11 @@ export function PlansPage() {
         is_recommended: z.boolean().optional(),
         is_active: z.boolean().optional(),
         cta_label: z.string().max(80).optional().or(z.literal('')),
+        stripe_price_id: z.string().max(255).optional().or(z.literal('')),
+        name_en: z.string().max(200).optional().or(z.literal('')),
+        short_description_en: z.string().max(240).optional().or(z.literal('')),
+        description_en: z.string().max(4000).optional().or(z.literal('')),
+        cta_label_en: z.string().max(80).optional().or(z.literal('')),
       }),
     [t],
   )
@@ -137,6 +157,15 @@ export function PlansPage() {
   const plansQuery = useQuery({
     queryKey: ['plans', { limit: 50, offset: 0 }],
     queryFn: () => listPlans({ limit: 50, offset: 0 }),
+  })
+
+  // Drives the "translation not configured" banner below — when
+  // DEEPL_API_KEY is missing, saving a plan silently mirrors the Spanish
+  // text into the English fields instead of translating it.
+  const translationStatusQuery = useQuery({
+    queryKey: ['plans-translation-status'],
+    queryFn: getTranslationStatus,
+    staleTime: 5 * 60 * 1000,
   })
 
   const items = useMemo(() => plansQuery.data?.items ?? [], [plansQuery.data])
@@ -158,6 +187,11 @@ export function PlansPage() {
       is_recommended: false,
       is_active: true,
       cta_label: '',
+      stripe_price_id: '',
+      name_en: '',
+      short_description_en: '',
+      description_en: '',
+      cta_label_en: '',
     },
   })
 
@@ -178,6 +212,11 @@ export function PlansPage() {
       is_recommended: false,
       is_active: true,
       cta_label: '',
+      stripe_price_id: '',
+      name_en: '',
+      short_description_en: '',
+      description_en: '',
+      cta_label_en: '',
     },
   })
 
@@ -199,6 +238,11 @@ export function PlansPage() {
         is_recommended: false,
         is_active: true,
         cta_label: '',
+        stripe_price_id: '',
+        name_en: '',
+        short_description_en: '',
+        description_en: '',
+        cta_label_en: '',
       })
       setCreateCatalogItemIds([])
       await queryClient.invalidateQueries({ queryKey: ['plans'] })
@@ -272,6 +316,13 @@ export function PlansPage() {
         </div>
       </section>
 
+      {translationStatusQuery.data?.enabled === false ? (
+        <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-5 py-4 text-sm text-amber-100">
+          <span className="font-semibold">{t('plansPage.translationWarning.title')}</span>{' '}
+          {t('plansPage.translationWarning.body')}
+        </div>
+      ) : null}
+
       <section className="relative">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -332,12 +383,18 @@ export function PlansPage() {
               <Table className="table-fixed">
                 <THead>
                   <TR>
-                    <TH className="w-[44%]">{t('plansPage.list.columns.plan')}</TH>
-                    <TH className="w-[14%]">{t('plansPage.list.columns.billing')}</TH>
-                    <TH className="w-[16%]">{t('plansPage.list.columns.price')}</TH>
-                    <TH className="w-[14%]">{t('plansPage.list.columns.status')}</TH>
-                    <TH className="hidden w-[12%] xl:table-cell">{t('plansPage.list.columns.recommended')}</TH>
-                    <TH className="w-[22%] text-right">{t('plansPage.list.columns.actions')}</TH>
+                    {/* table-layout:fixed sizes every column strictly to what's set here
+                        on the header row (only the first row counts) — the narrow columns
+                        get a fixed px width, comfortably wider than their nowrap content
+                        (badges, two buttons) can ever need, so nothing overflows into a
+                        neighboring cell at any viewport width. Plan gets no explicit width,
+                        so it absorbs whatever's left (its own text already truncates). */}
+                    <TH>{t('plansPage.list.columns.plan')}</TH>
+                    <TH className="w-[120px]">{t('plansPage.list.columns.billing')}</TH>
+                    <TH className="w-[130px]">{t('plansPage.list.columns.price')}</TH>
+                    <TH className="w-[110px]">{t('plansPage.list.columns.status')}</TH>
+                    <TH className="hidden w-[140px] xl:table-cell">{t('plansPage.list.columns.recommended')}</TH>
+                    <TH className="w-[230px] text-right">{t('plansPage.list.columns.actions')}</TH>
                   </TR>
                 </THead>
                 <TBody>
@@ -373,7 +430,7 @@ export function PlansPage() {
                         {p.is_recommended ? <Badge variant="info">{t('plansPage.badges.recommended')}</Badge> : <span className="text-ase-muted">{na}</span>}
                       </TD>
                       <TD className="text-right">
-                        <div className="inline-flex gap-2">
+                        <div className="inline-flex flex-nowrap gap-2 whitespace-nowrap">
                           <Button
                             size="sm"
                             variant="secondary"
@@ -392,6 +449,11 @@ export function PlansPage() {
                                 is_recommended: Boolean(p.is_recommended),
                                 is_active: p.is_active,
                                 cta_label: p.cta_label ?? '',
+                                stripe_price_id: p.stripe_price_id ?? '',
+                                name_en: p.name_en ?? '',
+                                short_description_en: p.short_description_en ?? '',
+                                description_en: p.description_en ?? '',
+                                cta_label_en: p.cta_label_en ?? '',
                               })
                               setEditCatalogItemIds((p.included_catalog_items ?? []).map((ci) => ci.catalog_item_id))
                             }}
@@ -433,6 +495,11 @@ export function PlansPage() {
                   display_order: values.display_order ? Number(values.display_order) : undefined,
                   cta_label: values.cta_label ? values.cta_label : null,
                   catalog_item_ids: createCatalogItemIds,
+                  stripe_price_id: values.stripe_price_id ? values.stripe_price_id.trim() : null,
+                  name_en: values.name_en ? values.name_en.trim() : null,
+                  short_description_en: values.short_description_en ? values.short_description_en.trim() : null,
+                  description_en: values.description_en ? values.description_en.trim() : null,
+                  cta_label_en: values.cta_label_en ? values.cta_label_en.trim() : null,
                 }),
               )}
             >
@@ -501,6 +568,36 @@ export function PlansPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
+                <Input
+                  placeholder={t('plansPage.create.placeholders.stripePriceId') as string}
+                  autoComplete="off"
+                  {...createForm.register('stripe_price_id')}
+                />
+                <p className="mt-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.stripePriceIdHint')}</p>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+                <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.englishFieldsHint')}</p>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
+                  <Input placeholder={t('plansPage.create.placeholders.nameEn') as string} {...createForm.register('name_en')} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
+                  <Input placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...createForm.register('short_description_en')} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
+                  <Textarea placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...createForm.register('description_en')} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
+                  <Input placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...createForm.register('cta_label_en')} />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isActive')}</div>
@@ -550,6 +647,18 @@ export function PlansPage() {
               disabled={updateMutation.isPending}
               onClick={editForm.handleSubmit((values) => {
                 if (!editing) return
+                // The English fields are pre-filled with the plan's current
+                // translation purely so the admin can see/override it — but
+                // that means they're never blank on an edit, unlike on
+                // create. Sending them back unconditionally would make the
+                // backend treat every save as an explicit manual override
+                // (see PlansService._ensure_english_fields), permanently
+                // blocking auto re-translation the moment a plan is edited
+                // for the first time. Only send an "_en" field if the admin
+                // actually typed into it this session (dirtyFields) — left
+                // untouched, it's sent as null so the backend re-translates
+                // from the (possibly just-edited) Spanish text instead.
+                const dirty = editForm.formState.dirtyFields
                 updateMutation.mutate({
                   plan_id: editing.id,
                   payload: {
@@ -565,6 +674,15 @@ export function PlansPage() {
                     is_active: typeof values.is_active === 'boolean' ? values.is_active : null,
                     cta_label: values.cta_label ? values.cta_label : null,
                     catalog_item_ids: editCatalogItemIds,
+                    stripe_price_id: values.stripe_price_id ? values.stripe_price_id.trim() : null,
+                    name_en: dirty.name_en && values.name_en ? values.name_en.trim() : null,
+                    short_description_en:
+                      dirty.short_description_en && values.short_description_en
+                        ? values.short_description_en.trim()
+                        : null,
+                    description_en:
+                      dirty.description_en && values.description_en ? values.description_en.trim() : null,
+                    cta_label_en: dirty.cta_label_en && values.cta_label_en ? values.cta_label_en.trim() : null,
                   },
                 })
               })}
@@ -630,6 +748,36 @@ export function PlansPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabel')}</label>
               <Input {...editForm.register('cta_label')} />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
+            <Input
+              placeholder={t('plansPage.create.placeholders.stripePriceId') as string}
+              autoComplete="off"
+              {...editForm.register('stripe_price_id')}
+            />
+            <p className="mt-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.stripePriceIdHint')}</p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+            <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.englishFieldsHint')}</p>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
+              <Input placeholder={t('plansPage.create.placeholders.nameEn') as string} {...editForm.register('name_en')} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
+              <Input placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...editForm.register('short_description_en')} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
+              <Textarea placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...editForm.register('description_en')} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
+              <Input placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...editForm.register('cta_label_en')} />
             </div>
           </div>
 

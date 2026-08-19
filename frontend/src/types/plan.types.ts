@@ -35,8 +35,15 @@ export type Plan = {
   display_order?: number
   is_recommended?: boolean
   cta_label?: string | null
+  /** Stripe Price id (price_...) this plan's subscription checkout uses. Null = not sellable via Stripe yet. */
+  stripe_price_id?: string | null
   /** Annual price when catalog API exposes monthly + annual on one row (Railway public catalog). */
   annual_price?: string | null
+  /** English mirror of name/short_description/description/cta_label — auto-translated by the backend, editable by the admin. */
+  name_en?: string | null
+  short_description_en?: string | null
+  description_en?: string | null
+  cta_label_en?: string | null
   /** Deprecated free-text bullets — only populated for plans created before the catalog picker existed. */
   features?: PlanFeature[]
   included_catalog_items?: PlanCatalogItem[]
@@ -68,6 +75,11 @@ export type PlanCreateRequest = {
   is_recommended?: boolean
   cta_label?: string | null
   catalog_item_ids?: number[] | null
+  stripe_price_id?: string | null
+  name_en?: string | null
+  short_description_en?: string | null
+  description_en?: string | null
+  cta_label_en?: string | null
 }
 
 
@@ -88,5 +100,10 @@ export type PlanUpdateRequest = {
   is_recommended?: boolean | null
   cta_label?: string | null
   catalog_item_ids?: number[] | null
+  stripe_price_id?: string | null
+  name_en?: string | null
+  short_description_en?: string | null
+  description_en?: string | null
+  cta_label_en?: string | null
 }
 

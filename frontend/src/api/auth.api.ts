@@ -51,6 +51,7 @@ export type ProfileUpdateRequest = {
   display_name?: string | null
   avatar_url?: string | null
   phone_e164?: string | null
+  newsletter_subscribed?: boolean
 }
 
 export async function updateProfile(payload: ProfileUpdateRequest) {

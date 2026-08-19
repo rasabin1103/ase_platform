@@ -37,6 +37,11 @@ from app.models.book_repo_redemption import BookRepoRedemption
 from app.models.user_verification_token import UserVerificationToken
 from app.models.error_log import ErrorLog
 from app.models.plan_catalog_item import PlanCatalogItem
+from app.models.pricing_pillar import PricingPillar
+from app.models.pricing_dimension_type import PricingDimensionType
+from app.models.pricing_dimension_level import PricingDimensionLevel
+from app.models.catalog_item_dimension_selection import CatalogItemDimensionSelection
+from app.models.service_dimension_selection import ServiceDimensionSelection
 
 __all__ = [
     "User",
@@ -78,5 +83,10 @@ __all__ = [
     "UserVerificationToken",
     "ErrorLog",
     "PlanCatalogItem",
+    "PricingPillar",
+    "PricingDimensionType",
+    "PricingDimensionLevel",
+    "CatalogItemDimensionSelection",
+    "ServiceDimensionSelection",
 ]
 

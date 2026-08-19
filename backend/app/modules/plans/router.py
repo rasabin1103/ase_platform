@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.translation import translation_configured
 from app.models.enums import BillingCycle
 from app.modules.auth.dependencies import require_permission, require_platform_role
-from app.modules.plans.schemas import PlanCreate, PlanListResponse, PlanRead, PlanUpdate
+from app.modules.plans.schemas import PlanCreate, PlanListResponse, PlanRead, PlanUpdate, TranslationStatus
 from app.modules.plans.service import PlansService
 
 router = APIRouter(prefix="/api/v1/plans", tags=["plans"])
@@ -46,6 +47,18 @@ def list_plans_public_catalog(
     """Active plans only, no auth — for public marketing / pricing UI."""
     items, total = svc.list(limit=limit, offset=0, is_active=True, billing_cycle=None)
     return PlanListResponse(items=items, limit=limit, offset=0, total=total)
+
+
+@router.get(
+    "/meta/translation-status",
+    response_model=TranslationStatus,
+    dependencies=[Depends(require_permission("billing.manage"))],
+)
+def get_translation_status():
+    """Lets the Plans admin UI warn when DEEPL_API_KEY isn't set — without
+    this, every save silently mirrors the Spanish text into the English
+    fields instead of translating, which otherwise looks like a bug."""
+    return TranslationStatus(enabled=translation_configured())
 
 
 @router.get("/{plan_id}", response_model=PlanRead, dependencies=[Depends(require_permission("billing.manage"))])
