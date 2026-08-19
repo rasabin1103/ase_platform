@@ -7,8 +7,8 @@ function captureDownloadedCsv(): { getText: () => Promise<string>; clickedFilena
   let capturedBlob: Blob | null = null
   let clickedFilename: string | undefined
 
-  vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob) => {
-    capturedBlob = blob
+  vi.spyOn(URL, 'createObjectURL').mockImplementation((obj: Blob | MediaSource) => {
+    capturedBlob = obj as Blob
     return 'blob:mock-url'
   })
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
