@@ -48,6 +48,13 @@ class CatalogItemRead(BaseModel):
     category: str
     shortDescription: str
     longDescription: str
+    # English mirrors, auto-translated via DeepL on save (see
+    # CatalogAdminService._ensure_english_fields) — null only for items
+    # created before this field existed and not re-saved since. The
+    # frontend falls back to the Spanish text whenever these are null.
+    titleEn: str | None = None
+    shortDescriptionEn: str | None = None
+    longDescriptionEn: str | None = None
     imageUrl: str
     images: list[CatalogItemImagePublicRead] = []
     price: Decimal
@@ -71,6 +78,13 @@ class CatalogItemRead(BaseModel):
     averageRating: float | None = None
     reviewCount: int = 0
     myReview: MyReviewRead | None = None
+    # True only when both repo_url and repo_path are configured on this
+    # item — powers the "Ver contenido"/"Descargar" buttons. Deliberately
+    # a plain boolean, never the raw repo_url/repo_path: those stay
+    # server-side, read through GithubClient only after the ownership
+    # check in resource-content/resource-download, never handed to the
+    # browser directly (this is a private, shared repo, not per-item).
+    hasResourceContent: bool = False
     createdAt: datetime
     updatedAt: datetime
 
@@ -100,3 +114,15 @@ class UserCatalogStateUpdate(BaseModel):
 class UserCatalogStateRead(BaseModel):
     favorite_slugs: list[str]
     purchased_slugs: list[str]
+
+
+class ResourceContentRead(BaseModel):
+    path: str
+    # "markdown" (README.md, decoded as text in `content`) | "docx" | "xlsx"
+    # (both binary, base64-encoded in `contentBase64` — the frontend decodes
+    # and renders them client-side with mammoth/SheetJS instead of the
+    # backend converting to HTML, keeping this endpoint format-agnostic).
+    kind: str = "markdown"
+    content: str | None = None
+    contentBase64: str | None = None
+    truncated: bool = False

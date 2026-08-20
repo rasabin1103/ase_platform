@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -30,10 +32,26 @@ class CatalogPurchase(Base, IdPkMixin, TimestampMixin):
     # one-time Stripe Checkout, see app/modules/billing), "plan_entitlement"
     # (included in the user's active paid subscription plan, granted
     # automatically by the subscription webhook), or "admin_grant" (an org
-    # admin's replace_all()/manual grant). Purely informational — used for
-    # admin visibility and metrics, never for access control itself (a row
-    # existing at all means access is granted, regardless of source).
+    # admin's replace_all()/manual grant). Informational, but also decides
+    # what `permanent_access_granted_at` gets set to when the row is first
+    # created — see that column.
     source: Mapped[str] = mapped_column(String(32), nullable=False, default="free", server_default="free")
     # Stripe Checkout Session id, set only when source == "stripe_checkout" —
     # lets support look up the actual payment in the Stripe Dashboard.
     stripe_checkout_session_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # NULL means this row's access is plan-sourced only ("plan_entitlement")
+    # and therefore live — CatalogPurchasesRepository.slugs_for_user() only
+    # honors it while BOTH `organization_id` currently has an active/trialing
+    # Subscription to a plan that still includes this item AND the user is
+    # still an active member of that organization (removed members lose it
+    # immediately, since it's the organization's purchase, not theirs). Any
+    # other source (free, stripe_checkout, admin_grant) sets this at
+    # creation time and grants access for life, independent of any
+    # subscription or membership. Also set the moment a direct purchase/
+    # grant arrives for an item the user already had via a plan — see
+    # CatalogPurchasesRepository.add(). Product decision from Roberto
+    # (2026-08-20): direct/individual catalog purchases are permanent;
+    # plan-based access ends when the plan is cancelled or the member is
+    # removed from the organization, so users are encouraged to download
+    # what they want to keep.
+    permanent_access_granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

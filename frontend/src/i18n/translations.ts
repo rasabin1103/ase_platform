@@ -84,6 +84,7 @@ export const translations = {
     },
     dashboardWelcome: {
       greeting: 'Welcome back, {{name}}',
+      freePlan: 'Free plan',
       loyalty: {
         silver: 'Silver',
         gold: 'Gold',
@@ -963,6 +964,7 @@ export const translations = {
     },
     dashboardWelcome: {
       greeting: 'Bienvenido de nuevo, {{name}}',
+      freePlan: 'Plan gratuito',
       loyalty: {
         silver: 'Plata',
         gold: 'Oro',

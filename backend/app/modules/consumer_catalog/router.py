@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,7 @@ from app.modules.consumer_catalog.schemas import (
     CatalogItemListResponse,
     CatalogItemRead,
     RateItemRequest,
+    ResourceContentRead,
     ReviewListResponse,
     ReviewRequest,
     UserCatalogStateRead,
@@ -109,6 +110,27 @@ def purchase_item(slug: str, user: User = Depends(get_current_user), svc: Consum
 @router.get("/{slug}", response_model=CatalogItemRead, dependencies=[Depends(require_permission("catalog.read"))])
 def get_catalog_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.get_by_slug(slug, user_id=user.id)
+
+
+@router.get(
+    "/{slug}/resource-content",
+    response_model=ResourceContentRead,
+    dependencies=[Depends(require_permission("purchases.manage_own"))],
+)
+def get_resource_content(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    """Read-only in-platform viewer — 403s unless the caller owns this item
+    (directly or via an active plan), same check as everything else."""
+    return svc.get_resource_content(slug, user_id=user.id)
+
+
+@router.get("/{slug}/resource-download", dependencies=[Depends(require_permission("purchases.manage_own"))])
+def download_resource(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    content, filename = svc.get_resource_download(slug, user_id=user.id)
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])

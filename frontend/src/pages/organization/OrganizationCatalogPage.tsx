@@ -11,9 +11,11 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { ImageCarousel } from '../../components/catalog/ImageCarousel'
+import { MarkdownContent } from '../../components/catalog/MarkdownViewer'
 import { RatingWidget } from '../../components/catalog/RatingWidget'
 import { cn } from '../../components/ui/cn'
 import { useI18n } from '../../i18n'
+import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 
 // Unified card shape for this management view: unlike the consumer-facing
@@ -225,6 +227,9 @@ function MiniCatalogCard({
   detailLabel: string
   typeLabel: string
 }) {
+  const { language } = useI18n()
+  const title = localizedCatalogText(language, item.title, item.titleEn)
+  const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0">
       <button
@@ -244,8 +249,8 @@ function MiniCatalogCard({
         ) : null}
       </button>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-sm font-bold text-ase-text line-clamp-2">{item.title}</h3>
-        <p className="text-xs text-ase-muted line-clamp-2">{item.shortDescription}</p>
+        <h3 className="text-sm font-bold text-ase-text line-clamp-2">{title}</h3>
+        <p className="text-xs text-ase-muted line-clamp-2">{shortDescription}</p>
         <RatingWidget item={item} compact />
         <div className="mt-auto flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" className="min-w-0 flex-1" onClick={onViewDetail}>
@@ -280,11 +285,14 @@ function CatalogItemDetailModal({
   onClose: () => void
   onToggle: () => void
 }) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   if (!item) return null
 
   const priceLabel =
     Number(item.price) > 0 ? `${item.price} ${item.currency}` : (t('organizationWorkspace.catalog.freeLabel') as string)
+  const title = localizedCatalogText(language, item.title, item.titleEn)
+  const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
+  const longDescription = localizedCatalogText(language, item.longDescription, item.longDescriptionEn)
 
   return (
     <Modal
@@ -316,8 +324,8 @@ function CatalogItemDetailModal({
           aspectClassName={ORG_CATALOG_IMAGE_ASPECT}
         />
         <div>
-          <h3 className="text-lg font-bold text-ase-text">{item.title}</h3>
-          <p className="mt-1 text-sm text-ase-text2">{item.longDescription || item.shortDescription}</p>
+          <h3 className="text-lg font-bold text-ase-text">{title}</h3>
+          <MarkdownContent content={longDescription || shortDescription} />
         </div>
         <RatingWidget item={item} />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

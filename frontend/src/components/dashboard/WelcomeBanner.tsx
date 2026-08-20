@@ -1,6 +1,7 @@
 import { Award } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
+import { useRbac } from '../../rbac/useRbac'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { Badge } from '../ui/Badge'
 import { localizedPlanText } from '../public/pricingFromPlans'
@@ -31,6 +32,7 @@ type WelcomeBannerProps = {
 export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const { currentUser } = useAuth()
   const { t, language } = useI18n()
+  const { isConsumerMode } = useRbac()
 
   const name = currentUser?.display_name || currentUser?.email || ''
   const initials = (currentUser?.display_name || currentUser?.email || '?').trim().slice(0, 1).toUpperCase()
@@ -42,11 +44,18 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const hasActivePlan =
     Boolean(currentUser?.plan_code) &&
     (currentUser?.subscription_status === 'active' || currentUser?.subscription_status === 'trialing')
+  // An independent user with no paid subscription is still on a plan — the
+  // free one. Show that by default instead of leaving the badge slot empty
+  // (which used to make "you're on the free plan" only discoverable by
+  // clicking the separate upsell CTA on the dashboard). Only independent
+  // users have plans at all, so admins/org members never get this fallback.
   const planLabel = hasActivePlan
     ? localizedPlanText(language, currentUser?.plan_name, currentUser?.plan_name_en)
-    : null
+    : isConsumerMode
+      ? String(t('dashboardWelcome.freePlan'))
+      : null
   const planBadge = planLabel ? (
-    <Badge variant="info" className="shrink-0 uppercase tracking-wide">
+    <Badge variant={hasActivePlan ? 'info' : 'default'} className="shrink-0 uppercase tracking-wide">
       {planLabel}
     </Badge>
   ) : null

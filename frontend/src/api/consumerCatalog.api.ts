@@ -67,3 +67,38 @@ export async function removeCatalogItemReview(slug: string) {
   const { data } = await apiClient.delete<CatalogItem>(`/consumer-catalog/${slug}/review`)
   return data
 }
+
+export type ResourceContent = {
+  path: string
+  /** "markdown" -> `content` is text (README.md). "docx"/"xlsx" -> binary,
+   *  base64-encoded in `contentBase64`, rendered client-side. */
+  kind: 'markdown' | 'docx' | 'xlsx'
+  content: string | null
+  contentBase64: string | null
+  truncated: boolean
+}
+
+export async function getResourceContent(slug: string) {
+  const { data } = await apiClient.get<ResourceContent>(`/consumer-catalog/${slug}/resource-content`)
+  return data
+}
+
+/** Downloads the resource's file straight from the browser — fetches it as
+ * a blob (auth header is attached by the request interceptor same as any
+ * other call) and triggers a save, same object-URL pattern as
+ * utils/csv.ts's downloadCsv. The filename comes from the server's
+ * Content-Disposition header (the file's real name in the repo). */
+export async function downloadResource(slug: string) {
+  const response = await apiClient.get(`/consumer-catalog/${slug}/resource-download`, { responseType: 'blob' })
+  const disposition = String(response.headers['content-disposition'] ?? '')
+  const match = /filename="?([^"]+)"?/.exec(disposition)
+  const filename = match?.[1] ?? `${slug}.txt`
+  const url = URL.createObjectURL(response.data as Blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}

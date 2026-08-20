@@ -16,6 +16,7 @@ from app.core.media_urls import (
     resolve_gallery_image_url,
 )
 from app.core.pricing_engine import calculate_recommended_price, match_dimension_level_for_quantity
+from app.core.translation import translate_es_to_en
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_dimension_selection import CatalogItemDimensionSelection
 from app.models.catalog_item_image import CatalogItemImage
@@ -36,11 +37,40 @@ from app.modules.catalog_admin.schemas import (
 )
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
 
+# English mirrors auto-translated via DeepL — same pattern as
+# PlansService._EN_FIELD_PAIRS/_ensure_english_fields.
+_EN_FIELD_PAIRS = (
+    ("title", "title_en"),
+    ("short_description", "short_description_en"),
+    ("long_description", "long_description_en"),
+)
+
 
 class CatalogAdminService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = ConsumerCatalogRepository(db)
+
+    def _ensure_english_fields(
+        self, item: CatalogItem, payload: CatalogItemAdminCreate | CatalogItemAdminUpdate, *, changed_es: dict[str, bool]
+    ) -> None:
+        """Fills item.<field>_en for every field where either (a) the admin
+        passed an explicit English override, or (b) the Spanish source text
+        changed in this call and needs a fresh translation. Falls back to
+        mirroring the Spanish text when translation is unavailable (no
+        DEEPL_API_KEY configured, or the API call fails) so the English
+        catalog is never left blank — saving an item can never fail because
+        of this step. Same pattern as PlansService._ensure_english_fields."""
+        for es_field, en_field in _EN_FIELD_PAIRS:
+            override = getattr(payload, en_field, None)
+            if override is not None:
+                setattr(item, en_field, override)
+                continue
+            if not changed_es.get(es_field, False):
+                continue
+            es_value = getattr(item, es_field, None)
+            translated = translate_es_to_en(es_value)
+            setattr(item, en_field, translated if translated is not None else es_value)
 
     def _image_to_read(self, image: CatalogItemImage) -> CatalogItemImageRead:
         return CatalogItemImageRead(
@@ -61,6 +91,9 @@ class CatalogAdminService:
             category=item.category,
             short_description=item.short_description,
             long_description=item.long_description,
+            title_en=item.title_en,
+            short_description_en=item.short_description_en,
+            long_description_en=item.long_description_en,
             image_url=resolve_catalog_cover_url(item),
             has_stored_image=catalog_has_stored_image(item),
             images=[self._image_to_read(img) for img in ordered],
@@ -77,6 +110,7 @@ class CatalogAdminService:
             tags=item.tags_json or [],
             repo_url=item.repo_url,
             repo_redeem_code=item.repo_redeem_code,
+            repo_path=item.repo_path,
             custom_fields=item.custom_fields_json or {},
             dimension_selections=[
                 DimensionSelectionRead(dimension_type_id=s.dimension_type_id, dimension_level_id=s.dimension_level_id)
@@ -277,8 +311,14 @@ class CatalogAdminService:
             tags_json=payload.tags,
             repo_url=payload.repo_url,
             repo_redeem_code=payload.repo_redeem_code,
+            repo_path=payload.repo_path,
             custom_fields_json=payload.custom_fields,
             page_count=payload.page_count,
+        )
+        self._ensure_english_fields(
+            item,
+            payload,
+            changed_es={"title": True, "short_description": True, "long_description": True},
         )
         self._sync_dimension_selections(item, payload.dimension_selections)
         self._apply_pricing(item)
@@ -325,6 +365,13 @@ class CatalogAdminService:
         item = self._require_item(item_id)
         was_visible = self._is_visible_status(item.status)
         data = payload.model_dump(exclude_unset=True)
+        # Handled exclusively by _ensure_english_fields below (needs to see
+        # None as "no override, maybe auto-translate" vs the generic loop
+        # below which would instead just blindly overwrite with whatever
+        # was sent — including a stray null wiping a prior translation on
+        # an edit that didn't touch these fields at all).
+        for en_field in ("title_en", "short_description_en", "long_description_en"):
+            data.pop(en_field, None)
         if "benefits" in data:
             item.benefits_json = data.pop("benefits")
         if "requirements" in data:
@@ -343,6 +390,15 @@ class CatalogAdminService:
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)
         for key, value in data.items():
             setattr(item, key, value)
+        self._ensure_english_fields(
+            item,
+            payload,
+            changed_es={
+                "title": payload.title is not None,
+                "short_description": payload.short_description is not None,
+                "long_description": payload.long_description is not None,
+            },
+        )
         self._apply_pricing(item)
         self.db.commit()
         self.db.refresh(item)

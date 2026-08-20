@@ -9,6 +9,7 @@ import {
 import { Button } from '../ui/Button'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
+import { StaticStars } from './RatingSummary'
 import type { CatalogItem } from '../../types/catalog.types'
 
 function StarPicker({
@@ -40,21 +41,6 @@ function StarPicker({
             fill={n <= shown ? 'currentColor' : 'none'}
           />
         </button>
-      ))}
-    </div>
-  )
-}
-
-function StaticStars({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          className={cn('h-3.5 w-3.5', n <= Math.round(rating) ? 'text-amber-300' : 'text-white/15')}
-          strokeWidth={1.75}
-          fill={n <= Math.round(rating) ? 'currentColor' : 'none'}
-        />
       ))}
     </div>
   )
@@ -107,6 +93,9 @@ export function ReviewWidget({ item }: { item: CatalogItem }) {
   const reviews = reviewsQuery.data?.items ?? []
   const average = item.averageRating ?? null
   const count = item.reviewCount ?? 0
+  // A free item (price 0) needs no ownership to review — same rule as the
+  // backend's submit_review() and the resource viewer/download.
+  const canReview = item.isPurchased || !Number(item.price)
 
   return (
     <div className="space-y-4">
@@ -124,7 +113,7 @@ export function ReviewWidget({ item }: { item: CatalogItem }) {
         ) : null}
       </div>
 
-      {item.isPurchased ? (
+      {canReview ? (
         <div className="space-y-2.5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs font-semibold text-ase-text2">{t('catalog.review.writeTitle')}</p>
           <StarPicker value={rating} onChange={setRating} disabled={submitMutation.isPending} />
