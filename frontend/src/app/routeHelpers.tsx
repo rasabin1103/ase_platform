@@ -86,6 +86,17 @@ export function MyPurchasesPage() {
   )
 }
 
+export function MyProductsPage() {
+  return (
+    <CatalogListPage
+      mode="myProducts"
+      titleKey="catalog.pages.myProducts.title"
+      subtitleKey="catalog.pages.myProducts.subtitle"
+      catalogBasePath="/my-products"
+    />
+  )
+}
+
 export function MyCoursesPage() {
   return (
     <CatalogListPage

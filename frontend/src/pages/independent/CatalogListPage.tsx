@@ -25,7 +25,7 @@ function groupByType(items: CatalogItem[]): Array<[CatalogItemType, CatalogItem[
   return TYPE_ORDER.filter((t) => groups.has(t)).map((t) => [t, groups.get(t)!])
 }
 
-type Mode = 'type' | 'favorites' | 'purchases' | 'myCourses' | 'myBooks' | 'myResources'
+type Mode = 'type' | 'favorites' | 'purchases' | 'myProducts' | 'myCourses' | 'myBooks' | 'myResources'
 
 type Props = {
   type?: CatalogItemType
@@ -56,17 +56,24 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
         type:
           mode === 'type'
             ? type
-            : mode === 'myCourses'
-              ? 'course'
-              : mode === 'myBooks'
-                ? 'book'
-                : mode === 'myResources'
-                  ? 'resource'
-                  : undefined,
+            : mode === 'myProducts'
+              ? 'product'
+              : mode === 'myCourses'
+                ? 'course'
+                : mode === 'myBooks'
+                  ? 'book'
+                  : mode === 'myResources'
+                    ? 'resource'
+                    : undefined,
         search: search.trim() || undefined,
         tags: tagFilter.length ? tagFilter : undefined,
         favorites_only: mode === 'favorites',
-        purchased_only: mode === 'purchases' || mode === 'myCourses' || mode === 'myBooks' || mode === 'myResources',
+        purchased_only:
+          mode === 'purchases' ||
+          mode === 'myProducts' ||
+          mode === 'myCourses' ||
+          mode === 'myBooks' ||
+          mode === 'myResources',
         sort: topRated ? 'top_rated' : undefined,
       }),
   })

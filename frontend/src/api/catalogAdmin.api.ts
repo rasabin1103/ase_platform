@@ -22,6 +22,9 @@ export type CatalogItemAdmin = {
   category: string
   short_description: string
   long_description: string
+  title_en: string | null
+  short_description_en: string | null
+  long_description_en: string | null
   image_url: string
   images: CatalogItemImage[]
   preview_url: string | null
@@ -37,6 +40,7 @@ export type CatalogItemAdmin = {
   tags: string[]
   repo_url: string | null
   repo_redeem_code: string | null
+  repo_path: string | null
   custom_fields: Record<string, unknown>
   has_stored_image?: boolean
   dimension_selections?: DimensionSelection[]
@@ -60,6 +64,9 @@ export type CatalogItemAdminPayload = {
   category: string
   short_description: string
   long_description: string
+  title_en?: string | null
+  short_description_en?: string | null
+  long_description_en?: string | null
   image_url: string
   preview_url?: string | null
   price: number
@@ -74,6 +81,7 @@ export type CatalogItemAdminPayload = {
   tags?: string[]
   repo_url?: string | null
   repo_redeem_code?: string | null
+  repo_path?: string | null
   custom_fields?: Record<string, unknown>
   dimension_selections?: DimensionSelection[]
   page_count?: number | null
@@ -94,6 +102,11 @@ export async function listAdminCatalog(params?: {
 
 export async function listAdminCatalogTags() {
   const { data } = await apiClient.get<string[]>('/admin/catalog/tags')
+  return data
+}
+
+export async function getCatalogTranslationStatus() {
+  const { data } = await apiClient.get<{ enabled: boolean }>('/admin/catalog/meta/translation-status')
   return data
 }
 

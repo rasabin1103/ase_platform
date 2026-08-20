@@ -8,6 +8,7 @@ from app.core.audit import record_audit_log
 from app.core.database import get_db
 from app.core.media_storage import validate_image_upload
 from app.core.media_urls import catalog_has_stored_image
+from app.core.translation import translation_configured
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.models.user import User
@@ -20,6 +21,7 @@ from app.modules.catalog_admin.schemas import (
     CatalogItemAdminUpdate,
     CatalogItemImageListResponse,
     CatalogItemImageRead,
+    TranslationStatus,
 )
 from app.modules.catalog_admin.service import CatalogAdminService
 
@@ -47,6 +49,19 @@ def list_catalog_admin_tags(svc: CatalogAdminService = Depends(get_service)):
     """Distinct tags across every catalog item (any status) — powers the
     admin filter chips."""
     return svc.list_tags()
+
+
+@router.get(
+    "/meta/translation-status",
+    response_model=TranslationStatus,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def get_catalog_translation_status():
+    """Lets the catalog admin UI warn when DEEPL_API_KEY isn't set — same
+    purpose as the equivalent Plans endpoint. Without this, every save
+    silently mirrors the Spanish text into the English fields instead of
+    translating, which otherwise looks like a bug."""
+    return TranslationStatus(enabled=translation_configured())
 
 
 @router.post("/{item_id}/image", dependencies=[Depends(require_permission("catalog.manage"))])

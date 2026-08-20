@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { useI18n } from '../../i18n'
+import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 import { cn } from '../ui/cn'
 import { catalogImageAspectClass } from './catalogCardShape'
@@ -45,8 +46,10 @@ export function CatalogPremiumCard({
   purchasePending,
   imageAspectClass,
 }: Props) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const detailPath = `/catalog/${item.type}/${item.slug}`
+  const title = localizedCatalogText(language, item.title, item.titleEn)
+  const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
 
   return (
     <article
@@ -113,8 +116,8 @@ export function CatalogPremiumCard({
       <div className={cn('relative flex flex-1 flex-col gap-3 p-5 sm:p-6', featured && 'lg:justify-center')}>
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300/85">{item.category}</p>
-          <h3 className="mt-1.5 text-lg font-extrabold tracking-tight text-ase-text sm:text-xl">{item.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-ase-text2 line-clamp-2">{item.shortDescription}</p>
+          <h3 className="mt-1.5 text-lg font-extrabold tracking-tight text-ase-text sm:text-xl">{title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-ase-text2 line-clamp-2">{shortDescription}</p>
         </div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <p className="text-xl font-extrabold text-ase-text">

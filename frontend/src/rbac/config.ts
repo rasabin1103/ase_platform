@@ -64,6 +64,7 @@ export const INDEPENDENT_NAV_GROUPS: NavGroupDef[] = [
     items: [
       { to: '/favorites', labelKey: 'private.nav.favorites', icon: Heart },
       { to: '/my-purchases', labelKey: 'private.nav.myPurchases', icon: ShoppingBag },
+      { to: '/my-products', labelKey: 'private.nav.myProducts', icon: Package },
       { to: '/my-courses', labelKey: 'private.nav.myCourses', icon: CircleCheckBig },
       { to: '/my-books', labelKey: 'private.nav.myBooks', icon: Library },
       { to: '/my-resources', labelKey: 'private.nav.myResources', icon: PackageCheck },
@@ -167,6 +168,7 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/catalog/resources',
     '/favorites',
     '/my-purchases',
+    '/my-products',
     '/my-courses',
     '/my-books',
     '/my-resources',

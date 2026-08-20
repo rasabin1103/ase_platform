@@ -6,7 +6,9 @@ import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { cn } from '../ui/cn'
 import { catalogImageAspectClass } from './catalogCardShape'
 import { RatingWidget } from './RatingWidget'
+import { RatingSummary } from './RatingSummary'
 import { useI18n } from '../../i18n'
+import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 
 type Props = {
@@ -46,8 +48,13 @@ export function CatalogItemCard({
   purchasePending,
   imageAspectClass,
 }: Props) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const detailPath = `/catalog/${item.type}/${item.slug}`
+  // Same rule as CatalogDetailPage: a free item (price 0) needs no purchase
+  // click at all — the "Comprar" button just doesn't apply to it.
+  const isFree = !Number(item.price)
+  const title = localizedCatalogText(language, item.title, item.titleEn)
+  const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden p-0" interactive>
@@ -87,8 +94,9 @@ export function CatalogItemCard({
       <div className="flex flex-1 flex-col gap-2.5 p-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
-          <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{item.title}</h3>
-          <p className="mt-1.5 text-sm text-ase-muted line-clamp-2">{item.shortDescription}</p>
+          <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{title}</h3>
+          <p className="mt-1.5 text-sm text-ase-muted line-clamp-2">{shortDescription}</p>
+          <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
         </div>
         <p className="text-lg font-bold text-ase-text">
           {formatPrice(item.price, item.currency, t('catalog.free'))}
@@ -107,18 +115,20 @@ export function CatalogItemCard({
               </Button>
             </a>
           ) : null}
-          <Button
-            size="sm"
-            variant={item.isPurchased ? 'success' : 'ghost'}
-            leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
-            disabled={purchasePending || item.isPurchased}
-            onClick={() => onPurchase(item.slug)}
-          >
-            {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
-          </Button>
+          {!isFree ? (
+            <Button
+              size="sm"
+              variant={item.isPurchased ? 'success' : 'ghost'}
+              leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+              disabled={purchasePending || item.isPurchased}
+              onClick={() => onPurchase(item.slug)}
+            >
+              {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
+            </Button>
+          ) : null}
         </div>
         <Link to={catalogBasePath} className="sr-only">
-          {item.title}
+          {title}
         </Link>
       </div>
     </Card>

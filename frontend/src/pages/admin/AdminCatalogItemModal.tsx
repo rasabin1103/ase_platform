@@ -7,6 +7,7 @@ import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components
 import { PricingEngineSection } from '../../components/admin/premium/PricingEngineSection'
 import { useForm, useWatch } from 'react-hook-form'
 import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
+import { getCatalogTranslationStatus } from '../../api/catalogAdmin.api'
 import { listCatalogCategories } from '../../api/catalogCategories.api'
 import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../../types/catalog.types'
 import { Button } from '../../components/ui/Button'
@@ -40,6 +41,9 @@ const defaults = (type: CatalogItemType): FormValues => ({
   category: 'General',
   short_description: '',
   long_description: '',
+  title_en: '',
+  short_description_en: '',
+  long_description_en: '',
   image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
   preview_url: null,
   price: 0,
@@ -54,6 +58,7 @@ const defaults = (type: CatalogItemType): FormValues => ({
   tags: [],
   repo_url: null,
   repo_redeem_code: null,
+  repo_path: null,
   dimension_selections: [],
   page_count: null,
 })
@@ -104,6 +109,15 @@ export function AdminCatalogItemModal({
     queryFn: () => listCatalogCategories({ active_only: true }),
     enabled: open,
   })
+  // Drives the "translation not configured" banner below — when disabled,
+  // every save silently mirrors the Spanish text into the English fields
+  // instead of translating (see CatalogAdminService._ensure_english_fields),
+  // same pattern as the Plans admin page.
+  const translationStatusQuery = useQuery({
+    queryKey: ['catalog-translation-status'],
+    queryFn: getCatalogTranslationStatus,
+    enabled: open,
+  })
 
   const requiredMsg = t('adminCatalog.validation.required') as string
   const inputErrClass = (hasError: boolean) =>
@@ -127,6 +141,9 @@ export function AdminCatalogItemModal({
           category: initial.category,
           short_description: initial.short_description,
           long_description: initial.long_description,
+          title_en: initial.title_en ?? '',
+          short_description_en: initial.short_description_en ?? '',
+          long_description_en: initial.long_description_en ?? '',
           image_url: initial.image_url,
           preview_url: initial.preview_url,
           price: Number(initial.price),
@@ -141,6 +158,7 @@ export function AdminCatalogItemModal({
           tags: initial.tags ?? [],
           repo_url: initial.repo_url,
           repo_redeem_code: initial.repo_redeem_code,
+          repo_path: initial.repo_path,
           dimension_selections: initial.dimension_selections ?? [],
           page_count: initial.page_count ?? null,
         })
@@ -206,8 +224,27 @@ export function AdminCatalogItemModal({
                 .filter(Boolean),
             ),
           )
+          // Only send an "_en" field as an explicit override when the admin
+          // actually typed into it this session (dirtyFields) — otherwise
+          // send null so the backend auto-translates from the (possibly
+          // just-edited) Spanish text instead of permanently locking in
+          // whatever text happened to be prefilled from the existing item.
+          // Same fix as PlansPage's editForm (task: retraducción bloqueada).
+          const dirty = form.formState.dirtyFields
+          const englishOverrides = {
+            title_en: dirty.title_en && values.title_en ? values.title_en.trim() : null,
+            short_description_en:
+              dirty.short_description_en && values.short_description_en ? values.short_description_en.trim() : null,
+            long_description_en:
+              dirty.long_description_en && values.long_description_en ? values.long_description_en.trim() : null,
+          }
           try {
-            await onSubmit({ ...values, tags, custom_fields: customFields }, imageFile, pendingGallery, pendingCoverKey)
+            await onSubmit(
+              { ...values, ...englishOverrides, tags, custom_fields: customFields },
+              imageFile,
+              pendingGallery,
+              pendingCoverKey,
+            )
             onClose()
           } catch (err) {
             const parsed = parseApiError(err, t('adminCatalog.saveError') as string)
@@ -235,6 +272,13 @@ export function AdminCatalogItemModal({
           </div>
         ) : null}
         <p className="text-xs text-ase-muted">{t('adminCatalog.requiredMark')}</p>
+
+        {translationStatusQuery.data?.enabled === false ? (
+          <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
+            <span className="font-semibold">{t('adminCatalog.translationWarning.title')}</span>{' '}
+            {t('adminCatalog.translationWarning.body')}
+          </div>
+        ) : null}
 
         <ImageUploadField
           label={t('adminCatalog.fields.photo')}
@@ -264,6 +308,11 @@ export function AdminCatalogItemModal({
               {...form.register('title', { required: requiredMsg })}
             />
             <FieldError message={errors.title?.message as string | undefined} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.titleEn')}</span>
+            <Input placeholder={t('adminCatalog.placeholders.titleEn') as string} {...form.register('title_en')} />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.translationHint')}</p>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">
@@ -350,6 +399,14 @@ export function AdminCatalogItemModal({
             <FieldError message={errors.short_description?.message as string | undefined} />
           </label>
           <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.shortDescriptionEn')}</span>
+            <Input
+              placeholder={t('adminCatalog.placeholders.shortDescriptionEn') as string}
+              {...form.register('short_description_en')}
+            />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.translationHint')}</p>
+          </label>
+          <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">
               {t('adminCatalog.fields.longDescription')}
               <RequiredMark />
@@ -363,6 +420,17 @@ export function AdminCatalogItemModal({
               {...form.register('long_description', { required: requiredMsg })}
             />
             <FieldError message={errors.long_description?.message as string | undefined} />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.longDescriptionMarkdownHint')}</p>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescriptionEn')}</span>
+            <textarea
+              className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+              rows={4}
+              placeholder={t('adminCatalog.placeholders.longDescriptionEn') as string}
+              {...form.register('long_description_en')}
+            />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.translationHint')}</p>
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">
@@ -377,7 +445,8 @@ export function AdminCatalogItemModal({
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.previewUrl')}</span>
-            <Input {...form.register('preview_url')} />
+            <Input placeholder="https://…" {...form.register('preview_url')} />
+            <FieldError message={errors.preview_url?.message as string | undefined} />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">
@@ -498,6 +567,7 @@ export function AdminCatalogItemModal({
                 <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoUrl')}</span>
                 <Input placeholder="https://github.com/tu-org/tu-repo" {...form.register('repo_url')} />
                 <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoUrlHint')}</p>
+                <FieldError message={errors.repo_url?.message as string | undefined} />
               </label>
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoRedeemCode')}</span>
@@ -506,6 +576,13 @@ export function AdminCatalogItemModal({
                 <FieldError message={errors.repo_redeem_code?.message as string | undefined} />
               </label>
             </>
+          ) : null}
+          {typeWatch === 'resource' ? (
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoPath')}</span>
+              <Input placeholder="resources/deploy-checklist" {...form.register('repo_path')} />
+              <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHint')}</p>
+            </label>
           ) : null}
 
           <PricingEngineSection

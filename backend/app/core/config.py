@@ -31,7 +31,16 @@ class Settings(BaseSettings):
     # private book repos when they redeem a code (see app/core/github_client.py).
     # Needs admin rights on the target repos: a classic PAT with the `repo`
     # scope, or a fine-grained PAT with "Administration: write" on those repos.
+    # Also used (read-only Contents API) to serve the in-platform resource
+    # viewer/download — no extra permission needed beyond repo read access.
     GITHUB_ACCESS_TOKEN: str | None = None
+
+    # Default repo for resource items (scripts...) that don't set their own
+    # repo_url — the single shared "ASE-Catalog" repo, organized by subtype
+    # folders. Set once here instead of retyping the same URL on every
+    # resource in the admin form; an item can still override it with its
+    # own repo_url if it ever needs a different repo.
+    GITHUB_CATALOG_REPO_URL: str | None = None
 
     # Base URL of the frontend app — used to build links inside transactional
     # emails (password reset, email verification). No trailing slash.

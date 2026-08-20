@@ -28,6 +28,15 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     category: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     short_description: Mapped[str] = mapped_column(String(500), nullable=False)
     long_description: Mapped[str] = mapped_column(Text, nullable=False)
+    # English mirrors of the three fields above, auto-translated via DeepL
+    # on save (same pattern as Plan._en fields — see
+    # PlansService._ensure_english_fields and app.core.translation). Always
+    # backfilled with the Spanish text when translation is unavailable, so
+    # these are never left blank; an admin can still type an explicit
+    # override instead of the auto-translation.
+    title_en: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    short_description_en: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    long_description_en: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     image_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     image_mime: Mapped[str | None] = mapped_column(String(64))
@@ -64,6 +73,14 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # `repo_redeem_code` (printed inside the book) to reveal `repo_url`.
     repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     repo_redeem_code: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    # Resources (scripts...): path to this item's specific file inside the
+    # repo at `repo_url` — e.g. "resources/scripts/deploy-checklist.sh" in
+    # the single shared ASE-Catalog repo. When both repo_url and repo_path
+    # are set, the consumer catalog exposes a read-only "view content" +
+    # download action, gated by ownership (ConsumerCatalogService — same
+    # purchased_slugs() check as everything else), never a GitHub
+    # collaborator invite (that would expose the whole shared repo).
+    repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     # --- Pricing engine (see app/core/pricing_engine.py) --------------------
     # Every "subelemento" (subtipo, complejidad, funcionalidad, páginas...)

@@ -209,12 +209,16 @@ class BillingService:
 
     def _grant_plan_entitlements(self, *, organization_id: int, plan_id: int) -> None:
         """Whatever `plan` includes (Plan.included_catalog_items — the same
-        list shown as "what's included" on the pricing page) becomes free
-        for every active member of the subscribing organization the moment
-        the subscription goes active/trialing. Never revokes anything on
-        cancellation — losing access automatically on churn is a real
-        product decision Roberto hasn't made yet, so the safe default is to
-        only ever grant, never take away, until that's explicitly decided."""
+        list shown as "what's included" on the pricing page) becomes
+        accessible to every active member of the subscribing organization
+        the moment the subscription goes active/trialing. This never
+        creates a permanent grant by itself (source="plan_entitlement"
+        leaves CatalogPurchase.permanent_access_granted_at NULL) — access is
+        live-checked against the organization's current subscription status
+        by CatalogPurchasesRepository.slugs_for_user(), so it disappears on
+        its own once the subscription is no longer active/trialing (see
+        _mark_canceled / the invoice.payment_failed branch of
+        handle_webhook). Nothing needs to be deleted here on cancellation."""
         plan = self.db.get(Plan, plan_id)
         if plan is None:
             return
@@ -305,6 +309,13 @@ class BillingService:
         self.db.commit()
 
     def _mark_canceled(self, stripe_subscription_id: str) -> None:
+        """Only updates Subscription.status/ends_at — nothing to do to
+        CatalogPurchase here. Every plan-sourced row's access is
+        live-checked against this status by
+        CatalogPurchasesRepository.slugs_for_user(), so it stops counting
+        the moment status leaves active/trialing. Anything the user
+        actually paid for directly stays theirs (permanent_access_granted_at
+        is set for those rows, independent of this subscription)."""
         sub = (
             self.db.query(Subscription)
             .filter(Subscription.provider_subscription_id == stripe_subscription_id)

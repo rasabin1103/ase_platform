@@ -16,6 +16,13 @@ export type CatalogItem = {
   category: string
   shortDescription: string
   longDescription: string
+  // English mirrors, auto-translated via DeepL on save — null on items
+  // saved before this field existed and not re-saved since. Use
+  // localizedCatalogText() rather than reading these directly, so the UI
+  // falls back to Spanish consistently whenever one is missing.
+  titleEn?: string | null
+  shortDescriptionEn?: string | null
+  longDescriptionEn?: string | null
   imageUrl: string
   images: CatalogItemGalleryImage[]
   price: string | number
@@ -39,6 +46,7 @@ export type CatalogItem = {
   averageRating?: number | null
   reviewCount: number
   myReview?: { rating: number; comment: string | null } | null
+  hasResourceContent: boolean
   createdAt: string
   updatedAt: string
 }
