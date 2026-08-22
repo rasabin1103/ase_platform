@@ -6,9 +6,9 @@ import { cn } from '../ui/cn'
 const linkBase =
   'group relative flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition duration-200'
 
-type Props = { groups: NavGroupDef[] }
+type Props = { groups: NavGroupDef[]; onNavigate?: () => void }
 
-export function SidebarNavGroups({ groups }: Props) {
+export function SidebarNavGroups({ groups, onNavigate }: Props) {
   const { t } = useI18n()
   return (
     <>
@@ -22,6 +22,7 @@ export function SidebarNavGroups({ groups }: Props) {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
                     linkBase,

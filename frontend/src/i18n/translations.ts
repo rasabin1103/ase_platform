@@ -820,6 +820,8 @@ export const translations = {
       dashboard: 'Dashboard',
       logout: 'Logout',
       publicSite: 'Public site',
+      collapseSidebar: 'Hide menu',
+      expandSidebar: 'Show menu',
     },
     notifications: {
       bellLabel: 'Notifications',
@@ -1699,6 +1701,8 @@ export const translations = {
       dashboard: 'Dashboard',
       logout: 'Salir',
       publicSite: 'Sitio público',
+      collapseSidebar: 'Ocultar menú',
+      expandSidebar: 'Mostrar menú',
     },
     notifications: {
       bellLabel: 'Notificaciones',

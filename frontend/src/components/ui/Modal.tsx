@@ -39,9 +39,15 @@ export function Modal({ open, title, onClose, footer, children, className, close
           )}
         >
           {(title ?? null) && (
-            <div className="flex shrink-0 items-center justify-between border-b border-ase-border px-6 py-4">
-              <div className="text-sm font-semibold text-ase-text">{title}</div>
-              <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
+            // min-w-0 flex-1 on the title slot: a long title (e.g. a
+            // resource's full repo path) needs to be allowed to actually
+            // shrink/wrap instead of pushing the Close button around — a
+            // flex item's default min-width is `auto` (content-based), so
+            // without min-w-0 here nothing below it, however it
+            // truncates/wraps internally, ever gets the chance to.
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-ase-border px-6 py-4">
+              <div className="min-w-0 flex-1 text-sm font-semibold text-ase-text">{title}</div>
+              <Button variant="ghost" className="h-9 shrink-0 px-3" onClick={onClose}>
                 {closeLabel}
               </Button>
             </div>

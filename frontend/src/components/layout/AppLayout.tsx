@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { Suspense, useEffect } from 'react'
 import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../../auth/auth.store'
 import { useAuth } from '../../hooks/useAuth'
+import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed'
 import { ScrollToTop } from './ScrollToTop'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
@@ -13,6 +14,7 @@ import { RouteLoadingFallback } from './RouteLoadingFallback'
 
 export function AppLayout() {
   const { currentUser } = useAuth()
+  const { collapsed: sidebarCollapsed, toggle: toggleSidebar, close: closeSidebar } = useSidebarCollapsed()
 
   useEffect(() => {
     if (currentUser?.active_workspace_uuid && !getActiveOrganizationUuid()) {
@@ -30,9 +32,9 @@ export function AppLayout() {
   return (
     <div className="relative flex h-full overflow-x-hidden bg-ase-bg">
       <ScrollToTop />
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} onClose={closeSidebar} />
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <Header />
+        <Header sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
         <ImpersonationBanner />
         <UnverifiedEmailBanner />
         <TwoFactorGraceModal />

@@ -11,6 +11,7 @@ import {
   FileText,
   FileWarning,
   FileX,
+  Headphones,
   Heart,
   ListChecks,
   Maximize2,
@@ -18,15 +19,20 @@ import {
   Package,
   ShieldCheck,
   ShoppingCart,
+  Truck,
 } from 'lucide-react'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { AudiobookPlayer } from '../../components/catalog/AudiobookPlayer'
+import { PlatformAudiobookPlayer } from '../../components/catalog/PlatformAudiobookPlayer'
 import type { AccessTargetType } from '../../api/access_requests.api'
 import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
 import {
   downloadResource,
+  getBookDownloadFormats,
   getConsumerCatalogItem,
   getResourceContent,
   toggleCatalogFavorite,
+  type ResourceDownloadFormat,
 } from '../../api/consumerCatalog.api'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -41,6 +47,7 @@ import { ImageCarousel } from '../../components/catalog/ImageCarousel'
 import { RatingWidget } from '../../components/catalog/RatingWidget'
 import { ReviewWidget } from '../../components/catalog/ReviewWidget'
 import { MarkdownContent, MarkdownViewer } from '../../components/catalog/MarkdownViewer'
+import { CodeViewer } from '../../components/catalog/CodeViewer'
 import { ShareButton } from '../../components/catalog/ShareButton'
 import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
@@ -56,15 +63,23 @@ const DocxViewer = lazy(() =>
 const XlsxViewer = lazy(() =>
   import('../../components/catalog/XlsxViewer').then((m) => ({ default: m.XlsxViewer })),
 )
+const PdfViewer = lazy(() =>
+  import('../../components/catalog/PdfViewer').then((m) => ({ default: m.PdfViewer })),
+)
 
 // Small "what kind of file is this" chip shown above the viewer body — a
 // premium touch that also doubles as a quick sanity check for the admin
 // (does the folder actually contain what I expect?) without opening the
 // file in a new tab.
-const RESOURCE_KIND_META: Record<'markdown' | 'docx' | 'xlsx', { icon: typeof FileText; labelKey: string }> = {
+const RESOURCE_KIND_META: Record<
+  'markdown' | 'docx' | 'xlsx' | 'code' | 'pdf',
+  { icon: typeof FileText; labelKey: string }
+> = {
   markdown: { icon: FileText, labelKey: 'catalog.resource.kindMarkdown' },
   docx: { icon: FileText, labelKey: 'catalog.resource.kindDocx' },
   xlsx: { icon: FileSpreadsheet, labelKey: 'catalog.resource.kindXlsx' },
+  code: { icon: Code, labelKey: 'catalog.resource.kindCode' },
+  pdf: { icon: FileText, labelKey: 'catalog.resource.kindPdf' },
 }
 
 const TYPE_CATALOG_PATH: Record<CatalogItemType, string> = {
@@ -128,6 +143,8 @@ export function CatalogDetailPage() {
   const [demoModalOpen, setDemoModalOpen] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerMaximized, setViewerMaximized] = useState(false)
+  const [audiobookOpen, setAudiobookOpen] = useState(false)
+  const [audiobookMaximized, setAudiobookMaximized] = useState(false)
 
   const query = useQuery({
     queryKey: ['consumer-catalog', slug],
@@ -151,6 +168,13 @@ export function CatalogDetailPage() {
   // backend (and lets a free — price 0 — item through with no purchase
   // needed at all), so no extra isPurchased check is needed here.
   const canViewResource = Boolean(item?.hasResourceContent)
+  // Mirrors ConsumerCatalogService._owns_resource: a free item needs no
+  // purchase at all, a priced one needs isPurchased (which already covers
+  // permanent purchases and live plan-based access). Someone who hasn't
+  // bought a priced item only gets Buy + a preview via "View content" — no
+  // audiobook, format downloads, or "buy printed" clutter for something
+  // they don't own yet.
+  const hasFullAccess = isFree || Boolean(item?.isPurchased)
 
   const contentQuery = useQuery({
     queryKey: ['consumer-catalog', slug, 'resource-content'],
@@ -159,7 +183,18 @@ export function CatalogDetailPage() {
   })
 
   const downloadMutation = useMutation({
-    mutationFn: () => downloadResource(slug!),
+    mutationFn: (format?: ResourceDownloadFormat) => downloadResource(slug!, format),
+  })
+  // Powers the disabled state of the per-format download buttons — a book
+  // can offer any subset of pdf/epub/kindle/zip, and clicking one that was
+  // never uploaded should look disabled from the start rather than only
+  // failing after the click. No ownership required to check this (see
+  // ConsumerCatalogService.get_book_download_formats), so it's safe to run
+  // for a non-owner too.
+  const bookFormatsQuery = useQuery({
+    queryKey: ['consumer-catalog', slug, 'download-formats'],
+    queryFn: () => getBookDownloadFormats(slug!),
+    enabled: Boolean(slug) && (type ?? item?.type) === 'book' && canViewResource,
   })
   const backPath = type && TYPE_CATALOG_PATH[type] ? TYPE_CATALOG_PATH[type] : '/dashboard'
 
@@ -273,19 +308,64 @@ export function CatalogDetailPage() {
                   </Button>
                 </a>
               ) : null}
+              {hasFullAccess && (item.audiobookUrl || (catalogType === 'book' && canViewResource)) ? (
+                <Button
+                  variant="outline"
+                  leftIcon={<Headphones className="h-4 w-4" strokeWidth={1.75} />}
+                  onClick={() => setAudiobookOpen(true)}
+                >
+                  {t('catalog.resource.audiobook')}
+                </Button>
+              ) : null}
               {canViewResource ? (
                 <>
                   <Button variant="outline" leftIcon={<Code className="h-4 w-4" strokeWidth={1.75} />} onClick={() => setViewerOpen(true)}>
-                    {t('catalog.resource.viewContent')}
+                    {hasFullAccess ? t('catalog.resource.viewContent') : t('catalog.resource.viewPreview')}
                   </Button>
-                  <Button
-                    variant="outline"
-                    leftIcon={<Download className="h-4 w-4" strokeWidth={1.75} />}
-                    disabled={downloadMutation.isPending}
-                    onClick={() => downloadMutation.mutate()}
-                  >
-                    {t('catalog.resource.download')}
-                  </Button>
+                  {hasFullAccess ? (
+                    catalogType === 'book' ? (
+                      <>
+                        {(['pdf', 'epub', 'kindle', 'zip'] as const).map((format) => (
+                          <Button
+                            key={format}
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<Download className="h-4 w-4" strokeWidth={1.75} />}
+                            disabled={
+                              (downloadMutation.isPending && downloadMutation.variables === format) ||
+                              bookFormatsQuery.data?.[format] === false
+                            }
+                            title={
+                              bookFormatsQuery.data?.[format] === false
+                                ? (t('catalog.resource.formatUnavailable') as string)
+                                : undefined
+                            }
+                            onClick={() => downloadMutation.mutate(format)}
+                          >
+                            {t(`catalog.resource.downloadFormat.${format}`)}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          leftIcon={<Truck className="h-4 w-4" strokeWidth={1.75} />}
+                          disabled
+                          title={t('catalog.resource.buyPrintedComingSoon') as string}
+                        >
+                          {t('catalog.resource.buyPrinted')}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        leftIcon={<Download className="h-4 w-4" strokeWidth={1.75} />}
+                        disabled={downloadMutation.isPending}
+                        onClick={() => downloadMutation.mutate(undefined)}
+                      >
+                        {t('catalog.resource.download')}
+                      </Button>
+                    )
+                  ) : null}
                   {downloadMutation.isError ? (
                     <span className="basis-full text-xs text-rose-300">{t('catalog.resource.downloadError')}</span>
                   ) : null}
@@ -351,8 +431,14 @@ export function CatalogDetailPage() {
             setViewerMaximized(false)
           }}
           title={
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate">
+            // items-start + break-all (not truncate): a long repo path
+            // (e.g. resources/skills/claude/ASE_QA-Strategy-v1.0/readme.md)
+            // now wraps onto a second line instead of being cut off — and
+            // the maximize button stays shrink-0 in its own slot so it
+            // never moves or shrinks regardless of how many lines the path
+            // takes.
+            <div className="flex min-w-0 items-start gap-2">
+              <span className="min-w-0 break-all">
                 {`${t('catalog.resource.modalTitle')} · ${contentQuery.data?.path ?? title}`}
               </span>
               <button
@@ -381,7 +467,7 @@ export function CatalogDetailPage() {
               title={t('catalog.resource.loadError') as string}
               description={`${parseApiError(contentQuery.error, t('catalog.resource.loadError') as string).message} ${t('catalog.resource.loadErrorHint')}`}
               actionLabel={t('catalog.resource.download') as string}
-              onAction={() => downloadMutation.mutate()}
+              onAction={() => downloadMutation.mutate(undefined)}
             />
           ) : contentQuery.data ? (
             <div className="space-y-3">
@@ -416,6 +502,17 @@ export function CatalogDetailPage() {
                     maximized={viewerMaximized}
                   />
                 </Suspense>
+              ) : contentQuery.data.kind === 'pdf' && contentQuery.data.contentBase64 ? (
+                <Suspense fallback={<Skeleton className="h-48 w-full rounded-lg" />}>
+                  <PdfViewer
+                    path={contentQuery.data.path}
+                    contentBase64={contentQuery.data.contentBase64}
+                    maximized={viewerMaximized}
+                    isPreview={contentQuery.data.isPreview}
+                  />
+                </Suspense>
+              ) : contentQuery.data.kind === 'code' && contentQuery.data.content ? (
+                <CodeViewer path={contentQuery.data.path} content={contentQuery.data.content} maximized={viewerMaximized} />
               ) : contentQuery.data.content ? (
                 <MarkdownViewer path={contentQuery.data.path} content={contentQuery.data.content} maximized={viewerMaximized} />
               ) : (
@@ -427,6 +524,42 @@ export function CatalogDetailPage() {
               )}
             </div>
           ) : null}
+        </Modal>
+      ) : null}
+
+      {item.audiobookUrl || (catalogType === 'book' && canViewResource) ? (
+        <Modal
+          open={audiobookOpen}
+          onClose={() => {
+            setAudiobookOpen(false)
+            setAudiobookMaximized(false)
+          }}
+          title={
+            <div className="flex min-w-0 items-start gap-2">
+              <span className="min-w-0 break-all">{t('catalog.resource.audiobook')}</span>
+              <button
+                type="button"
+                onClick={() => setAudiobookMaximized((prev) => !prev)}
+                aria-label={(audiobookMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
+                title={(audiobookMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
+                className="flex shrink-0 items-center rounded-md p-1.5 text-ase-text2 transition hover:bg-white/[0.06] hover:text-ase-text"
+              >
+                {audiobookMaximized ? (
+                  <Minimize2 className="h-4 w-4" strokeWidth={1.75} />
+                ) : (
+                  <Maximize2 className="h-4 w-4" strokeWidth={1.75} />
+                )}
+              </button>
+            </div>
+          }
+          closeLabel={t('catalog.resource.close')}
+          className={audiobookMaximized ? 'h-[92vh] w-[96vw] max-w-none' : 'max-w-3xl'}
+        >
+          {item.audiobookUrl ? (
+            <AudiobookPlayer url={item.audiobookUrl} coverUrl={item.imageUrl} maximized={audiobookMaximized} />
+          ) : (
+            <PlatformAudiobookPlayer slug={item.slug} coverUrl={item.imageUrl} maximized={audiobookMaximized} />
+          )}
         </Modal>
       ) : null}
 

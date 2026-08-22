@@ -64,6 +64,7 @@ class CatalogItemRead(BaseModel):
     duration: str | None = None
     author: str
     previewUrl: str | None = None
+    audiobookUrl: str | None = None
     benefits: list[str] = []
     requirements: list[str] = []
     includedItems: list[str] = []
@@ -78,12 +79,16 @@ class CatalogItemRead(BaseModel):
     averageRating: float | None = None
     reviewCount: int = 0
     myReview: MyReviewRead | None = None
-    # True only when both repo_url and repo_path are configured on this
-    # item — powers the "Ver contenido"/"Descargar" buttons. Deliberately
-    # a plain boolean, never the raw repo_url/repo_path: those stay
-    # server-side, read through GithubClient only after the ownership
-    # check in resource-content/resource-download, never handed to the
-    # browser directly (this is a private, shared repo, not per-item).
+    # True when both repo_url and repo_path are configured on this item —
+    # gates whether the "Ver contenido"/"Descargar" buttons render at all,
+    # NOT whether the current user can see something (a priced item's
+    # resource folder may only offer a free preview*.pdf to non-owners;
+    # the content/download endpoints enforce ownership themselves for the
+    # real file). Deliberately a plain boolean, never the raw
+    # repo_url/repo_path: those stay server-side, read through
+    # GithubClient only inside resource-content/resource-download, never
+    # handed to the browser directly (this is a private, shared repo, not
+    # per-item).
     hasResourceContent: bool = False
     createdAt: datetime
     updatedAt: datetime
@@ -118,11 +123,54 @@ class UserCatalogStateRead(BaseModel):
 
 class ResourceContentRead(BaseModel):
     path: str
-    # "markdown" (README.md, decoded as text in `content`) | "docx" | "xlsx"
-    # (both binary, base64-encoded in `contentBase64` — the frontend decodes
-    # and renders them client-side with mammoth/SheetJS instead of the
-    # backend converting to HTML, keeping this endpoint format-agnostic).
+    # "markdown" (README.md) and "code" (any other recognized text/script
+    # file) are both decoded as text in `content`. "docx"/"xlsx"/"pdf" are
+    # binary, base64-encoded in `contentBase64` — the frontend decodes and
+    # renders them client-side (mammoth/SheetJS/native browser PDF viewer)
+    # instead of the backend converting to HTML, keeping this endpoint
+    # format-agnostic.
     kind: str = "markdown"
     content: str | None = None
     contentBase64: str | None = None
     truncated: bool = False
+    # True when the caller doesn't own this item and what's being served is
+    # a sample (a preview*.pdf the admin uploaded), not the real file — lets
+    # the frontend show a "buy to see the rest" banner instead of treating
+    # this like full access.
+    isPreview: bool = False
+
+
+class BookDownloadFormatsRead(BaseModel):
+    """Which of a book's per-format download buttons have something to
+    serve — checked without requiring ownership, so the frontend can gray
+    out a format that was never uploaded instead of only discovering that
+    after checkout. "zip" is true either for a real pre-made zip, or
+    implicitly whenever at least one of pdf/epub/kindle exists (bundled on
+    the fly by the download endpoint in that case)."""
+
+    pdf: bool = False
+    epub: bool = False
+    kindle: bool = False
+    zip: bool = False
+
+
+class AudiobookChapterRead(BaseModel):
+    name: str
+    index: int
+
+
+class AudiobookChapterListRead(BaseModel):
+    """A book's platform-hosted audiobook — chapters split into separate,
+    smaller files under repo_path's "audiolibro" subfolder, unlike
+    `audiobookUrl` (a single external link the browser is handed directly).
+    Both are optional and independent: a book can offer either, both, or
+    neither. Listing chapters requires full ownership, same as download —
+    there's no "audio preview" carve-out like the book's PDF."""
+
+    chapters: list[AudiobookChapterRead]
+
+
+class AudiobookChapterContentRead(BaseModel):
+    name: str
+    contentBase64: str
+    mimeType: str

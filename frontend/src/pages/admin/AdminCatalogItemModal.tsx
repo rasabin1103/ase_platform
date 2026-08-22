@@ -46,6 +46,7 @@ const defaults = (type: CatalogItemType): FormValues => ({
   long_description_en: '',
   image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
   preview_url: null,
+  audiobook_url: null,
   price: 0,
   currency: 'EUR',
   status: 'draft',
@@ -146,6 +147,7 @@ export function AdminCatalogItemModal({
           long_description_en: initial.long_description_en ?? '',
           image_url: initial.image_url,
           preview_url: initial.preview_url,
+          audiobook_url: initial.audiobook_url,
           price: Number(initial.price),
           currency: initial.currency,
           status: initial.status,
@@ -563,18 +565,42 @@ export function AdminCatalogItemModal({
           ) : null}
           {typeWatch === 'book' ? (
             <>
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoUrl')}</span>
-                <Input placeholder="https://github.com/tu-org/tu-repo" {...form.register('repo_url')} />
-                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoUrlHint')}</p>
-                <FieldError message={errors.repo_url?.message as string | undefined} />
-              </label>
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoRedeemCode')}</span>
-                <Input placeholder="ASE-BOOK-2026" {...form.register('repo_redeem_code')} />
-                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoRedeemCodeHint')}</p>
-                <FieldError message={errors.repo_redeem_code?.message as string | undefined} />
-              </label>
+              <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                  {t('adminCatalog.bookRedemptionSection.title')}
+                </span>
+                <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.bookRedemptionSection.hint')}</p>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoUrl')}</span>
+                  <Input placeholder="https://github.com/tu-org/tu-repo" {...form.register('repo_url')} />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoUrlHint')}</p>
+                  <FieldError message={errors.repo_url?.message as string | undefined} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoRedeemCode')}</span>
+                  <Input placeholder="ASE-BOOK-2026" {...form.register('repo_redeem_code')} />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoRedeemCodeHint')}</p>
+                  <FieldError message={errors.repo_redeem_code?.message as string | undefined} />
+                </label>
+              </div>
+              <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                  {t('adminCatalog.bookContentSection.title')}
+                </span>
+                <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.bookContentSection.hint')}</p>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoPath')}</span>
+                  <Input placeholder="books/mi-libro" {...form.register('repo_path')} />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHintBook')}</p>
+                  <FieldError message={errors.repo_path?.message as string | undefined} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.audiobookUrl')}</span>
+                  <Input placeholder="https://…" {...form.register('audiobook_url')} />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.audiobookUrlHint')}</p>
+                  <FieldError message={errors.audiobook_url?.message as string | undefined} />
+                </label>
+              </div>
             </>
           ) : null}
           {typeWatch === 'resource' ? (
