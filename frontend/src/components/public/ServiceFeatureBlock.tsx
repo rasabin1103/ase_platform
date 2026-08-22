@@ -68,7 +68,7 @@ export function ServiceFeatureBlock({
 
         <div className="mt-6 h-px bg-white/5" />
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {methodology.map((step) => (
             <Chip key={step}>{step}</Chip>
           ))}

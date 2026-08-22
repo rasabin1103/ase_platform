@@ -91,21 +91,31 @@ export function AdminCatalogPage() {
       return
     }
     const created = await createAdminCatalogItem(values)
-    if (imageFile) await uploadCatalogItemImage(created.id, imageFile)
+    try {
+      if (imageFile) await uploadCatalogItemImage(created.id, imageFile)
 
-    // Upload any staged gallery images now that the item has an id, then set
-    // whichever one the admin picked (if any) as the cover.
-    let coverServerId: number | null = null
-    for (const staged of pendingGallery) {
-      const uploaded =
-        staged.kind === 'file' && staged.file
-          ? await addCatalogItemImage(created.id, staged.file)
-          : staged.kind === 'url' && staged.url
-            ? await addCatalogItemImageUrl(created.id, staged.url)
-            : null
-      if (uploaded && staged.key === pendingCoverKey) coverServerId = uploaded.id
+      // Upload any staged gallery images now that the item has an id, then
+      // set whichever one the admin picked (if any) as the cover.
+      let coverServerId: number | null = null
+      for (const staged of pendingGallery) {
+        const uploaded =
+          staged.kind === 'file' && staged.file
+            ? await addCatalogItemImage(created.id, staged.file)
+            : staged.kind === 'url' && staged.url
+              ? await addCatalogItemImageUrl(created.id, staged.url)
+              : null
+        if (uploaded && staged.key === pendingCoverKey) coverServerId = uploaded.id
+      }
+      if (coverServerId != null) await setCatalogItemCoverImage(created.id, coverServerId)
+    } catch (err) {
+      // The item row was already created above (uploads need its id), but a
+      // failure anywhere in the image/gallery step — e.g. an oversized
+      // secondary image — must not leave a half-configured item behind for
+      // the admin to find later. Roll it back so "creation failed" actually
+      // means nothing was created, then surface the original error.
+      await deleteAdminCatalogItem(created.id).catch(() => {})
+      throw err
     }
-    if (coverServerId != null) await setCatalogItemCoverImage(created.id, coverServerId)
   }
 
   const createMut = useMutation({

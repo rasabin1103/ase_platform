@@ -58,6 +58,10 @@ class CatalogItemAdminBase(BaseModel):
     long_description_en: str | None = None
     image_url: str = Field(min_length=1, max_length=2048)
     preview_url: str | None = Field(default=None, max_length=2048)
+    # Book pillar: external link for the audio edition (see
+    # CatalogItem.audiobook_url) — a hosted file in this repo isn't a good
+    # fit for something that size.
+    audiobook_url: str | None = Field(default=None, max_length=2048)
     price: Decimal = Field(ge=0)
     currency: str = Field(default="EUR", min_length=3, max_length=3)
     status: CatalogItemStatus = CatalogItemStatus.draft
@@ -97,7 +101,7 @@ class CatalogItemAdminBase(BaseModel):
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
-    @field_validator("preview_url", "repo_url")
+    @field_validator("preview_url", "repo_url", "audiobook_url")
     @classmethod
     def _validate_link_fields(cls, value: str | None) -> str | None:
         return _validate_absolute_url(value)
@@ -113,6 +117,7 @@ class CatalogItemAdminUpdate(BaseModel):
     long_description_en: str | None = None
     image_url: str | None = None
     preview_url: str | None = None
+    audiobook_url: str | None = None
     price: Decimal | None = None
     currency: str | None = None
     status: CatalogItemStatus | None = None
@@ -130,7 +135,7 @@ class CatalogItemAdminUpdate(BaseModel):
     dimension_selections: list[DimensionSelectionInput] | None = None
     page_count: int | None = Field(default=None, ge=1)
 
-    @field_validator("preview_url", "repo_url")
+    @field_validator("preview_url", "repo_url", "audiobook_url")
     @classmethod
     def _validate_link_fields(cls, value: str | None) -> str | None:
         return _validate_absolute_url(value)

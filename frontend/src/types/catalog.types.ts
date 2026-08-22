@@ -32,6 +32,7 @@ export type CatalogItem = {
   duration?: string | null
   author: string
   previewUrl?: string | null
+  audiobookUrl?: string | null
   benefits?: string[]
   requirements?: string[]
   includedItems?: string[]
@@ -46,6 +47,10 @@ export type CatalogItem = {
   averageRating?: number | null
   reviewCount: number
   myReview?: { rating: number; comment: string | null } | null
+  // Just "does this item have a linked resource folder" — not "can I see
+  // it right now". A priced item's non-owner can still get a free
+  // preview*.pdf; the resource-content/resource-download calls enforce
+  // real ownership themselves. See ConsumerCatalogService._to_read.
   hasResourceContent: boolean
   createdAt: string
   updatedAt: string

@@ -28,6 +28,7 @@ export type CatalogItemAdmin = {
   image_url: string
   images: CatalogItemImage[]
   preview_url: string | null
+  audiobook_url: string | null
   price: string | number
   currency: string
   status: CatalogItemStatus
@@ -69,6 +70,7 @@ export type CatalogItemAdminPayload = {
   long_description_en?: string | null
   image_url: string
   preview_url?: string | null
+  audiobook_url?: string | null
   price: number
   currency: string
   status: CatalogItemStatus

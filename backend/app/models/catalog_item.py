@@ -56,6 +56,11 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     duration: Mapped[str | None] = mapped_column(String(80))
     author: Mapped[str] = mapped_column(String(200), nullable=False)
     preview_url: Mapped[str | None] = mapped_column(String(2048))
+    # Book pillar: external link (Drive, S3, Spotify, ...) for the audio
+    # edition — deliberately not another repo_path file, audiobooks are
+    # typically hundreds of MB and the GitHub Contents API this platform
+    # already uses for resource content/download isn't built for that.
+    audiobook_url: Mapped[str | None] = mapped_column(String(2048))
     benefits_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     requirements_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     included_items_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)

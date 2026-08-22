@@ -34,7 +34,12 @@ export function ServicesHeroPremium() {
               </Link>
             </div>
 
-            <div className="mt-10 grid max-w-xl grid-cols-3 gap-4 border-t border-white/10 pt-8">
+            {/* grid-cols-1: each stat's value is a full sentence (see
+                servicesPage.locale.ts), not a short number like the counters
+                on AboutPage/PlatformPage — squeezing that into a 1/3-width
+                mobile column wraps it into a wall of 6-7 lines. Stacks on
+                mobile, 3-across from sm: up where there's room. */}
+            <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 border-t border-white/10 pt-8 sm:grid-cols-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">
                   {t('servicesPage.hero.stats.delivery.label')}
@@ -101,7 +106,7 @@ export function ServicesHeroPremium() {
                     <div className="text-sm font-semibold text-ase-text">{t('servicesPage.visuals.deliveryMapTitle')}</div>
                     <span className="h-2 w-2 animate-pulse rounded-full bg-ase-accent shadow-[0_0_16px_rgba(34,211,238,0.35)]" />
                   </div>
-                  <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[10px] font-semibold uppercase tracking-wide text-ase-muted">
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[10px] font-semibold uppercase tracking-wide text-ase-muted sm:grid-cols-4">
                     {phases.map((label, i) => (
                       <span key={`phase-${i}`} className="rounded-lg bg-white/[0.04] py-2">
                         {label}
