@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listPublicBlogPosts, listPublicBlogTags } from '../../api/publicBlog.api'
+import { Breadcrumbs } from '../../components/ui/Breadcrumbs'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Eyebrow } from '../../components/ui/Eyebrow'
@@ -9,6 +10,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { useI18n } from '../../i18n'
 import { usePageTitle } from '../../hooks/usePageTitle'
+import { resolveMediaUrl } from '../../utils/mediaUrls'
 
 export function BlogListPage() {
   const { t } = useI18n()
@@ -31,7 +33,13 @@ export function BlogListPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-14">
-      <Eyebrow>{t('blogPage.badge')}</Eyebrow>
+      <Breadcrumbs
+        items={[
+          { label: t('blogPage.breadcrumbHome') as string, to: '/' },
+          { label: t('blogPage.badge') as string },
+        ]}
+      />
+      <Eyebrow className="mt-6">{t('blogPage.badge')}</Eyebrow>
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">{t('blogPage.title')}</h1>
       <p className="mt-4 max-w-3xl text-base text-ase-text2">{t('blogPage.subtitle')}</p>
 
@@ -74,7 +82,12 @@ export function BlogListPage() {
                 <Card className="group h-full overflow-hidden rounded-2xl border-white/[0.08] bg-ase-surface/60 p-0 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20" interactive>
                   <div className="h-40 overflow-hidden border-b border-white/[0.06] bg-white/[0.03]">
                     {post.cover_image_url ? (
-                      <img src={post.cover_image_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                      <img
+                        src={resolveMediaUrl(post.cover_image_url) ?? undefined}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition group-hover:scale-105"
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-3xl text-ase-muted">◇</div>
                     )}

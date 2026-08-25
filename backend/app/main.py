@@ -16,6 +16,7 @@ from app.core.anniversary import run_anniversary_sweep
 from app.core.config import settings
 from app.core.loyalty import run_loyalty_sweep
 from app.core.newsletter import run_weekly_newsletter
+from app.core.test_run_polling import run_test_run_polling_sweep
 from app.core.database import SessionLocal
 from app.core.error_logging import record_error_log
 from app.core.monitoring import init_sentry
@@ -79,6 +80,22 @@ def _run_weekly_newsletter_job() -> None:
         db.close()
 
 
+def _run_test_run_polling_job() -> None:
+    """Frequent (every ~45s) job body syncing TestRun rows against GitHub
+    Actions — same isolated-session, never-raise pattern as the other
+    sweeps, just on a much shorter interval since run status is
+    user-visible and time-sensitive rather than a daily background task."""
+    db = SessionLocal()
+    try:
+        count = run_test_run_polling_sweep(db)
+        if count:
+            logger.info("Test run polling sweep updated %s run(s)", count)
+    except Exception:
+        logger.exception("Test run polling sweep failed")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = BackgroundScheduler(timezone="UTC")
@@ -121,6 +138,14 @@ async def lifespan(app: FastAPI):
             _run_weekly_newsletter_job,
             CronTrigger(day_of_week="fri", hour=7, minute=0, timezone="Europe/Madrid"),
             id="weekly_newsletter",
+        )
+    if settings.TEST_RUN_POLL_SWEEP_ENABLED:
+        scheduler.add_job(
+            _run_test_run_polling_job,
+            "interval",
+            seconds=45,
+            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=15),
+            id="test_run_polling_sweep",
         )
     if scheduler.get_jobs():
         scheduler.start()
@@ -190,6 +215,8 @@ from app.modules.book_redemption.router import router as book_redemption_router
 from app.modules.admin_account_lifecycle.router import router as admin_account_lifecycle_router
 from app.modules.blog_admin.router import router as blog_admin_router
 from app.modules.public_blog.router import router as public_blog_router
+from app.modules.blog_engagement.router import router as blog_engagement_router
+from app.modules.test_execution.router import router as test_execution_router, public_router as test_execution_public_router
 from app.modules.catalog_categories.router import router as catalog_categories_router
 from app.modules.admin_data_reset.router import router as admin_data_reset_router
 from app.modules.admin_demo_data.router import router as admin_demo_data_router
@@ -218,6 +245,9 @@ def create_app() -> FastAPI:
     app.include_router(public_catalog_router)
     app.include_router(blog_admin_router)
     app.include_router(public_blog_router)
+    app.include_router(blog_engagement_router)
+    app.include_router(test_execution_router)
+    app.include_router(test_execution_public_router)
     app.include_router(catalog_categories_router)
     app.include_router(notifications_router)
     app.include_router(suggestions_router)

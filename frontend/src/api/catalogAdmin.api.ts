@@ -13,6 +13,20 @@ export type DimensionSelection = {
   dimension_level_id: number
 }
 
+// One workflow_dispatch input a framework product's workflow expects (e.g.
+// BASE_URL) — admin-defined, mirrors CategoryFieldDef's questionnaire
+// pattern. `key` must match an input name declared under
+// `on.workflow_dispatch.inputs` in the workflow YAML, or GitHub silently
+// ignores it. Buyers fill in their own values per framework (see
+// testExecution.api.ts's TestExecutionConfig types).
+export type TestInputVariableDef = {
+  key: string
+  label: string
+  type: 'text' | 'secret'
+  required: boolean
+  description?: string | null
+}
+
 export type CatalogItemAdmin = {
   id: number
   uuid: string
@@ -46,6 +60,13 @@ export type CatalogItemAdmin = {
   has_stored_image?: boolean
   dimension_selections?: DimensionSelection[]
   page_count?: number | null
+  // Test-execution SaaS (product pillar only) — the GitHub repo/workflow to
+  // dispatch and the run quota granted per purchase/plan-inclusion. Null on
+  // every non-runnable item.
+  test_repo_url?: string | null
+  test_workflow_file?: string | null
+  test_included_runs?: number | null
+  test_input_schema?: TestInputVariableDef[]
   recommended_price?: string | number | null
   created_at: string
   updated_at: string
@@ -87,6 +108,10 @@ export type CatalogItemAdminPayload = {
   custom_fields?: Record<string, unknown>
   dimension_selections?: DimensionSelection[]
   page_count?: number | null
+  test_repo_url?: string | null
+  test_workflow_file?: string | null
+  test_included_runs?: number | null
+  test_input_schema?: TestInputVariableDef[]
 }
 
 export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>
@@ -109,6 +134,65 @@ export async function listAdminCatalogTags() {
 
 export async function getCatalogTranslationStatus() {
   const { data } = await apiClient.get<{ enabled: boolean }>('/admin/catalog/meta/translation-status')
+  return data
+}
+
+// --- Test-execution usage stats (admin) -------------------------------------
+
+export type CatalogTestRunStatusCounts = {
+  pending: number
+  queued: number
+  in_progress: number
+  completed: number
+  failed_to_dispatch: number
+}
+
+export type CatalogTestRunConclusionCounts = {
+  success: number
+  failure: number
+  cancelled: number
+  timed_out: number
+  action_required: number
+  unknown: number
+}
+
+export type CatalogTestRunRecent = {
+  uuid: string
+  user_email: string
+  status: string
+  conclusion: string | null
+  created_at: string
+}
+
+export type CatalogItemTestStats = {
+  item_id: number
+  item_title: string
+  item_slug: string
+  included_runs: number | null
+  total_runs: number
+  unique_users: number
+  by_status: CatalogTestRunStatusCounts
+  by_conclusion: CatalogTestRunConclusionCounts
+  last_run_at: string | null
+  recent_runs: CatalogTestRunRecent[]
+}
+
+export type CatalogTestStatsSummaryItem = {
+  item_id: number
+  item_title: string
+  item_slug: string
+  included_runs: number | null
+  total_runs: number
+  last_run_at: string | null
+}
+
+export async function getCatalogItemTestStats(itemId: number) {
+  const { data } = await apiClient.get<CatalogItemTestStats>(`/admin/catalog/${itemId}/test-stats`)
+  return data
+}
+
+export async function getCatalogTestStatsSummary() {
+  const { data } = await apiClient.get<{ items: CatalogTestStatsSummaryItem[] }>('/admin/catalog/test-stats/summary')
   return data
 }
 

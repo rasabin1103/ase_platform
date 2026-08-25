@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, LargeBinary, String, Text
+from sqlalchemy import DateTime, Enum, Integer, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,6 +42,12 @@ class BlogPost(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     meta_title: Mapped[str | None] = mapped_column(String(160), nullable=True)
     meta_description: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # Simple page-view counters (incremented on every successful public read
+    # of the article detail, not deduped per visitor — see
+    # PublicBlogService.get_public_post_by_slug). views_authenticated is a
+    # subset of views_total; anonymous views = views_total - views_authenticated.
+    views_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    views_authenticated: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
     def __repr__(self) -> str:
         return f"<BlogPost id={self.id} slug={self.slug!r} status={self.status.value}>"

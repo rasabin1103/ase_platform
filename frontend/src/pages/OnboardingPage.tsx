@@ -81,6 +81,18 @@ export function OnboardingPage() {
     },
   })
 
+  // Separate mutation instance from the manual "Create organization" form
+  // above — sharing one would make a failure in either form's action light
+  // up the other form's error banner too, which is confusing.
+  const individualMutation = useMutation({
+    mutationFn: createOrganization,
+    onSuccess: async (created) => {
+      setActiveOrganizationUuid(created.organization_uuid)
+      await queryClient.invalidateQueries({ queryKey: ['organizations'] })
+      navigate('/dashboard', { replace: true })
+    },
+  })
+
   const display = meQuery.data?.display_name ?? meQuery.data?.email ?? 'your account'
 
   // ---- incoming member invites ----
@@ -223,18 +235,32 @@ export function OnboardingPage() {
             <div className="mt-4">
               <Button
                 variant="secondary"
+                disabled={individualMutation.isPending || !meQuery.data?.uuid}
                 onClick={() => {
                   const base = meQuery.data?.display_name || 'individual'
                   const name = `Workspace — ${base}`
-                  mutation.mutate({
+                  // The slug used to be derived purely from the display
+                  // name (slugify(name)) — deterministic and with no
+                  // uniqueness guarantee, so two accounts sharing a display
+                  // name (e.g. seeded demo users, both "Demo Usuario Pro")
+                  // collided on organizations.slug's global unique
+                  // constraint and the creation call failed with "Slug
+                  // already exists". Keying the slug off the user's own
+                  // uuid instead guarantees it's unique per account,
+                  // regardless of what anyone's display name is.
+                  const uuidSuffix = (meQuery.data?.uuid ?? '').replace(/-/g, '').slice(0, 12)
+                  individualMutation.mutate({
                     organization_name: name,
-                    organization_slug: slugify(name),
+                    organization_slug: `personal-${uuidSuffix}`,
                     organization_type: 'individual',
                   })
                 }}
               >
-                Create individual workspace
+                {individualMutation.isPending ? 'Creating…' : 'Create individual workspace'}
               </Button>
+              {individualMutation.isError ? (
+                <p className="mt-2 text-xs text-ase-error">Could not create the workspace. Please try again.</p>
+              ) : null}
             </div>
           </Card>
 

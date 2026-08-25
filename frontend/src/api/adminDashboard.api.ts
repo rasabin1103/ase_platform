@@ -168,3 +168,36 @@ export async function getSystemStatus() {
   const { data } = await apiClient.get<SystemStatus>('/admin/system-status')
   return data
 }
+
+export type ApplicationMapMember = {
+  uuid: string
+  email: string
+  display_name: string | null
+  role_codes: string[]
+}
+
+export type ApplicationMapOrganization = {
+  uuid: string
+  name: string
+  type: string
+  members: ApplicationMapMember[]
+}
+
+export type ApplicationMapIndividualUser = {
+  uuid: string
+  email: string
+  display_name: string | null
+}
+
+export type ApplicationMap = {
+  organizations: ApplicationMapOrganization[]
+  organizations_total: number
+  individual_users: ApplicationMapIndividualUser[]
+  individual_users_total: number
+  individual_users_truncated: boolean
+}
+
+export async function getApplicationMap() {
+  const { data } = await apiClient.get<ApplicationMap>('/admin/application-map')
+  return data
+}

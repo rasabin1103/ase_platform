@@ -23,7 +23,6 @@ import type { UseFormReturn } from 'react-hook-form'
 import { useI18n } from '../i18n'
 import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../auth/auth.store'
 import { useAuth } from '../hooks/useAuth'
-import { OrganizationTopologyMap } from '../components/private/organizations/OrganizationTopologyMap'
 
 type FormValues = {
   organization_name: string
@@ -254,28 +253,6 @@ export function OrganizationsPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-ase-text">{t('organizationsPage.superAdmin.topology.title')}</h2>
-                  <p className="mt-1 text-sm text-ase-text2">{t('organizationsPage.superAdmin.topology.subtitle')}</p>
-                </div>
-              </div>
-              <div className="mt-5">
-                <OrganizationTopologyMap
-                  organizations={filteredSuperItems}
-                  coreLabel={t('organizationsPage.superAdmin.topology.core') as string}
-                  activeUuid={activeUuid}
-                  typeLabel={(type) => organizationTypeLabel(t, type)}
-                  legend={{
-                    active: t('organizationsPage.superAdmin.topology.active') as string,
-                    selected: t('organizationsPage.superAdmin.topology.selected') as string,
-                    suspended: t('organizationsPage.superAdmin.topology.suspended') as string,
-                  }}
-                />
-              </div>
-            </Card>
-
             <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
               <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_160px_190px_auto]">
                 <Input

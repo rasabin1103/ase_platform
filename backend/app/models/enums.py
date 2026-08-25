@@ -235,9 +235,57 @@ class BlogPostStatus(str, Enum):
     published = "published"
 
 
+class BlogReactionType(str, Enum):
+    like = "like"
+    dislike = "dislike"
+
+
+class BlogShareNetwork(str, Enum):
+    linkedin = "linkedin"
+    twitter = "twitter"
+    facebook = "facebook"
+    whatsapp = "whatsapp"
+    instagram = "instagram"
+    copy_link = "copy_link"
+    native = "native"
+
+
 class UserTokenPurpose(str, Enum):
     """What a `UserVerificationToken` row is for — kept as a single table
     with a purpose column instead of two near-identical tables."""
 
     password_reset = "password_reset"
     email_verification = "email_verification"
+
+
+class ApiCredentialStatus(str, Enum):
+    """A revoked credential's row is kept (not deleted) so past TestRun rows
+    still resolve who triggered them — see ApiCredential."""
+
+    active = "active"
+    revoked = "revoked"
+
+
+class TestRunStatus(str, Enum):
+    """Mirrors a GitHub Actions workflow run's lifecycle (its own `status`
+    field: queued -> in_progress -> completed). `pending` is our own
+    pre-dispatch state, set the instant a run is accepted against quota but
+    before the GitHub Actions API call has been confirmed."""
+
+    pending = "pending"
+    queued = "queued"
+    in_progress = "in_progress"
+    completed = "completed"
+    failed_to_dispatch = "failed_to_dispatch"
+
+
+class TestRunConclusion(str, Enum):
+    """Mirrors a GitHub Actions workflow run's `conclusion` field — only
+    meaningful once `TestRunStatus.completed`. Null on the row until then."""
+
+    success = "success"
+    failure = "failure"
+    cancelled = "cancelled"
+    timed_out = "timed_out"
+    action_required = "action_required"
+    unknown = "unknown"

@@ -4,7 +4,7 @@ import logging
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -20,10 +20,12 @@ from app.core.translation import translate_es_to_en
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_dimension_selection import CatalogItemDimensionSelection
 from app.models.catalog_item_image import CatalogItemImage
-from app.models.enums import CatalogItemStatus, CatalogItemType, PricingPillarCode
+from app.models.enums import CatalogItemStatus, CatalogItemType, PricingPillarCode, TestRunConclusion, TestRunStatus
 from app.models.pricing_dimension_level import PricingDimensionLevel
 from app.models.pricing_dimension_type import PricingDimensionType
 from app.models.pricing_pillar import PricingPillar
+from app.models.test_run import TestRun
+from app.models.user import User
 from app.modules.notifications.service import NotificationsService
 from app.modules.catalog_admin.schemas import (
     CatalogItemAdminCreate,
@@ -32,8 +34,15 @@ from app.modules.catalog_admin.schemas import (
     CatalogItemAdminUpdate,
     CatalogItemImageListResponse,
     CatalogItemImageRead,
+    CatalogItemTestStatsRead,
+    CatalogTestRunConclusionCounts,
+    CatalogTestRunRecentRead,
+    CatalogTestRunStatusCounts,
+    CatalogTestStatsSummaryItem,
+    CatalogTestStatsSummaryResponse,
     DimensionSelectionInput,
     DimensionSelectionRead,
+    TestInputVariableDef,
 )
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
 
@@ -118,6 +127,10 @@ class CatalogAdminService:
                 for s in item.dimension_selections
             ],
             page_count=item.page_count,
+            test_repo_url=item.test_repo_url,
+            test_workflow_file=item.test_workflow_file,
+            test_included_runs=item.test_included_runs,
+            test_input_schema=[TestInputVariableDef(**v) for v in (item.test_input_schema_json or [])],
             recommended_price=item.recommended_price,
             created_at=item.created_at,
             updated_at=item.updated_at,
@@ -316,6 +329,10 @@ class CatalogAdminService:
             repo_path=payload.repo_path,
             custom_fields_json=payload.custom_fields,
             page_count=payload.page_count,
+            test_repo_url=payload.test_repo_url,
+            test_workflow_file=payload.test_workflow_file,
+            test_included_runs=payload.test_included_runs,
+            test_input_schema_json=[v.model_dump() for v in payload.test_input_schema],
         )
         self._ensure_english_fields(
             item,
@@ -384,6 +401,8 @@ class CatalogAdminService:
             item.tags_json = data.pop("tags")
         if "custom_fields" in data:
             item.custom_fields_json = data.pop("custom_fields")
+        if "test_input_schema" in data:
+            item.test_input_schema_json = data.pop("test_input_schema")
         if "dimension_selections" in data:
             data.pop("dimension_selections")
             self._sync_dimension_selections(item, payload.dimension_selections or [])
@@ -504,3 +523,113 @@ class CatalogAdminService:
             if remaining:
                 remaining[0].is_cover = True
         self.db.commit()
+
+    # --- Test-execution usage stats (admin) ---------------------------------
+    # Read-only reporting over app.modules.test_execution's TestRun rows —
+    # kept here rather than in that module since this is purely an admin
+    # "how much is this product being used" view, not part of the
+    # buyer-facing trigger/quota flow itself.
+
+    def get_test_stats(self, item_id: int) -> CatalogItemTestStatsRead:
+        item = self._require_item(item_id)
+        if not item.test_repo_url:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="This item has no test framework configured",
+            )
+
+        total_runs = int(
+            self.db.execute(
+                select(func.count()).select_from(TestRun).where(TestRun.catalog_item_id == item.id)
+            ).scalar_one()
+        )
+        unique_users = int(
+            self.db.execute(
+                select(func.count(func.distinct(TestRun.user_id))).where(TestRun.catalog_item_id == item.id)
+            ).scalar_one()
+        )
+
+        status_counts = {s.value: 0 for s in TestRunStatus}
+        for s_val, n in self.db.execute(
+            select(TestRun.status, func.count())
+            .where(TestRun.catalog_item_id == item.id)
+            .group_by(TestRun.status)
+        ).all():
+            status_counts[s_val.value if hasattr(s_val, "value") else s_val] = int(n)
+
+        conclusion_counts = {c.value: 0 for c in TestRunConclusion}
+        for c_val, n in self.db.execute(
+            select(TestRun.conclusion, func.count())
+            .where(TestRun.catalog_item_id == item.id, TestRun.conclusion.is_not(None))
+            .group_by(TestRun.conclusion)
+        ).all():
+            conclusion_counts[c_val.value if hasattr(c_val, "value") else c_val] = int(n)
+
+        last_run_at = self.db.execute(
+            select(func.max(TestRun.created_at)).where(TestRun.catalog_item_id == item.id)
+        ).scalar_one()
+
+        recent_rows = self.db.execute(
+            select(TestRun, User.email)
+            .join(User, User.id == TestRun.user_id)
+            .where(TestRun.catalog_item_id == item.id)
+            .order_by(TestRun.created_at.desc())
+            .limit(10)
+        ).all()
+        recent_runs = [
+            CatalogTestRunRecentRead(
+                uuid=r.uuid,
+                user_email=email,
+                status=r.status.value,
+                conclusion=r.conclusion.value if r.conclusion else None,
+                created_at=r.created_at,
+            )
+            for r, email in recent_rows
+        ]
+
+        return CatalogItemTestStatsRead(
+            item_id=item.id,
+            item_title=item.title,
+            item_slug=item.slug,
+            included_runs=item.test_included_runs,
+            total_runs=total_runs,
+            unique_users=unique_users,
+            by_status=CatalogTestRunStatusCounts(**status_counts),
+            by_conclusion=CatalogTestRunConclusionCounts(**conclusion_counts),
+            last_run_at=last_run_at,
+            recent_runs=recent_runs,
+        )
+
+    def list_test_stats_summary(self) -> CatalogTestStatsSummaryResponse:
+        """Lightweight per-product execution totals — powers the admin
+        dashboard's 'ejecuciones por producto' section. Only items with a
+        test framework configured are included; items nobody has ever run
+        just show total_runs=0 rather than being omitted, so the dashboard
+        reads as a complete roster of test-enabled products."""
+        items = list(
+            self.db.execute(select(CatalogItem).where(CatalogItem.test_repo_url.is_not(None))).scalars().all()
+        )
+        if not items:
+            return CatalogTestStatsSummaryResponse(items=[])
+
+        item_ids = [i.id for i in items]
+        counts_rows = self.db.execute(
+            select(TestRun.catalog_item_id, func.count(), func.max(TestRun.created_at))
+            .where(TestRun.catalog_item_id.in_(item_ids))
+            .group_by(TestRun.catalog_item_id)
+        ).all()
+        counts_by_item = {cid: (int(n), last) for cid, n, last in counts_rows}
+
+        return CatalogTestStatsSummaryResponse(
+            items=[
+                CatalogTestStatsSummaryItem(
+                    item_id=i.id,
+                    item_title=i.title,
+                    item_slug=i.slug,
+                    included_runs=i.test_included_runs,
+                    total_runs=counts_by_item.get(i.id, (0, None))[0],
+                    last_run_at=counts_by_item.get(i.id, (0, None))[1],
+                )
+                for i in items
+            ]
+        )

@@ -62,14 +62,6 @@ export const organizationsPageEn = {
       business: { label: 'Business accounts', hint: 'Business tenants' },
       enterprise: { label: 'Enterprise accounts', hint: 'Enterprise tenants' },
     },
-    topology: {
-      title: 'Organization topology',
-      subtitle: 'Tenant relationships around the ASE platform core.',
-      core: 'ASE Platform Core',
-      active: 'Active',
-      selected: 'Selected',
-      suspended: 'Suspended',
-    },
     filters: {
       search: 'Search by name or public identifier',
       status: 'Status',
@@ -230,14 +222,6 @@ export const organizationsPageEs = {
       managed: { label: 'Gestionadas por plataforma', hint: 'Propiedad directa de plataforma' },
       business: { label: 'Cuentas business', hint: 'Tenants business' },
       enterprise: { label: 'Cuentas enterprise', hint: 'Tenants enterprise' },
-    },
-    topology: {
-      title: 'Mapa de organizaciones',
-      subtitle: 'Relaciones de tenants alrededor del núcleo de plataforma ASE.',
-      core: 'ASE Platform Core',
-      active: 'Activa',
-      selected: 'Seleccionada',
-      suspended: 'Suspendida',
     },
     filters: {
       search: 'Buscar por nombre o identificador público',

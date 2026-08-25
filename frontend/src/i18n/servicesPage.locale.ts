@@ -24,9 +24,9 @@ export const servicesPageEn = {
     cards: {
       c1: {
         icon: '◇',
-        title: 'Courses and certifications',
+        title: 'Courses and books',
         description:
-          'Structured learning paths for QA Engineers, Automation Leads and full teams.',
+          'A catalog of courses and technical books — books ship in PDF, EPUB, Kindle and audiobook, with a free preview before you buy.',
       },
       c2: {
         icon: '◆',
@@ -36,14 +36,26 @@ export const servicesPageEn = {
       },
       c3: {
         icon: '▣',
-        title: 'Tools and resources',
+        title: 'Scripts and resources',
         description:
-          'Technical assets, scripts, configurations and CI/CD integration guides curated by experts.',
+          'Downloadable scripts and configs with a built-in syntax-highlighted code viewer, hosted on GitHub and unlocked by your purchase.',
       },
       c4: {
         icon: '⬡',
         title: 'Consulting and services',
         description: 'Direct access to senior QA consulting for companies on the Enterprise plan.',
+      },
+      c5: {
+        icon: '✦',
+        title: 'Blog and community',
+        description:
+          'Articles with comments, likes/dislikes and one-click sharing to LinkedIn, X, Facebook and WhatsApp.',
+      },
+      c6: {
+        icon: '★',
+        title: 'Reviews and loyalty',
+        description:
+          'Star reviews on every product, plus a loyalty program that rewards tenure with Silver, Gold, Platinum and Infinite tiers.',
       },
     },
   },
@@ -257,9 +269,9 @@ export const servicesPageEs = {
     cards: {
       c1: {
         icon: '◇',
-        title: 'Cursos y certificaciones',
+        title: 'Cursos y libros',
         description:
-          'Rutas de aprendizaje estructuradas para QA Engineers, Automation Leads y equipos completos.',
+          'Catálogo de cursos y libros técnicos — los libros se entregan en PDF, EPUB, Kindle y audiolibro, con vista previa gratuita antes de comprar.',
       },
       c2: {
         icon: '◆',
@@ -269,14 +281,26 @@ export const servicesPageEs = {
       },
       c3: {
         icon: '▣',
-        title: 'Herramientas y recursos',
+        title: 'Scripts y recursos',
         description:
-          'Assets técnicos, scripts, configuraciones y guías de integración CI/CD curadas por expertos.',
+          'Scripts y configuraciones descargables con visor de código con sintaxis resaltada, alojados en GitHub y desbloqueados al comprar.',
       },
       c4: {
         icon: '⬡',
         title: 'Consultoría y servicios',
         description: 'Acceso directo a consultoría QA senior para empresas con plan Enterprise.',
+      },
+      c5: {
+        icon: '✦',
+        title: 'Blog y comunidad',
+        description:
+          'Artículos con comentarios, me gusta/no me gusta y un clic para compartir en LinkedIn, X, Facebook y WhatsApp.',
+      },
+      c6: {
+        icon: '★',
+        title: 'Reseñas y fidelidad',
+        description:
+          'Valoraciones con estrellas en cada producto, más un programa de fidelidad que premia la antigüedad con niveles Plata, Oro, Platino e Infinita.',
       },
     },
   },

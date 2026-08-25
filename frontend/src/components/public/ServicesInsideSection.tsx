@@ -1,7 +1,7 @@
 import { Card } from '../ui/Card'
 import { useI18n } from '../../i18n'
 
-const CARD_IDS = ['c1', 'c2', 'c3', 'c4'] as const
+const CARD_IDS = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'] as const
 
 export function ServicesInsideSection() {
   const { t } = useI18n()

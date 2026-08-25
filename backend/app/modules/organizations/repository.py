@@ -29,9 +29,26 @@ class OrganizationsRepository:
         return self.db.execute(stmt).scalar_one_or_none()
 
     def list(self, *, limit: int, offset: int, include_suspended: bool = False) -> tuple[list[Organization], int]:
-        base = select(Organization)
+        # Deleted orgs are excluded unconditionally, regardless of
+        # `include_suspended` — soft-delete is meant to hide the org from
+        # every normal listing permanently (see `soft_delete()`'s
+        # docstring), whereas suspension is a reversible state the super
+        # admin still needs to see (and act on) via `include_suspended`.
+        # Previously both were lumped into the same `include_suspended`
+        # flag, so the super-admin listing (which always passes
+        # `include_suspended=True` to be able to show/reactivate suspended
+        # orgs) also kept showing deleted orgs forever.
+        #
+        # is_platform_core is excluded unconditionally too — that row (the
+        # seed script's "ASE Platform" org) only exists as an anchor for the
+        # super_admin's RBAC role assignment, not a real tenant, so it has
+        # no business appearing in any admin-facing organization list.
+        base = select(Organization).where(
+            Organization.status != OrganizationStatus.deleted,
+            Organization.is_platform_core.is_(False),
+        )
         if not include_suspended:
-            base = base.where(Organization.status.notin_([OrganizationStatus.suspended, OrganizationStatus.deleted]))
+            base = base.where(Organization.status != OrganizationStatus.suspended)
 
         total_stmt = select(func.count()).select_from(base.subquery())
         total = int(self.db.execute(total_stmt).scalar_one())

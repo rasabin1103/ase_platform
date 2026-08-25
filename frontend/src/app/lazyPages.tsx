@@ -55,6 +55,9 @@ export const ProfilePage = lazy(() => import('../pages/independent/ProfilePage')
 export const RedeemCodePage = lazy(() =>
   import('../pages/independent/RedeemCodePage').then((m) => ({ default: m.RedeemCodePage })),
 )
+export const TestExecutionPage = lazy(() =>
+  import('../pages/independent/TestExecutionPage').then((m) => ({ default: m.TestExecutionPage })),
+)
 
 // --- Organization ---
 export const OrganizationDashboardPage = lazy(() =>
@@ -77,9 +80,6 @@ export const AdminCatalogPage = lazy(() =>
 export const AdminBlogPage = lazy(() => import('../pages/admin/AdminBlogPage').then((m) => ({ default: m.AdminBlogPage })))
 export const AdminBlogEditorPage = lazy(() =>
   import('../pages/admin/AdminBlogEditorPage').then((m) => ({ default: m.AdminBlogEditorPage })),
-)
-export const AdminCatalogSettingsPage = lazy(() =>
-  import('../pages/admin/AdminCatalogSettingsPage').then((m) => ({ default: m.AdminCatalogSettingsPage })),
 )
 export const AdminDashboardPage = lazy(() =>
   import('../pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),

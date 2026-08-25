@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Plus, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { CatalogGalleryManager } from '../../components/admin/premium/CatalogGalleryManager'
 import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
 import { PricingEngineSection } from '../../components/admin/premium/PricingEngineSection'
 import { useForm, useWatch } from 'react-hook-form'
-import type { CatalogItemAdmin, CatalogItemAdminPayload } from '../../api/catalogAdmin.api'
+import type { CatalogItemAdmin, CatalogItemAdminPayload, TestInputVariableDef } from '../../api/catalogAdmin.api'
 import { getCatalogTranslationStatus } from '../../api/catalogAdmin.api'
 import { listCatalogCategories } from '../../api/catalogCategories.api'
 import type { CatalogItemLevel, CatalogItemStatus, CatalogItemType } from '../../types/catalog.types'
@@ -62,6 +63,9 @@ const defaults = (type: CatalogItemType): FormValues => ({
   repo_path: null,
   dimension_selections: [],
   page_count: null,
+  test_repo_url: null,
+  test_workflow_file: null,
+  test_included_runs: null,
 })
 
 type Props = {
@@ -87,6 +91,17 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-ase-error">{message}</p>
 }
 
+function variableKeySlug(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 100)
+}
+
+const emptyVariable: TestInputVariableDef = { key: '', label: '', type: 'text', required: false, description: '' }
+
 export function AdminCatalogItemModal({
   open,
   onClose,
@@ -103,6 +118,7 @@ export function AdminCatalogItemModal({
   const [serverError, setServerError] = useState<string | null>(null)
   const [tagsInput, setTagsInput] = useState('')
   const [customFields, setCustomFields] = useState<Record<string, unknown>>({})
+  const [testInputSchema, setTestInputSchema] = useState<TestInputVariableDef[]>([])
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
   const { errors } = form.formState
   const categoriesQuery = useQuery({
@@ -163,13 +179,18 @@ export function AdminCatalogItemModal({
           repo_path: initial.repo_path,
           dimension_selections: initial.dimension_selections ?? [],
           page_count: initial.page_count ?? null,
+          test_repo_url: initial.test_repo_url ?? null,
+          test_workflow_file: initial.test_workflow_file ?? null,
+          test_included_runs: initial.test_included_runs ?? null,
         })
         setTagsInput((initial.tags ?? []).join(', '))
         setCustomFields(initial.custom_fields ?? {})
+        setTestInputSchema(initial.test_input_schema ?? [])
       } else {
         form.reset(defaults(defaultType))
         setTagsInput('')
         setCustomFields({})
+        setTestInputSchema([])
       }
       setImageFile(null)
       setPendingGallery((prev) => {
@@ -194,6 +215,10 @@ export function AdminCatalogItemModal({
   // changes the stored value.
   const categorySelectValues = categoryWatch && !selectedCategory ? [categoryWatch, ...categoryOptions.map((c) => c.name)] : categoryOptions.map((c) => c.name)
 
+  const updateTestVariable = (index: number, patch: Partial<TestInputVariableDef>) => {
+    setTestInputSchema((prev) => prev.map((v, i) => (i === index ? { ...v, ...patch } : v)))
+  }
+
   const formId = 'admin-catalog-item-form'
 
   return (
@@ -202,6 +227,7 @@ export function AdminCatalogItemModal({
       onClose={onClose}
       title={isEdit ? t('adminCatalog.formEdit') : t('adminCatalog.formCreate')}
       className="max-w-2xl"
+      allowFullscreen
       footer={
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -242,7 +268,13 @@ export function AdminCatalogItemModal({
           }
           try {
             await onSubmit(
-              { ...values, ...englishOverrides, tags, custom_fields: customFields },
+              {
+                ...values,
+                ...englishOverrides,
+                tags,
+                custom_fields: customFields,
+                test_input_schema: testInputSchema.filter((v) => v.key && v.label),
+              },
               imageFile,
               pendingGallery,
               pendingCoverKey,
@@ -355,7 +387,7 @@ export function AdminCatalogItemModal({
                 {t('adminCatalog.fields.category')}
                 <RequiredMark />
               </span>
-              <Link to="/admin/catalog-settings" className="text-cyan-300 hover:underline">
+              <Link to="/admin/catalog?section=categories" className="text-cyan-300 hover:underline">
                 {t('adminCatalog.manageCategories')}
               </Link>
             </span>
@@ -609,6 +641,152 @@ export function AdminCatalogItemModal({
               <Input placeholder="resources/deploy-checklist" {...form.register('repo_path')} />
               <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHint')}</p>
             </label>
+          ) : null}
+          {typeWatch === 'product' ? (
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                {t('adminCatalog.productContentSection.title')}
+              </span>
+              <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.productContentSection.hint')}</p>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoPath')}</span>
+                <Input placeholder="products/mi-producto" {...form.register('repo_path')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHint')}</p>
+                <FieldError message={errors.repo_path?.message as string | undefined} />
+              </label>
+            </div>
+          ) : null}
+          {typeWatch === 'product' ? (
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                {t('adminCatalog.testExecutionSection.title')}
+              </span>
+              <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.testExecutionSection.hint')}</p>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.testRepoUrl')}</span>
+                <Input placeholder="https://github.com/tu-org/tu-framework" {...form.register('test_repo_url')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.testRepoUrlHint')}</p>
+                <FieldError message={errors.test_repo_url?.message as string | undefined} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.testWorkflowFile')}</span>
+                <Input placeholder="run-tests.yml" {...form.register('test_workflow_file')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.testWorkflowFileHint')}</p>
+                <FieldError message={errors.test_workflow_file?.message as string | undefined} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.testIncludedRuns')}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="10"
+                  {...form.register('test_included_runs', {
+                    setValueAs: (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.testIncludedRunsHint')}</p>
+                <FieldError message={errors.test_included_runs?.message as string | undefined} />
+              </label>
+
+              <div className="space-y-3 border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                    {t('adminCatalog.testInputSchemaSection.title')}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<Plus className="h-3.5 w-3.5" />}
+                    onClick={() => setTestInputSchema((prev) => [...prev, { ...emptyVariable }])}
+                  >
+                    {t('adminCatalog.addTestVariable')}
+                  </Button>
+                </div>
+                <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.testInputSchemaSection.hint')}</p>
+
+                {testInputSchema.length === 0 ? (
+                  <p className="text-xs text-ase-muted">{t('adminCatalog.noTestVariables')}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {testInputSchema.map((variable, index) => (
+                      <div key={index} className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.label')}
+                            </span>
+                            <Input
+                              value={variable.label}
+                              onChange={(e) => {
+                                const label = e.target.value
+                                updateTestVariable(index, {
+                                  label,
+                                  key: variable.key || variableKeySlug(label),
+                                })
+                              }}
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.key')}
+                            </span>
+                            <Input
+                              value={variable.key}
+                              onChange={(e) => updateTestVariable(index, { key: variableKeySlug(e.target.value) })}
+                            />
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.type')}
+                            </span>
+                            <Select
+                              value={variable.type}
+                              onChange={(e) =>
+                                updateTestVariable(index, { type: e.target.value as TestInputVariableDef['type'] })
+                              }
+                            >
+                              <option value="text">{t('adminCatalog.testVariableTypes.text')}</option>
+                              <option value="secret">{t('adminCatalog.testVariableTypes.secret')}</option>
+                            </Select>
+                          </label>
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.description')}
+                            </span>
+                            <Input
+                              placeholder={t('adminCatalog.testVariableFields.descriptionPlaceholder') as string}
+                              value={variable.description ?? ''}
+                              onChange={(e) => updateTestVariable(index, { description: e.target.value })}
+                            />
+                          </label>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 text-[11px] text-ase-muted">
+                            <input
+                              type="checkbox"
+                              checked={variable.required}
+                              onChange={(e) => updateTestVariable(index, { required: e.target.checked })}
+                            />
+                            {t('adminCatalog.testVariableFields.required')}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setTestInputSchema((prev) => prev.filter((_, i) => i !== index))}
+                            className="inline-flex items-center gap-1 text-[11px] text-ase-error hover:underline"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {t('adminCatalog.removeTestVariable')}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : null}
 
           <PricingEngineSection

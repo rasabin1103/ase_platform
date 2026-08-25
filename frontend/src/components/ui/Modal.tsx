@@ -1,4 +1,5 @@
-import type { PropsWithChildren, ReactNode } from 'react'
+import { Maximize2, Minimize2 } from 'lucide-react'
+import { useState, type PropsWithChildren, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from './cn'
 import { Button } from './Button'
@@ -10,9 +11,29 @@ type Props = PropsWithChildren & {
   footer?: ReactNode
   className?: string
   closeLabel?: ReactNode
+  // Shows a maximize/restore toggle next to Close — on by default so every
+  // modal in the app offers it, not just the ones that obviously need the
+  // extra room. Only rendered alongside a `title`, since that's the only
+  // place there's a header row to put the toggle button in. Set explicitly
+  // to `false` for the rare modal where maximizing genuinely makes no
+  // sense (e.g. a single yes/no confirmation with no scrollable content).
+  allowFullscreen?: boolean
 }
 
-export function Modal({ open, title, onClose, footer, children, className, closeLabel = 'Close' }: Props) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  footer,
+  children,
+  className,
+  closeLabel = 'Close',
+  allowFullscreen = true,
+}: Props) {
+  // Resets every time the modal closes rather than persisting across opens —
+  // a maximized state carrying over to the next unrelated item feels like a
+  // bug, not a preference worth remembering.
+  const [fullscreen, setFullscreen] = useState(false)
   if (!open) return null
 
   return createPortal(
@@ -23,7 +44,7 @@ export function Modal({ open, title, onClose, footer, children, className, close
         aria-hidden="true"
       />
 
-      <div className="absolute inset-0 flex items-center justify-center p-4">
+      <div className={cn('absolute inset-0 flex items-center justify-center', fullscreen ? 'p-0' : 'p-4')}>
         <div
           role="dialog"
           aria-modal="true"
@@ -34,8 +55,16 @@ export function Modal({ open, title, onClose, footer, children, className, close
             // (flex-1 + min-h-0, the classic flexbox-overflow requirement)
             // scrolls — so action buttons in `footer` are never pushed
             // off-screen by a long form.
-            'flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-ase-border bg-ase-surface shadow-soft',
-            className,
+            'flex flex-col overflow-hidden border border-ase-border bg-ase-surface shadow-soft',
+            fullscreen
+              ? 'h-full w-full max-h-none max-w-none rounded-none'
+              // className is only applied in the non-fullscreen branch —
+              // deliberately, since a caller-provided width override (e.g.
+              // "max-w-2xl") and the fullscreen "max-w-none" above would
+              // otherwise both end up in the class list with no reliable
+              // winner (this file's `cn` is a plain string join, not
+              // tailwind-merge, so there's no de-duplication to lean on).
+              : cn('max-h-[90vh] w-full max-w-lg rounded-2xl', className),
           )}
         >
           {(title ?? null) && (
@@ -47,9 +76,26 @@ export function Modal({ open, title, onClose, footer, children, className, close
             // truncates/wraps internally, ever gets the chance to.
             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-ase-border px-6 py-4">
               <div className="min-w-0 flex-1 text-sm font-semibold text-ase-text">{title}</div>
-              <Button variant="ghost" className="h-9 shrink-0 px-3" onClick={onClose}>
-                {closeLabel}
-              </Button>
+              <div className="flex shrink-0 items-center gap-2">
+                {allowFullscreen ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 px-3"
+                    onClick={() => setFullscreen((v) => !v)}
+                    aria-label={fullscreen ? 'Restore' : 'Fullscreen'}
+                  >
+                    {fullscreen ? (
+                      <Minimize2 className="h-4 w-4" strokeWidth={1.75} />
+                    ) : (
+                      <Maximize2 className="h-4 w-4" strokeWidth={1.75} />
+                    )}
+                  </Button>
+                ) : null}
+                <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
+                  {closeLabel}
+                </Button>
+              </div>
             </div>
           )}
 

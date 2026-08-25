@@ -48,6 +48,9 @@ export function CatalogPremiumCard({
 }: Props) {
   const { t, language } = useI18n()
   const detailPath = `/catalog/${item.type}/${item.slug}`
+  // Same rule as CatalogItemCard/CatalogDetailPage: a free item (price 0)
+  // needs no purchase click at all — the "Comprar" button just doesn't apply.
+  const isFree = !Number(item.price)
   const title = localizedCatalogText(language, item.title, item.titleEn)
   const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
 
@@ -140,15 +143,17 @@ export function CatalogPremiumCard({
               </Button>
             </a>
           ) : null}
-          <Button
-            size="sm"
-            variant={item.isPurchased ? 'success' : 'ghost'}
-            leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
-            disabled={purchasePending || item.isPurchased}
-            onClick={() => onPurchase(item.slug)}
-          >
-            {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
-          </Button>
+          {!isFree ? (
+            <Button
+              size="sm"
+              variant={item.isPurchased ? 'success' : 'ghost'}
+              leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+              disabled={purchasePending || item.isPurchased}
+              onClick={() => onPurchase(item.slug)}
+            >
+              {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
+            </Button>
+          ) : null}
         </div>
       </div>
     </article>

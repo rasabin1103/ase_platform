@@ -107,6 +107,7 @@ def _upsert_org(
     slug: str,
     org_type: OrganizationType,
     owner: User,
+    is_platform_core: bool = False,
 ) -> tuple[Organization, bool]:
     org = db.execute(select(Organization).where(Organization.slug == slug)).scalar_one_or_none()
     if org is None:
@@ -116,12 +117,14 @@ def _upsert_org(
             type=org_type,
             owner_user_id=owner.id,
             status=OrganizationStatus.active,
+            is_platform_core=is_platform_core,
         )
         db.add(org)
         db.flush()
         return org, True
     org.owner_user_id = owner.id
     org.status = OrganizationStatus.active
+    org.is_platform_core = is_platform_core
     db.flush()
     return org, False
 
@@ -205,6 +208,11 @@ def _seed_mvp_users(db: Session) -> SeedRbacResult:
         slug=MVP_PLATFORM_SLUG,
         org_type=OrganizationType.enterprise,
         owner=super_admin,
+        # Not a real tenant — exists only so the super_admin's RBAC role
+        # assignment has an OrganizationMember row to attach to (see
+        # Organization.is_platform_core). Excluded from every
+        # organization-facing list/count/chart.
+        is_platform_core=True,
     )
     if platform_new:
         created_orgs += 1

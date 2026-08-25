@@ -49,6 +49,17 @@ class BlogPostAdminRead(BlogPostAdminBase):
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    # Engagement stats — always populated for the admin's eyes only. Split
+    # views by logged-in vs anonymous readers (anonymous = viewsTotal -
+    # viewsAuthenticated) per the requirement that the admin sees this
+    # breakdown, not just a single number.
+    viewsTotal: int = 0
+    viewsAuthenticated: int = 0
+    likesCount: int = 0
+    dislikesCount: int = 0
+    commentsCount: int = 0
+    sharesTotal: int = 0
+    sharesByNetwork: dict[str, int] = {}
 
     model_config = {"from_attributes": True}
 

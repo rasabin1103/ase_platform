@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   approveJoinRequest,
   cancelMemberInvite,
@@ -9,13 +10,18 @@ import {
   rejectJoinRequest,
   searchUnaffiliatedUsers,
 } from '../../api/orgMembership.api'
+import { leaveOrganization } from '../../api/organizationMembers.api'
+import { clearActiveOrganizationUuid } from '../../auth/auth.store'
 import { Card } from '../../components/ui/Card'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Badge } from '../../components/ui/Badge'
+import { Modal } from '../../components/ui/Modal'
+import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
+import { parseApiError } from '../../utils/apiError'
 
 function statusVariant(status: string): 'success' | 'warning' | 'error' | 'default' {
   if (status === 'approved' || status === 'accepted') return 'success'
@@ -32,9 +38,32 @@ function statusLabel(t: (key: string) => unknown, status: string): string {
 export function OrganizationMembersPage() {
   const { t } = useI18n()
   const { primaryRole, hasPermission } = useRbac()
+  const { currentUser, loadCurrentUser } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const canInvite = hasPermission('users.create')
   const isOwner = primaryRole === 'org_owner'
+
+  // ---- leave organization ----
+
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
+
+  const leaveMut = useMutation({
+    mutationFn: () => leaveOrganization(currentUser?.active_workspace_uuid ?? ''),
+    onSuccess: async () => {
+      // The workspace we just left is no longer valid as the active
+      // context — clearing it (rather than leaving the stale uuid
+      // cached) lets WorkspaceContextGate pick a sane new default the
+      // next time it resolves the user's workspaces.
+      clearActiveOrganizationUuid()
+      setConfirmLeaveOpen(false)
+      await loadCurrentUser()
+      await queryClient.invalidateQueries({ queryKey: ['organizations'] })
+      navigate('/onboarding', { replace: true })
+    },
+    onError: (err) => setLeaveError(parseApiError(err, t('orgMembership.admin.leaveError') as string).message),
+  })
 
   // ---- join requests ----
 
@@ -246,6 +275,49 @@ export function OrganizationMembersPage() {
           </div>
         </Card>
       ) : null}
+
+      <Card className="p-6" interactive>
+        <div className="text-sm font-semibold text-ase-text">{t('orgMembership.admin.leaveTitle')}</div>
+        <div className="mt-1 text-sm text-ase-text2">{t('orgMembership.admin.leaveSubtitle')}</div>
+
+        <div className="mt-4">
+          {isOwner ? <Badge variant="warning">{t('orgMembership.admin.leaveOwnerHint')}</Badge> : null}
+          <div className="mt-3">
+            <Button
+              variant="danger"
+              disabled={!currentUser?.active_workspace_uuid}
+              onClick={() => {
+                setLeaveError(null)
+                setConfirmLeaveOpen(true)
+              }}
+            >
+              {t('orgMembership.admin.leaveButton')}
+            </Button>
+          </div>
+          {leaveError ? <p className="mt-2 text-sm text-ase-error">{leaveError}</p> : null}
+        </div>
+      </Card>
+
+      <Modal
+        open={confirmLeaveOpen}
+        title={t('orgMembership.admin.leaveConfirmTitle') as string}
+        onClose={() => setConfirmLeaveOpen(false)}
+        allowFullscreen={false}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setConfirmLeaveOpen(false)}>
+              {t('orgMembership.admin.leaveCancel')}
+            </Button>
+            <Button variant="danger" disabled={leaveMut.isPending} onClick={() => leaveMut.mutate()}>
+              {t('orgMembership.admin.leaveConfirmButton')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-ase-text2">
+          {isOwner ? t('orgMembership.admin.leaveOwnerConfirmBody') : t('orgMembership.admin.leaveConfirmBody')}
+        </p>
+      </Modal>
     </div>
   )
 }

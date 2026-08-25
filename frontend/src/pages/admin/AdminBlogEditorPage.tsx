@@ -114,9 +114,14 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
       if (imageFile) await uploadBlogCoverImage(created.id, imageFile)
       return created
     },
-    onSuccess: (created) => {
+    onSuccess: () => {
       invalidate()
-      navigate(`/admin/blog/${created.id}/edit`, { replace: true })
+      // Always return to the blog list after saving — editing an existing
+      // post again (e.g. to flip it from draft to published) is a separate
+      // trip through "Editar" from the list, which lands here with the real
+      // id already in the URL, so isEditing is true from the very first
+      // render and the next save is guaranteed to PATCH, never re-create.
+      navigate('/admin/blog')
     },
   })
 
@@ -132,6 +137,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
     onSuccess: () => {
       invalidate()
       setImageFile(null)
+      navigate('/admin/blog')
     },
   })
 

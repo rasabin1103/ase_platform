@@ -11,7 +11,14 @@ from app.models.access_request import AccessRequest
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_rating import CatalogItemRating
 from app.models.catalog_purchase import CatalogPurchase
-from app.models.enums import AccessRequestStatus, CatalogItemType, OrganizationType, UserStatus
+from app.models.enums import (
+    AccessRequestStatus,
+    CatalogItemType,
+    MembershipStatus,
+    OrganizationStatus,
+    OrganizationType,
+    UserStatus,
+)
 from app.models.member_role import MemberRole
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
@@ -107,8 +114,21 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         .limit(5)
     ).all()
 
+    # Same fix as the user-growth chart above: deleted/suspended
+    # organizations shouldn't keep padding this breakdown forever — this one
+    # was missed when that fix originally shipped (task #76), which is why
+    # deleting an org never budged this chart. is_platform_core is excluded
+    # too — the seed script's "ASE Platform" org is only an RBAC anchor for
+    # the super_admin, not a real tenant (see Organization.is_platform_core).
     organizations_by_type: dict[str, int] = {ot.value: 0 for ot in OrganizationType}
-    org_type_rows = db.execute(select(Organization.type, func.count()).group_by(Organization.type)).all()
+    org_type_rows = db.execute(
+        select(Organization.type, func.count())
+        .where(
+            Organization.status.notin_([OrganizationStatus.deleted, OrganizationStatus.suspended]),
+            Organization.is_platform_core.is_(False),
+        )
+        .group_by(Organization.type)
+    ).all()
     for ot_val, n in org_type_rows:
         organizations_by_type[ot_val.value if isinstance(ot_val, OrganizationType) else ot_val] = int(n)
     organizations_total = sum(organizations_by_type.values())
@@ -195,4 +215,112 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         "reviews_total": reviews_total,
         "reviews_average_rating": reviews_average_rating,
         "reviews_distribution": reviews_distribution,
+    }
+
+
+def build_application_map(db: Session, *, individual_users_limit: int = 150) -> dict:
+    """Powers the admin dashboard's "application map" tree: real
+    organizations (with their active members) on one branch, unaffiliated
+    individual users on the other. A user only ever shows up once — either
+    nested under the organization(s) they actively belong to, or in the
+    individual-users branch if they don't belong to any.
+
+    "Real organization" here means business/enterprise/academy — the same
+    exclusions as `organizations_by_type` above (no deleted/suspended, no
+    `is_platform_core` seed anchor), plus `individual`-type orgs are
+    intentionally left out too: those are personal workspaces auto-created
+    for independent users, not actual teams, so their "member" (the owner)
+    belongs on the individual-users branch instead of appearing as a
+    one-person "organization".
+    """
+    real_org_types = [OrganizationType.business, OrganizationType.enterprise, OrganizationType.academy]
+
+    org_rows = db.execute(
+        select(Organization)
+        .where(
+            Organization.type.in_(real_org_types),
+            Organization.status.notin_([OrganizationStatus.deleted, OrganizationStatus.suspended]),
+            Organization.is_platform_core.is_(False),
+        )
+        .order_by(Organization.name)
+    ).scalars().all()
+
+    org_ids = [o.id for o in org_rows]
+    members_by_org: dict[int, list[dict]] = {oid: [] for oid in org_ids}
+    covered_user_ids: set[int] = set()
+
+    if org_ids:
+        member_rows = db.execute(
+            select(OrganizationMember.organization_id, User)
+            .join(User, User.id == OrganizationMember.user_id)
+            .where(
+                OrganizationMember.organization_id.in_(org_ids),
+                OrganizationMember.membership_status == MembershipStatus.active,
+                User.status.notin_([UserStatus.deleted, UserStatus.suspended]),
+            )
+        ).all()
+
+        member_user_ids = list({u.id for _, u in member_rows})
+        roles_by_member_user: dict[tuple[int, int], list[str]] = {}
+        if member_user_ids:
+            role_rows = db.execute(
+                select(OrganizationMember.organization_id, OrganizationMember.user_id, Role.code)
+                .select_from(MemberRole)
+                .join(OrganizationMember, OrganizationMember.id == MemberRole.organization_member_id)
+                .join(Role, Role.id == MemberRole.role_id)
+                .where(
+                    OrganizationMember.organization_id.in_(org_ids),
+                    OrganizationMember.user_id.in_(member_user_ids),
+                )
+            ).all()
+            for oid, uid, code in role_rows:
+                roles_by_member_user.setdefault((oid, uid), []).append(code)
+
+        for oid, u in member_rows:
+            covered_user_ids.add(u.id)
+            members_by_org[oid].append(
+                {
+                    "uuid": str(u.uuid),
+                    "email": u.email,
+                    "display_name": u.display_name,
+                    "role_codes": sorted(roles_by_member_user.get((oid, u.id), [])),
+                }
+            )
+
+        for oid in members_by_org:
+            members_by_org[oid].sort(key=lambda m: (m["display_name"] or m["email"]).lower())
+
+    organizations = [
+        {
+            "uuid": str(o.uuid),
+            "name": o.name,
+            "type": o.type.value if hasattr(o.type, "value") else str(o.type),
+            "members": members_by_org.get(o.id, []),
+        }
+        for o in org_rows
+    ]
+
+    # Individual users = active accounts not covered above — includes users
+    # whose only organization is their personal `individual`-type workspace,
+    # as well as any account with no organization membership at all.
+    individual_total_query = select(func.count()).select_from(User).where(User.status == UserStatus.active)
+    individual_list_query = (
+        select(User).where(User.status == UserStatus.active).order_by(User.created_at.desc()).limit(individual_users_limit)
+    )
+    if covered_user_ids:
+        individual_total_query = individual_total_query.where(User.id.notin_(covered_user_ids))
+        individual_list_query = individual_list_query.where(User.id.notin_(covered_user_ids))
+
+    individual_users_total = int(db.execute(individual_total_query).scalar_one())
+    individual_rows = db.execute(individual_list_query).scalars().all()
+    individual_users = [
+        {"uuid": str(u.uuid), "email": u.email, "display_name": u.display_name} for u in individual_rows
+    ]
+
+    return {
+        "organizations": organizations,
+        "organizations_total": len(organizations),
+        "individual_users": individual_users,
+        "individual_users_total": individual_users_total,
+        "individual_users_truncated": individual_users_total > len(individual_users),
     }

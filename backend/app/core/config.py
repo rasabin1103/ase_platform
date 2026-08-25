@@ -114,6 +114,13 @@ class Settings(BaseSettings):
     # the whole feature off without redeploying code.
     NEWSLETTER_SWEEP_ENABLED: bool = True
 
+    # Frequent poll (every 45s, not a daily sweep like the others above) that
+    # syncs pending/queued/in_progress TestRun rows against the GitHub
+    # Actions API (see app/core/test_run_polling.py) — no webhook is
+    # configured on this backend today, so this is how run status/conclusion
+    # ever gets updated after the initial dispatch.
+    TEST_RUN_POLL_SWEEP_ENABLED: bool = True
+
     # Stripe billing (subscriptions on Plans only, for now). If
     # STRIPE_SECRET_KEY is left empty, the billing module's endpoints return
     # a clear "not configured" error instead of failing with an unclear

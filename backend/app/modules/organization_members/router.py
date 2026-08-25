@@ -149,6 +149,24 @@ def update_member(
     )
 
 
+@router.post("/{organization_uuid}/leave", status_code=status.HTTP_204_NO_CONTENT)
+def leave_organization(
+    organization_uuid: UUID,
+    current_user: User = Depends(get_current_user),
+    svc: OrganizationMembersService = Depends(get_service),
+):
+    # Self-service — deliberately no permission dependency beyond being
+    # logged in, unlike every other endpoint in this router. Whether you
+    # can leave is decided by `svc.leave()`'s own guards (owner, sole
+    # super_admin org, individual workspace), not by an RBAC permission:
+    # any member should be able to walk away from an organization they
+    # belong to, regardless of what role they hold in it.
+    org_id = svc.repo.get_organization_id(organization_id=None, organization_uuid=organization_uuid)
+    if org_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    svc.leave(organization_id=org_id, user_id=current_user.id)
+
+
 @router.delete("/{member_id}", response_model=OrganizationMemberRead, dependencies=[Depends(require_permission("users.delete"))])
 def delete_member(
     member_id: int,

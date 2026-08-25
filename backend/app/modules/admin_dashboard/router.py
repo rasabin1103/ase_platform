@@ -18,7 +18,7 @@ from app.models.catalog_item import CatalogItem
 from app.models.catalog_purchase import CatalogPurchase
 from app.models.enums import AccessRequestStatus, CatalogItemType, UserStatus
 from app.models.user import User
-from app.modules.admin_dashboard.analytics import build_admin_analytics
+from app.modules.admin_dashboard.analytics import build_admin_analytics, build_application_map
 from app.modules.admin_dashboard.schemas import (
     AdminAnalyticsRead,
     AdminBookRedemptionListResponse,
@@ -32,12 +32,13 @@ from app.modules.admin_dashboard.schemas import (
     AdminSearchResponse,
     AdminSearchUserHit,
     AdminStatsRead,
+    ApplicationMapRead,
     SystemStatusCounts,
     SystemStatusDatabase,
     SystemStatusRead,
     TopUserPurchases,
 )
-from app.modules.auth.dependencies import get_current_user, require_permission
+from app.modules.auth.dependencies import get_current_user, require_permission, require_platform_role
 from app.modules.notifications.service import NotificationsService
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin-dashboard"])
@@ -336,6 +337,23 @@ def system_status(db: Session = Depends(get_db)):
 def admin_analytics(db: Session = Depends(get_db)):
     data = build_admin_analytics(db)
     return AdminAnalyticsRead(**data)
+
+
+@router.get(
+    "/application-map",
+    response_model=ApplicationMapRead,
+    dependencies=[Depends(require_platform_role("super_admin"))],
+)
+def admin_application_map(db: Session = Depends(get_db)):
+    """Tree data for the dashboard's "application map": real organizations
+    (business/enterprise/academy, excluding the platform-core seed anchor
+    and deleted/suspended orgs) each with their active members, plus every
+    other active user on a separate "individual users" branch. Restricted to
+    super_admin — it lists membership details across every tenant, which is
+    beyond what the generic `platform.read` permission should expose to an
+    org_owner/org_admin scoped to their own organization."""
+    data = build_application_map(db)
+    return ApplicationMapRead(**data)
 
 
 @router.get(

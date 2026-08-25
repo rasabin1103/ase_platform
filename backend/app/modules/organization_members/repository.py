@@ -67,3 +67,7 @@ class OrganizationMembersRepository:
         self.db.flush()
         return member
 
+    def delete(self, member: OrganizationMember) -> None:
+        self.db.delete(member)
+        self.db.flush()
+

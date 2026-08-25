@@ -19,6 +19,13 @@ export type BlogPostAdmin = {
   published_at: string | null
   created_at: string
   updated_at: string
+  viewsTotal: number
+  viewsAuthenticated: number
+  likesCount: number
+  dislikesCount: number
+  commentsCount: number
+  sharesTotal: number
+  sharesByNetwork: Record<string, number>
 }
 
 export type BlogAdminListResponse = {
@@ -86,4 +93,31 @@ export async function uploadBlogCoverImage(postId: number, file: File) {
 
 export async function clearBlogCoverImage(postId: number) {
   await apiClient.delete(`/admin/blog/${postId}/image`)
+}
+
+// --- comment moderation (raw/uncensored text, any comment) ------------------
+
+export type BlogCommentAdmin = {
+  id: number
+  authorName: string
+  content: string
+  createdAt: string
+  parentId: number | null
+  isOwn: boolean
+  canDelete: boolean
+  replies: BlogCommentAdmin[]
+}
+
+export type BlogCommentAdminListResponse = {
+  comments: BlogCommentAdmin[]
+  total: number
+}
+
+export async function listAdminBlogComments(postId: number) {
+  const { data } = await apiClient.get<BlogCommentAdminListResponse>(`/admin/blog/${postId}/comments`)
+  return data
+}
+
+export async function deleteAdminBlogComment(postId: number, commentId: number) {
+  await apiClient.delete(`/admin/blog/${postId}/comments/${commentId}`)
 }
