@@ -45,3 +45,10 @@ def sanitize_rich_text(html: str) -> str:
         strip=True,
     )
     return cleaned
+
+
+def sanitize_plain_text(text: str) -> str:
+    """Strips every HTML tag, leaving only plain text — used for blog
+    comments, which are plain text (no rich formatting), so any markup a
+    commenter pastes in is removed rather than rendered."""
+    return bleach.clean(text or "", tags=[], attributes={}, strip=True).strip()

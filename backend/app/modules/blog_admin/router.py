@@ -18,6 +18,7 @@ from app.modules.blog_admin.schemas import (
     BlogPostAdminUpdate,
 )
 from app.modules.blog_admin.service import BlogAdminService
+from app.modules.blog_engagement.schemas import CommentListResponse
 
 router = APIRouter(prefix="/api/v1/admin/blog", tags=["blog-admin"])
 
@@ -122,6 +123,24 @@ def update_blog_post(
         metadata={"fields": sorted(payload.model_dump(exclude_unset=True).keys())},
     )
     return post
+
+
+@router.get("/{post_id}/comments", response_model=CommentListResponse, dependencies=[_MANAGE])
+def list_blog_comments_admin(post_id: int, svc: BlogAdminService = Depends(get_service)):
+    """Raw, uncensored comment text for moderation — never the public,
+    banned-words-censored version."""
+    return svc.list_comments(post_id)
+
+
+@router.delete("/{post_id}/comments/{comment_id}", status_code=204, dependencies=[_MANAGE])
+def delete_blog_comment_admin(
+    post_id: int,
+    comment_id: int,
+    current_user: User = Depends(get_current_user),
+    svc: BlogAdminService = Depends(get_service),
+):
+    """Admin can delete anyone's comment (moderation), not just their own."""
+    svc.delete_comment(post_id, comment_id, admin_user_id=current_user.id)
 
 
 @router.delete("/{post_id}", status_code=204, dependencies=[_MANAGE])

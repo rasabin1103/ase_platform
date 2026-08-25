@@ -21,6 +21,8 @@ from app.modules.catalog_admin.schemas import (
     CatalogItemAdminUpdate,
     CatalogItemImageListResponse,
     CatalogItemImageRead,
+    CatalogItemTestStatsRead,
+    CatalogTestStatsSummaryResponse,
     TranslationStatus,
 )
 from app.modules.catalog_admin.service import CatalogAdminService
@@ -62,6 +64,28 @@ def get_catalog_translation_status():
     silently mirrors the Spanish text into the English fields instead of
     translating, which otherwise looks like a bug."""
     return TranslationStatus(enabled=translation_configured())
+
+
+@router.get(
+    "/test-stats/summary",
+    response_model=CatalogTestStatsSummaryResponse,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def get_catalog_test_stats_summary(svc: CatalogAdminService = Depends(get_service)):
+    """Per-product execution totals across every test-enabled catalog item
+    — powers the admin dashboard's 'ejecuciones por producto' section."""
+    return svc.list_test_stats_summary()
+
+
+@router.get(
+    "/{item_id}/test-stats",
+    response_model=CatalogItemTestStatsRead,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def get_catalog_item_test_stats(item_id: int, svc: CatalogAdminService = Depends(get_service)):
+    """Usage stats for one test-enabled product — powers the 'Estadísticas
+    de uso' button on its row in the admin catalog list."""
+    return svc.get_test_stats(item_id)
 
 
 @router.post("/{item_id}/image", dependencies=[Depends(require_permission("catalog.manage"))])

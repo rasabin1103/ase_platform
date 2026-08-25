@@ -13,6 +13,8 @@ export function PlatformModulesMap() {
     t<ModuleCardContent>('modules.cards.plans'),
     t<ModuleCardContent>('modules.cards.products'),
     t<ModuleCardContent>('modules.cards.courses'),
+    t<ModuleCardContent>('modules.cards.blog'),
+    t<ModuleCardContent>('modules.cards.reviews'),
     t<ModuleCardContent>('modules.cards.audit'),
   ]
 
@@ -78,11 +80,18 @@ export function PlatformModulesMap() {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 gap-5">
+            {/* 2-col only in the stacked (pre-lg) layout, where this block
+                spans the full page width — once the parent grid splits into
+                3 columns at lg, this slot is narrow again, so it drops back
+                to 1 column instead of squeezing 6 cards into two cramped
+                ones. */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-1">
               <ModuleCard title={modules[3].title} desc={modules[3].desc} />
               <ModuleCard title={modules[4].title} desc={modules[4].desc} />
               <ModuleCard title={modules[5].title} desc={modules[5].desc} />
               <ModuleCard title={modules[6].title} desc={modules[6].desc} />
+              <ModuleCard title={modules[7].title} desc={modules[7].desc} />
+              <ModuleCard title={modules[8].title} desc={modules[8].desc} />
             </div>
           </div>
         </div>

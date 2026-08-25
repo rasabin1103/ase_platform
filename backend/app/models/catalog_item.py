@@ -101,6 +101,36 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # directly by the admin, matching the "advisory suggestion" design.
     recommended_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
+    # --- Test-execution SaaS (product pillar only) --------------------------
+    # Turns a "product" catalog item into a runnable test-automation
+    # framework: ASE's own GitHub repo hosting the customer's framework code
+    # (Pytest, Playwright, Karate, WDIO...), triggered via the GitHub Actions
+    # workflow_dispatch API (see app.core.github_client) rather than exposing
+    # the repo itself — the buyer never gets repo access, only API-triggered
+    # runs, same "we own the credential, they own the entitlement" model as
+    # the rest of the catalog. All three are null for every non-runnable
+    # catalog item (courses, books, resources, and any product that isn't a
+    # test framework); test_execution.service treats a null
+    # test_workflow_file as "this item cannot be run".
+    test_repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    # Workflow file name in .github/workflows/ to dispatch, e.g. "run-tests.yml".
+    test_workflow_file: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Runs included per billing period for a purchase/plan-inclusion of this
+    # item — the quota enforced by test_execution.service before allowing a
+    # new dispatch. Null/0 both mean "not runnable" at the API layer.
+    test_included_runs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Schema of the workflow_dispatch inputs this framework's workflow
+    # actually declares (e.g. BASE_URL, API_TOKEN) — a list of
+    # {key, label, type, required, description} dicts, admin-defined,
+    # mirroring CatalogCategory.fields_json's "questionnaire" pattern. Each
+    # `key` here must match an input name declared under
+    # `on.workflow_dispatch.inputs` in the workflow YAML at test_repo_url,
+    # or GitHub silently ignores it. Buyers fill in their own values per
+    # framework (see TestExecutionConfig) rather than reusing the admin's
+    # own GitHub repo variables — that's what makes this usable by more
+    # than one customer against their own target environment.
+    test_input_schema_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",
         back_populates="catalog_item",

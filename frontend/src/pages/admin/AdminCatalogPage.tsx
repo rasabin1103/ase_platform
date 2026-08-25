@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Activity } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -6,6 +7,7 @@ import {
   addCatalogItemImageUrl,
   createAdminCatalogItem,
   deleteAdminCatalogItem,
+  getCatalogItemTestStats,
   listAdminCatalog,
   listAdminCatalogTags,
   setCatalogItemCoverImage,
@@ -23,15 +25,14 @@ import { Modal } from '../../components/ui/Modal'
 import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Badge } from '../../components/ui/Badge'
+import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
-import {
-  MiniMetric,
-  PremiumHero,
-  PremiumMetricCard,
-} from '../../components/admin/premium/PremiumAdminUi'
+import { MiniMetric, PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
 import { cn } from '../../components/ui/cn'
 import { AdminCatalogItemModal } from './AdminCatalogItemModal'
+import { AdminCatalogCategoriesPanel } from './AdminCatalogCategoriesPage'
+import { AdminPricingEnginePanel } from './AdminPricingEnginePage'
 
 type TabKey = 'all' | CatalogItemType
 type ViewMode = 'cards' | 'table'
@@ -44,7 +45,37 @@ const TABS: { key: TabKey; labelKey: string }[] = [
   { key: 'resource', labelKey: 'adminCatalog.tabResource' },
 ]
 
-export function AdminCatalogPage() {
+function fmtDate(iso: string | null) {
+  if (!iso) return '—'
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
+  } catch {
+    return iso
+  }
+}
+
+// GitHub Actions run status/conclusion values, straight off TestRunStatus/
+// TestRunConclusion — same vocabulary as testExecution.locale.ts's
+// `status.*`/`conclusion.*` keys, reused here via cross-namespace lookup
+// instead of duplicating the copy.
+const STATUS_TONE: Record<string, 'default' | 'info' | 'success' | 'warning' | 'error'> = {
+  pending: 'default',
+  queued: 'info',
+  in_progress: 'info',
+  completed: 'success',
+  failed_to_dispatch: 'error',
+}
+
+const CONCLUSION_TONE: Record<string, 'default' | 'info' | 'success' | 'warning' | 'error'> = {
+  success: 'success',
+  failure: 'error',
+  cancelled: 'warning',
+  timed_out: 'error',
+  action_required: 'warning',
+  unknown: 'default',
+}
+
+function AdminCatalogItemsPanel() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<TabKey>('all')
@@ -55,6 +86,7 @@ export function AdminCatalogPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<CatalogItemAdmin | null>(null)
   const [deleting, setDeleting] = useState<CatalogItemAdmin | null>(null)
+  const [statsItem, setStatsItem] = useState<CatalogItemAdmin | null>(null)
 
   const typeFilter = tab === 'all' ? undefined : tab
   const query = useQuery({
@@ -156,26 +188,20 @@ export function AdminCatalogPage() {
   const publishedCount = items.filter((i) => i.status === 'published').length
 
   return (
-    <div className="space-y-8 pb-16">
-      <PremiumHero
-        accent="cyan"
-        badge={t('adminCatalog.premium.badge')}
-        title={t('adminCatalog.title')}
-        subtitle={t('adminCatalog.subtitle')}
-        actions={
-          <Button size="sm" onClick={() => setCreateOpen(true)} leftIcon={<span>+</span>}>
-            {t('adminCatalog.create')}
-          </Button>
-        }
-        sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
-            <div className="grid grid-cols-2 gap-3">
-              <PremiumMetricCard label={t('adminCatalog.tabAll')} value={query.data?.total ?? items.length} icon="◇" accent="from-cyan-300 to-blue-500" />
-              <PremiumMetricCard label={t('adminCatalog.colStatus')} value={publishedCount} icon="✓" accent="from-emerald-300 to-teal-500" />
-            </div>
-          </Card>
-        }
-      />
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4 text-xs text-ase-muted">
+          <span>
+            {t('adminCatalog.tabAll')}: <span className="font-semibold text-ase-text">{query.data?.total ?? items.length}</span>
+          </span>
+          <span>
+            {t('adminCatalog.colStatus')}: <span className="font-semibold text-ase-text">{publishedCount}</span>
+          </span>
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen(true)} leftIcon={<span>+</span>}>
+          {t('adminCatalog.create')}
+        </Button>
+      </div>
 
       <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -255,6 +281,7 @@ export function AdminCatalogPage() {
               t={t}
               onEdit={() => setEditing(item)}
               onDelete={() => setDeleting(item)}
+              onStats={() => setStatsItem(item)}
             />
           ))}
         </div>
@@ -280,10 +307,20 @@ export function AdminCatalogPage() {
               <span>
                 {item.price} {item.currency}
               </span>
-              <span className="flex gap-2">
+              <span className="flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" onClick={() => setEditing(item)}>
                   {t('adminCatalog.edit')}
                 </Button>
+                {item.test_repo_url ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setStatsItem(item)}
+                    leftIcon={<Activity className="h-4 w-4" strokeWidth={1.75} />}
+                  >
+                    {t('adminCatalog.testStats.button')}
+                  </Button>
+                ) : null}
                 <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setDeleting(item)}>
                   {t('adminCatalog.delete')}
                 </Button>
@@ -326,6 +363,74 @@ export function AdminCatalogPage() {
           </Button>
         </div>
       </Modal>
+
+      <CatalogTestStatsModal item={statsItem} onClose={() => setStatsItem(null)} />
+    </div>
+  )
+}
+
+// The outer, nav-facing page: hosts the item-management panel plus the two
+// configuration screens ("categories" and "pricing engine") that used to
+// live behind a separate "Catalog settings" nav entry — merged here into
+// one tab bar under a single menu item, per the same consolidation pattern
+// already used for AdminSystemPage. `SectionKey` is deliberately a
+// different name from `TabKey` above: that one selects an item *type*
+// filter inside the items panel, this one selects which panel is shown at
+// all — conflating them would make neither read clearly.
+type SectionKey = 'items' | 'categories' | 'pricing'
+
+const SECTIONS: { key: SectionKey; labelKey: string }[] = [
+  { key: 'items', labelKey: 'adminCatalog.tabs.items' },
+  { key: 'categories', labelKey: 'adminCatalog.tabs.categories' },
+  { key: 'pricing', labelKey: 'adminCatalog.tabs.pricing' },
+]
+
+const VALID_SECTIONS: SectionKey[] = ['items', 'categories', 'pricing']
+
+export function AdminCatalogPage() {
+  const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  // Lets other screens deep-link straight into a tab — e.g. the "Manage
+  // categories" shortcut inside the item creation form links to
+  // `?section=categories` instead of dropping the admin on the Items tab
+  // and making them click again.
+  const initialSection = searchParams.get('section') as SectionKey | null
+  const [section, setSection] = useState<SectionKey>(
+    initialSection && VALID_SECTIONS.includes(initialSection) ? initialSection : 'items',
+  )
+
+  return (
+    <div className="space-y-8 pb-16">
+      <PremiumHero
+        accent="cyan"
+        badge={t('adminCatalog.premium.badge')}
+        title={t('adminCatalog.title')}
+        subtitle={t('adminCatalog.subtitle')}
+      />
+
+      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-3 backdrop-blur">
+        <div className="flex flex-wrap gap-2">
+          {SECTIONS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setSection(item.key)}
+              className={cn(
+                'rounded-full border px-4 py-1.5 text-xs font-semibold transition',
+                section === item.key
+                  ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
+                  : 'border-white/10 bg-white/[0.03] text-ase-muted hover:text-ase-text',
+              )}
+            >
+              {t(item.labelKey)}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {section === 'items' && <AdminCatalogItemsPanel />}
+      {section === 'categories' && <AdminCatalogCategoriesPanel />}
+      {section === 'pricing' && <AdminPricingEnginePanel />}
     </div>
   )
 }
@@ -335,11 +440,13 @@ function CatalogPremiumCard({
   t,
   onEdit,
   onDelete,
+  onStats,
 }: {
   item: CatalogItemAdmin
   t: (k: string) => string
   onEdit: () => void
   onDelete: () => void
+  onStats: () => void
 }) {
   return (
     <Card className="group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20">
@@ -362,11 +469,120 @@ function CatalogPremiumCard({
           <Button size="sm" variant="secondary" onClick={onEdit}>
             {t('adminCatalog.edit')}
           </Button>
+          {item.test_repo_url ? (
+            <Button size="sm" variant="ghost" onClick={onStats} leftIcon={<Activity className="h-4 w-4" strokeWidth={1.75} />}>
+              {t('adminCatalog.testStats.button')}
+            </Button>
+          ) : null}
           <Button size="sm" variant="outline" className="border-ase-error/30" onClick={onDelete}>
             {t('adminCatalog.delete')}
           </Button>
         </div>
       </div>
     </Card>
+  )
+}
+
+function CatalogTestStatsModal({ item, onClose }: { item: CatalogItemAdmin | null; onClose: () => void }) {
+  const { t } = useI18n()
+  const query = useQuery({
+    queryKey: ['admin-catalog-test-stats', item?.id],
+    queryFn: () => getCatalogItemTestStats(item!.id),
+    enabled: item !== null,
+  })
+  const stats = query.data
+
+  return (
+    <Modal
+      open={item !== null}
+      onClose={onClose}
+      title={item ? `${t('adminCatalog.testStats.title')} · ${item.title}` : t('adminCatalog.testStats.title')}
+      footer={<Button onClick={onClose}>{t('adminCatalog.testStats.close')}</Button>}
+    >
+      <div className="space-y-5">
+        <p className="text-sm text-ase-text2">{t('adminCatalog.testStats.hint')}</p>
+
+        {query.isLoading ? (
+          <Skeleton className="h-40 rounded-2xl" />
+        ) : query.isError ? (
+          <EmptyState title={t('private.common.couldNotLoad')} description={t('adminCatalog.testStats.loadError')} />
+        ) : stats ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <MiniMetric label={t('adminCatalog.testStats.totalRuns')} value={String(stats.total_runs)} />
+              <MiniMetric label={t('adminCatalog.testStats.uniqueUsers')} value={String(stats.unique_users)} />
+              <MiniMetric
+                label={t('adminCatalog.testStats.includedRuns')}
+                value={stats.included_runs != null ? String(stats.included_runs) : '—'}
+              />
+              <MiniMetric
+                label={t('adminCatalog.testStats.lastRun')}
+                value={stats.last_run_at ? fmtDate(stats.last_run_at) : (t('adminCatalog.testStats.never') as string)}
+              />
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-ase-text">{t('adminCatalog.testStats.byStatus')}</h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(stats.by_status).map(([key, count]) => (
+                  <Badge key={key} variant={STATUS_TONE[key] ?? 'default'}>
+                    {t(`testExecution.status.${key}`)}: {count}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-ase-text">{t('adminCatalog.testStats.byConclusion')}</h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(stats.by_conclusion).map(([key, count]) => (
+                  <Badge key={key} variant={CONCLUSION_TONE[key] ?? 'default'}>
+                    {t(`testExecution.conclusion.${key}`)}: {count}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-ase-text">{t('adminCatalog.testStats.recentRuns')}</h3>
+              {stats.recent_runs.length === 0 ? (
+                <p className="text-sm text-ase-muted">{t('adminCatalog.testStats.empty')}</p>
+              ) : (
+                <Table className="table-fixed">
+                  <THead>
+                    <TR>
+                      <TH className="w-[34%]">{t('adminCatalog.testStats.columns.user')}</TH>
+                      <TH className="w-[22%]">{t('adminCatalog.testStats.columns.status')}</TH>
+                      <TH className="w-[22%]">{t('adminCatalog.testStats.columns.conclusion')}</TH>
+                      <TH className="w-[22%]">{t('adminCatalog.testStats.columns.created')}</TH>
+                    </TR>
+                  </THead>
+                  <TBody>
+                    {stats.recent_runs.map((r) => (
+                      <TR key={r.uuid}>
+                        <TD className="truncate text-ase-text2">{r.user_email}</TD>
+                        <TD>
+                          <Badge variant={STATUS_TONE[r.status] ?? 'default'}>{t(`testExecution.status.${r.status}`)}</Badge>
+                        </TD>
+                        <TD>
+                          {r.conclusion ? (
+                            <Badge variant={CONCLUSION_TONE[r.conclusion] ?? 'default'}>
+                              {t(`testExecution.conclusion.${r.conclusion}`)}
+                            </Badge>
+                          ) : (
+                            <span className="text-ase-muted">—</span>
+                          )}
+                        </TD>
+                        <TD className="text-ase-muted">{fmtDate(r.created_at)}</TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+    </Modal>
   )
 }

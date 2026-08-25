@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.media_urls import blog_has_stored_image
+from app.models.user import User
+from app.modules.auth.dependencies import get_current_user_optional
 from app.modules.public_blog.schemas import BlogPostPublicDetail, BlogPostPublicListResponse
 from app.modules.public_blog.service import (
     get_public_post_by_slug,
     get_published_post_or_404,
     list_public_posts,
     list_public_tags,
+    render_public_post_preview_html,
 )
 
 router = APIRouter(prefix="/api/v1/public", tags=["public-blog"])
@@ -36,9 +39,26 @@ def read_public_blog_tags(db: Session = Depends(get_db)) -> list[str]:
 
 
 @router.get("/blog/{slug}", response_model=BlogPostPublicDetail)
-def read_public_blog_post(slug: str, db: Session = Depends(get_db)) -> BlogPostPublicDetail:
-    """Full article by slug — 404s for drafts and unknown slugs alike, no auth."""
-    return get_public_post_by_slug(db, slug)
+def read_public_blog_post(
+    slug: str,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+) -> BlogPostPublicDetail:
+    """Full article by slug — 404s for drafts and unknown slugs alike. No
+    auth required to read, but an optional token is accepted so the view
+    counter and "my reaction" can distinguish a logged-in reader."""
+    return get_public_post_by_slug(db, slug, viewer_user_id=user.id if user else None)
+
+
+@router.get("/blog/{slug}/preview", response_class=HTMLResponse)
+def read_public_blog_post_preview(slug: str, request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    """Server-rendered Open Graph/Twitter Card preview — this is the URL the
+    frontend's share buttons hand to LinkedIn/Facebook/X/WhatsApp instead of
+    the plain SPA route, since those networks' crawlers can't see the SPA's
+    client-side meta tags. No auth; does not count as a page view. See
+    render_public_post_preview_html for the full rationale."""
+    body = render_public_post_preview_html(db, slug, backend_base_url=str(request.base_url))
+    return HTMLResponse(content=body)
 
 
 @router.get("/blog-cover/{post_id}")

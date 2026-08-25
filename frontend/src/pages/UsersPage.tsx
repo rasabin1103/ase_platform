@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
-import { Download, LogIn } from 'lucide-react'
+import { BarChart3, Download, LogIn } from 'lucide-react'
 import { z } from 'zod'
 import { createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
 import type { UserUpdateRequest } from '../types/user.types'
@@ -20,6 +20,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
 import { MemberCatalogStatsModal } from '../components/organization/MemberCatalogStatsModal'
+import { UserStatsModal } from '../components/admin/UserStatsModal'
 import type { User, UserStatus } from '../types/user.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
@@ -67,6 +68,7 @@ export function UsersPage() {
   const [editing, setEditing] = useState<User | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
+  const [statsForUser, setStatsForUser] = useState<User | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
   const [verificationSentEmail, setVerificationSentEmail] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
@@ -339,6 +341,7 @@ export function UsersPage() {
                   }}
                   onDelete={() => setConfirmDelete(u)}
                   onImpersonate={isSuperAdmin && u.uuid !== currentUser?.uuid ? () => setConfirmImpersonate(u) : undefined}
+                  onViewStats={isSuperAdmin ? () => setStatsForUser(u) : undefined}
                 />
               ))}
             </div>
@@ -399,6 +402,11 @@ export function UsersPage() {
                             {t('usersPage.actions.edit')}
                           </Button>
                           <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setConfirmDelete(u)}>{t('usersPage.actions.delete')}</Button>
+                          {isSuperAdmin ? (
+                            <Button size="sm" variant="ghost" onClick={() => setStatsForUser(u)} title={t('usersPage.actions.viewStats') as string}>
+                              <BarChart3 className="h-4 w-4" strokeWidth={1.75} />
+                            </Button>
+                          ) : null}
                           {isSuperAdmin && u.uuid !== currentUser?.uuid ? (
                             <Button size="sm" variant="ghost" onClick={() => setConfirmImpersonate(u)} title={t('impersonation.action') as string}>
                               <LogIn className="h-4 w-4" strokeWidth={1.75} />
@@ -581,6 +589,8 @@ export function UsersPage() {
 
       <MemberCatalogStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} />
 
+      <UserStatsModal user={statsForUser} onClose={() => setStatsForUser(null)} />
+
       {verificationSentEmail ? (
         <div className="fixed bottom-6 right-6 z-[60] max-w-sm rounded-2xl border border-emerald-300/25 bg-ase-bg2 p-4 text-sm text-emerald-100 shadow-soft">
           {String(t('usersPage.create.verificationSent')).replace('{{email}}', verificationSentEmail)}
@@ -662,6 +672,7 @@ function UserPremiumCard({
   onEdit,
   onDelete,
   onImpersonate,
+  onViewStats,
 }: {
   user: User
   t: (k: string) => string
@@ -669,6 +680,7 @@ function UserPremiumCard({
   onEdit: () => void
   onDelete: () => void
   onImpersonate?: () => void
+  onViewStats?: () => void
 }) {
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
@@ -707,6 +719,12 @@ function UserPremiumCard({
         <Button size="sm" variant="outline" className="border-ase-error/30" onClick={onDelete}>
           {t('usersPage.actions.delete')}
         </Button>
+        {onViewStats ? (
+          <Button size="sm" variant="ghost" onClick={onViewStats}>
+            <BarChart3 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+            {t('usersPage.actions.viewStats')}
+          </Button>
+        ) : null}
         {onImpersonate ? (
           <Button size="sm" variant="ghost" onClick={onImpersonate}>
             <LogIn className="mr-1.5 h-4 w-4" strokeWidth={1.75} />

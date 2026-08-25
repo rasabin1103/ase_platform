@@ -15,6 +15,7 @@ from app.modules.blog_admin.schemas import (
     BlogPostAdminRead,
     BlogPostAdminUpdate,
 )
+from app.modules.blog_engagement.repository import BlogEngagementRepository
 from app.modules.public_blog.repository import BlogRepository
 
 
@@ -22,8 +23,11 @@ class BlogAdminService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = BlogRepository(db)
+        self.engagement = BlogEngagementRepository(db)
 
-    def _to_read(self, post: BlogPost) -> BlogPostAdminRead:
+    def _to_read(self, post: BlogPost, *, stats: dict | None = None) -> BlogPostAdminRead:
+        if stats is None:
+            stats = self._stats_for_post(post.id)
         return BlogPostAdminRead(
             id=post.id,
             uuid=post.uuid,
@@ -41,7 +45,47 @@ class BlogAdminService:
             published_at=post.published_at,
             created_at=post.created_at,
             updated_at=post.updated_at,
+            viewsTotal=post.views_total,
+            viewsAuthenticated=post.views_authenticated,
+            likesCount=stats["likes"],
+            dislikesCount=stats["dislikes"],
+            commentsCount=stats["comments"],
+            sharesTotal=stats["shares_total"],
+            sharesByNetwork=stats["shares_by_network"],
         )
+
+    def _stats_for_post(self, post_id: int) -> dict:
+        likes, dislikes = self.engagement.reaction_counts_for_post(post_id)
+        comments = self.engagement.comment_counts_for_posts([post_id]).get(post_id, 0)
+        shares_by_network = self.engagement.share_counts_for_post(post_id)
+        return {
+            "likes": likes,
+            "dislikes": dislikes,
+            "comments": comments,
+            "shares_total": sum(shares_by_network.values()),
+            "shares_by_network": shares_by_network,
+        }
+
+    def _batch_stats(self, posts: list[BlogPost]) -> dict[int, dict]:
+        post_ids = [p.id for p in posts]
+        reactions = self.engagement.reaction_counts_for_posts(post_ids)
+        comments = self.engagement.comment_counts_for_posts(post_ids)
+        shares_total = self.engagement.share_totals_for_posts(post_ids)
+        result: dict[int, dict] = {}
+        for post_id in post_ids:
+            likes, dislikes = reactions.get(post_id, (0, 0))
+            result[post_id] = {
+                "likes": likes,
+                "dislikes": dislikes,
+                "comments": comments.get(post_id, 0),
+                "shares_total": shares_total.get(post_id, 0),
+                # Per-network breakdown is only fetched for the single-post
+                # detail view (_stats_for_post) — the list view would need
+                # one more grouped query per post otherwise; the total is
+                # enough for the row-level summary.
+                "shares_by_network": {},
+            }
+        return result
 
     def _require_post(self, post_id: int) -> BlogPost:
         post = self.repo.get_by_id(post_id)
@@ -76,7 +120,9 @@ class BlogAdminService:
     ) -> BlogPostAdminListResponse:
         statuses = (status_filter,) if status_filter is not None else None
         posts, total = self.repo.list(limit=limit, offset=offset, search=search, tags=tags, statuses=statuses)
-        return BlogPostAdminListResponse(items=[self._to_read(p) for p in posts], limit=limit, offset=offset, total=total)
+        stats_by_post = self._batch_stats(posts)
+        items = [self._to_read(p, stats=stats_by_post[p.id]) for p in posts]
+        return BlogPostAdminListResponse(items=items, limit=limit, offset=offset, total=total)
 
     def list_tags(self) -> list[str]:
         return self.repo.distinct_tags()
@@ -139,3 +185,22 @@ class BlogAdminService:
         self.db.commit()
         self.db.refresh(post)
         return self._to_read(post)
+
+    # --- comment moderation -----------------------------------------------
+    # Delegates to BlogEngagementService (imported lazily to avoid a
+    # module-load cycle: blog_engagement's own service already imports
+    # public_blog.repository, and this module sits alongside it). The admin
+    # always sees the raw, uncensored comment text (is_admin=True), and can
+    # delete anyone's comment, not just their own.
+
+    def list_comments(self, post_id: int):
+        from app.modules.blog_engagement.service import BlogEngagementService
+
+        post = self._require_post(post_id)
+        return BlogEngagementService(self.db).list_comments(post.slug, viewer_user_id=None, is_admin=True)
+
+    def delete_comment(self, post_id: int, comment_id: int, *, admin_user_id: int) -> None:
+        from app.modules.blog_engagement.service import BlogEngagementService
+
+        post = self._require_post(post_id)
+        BlogEngagementService(self.db).delete_comment(post.slug, comment_id=comment_id, user_id=admin_user_id, is_admin=True)

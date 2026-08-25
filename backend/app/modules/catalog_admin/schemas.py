@@ -41,6 +41,19 @@ class DimensionSelectionRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TestInputVariableDef(BaseModel):
+    """One admin-declared workflow_dispatch input a framework's workflow
+    expects (e.g. BASE_URL) — see CatalogItem.test_input_schema_json. `key`
+    must match an input name under `on.workflow_dispatch.inputs` in the
+    workflow YAML at test_repo_url, or GitHub silently ignores it."""
+
+    key: str = Field(min_length=1, max_length=100)
+    label: str = Field(min_length=1, max_length=200)
+    type: str = Field(default="text")  # "text" | "secret" — secret masks the value in the buyer-facing UI
+    required: bool = False
+    description: str | None = Field(default=None, max_length=500)
+
+
 class CatalogItemAdminBase(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     slug: str = Field(min_length=1, max_length=160)
@@ -98,10 +111,19 @@ class CatalogItemAdminBase(BaseModel):
     dimension_selections: list[DimensionSelectionInput] = []
     # Book pillar only.
     page_count: int | None = Field(default=None, ge=1)
+    # --- Test-execution SaaS (product pillar only) — see
+    # CatalogItem.test_repo_url/test_workflow_file/test_included_runs. All
+    # optional: a "product" item without these simply isn't runnable.
+    test_repo_url: str | None = Field(default=None, max_length=2048)
+    test_workflow_file: str | None = Field(default=None, max_length=255)
+    test_included_runs: int | None = Field(default=None, ge=0)
+    # Schema of workflow_dispatch inputs buyers must fill in per-framework
+    # (see CatalogItem.test_input_schema_json / TestExecutionConfig).
+    test_input_schema: list[TestInputVariableDef] = []
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
-    @field_validator("preview_url", "repo_url", "audiobook_url")
+    @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod
     def _validate_link_fields(cls, value: str | None) -> str | None:
         return _validate_absolute_url(value)
@@ -134,8 +156,12 @@ class CatalogItemAdminUpdate(BaseModel):
     custom_fields: dict[str, Any] | None = None
     dimension_selections: list[DimensionSelectionInput] | None = None
     page_count: int | None = Field(default=None, ge=1)
+    test_repo_url: str | None = None
+    test_workflow_file: str | None = None
+    test_included_runs: int | None = Field(default=None, ge=0)
+    test_input_schema: list[TestInputVariableDef] | None = None
 
-    @field_validator("preview_url", "repo_url", "audiobook_url")
+    @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod
     def _validate_link_fields(cls, value: str | None) -> str | None:
         return _validate_absolute_url(value)
@@ -184,3 +210,66 @@ class TranslationStatus(BaseModel):
     so catalog_admin doesn't need to import from the plans module."""
 
     enabled: bool
+
+
+class CatalogTestRunStatusCounts(BaseModel):
+    """Mirrors TestRunStatus's members exactly — every key always present
+    (defaulting to 0) so the admin UI never has to guard against a missing
+    status bucket."""
+
+    pending: int = 0
+    queued: int = 0
+    in_progress: int = 0
+    completed: int = 0
+    failed_to_dispatch: int = 0
+
+
+class CatalogTestRunConclusionCounts(BaseModel):
+    success: int = 0
+    failure: int = 0
+    cancelled: int = 0
+    timed_out: int = 0
+    action_required: int = 0
+    unknown: int = 0
+
+
+class CatalogTestRunRecentRead(BaseModel):
+    uuid: UUID
+    user_email: str
+    status: str
+    conclusion: str | None = None
+    created_at: datetime
+
+
+class CatalogItemTestStatsRead(BaseModel):
+    """Usage stats for one test-enabled catalog item — powers the
+    'Estadísticas de uso' button in the admin catalog list."""
+
+    item_id: int
+    item_title: str
+    item_slug: str
+    included_runs: int | None = None
+    total_runs: int
+    unique_users: int
+    by_status: CatalogTestRunStatusCounts
+    by_conclusion: CatalogTestRunConclusionCounts
+    last_run_at: datetime | None = None
+    recent_runs: list[CatalogTestRunRecentRead] = []
+
+
+class CatalogTestStatsSummaryItem(BaseModel):
+    """One row of the admin dashboard's 'executions per product' summary —
+    deliberately lighter than CatalogItemTestStatsRead (no per-status
+    breakdown, no recent runs) since the dashboard only needs a quick
+    per-product total."""
+
+    item_id: int
+    item_title: str
+    item_slug: str
+    included_runs: int | None = None
+    total_runs: int
+    last_run_at: datetime | None = None
+
+
+class CatalogTestStatsSummaryResponse(BaseModel):
+    items: list[CatalogTestStatsSummaryItem] = []

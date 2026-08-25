@@ -67,6 +67,34 @@ class AdminAnalyticsRead(BaseModel):
     reviews_distribution: dict[str, int] = {}
 
 
+class ApplicationMapMemberRead(BaseModel):
+    uuid: str
+    email: str
+    display_name: str | None = None
+    role_codes: list[str] = []
+
+
+class ApplicationMapOrganizationRead(BaseModel):
+    uuid: str
+    name: str
+    type: str
+    members: list[ApplicationMapMemberRead] = []
+
+
+class ApplicationMapIndividualUserRead(BaseModel):
+    uuid: str
+    email: str
+    display_name: str | None = None
+
+
+class ApplicationMapRead(BaseModel):
+    organizations: list[ApplicationMapOrganizationRead] = []
+    organizations_total: int = 0
+    individual_users: list[ApplicationMapIndividualUserRead] = []
+    individual_users_total: int = 0
+    individual_users_truncated: bool = False
+
+
 class AdminPurchasesSummaryRead(BaseModel):
     purchases_total: int
     revenue_total: float

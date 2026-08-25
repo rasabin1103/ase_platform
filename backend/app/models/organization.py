@@ -52,6 +52,18 @@ class Organization(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # User.newsletter_subscribed setting. Toggled by org_owner/org_admin.
     newsletter_subscribed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # True for exactly one row: the platform's own internal anchor
+    # organization (seed_demo_rbac.py's "ASE Platform" / slug "ase-platform"),
+    # which exists solely so the super_admin's role assignment has an
+    # OrganizationMember row to hang off of — this codebase's RBAC models
+    # every role assignment as organization-scoped (see
+    # auth.dependencies.is_super_admin), so the super admin needs *some*
+    # organization even though it isn't a real tenant. This flag is how
+    # every organization-facing list/count/chart tells the difference and
+    # excludes it — a platform admin is core platform staff, not a customer
+    # organization, and shouldn't show up as one.
+    is_platform_core: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
     owner: Mapped["User"] = relationship(back_populates="owned_organizations")
     members: Mapped[list["OrganizationMember"]] = relationship(
         back_populates="organization",

@@ -62,6 +62,18 @@ export const orgMembershipEn = {
     statusCancelled: 'Cancelled',
     requestedOn: 'Requested on {{date}}',
     invitedOn: 'Invited on {{date}}',
+    leaveTitle: 'Leave this organization',
+    leaveSubtitle: "Remove yourself as a member. You'll lose access to its shared catalog and settings.",
+    leaveButton: 'Leave organization',
+    leaveOwnerHint: 'You are the owner. If other members remain, transfer ownership first — if you are the only member, leaving deletes the organization.',
+    leaveConfirmTitle: 'Leave organization?',
+    leaveConfirmBody:
+      "You'll lose access to this organization's shared catalog, purchases, and settings. To rejoin later you'd need a new invitation.",
+    leaveOwnerConfirmBody:
+      "As the owner, if you are the only active member this will permanently delete the organization along with your membership. If other members remain, you'll need to transfer ownership to one of them first.",
+    leaveConfirmButton: 'Yes, leave',
+    leaveCancel: 'Cancel',
+    leaveError: 'Could not leave the organization. Try again.',
   },
   profileLinks: {
     title: 'Professional links',
@@ -142,6 +154,18 @@ export const orgMembershipEs = {
     statusCancelled: 'Cancelada',
     requestedOn: 'Solicitado el {{date}}',
     invitedOn: 'Invitado el {{date}}',
+    leaveTitle: 'Salir de esta organización',
+    leaveSubtitle: 'Deja de ser miembro. Perderás el acceso a su catálogo compartido y su configuración.',
+    leaveButton: 'Salir de la organización',
+    leaveOwnerHint: 'Eres el propietario. Si quedan otros miembros, transfiere la propiedad primero — si eres el único miembro, salir eliminará la organización.',
+    leaveConfirmTitle: '¿Salir de la organización?',
+    leaveConfirmBody:
+      'Perderás el acceso al catálogo compartido, las compras y la configuración de esta organización. Para volver a unirte necesitarías una nueva invitación.',
+    leaveOwnerConfirmBody:
+      'Como propietario, si eres el único miembro activo esta acción eliminará permanentemente la organización junto con tu membresía. Si quedan otros miembros, primero deberás transferirles la propiedad.',
+    leaveConfirmButton: 'Sí, salir',
+    leaveCancel: 'Cancelar',
+    leaveError: 'No se pudo salir de la organización. Inténtalo de nuevo.',
   },
   profileLinks: {
     title: 'Redes y enlaces profesionales',

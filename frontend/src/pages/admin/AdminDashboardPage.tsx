@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { getAdminAnalytics, getAdminStats } from '../../api/adminDashboard.api'
+import { getAdminAnalytics, getAdminStats, getApplicationMap } from '../../api/adminDashboard.api'
+import { getCatalogTestStatsSummary } from '../../api/catalogAdmin.api'
+import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
+import { ApplicationMapTree } from '../../components/admin/premium/ApplicationMapTree'
 import {
   InsightBar,
   PremiumBreakdownCard,
@@ -17,6 +21,15 @@ import {
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { useI18n } from '../../i18n'
 
+function fmtDate(iso: string | null) {
+  if (!iso) return '—'
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
+  } catch {
+    return iso
+  }
+}
+
 const QUICK_LINKS = [
   { to: '/admin/catalog', labelKey: 'adminDashboard.actions.manageCatalog', icon: '◇' },
   { to: '/users', labelKey: 'adminDashboard.actions.manageUsers', icon: '◉' },
@@ -29,8 +42,12 @@ export function AdminDashboardPage() {
   const { t } = useI18n()
   const statsQuery = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats })
   const analyticsQuery = useQuery({ queryKey: ['admin-analytics'], queryFn: getAdminAnalytics })
+  const testStatsQuery = useQuery({ queryKey: ['admin-catalog-test-stats-summary'], queryFn: getCatalogTestStatsSummary })
+  const applicationMapQuery = useQuery({ queryKey: ['admin-application-map'], queryFn: getApplicationMap })
+  const applicationMap = applicationMapQuery.data
   const stats = statsQuery.data
   const analytics = analyticsQuery.data
+  const testStatsRows = [...(testStatsQuery.data?.items ?? [])].sort((a, b) => b.total_runs - a.total_runs)
 
   const catalogTotal = stats?.catalog_total ?? 0
   const byType = analytics?.catalog_by_type ?? stats?.catalog_by_type ?? {}
@@ -110,6 +127,45 @@ export function AdminDashboardPage() {
           />
         </div>
       )}
+
+      {testStatsRows.length > 0 || testStatsQuery.isLoading || testStatsQuery.isError ? (
+        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
+          <h2 className="text-lg font-semibold text-ase-text">{t('adminDashboard.sections.testExecutions.title')}</h2>
+          <p className="mb-4 max-w-2xl text-sm text-ase-text2">{t('adminDashboard.sections.testExecutions.subtitle')}</p>
+          {testStatsQuery.isLoading ? (
+            <Skeleton className="h-32 rounded-2xl" />
+          ) : testStatsQuery.isError ? (
+            <EmptyState title={t('private.common.couldNotLoad')} description={t('adminDashboard.testExecutionsLabels.loadError')} />
+          ) : testStatsRows.length === 0 ? (
+            <EmptyState title={t('adminDashboard.testExecutionsLabels.empty')} />
+          ) : (
+            <Table className="table-fixed">
+              <THead>
+                <TR>
+                  <TH className="w-[40%]">{t('adminDashboard.testExecutionsLabels.columns.product')}</TH>
+                  <TH className="w-[20%]">{t('adminDashboard.testExecutionsLabels.columns.included')}</TH>
+                  <TH className="w-[20%]">{t('adminDashboard.testExecutionsLabels.columns.total')}</TH>
+                  <TH className="w-[20%]">{t('adminDashboard.testExecutionsLabels.columns.lastRun')}</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {testStatsRows.map((row) => (
+                  <TR key={row.item_id}>
+                    <TD className="text-ase-text">{row.item_title}</TD>
+                    <TD className="text-ase-text2">{row.included_runs ?? '—'}</TD>
+                    <TD>
+                      <Badge variant={row.total_runs > 0 ? 'success' : 'default'}>{row.total_runs}</Badge>
+                    </TD>
+                    <TD className="text-ase-muted">
+                      {row.last_run_at ? fmtDate(row.last_run_at) : t('adminDashboard.testExecutionsLabels.never')}
+                    </TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          )}
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-4 lg:grid-cols-2">
@@ -246,6 +302,25 @@ export function AdminDashboardPage() {
           </>
         )}
       </div>
+
+      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Badge variant="info" className="mb-2">
+              {t('adminDashboard.applicationMap.badge')}
+            </Badge>
+            <h2 className="text-lg font-semibold text-ase-text">{t('adminDashboard.applicationMap.title')}</h2>
+            <p className="mt-1 text-sm text-ase-text2">{t('adminDashboard.applicationMap.subtitle')}</p>
+          </div>
+        </div>
+
+        <ApplicationMapTree
+          data={applicationMap}
+          isLoading={applicationMapQuery.isLoading}
+          isError={applicationMapQuery.isError}
+          onRetry={() => void applicationMapQuery.refetch()}
+        />
+      </Card>
     </div>
   )
 }

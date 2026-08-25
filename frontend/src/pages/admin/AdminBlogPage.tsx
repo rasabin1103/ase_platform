@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BarChart3, Eye, MessageCircle, Share2, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { deleteAdminBlogPost, listAdminBlogPosts, listAdminBlogTags, type BlogPostAdmin } from '../../api/blogAdmin.api'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -11,6 +12,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { BlogStatsModal } from '../../components/admin/BlogStatsModal'
 import { useI18n } from '../../i18n'
 
 export function AdminBlogPage() {
@@ -19,6 +21,7 @@ export function AdminBlogPage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [deleting, setDeleting] = useState<BlogPostAdmin | null>(null)
+  const [viewingStats, setViewingStats] = useState<BlogPostAdmin | null>(null)
 
   const query = useQuery({
     queryKey: ['admin-blog', search, tagFilter],
@@ -92,21 +95,47 @@ export function AdminBlogPage() {
         <EmptyState title={t('adminBlog.empty')} description={t('adminBlog.subtitle')} />
       ) : (
         <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0">
-          <div className="grid grid-cols-[1fr_110px_140px_160px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
+          <div className="grid grid-cols-[1fr_190px_110px_120px_220px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
             <span>{t('adminBlog.colTitle')}</span>
+            <span>{t('adminBlog.stats.title')}</span>
             <span>{t('adminBlog.colStatus')}</span>
             <span>{t('adminBlog.colUpdated')}</span>
             <span>{t('adminBlog.colActions')}</span>
           </div>
           {items.map((post) => (
-            <div key={post.id} className="grid grid-cols-[1fr_110px_140px_160px] items-center gap-2 px-4 py-3 text-sm">
+            <div key={post.id} className="grid grid-cols-[1fr_190px_110px_120px_220px] items-center gap-2 px-4 py-3 text-sm">
               <div>
                 <div className="font-medium text-ase-text">{post.title}</div>
                 <div className="text-xs text-ase-muted">/{post.slug}</div>
               </div>
+              <div className="flex flex-wrap items-center gap-2.5 text-xs text-ase-muted">
+                <span className="inline-flex items-center gap-1" title={t('adminBlog.stats.views') as string}>
+                  <Eye className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {post.viewsTotal}
+                </span>
+                <span className="inline-flex items-center gap-1" title={t('adminBlog.stats.likes') as string}>
+                  <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {post.likesCount}
+                </span>
+                <span className="inline-flex items-center gap-1" title={t('adminBlog.stats.dislikes') as string}>
+                  <ThumbsDown className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {post.dislikesCount}
+                </span>
+                <span className="inline-flex items-center gap-1" title={t('adminBlog.stats.comments') as string}>
+                  <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {post.commentsCount}
+                </span>
+                <span className="inline-flex items-center gap-1" title={t('adminBlog.stats.shares') as string}>
+                  <Share2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {post.sharesTotal}
+                </span>
+              </div>
               <Badge variant={post.status === 'published' ? 'success' : 'default'}>{t(`adminBlog.status.${post.status}`)}</Badge>
               <span className="text-xs text-ase-muted">{new Date(post.updated_at).toLocaleDateString()}</span>
-              <span className="flex gap-2">
+              <span className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" leftIcon={<BarChart3 className="h-3.5 w-3.5" strokeWidth={1.75} />} onClick={() => setViewingStats(post)}>
+                  {t('adminBlog.stats.button')}
+                </Button>
                 <Link to={`/admin/blog/${post.id}/edit`}>
                   <Button size="sm" variant="secondary">
                     {t('adminBlog.edit')}
@@ -133,6 +162,8 @@ export function AdminBlogPage() {
           </Button>
         </div>
       </Modal>
+
+      <BlogStatsModal post={viewingStats} onClose={() => setViewingStats(null)} />
     </div>
   )
 }

@@ -188,6 +188,13 @@ export const adminDashboardEn = {
     requests: { title: 'Access requests', subtitle: 'Requests grouped by status' },
     ratings: { title: 'Ratings engagement', subtitle: 'Feedback collected via the catalog rating system' },
     usersByRole: { title: 'Users by role', subtitle: 'Distinct users holding each role' },
+    testExecutions: { title: 'Executions per product', subtitle: 'Total test runs triggered for each runnable product' },
+  },
+  testExecutionsLabels: {
+    columns: { product: 'Product', included: 'Included per buyer', total: 'Total runs', lastRun: 'Last run' },
+    never: 'Never run',
+    empty: 'No test-enabled products yet.',
+    loadError: 'Could not load execution stats.',
   },
   requestStatus: {
     pending: 'Pending',
@@ -216,6 +223,22 @@ export const adminDashboardEn = {
   emptyRoles: 'No role assignments yet',
   loadError: 'Could not load platform metrics. Check your connection and try again.',
   retry: 'Retry',
+  applicationMap: {
+    badge: 'Application map',
+    title: 'Application map',
+    subtitle: 'A single ASE Core root, branching into organizations (with their members) and unaffiliated individual users.',
+    rootLabel: 'ASE Core',
+    organizations: 'Organizations',
+    organizationsTotal: 'organizations',
+    individualUsers: 'Individual users',
+    individualUsersTotal: 'individual users',
+    membersLabel: 'members',
+    noMembers: 'No active members',
+    noOrganizations: 'No organizations yet',
+    noIndividualUsers: 'No individual users',
+    truncatedHint: 'Showing the most recent accounts only',
+    loadError: 'Could not load the application map.',
+  },
 }
 
 export const adminDashboardEs = {
@@ -259,6 +282,13 @@ export const adminDashboardEs = {
     requests: { title: 'Solicitudes de acceso', subtitle: 'Solicitudes agrupadas por estado' },
     ratings: { title: 'Uso del sistema de valoraciones', subtitle: 'Feedback recogido mediante el sistema de valoración del catálogo' },
     usersByRole: { title: 'Usuarios por rol', subtitle: 'Usuarios distintos que ostentan cada rol' },
+    testExecutions: { title: 'Ejecuciones por producto', subtitle: 'Total de ejecuciones de test disparadas por cada producto ejecutable' },
+  },
+  testExecutionsLabels: {
+    columns: { product: 'Producto', included: 'Incluidas por comprador', total: 'Ejecuciones totales', lastRun: 'Última ejecución' },
+    never: 'Nunca ejecutado',
+    empty: 'Todavía no hay productos con test configurado.',
+    loadError: 'No se pudieron cargar las estadísticas de ejecuciones.',
   },
   requestStatus: {
     pending: 'Pendientes',
@@ -287,11 +317,32 @@ export const adminDashboardEs = {
   emptyRoles: 'Todavía no hay roles asignados',
   loadError: 'No se pudieron cargar las métricas de la plataforma. Comprueba tu conexión e inténtalo de nuevo.',
   retry: 'Reintentar',
+  applicationMap: {
+    badge: 'Mapa de la aplicación',
+    title: 'Mapa de la aplicación',
+    subtitle: 'Una única raíz ASE Core, que se ramifica en organizaciones (con sus miembros) y usuarios individuales sin organización.',
+    rootLabel: 'ASE Core',
+    organizations: 'Organizaciones',
+    organizationsTotal: 'organizaciones',
+    individualUsers: 'Usuarios individuales',
+    individualUsersTotal: 'usuarios individuales',
+    membersLabel: 'miembros',
+    noMembers: 'Sin miembros activos',
+    noOrganizations: 'Todavía no hay organizaciones',
+    noIndividualUsers: 'No hay usuarios individuales',
+    truncatedHint: 'Mostrando solo las cuentas más recientes',
+    loadError: 'No se pudo cargar el mapa de la aplicación.',
+  },
 }
 
 export const adminCatalogEn = {
   title: 'Catalog management',
   subtitle: 'Create, edit and remove products, courses, books and resources.',
+  tabs: {
+    items: 'Items',
+    categories: 'Categories',
+    pricing: 'Pricing engine',
+  },
   colTitle: 'Title',
   colType: 'Type',
   colStatus: 'Status',
@@ -328,6 +379,36 @@ export const adminCatalogEn = {
     title: 'Book content (shared ASE-Catalog repo)',
     hint: 'Powers the "View content"/"Download" buttons on the item page: the full PDF, the free preview, and the epub/Kindle/zip downloads, all read from one folder in the single shared repo already configured on the server — no repository URL needed here.',
   },
+  productContentSection: {
+    title: 'Downloadable content (optional, shared ASE-Catalog repo)',
+    hint: 'Attach a downloadable deliverable to this product — a README, packaged .zip, or a single script/config file — using the same shared repo as resources and books. Powers the "View content"/"Download" buttons on the item page, shown to buyers, owners of a plan that includes this product, or anyone at all if the product is free. Leave blank if this product has no downloadable file (e.g. a pure test-execution framework).',
+  },
+  testExecutionSection: {
+    title: 'Test execution (SaaS API)',
+    hint: 'Turns this product into a runnable test-automation framework: buyers get client_id/client_secret API credentials and can trigger runs of the GitHub Actions workflow below, up to the run quota set here. Leave the workflow file blank if this product isn\'t runnable.',
+  },
+  testRepoUrlHint: 'The GitHub repo hosting the framework\'s code and its .github/workflows — this is ASE\'s own repo, buyers never get direct access to it, only API-triggered runs.',
+  testWorkflowFileHint: 'Workflow filename under .github/workflows/, e.g. "run-tests.yml" — must declare "on: workflow_dispatch". Required for this product to be runnable.',
+  testIncludedRunsHint: 'How many runs a buyer gets per purchase/plan-inclusion of this product — enforced by the public API before dispatching a new run.',
+  testInputSchemaSection: {
+    title: 'Buyer variables (workflow_dispatch inputs)',
+    hint: 'Declare the inputs your workflow actually needs (e.g. BASE_URL, API_TOKEN). Each "Key" here must exactly match an input name under "on.workflow_dispatch.inputs" in the workflow YAML, or GitHub silently ignores it. Buyers fill in their own values per framework before triggering a run — this is what lets more than one customer run it against their own target environment.',
+  },
+  addTestVariable: 'Add variable',
+  removeTestVariable: 'Remove',
+  noTestVariables: 'No variables declared — the workflow will be dispatched with no inputs.',
+  testVariableFields: {
+    key: 'Key (must match the workflow input name)',
+    label: 'Label shown to the buyer',
+    type: 'Type',
+    required: 'Required',
+    description: 'Hint text shown next to the field (optional) — NOT the actual value. Each buyer enters their own real value later, from their "Configure" screen.',
+    descriptionPlaceholder: 'e.g. "Your environment\'s base URL" — a hint, not a real URL',
+  },
+  testVariableTypes: {
+    text: 'Text',
+    secret: 'Secret (masked)',
+  },
   audiobookUrlHint: 'External link to the audiobook (Drive, S3, Spotify, a dedicated host...) — not stored in the repo, audiobook files are typically too large for it. If using YouTube, upload it as "Unlisted", not "Private": Private only plays for specific Google accounts you invite one by one, which does not work for a storefront with unknown buyers; Unlisted plays for anyone with the link (not searchable) and is what the platform can actually embed and show only to whoever owns the book. Leave blank if this book has no audio edition.',
   tagsHint: 'Free-form tags used to filter the catalog, e.g. "skill, claude, qa".',
   translationHint: 'Leave blank to auto-translate from the Spanish text on save (via DeepL). Type here only to override the automatic translation.',
@@ -362,6 +443,9 @@ export const adminCatalogEn = {
     imageUrl: 'Cover image URL',
     previewUrl: 'Preview URL',
     audiobookUrl: 'Audiobook URL',
+    testRepoUrl: 'Framework repository URL',
+    testWorkflowFile: 'Workflow file',
+    testIncludedRuns: 'Included runs',
     price: 'Price',
     currency: 'Currency',
     status: 'Status',
@@ -389,11 +473,33 @@ export const adminCatalogEn = {
   },
   premium: { badge: 'Catalog ops', viewCards: 'Cards', viewTable: 'Table' },
   status: { published: 'Published', draft: 'Draft', coming_soon: 'Coming soon', request_only: 'Request only' },
+  testStats: {
+    button: 'Usage stats',
+    title: 'Usage stats',
+    hint: 'How much this product is actually being run, across every buyer.',
+    totalRuns: 'Total runs',
+    uniqueUsers: 'Unique users',
+    includedRuns: 'Runs included per buyer',
+    lastRun: 'Last run',
+    never: 'Never run',
+    byStatus: 'By status',
+    byConclusion: 'By result',
+    recentRuns: 'Most recent runs',
+    columns: { user: 'User', status: 'Status', conclusion: 'Result', created: 'Created' },
+    empty: 'No runs yet for this product.',
+    loadError: 'Could not load usage stats.',
+    close: 'Close',
+  },
 }
 
 export const adminCatalogEs = {
   title: 'Gestión del catálogo',
   subtitle: 'Crea, edita y elimina productos, cursos, libros y recursos.',
+  tabs: {
+    items: 'Ítems',
+    categories: 'Categorías',
+    pricing: 'Motor de precios',
+  },
   colTitle: 'Título',
   colType: 'Tipo',
   colStatus: 'Estado',
@@ -430,6 +536,35 @@ export const adminCatalogEs = {
     title: 'Contenido del libro (repo compartido ASE-Catalog)',
     hint: 'Alimenta los botones "Ver contenido"/"Descargar" de la ficha del ítem: el PDF completo, la vista previa gratuita y las descargas en epub/Kindle/zip, todo leído de una sola carpeta dentro del único repositorio compartido ya configurado en el servidor — aquí no hace falta ninguna URL de repositorio.',
   },
+  productContentSection: {
+    title: 'Contenido descargable (opcional, repo compartido ASE-Catalog)',
+    hint: 'Añade un entregable descargable a este producto — un README, un .zip empaquetado, o un único script/archivo de configuración — usando el mismo repo compartido que recursos y libros. Alimenta los botones "Ver contenido"/"Descargar" de la ficha, visibles para compradores, para quien tenga un plan que incluya este producto, o para cualquiera si el producto es gratuito. Déjalo en blanco si este producto no tiene archivo descargable (por ejemplo, un framework de solo ejecución de tests).',
+  },
+  testExecutionSection: {
+    title: 'Ejecución de tests (API SaaS)',
+    hint: 'Convierte este producto en un framework de test-automation ejecutable: los compradores reciben credenciales client_id/client_secret y pueden disparar ejecuciones del workflow de GitHub Actions indicado abajo, hasta el cupo de runs configurado aquí. Deja el archivo de workflow en blanco si este producto no es ejecutable.',
+  },
+  testRepoUrlHint: 'El repositorio de GitHub que aloja el código del framework y sus .github/workflows — es un repo propio de ASE, los compradores nunca acceden a él directamente, solo disparan ejecuciones vía API.',
+  testWorkflowFileHint: 'Nombre del archivo de workflow dentro de .github/workflows/, por ejemplo "run-tests.yml" — debe declarar "on: workflow_dispatch". Obligatorio para que este producto sea ejecutable.',
+  testIncludedRunsHint: 'Cuántas ejecuciones recibe un comprador por cada compra/inclusión en plan de este producto — se aplica en la API pública antes de disparar una nueva ejecución.',
+  testInputSchemaSection: {
+    title: 'Variables del comprador (inputs de workflow_dispatch)',
+    hint: 'Declara los inputs que realmente necesita tu workflow (por ejemplo BASE_URL, API_TOKEN). Cada "Clave" debe coincidir exactamente con un nombre de input bajo "on.workflow_dispatch.inputs" en el YAML del workflow, o GitHub lo ignorará silenciosamente. Cada comprador rellena sus propios valores por framework antes de disparar una ejecución — esto es lo que permite que más de un cliente lo ejecute contra su propio entorno.',
+  },
+  addTestVariable: 'Añadir variable',
+  removeTestVariable: 'Quitar',
+  noTestVariables: 'No hay variables declaradas — el workflow se disparará sin inputs.',
+  testVariableFields: {
+    key: 'Clave (debe coincidir con el nombre del input del workflow)',
+    label: 'Etiqueta mostrada al comprador',
+    type: 'Tipo',
+    required: 'Obligatorio',
+    description: 'Texto de ayuda junto al campo (opcional) — NO es el valor real. Cada comprador introduce su propio valor después, desde su pantalla "Configurar".',
+  },
+  testVariableTypes: {
+    text: 'Texto',
+    secret: 'Secreto (oculto)',
+  },
   audiobookUrlHint: 'Enlace externo al audiolibro (Drive, S3, Spotify, un hosting dedicado...) — no se guarda en el repo, los archivos de audiolibro suelen pesar demasiado para eso. Si usas YouTube, súbelo como "No listado", no como "Privado": Privado solo lo reproducen las cuentas de Google que invites una a una, lo cual no funciona para una tienda con compradores desconocidos; No listado lo reproduce cualquiera con el enlace (no aparece en buscadores) y es lo que la plataforma puede realmente incrustar y mostrar solo a quien haya comprado el libro. Déjalo en blanco si este libro no tiene edición en audio.',
   tagsHint: 'Etiquetas libres para filtrar el catálogo, por ejemplo "skill, claude, qa".',
   translationHint: 'Déjalo en blanco para traducir automáticamente el texto en español al guardar (vía DeepL). Escribe aquí solo para anular la traducción automática.',
@@ -464,6 +599,9 @@ export const adminCatalogEs = {
     imageUrl: 'URL imagen de portada',
     previewUrl: 'URL de vista previa',
     audiobookUrl: 'URL del audiolibro',
+    testRepoUrl: 'URL del repositorio del framework',
+    testWorkflowFile: 'Archivo de workflow',
+    testIncludedRuns: 'Runs incluidos',
     price: 'Precio',
     currency: 'Moneda',
     status: 'Estado',
@@ -491,15 +629,22 @@ export const adminCatalogEs = {
   },
   premium: { badge: 'Operaciones catálogo', viewCards: 'Tarjetas', viewTable: 'Tabla' },
   status: { published: 'Publicado', draft: 'Borrador', coming_soon: 'Próximamente', request_only: 'Solo solicitud' },
-}
-
-export const adminCatalogSettingsEn = {
-  heroBadge: 'Catalog settings',
-  title: 'Catalog settings',
-  subtitle: 'Categories and pricing engine — the two configuration screens behind every catalog item.',
-  tabs: {
-    categories: 'Categories',
-    pricing: 'Pricing engine',
+  testStats: {
+    button: 'Estadísticas de uso',
+    title: 'Estadísticas de uso',
+    hint: 'Cuánto se está usando realmente este producto, entre todos los compradores.',
+    totalRuns: 'Ejecuciones totales',
+    uniqueUsers: 'Usuarios distintos',
+    includedRuns: 'Ejecuciones incluidas por comprador',
+    lastRun: 'Última ejecución',
+    never: 'Nunca ejecutado',
+    byStatus: 'Por estado',
+    byConclusion: 'Por resultado',
+    recentRuns: 'Ejecuciones más recientes',
+    columns: { user: 'Usuario', status: 'Estado', conclusion: 'Resultado', created: 'Creada' },
+    empty: 'Todavía no hay ejecuciones de este producto.',
+    loadError: 'No se pudieron cargar las estadísticas de uso.',
+    close: 'Cerrar',
   },
 }
 
@@ -535,16 +680,6 @@ export const adminCatalogCategoriesEn = {
     fieldLabel: 'Field label',
     optionsPlaceholder: 'option 1, option 2, option 3',
     required: 'Required',
-  },
-}
-
-export const adminCatalogSettingsEs = {
-  heroBadge: 'Configuración del catálogo',
-  title: 'Configuración del catálogo',
-  subtitle: 'Categorías y motor de precios — las dos pantallas de configuración detrás de cada ítem del catálogo.',
-  tabs: {
-    categories: 'Categorías',
-    pricing: 'Motor de precios',
   },
 }
 

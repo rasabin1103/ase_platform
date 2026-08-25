@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
 
 from app.models.enums import UserStatus
+from app.modules.catalog_admin.schemas import CatalogTestRunConclusionCounts, CatalogTestRunStatusCounts
 
 
 class UserCreate(BaseModel):
@@ -59,4 +60,60 @@ class ImpersonationTokenRead(BaseModel):
     token_type: str = "bearer"
     expires_in_minutes: int
     target_email: EmailStr
+
+
+class UserOrganizationMembershipRead(BaseModel):
+    organization_uuid: UUID
+    organization_name: str
+    organization_type: str
+    membership_status: str
+    role_codes: list[str] = []
+
+
+class UserPlanRead(BaseModel):
+    """Mirrors the plan-badge resolution in `GET /auth/me` — same "latest
+    active/trialing Subscription on the user's default workspace" logic,
+    just surfaced here for whichever user a super admin is looking up
+    instead of the caller's own account. All-None for a free/no-plan
+    account, same as `/me`."""
+
+    plan_code: str | None = None
+    plan_name: str | None = None
+    plan_name_en: str | None = None
+    subscription_status: str | None = None
+
+
+class UserPurchaseRecentRead(BaseModel):
+    catalog_item_title: str
+    catalog_item_type: str
+    source: str
+    purchased_at: datetime
+
+
+class UserTestRunRecentRead(BaseModel):
+    uuid: UUID
+    catalog_item_title: str
+    status: str
+    conclusion: str | None = None
+    created_at: datetime
+
+
+class UserStatsRead(BaseModel):
+    """Per-user usage snapshot for the super admin's user detail view —
+    deliberately scoped to one specific user (unlike the platform-wide
+    admin dashboard aggregates), following the same shape already used for
+    `CatalogItemTestStatsRead` (one catalog item's usage) just pivoted onto
+    a user instead of a product."""
+
+    user: UserRead
+    loyalty_tier: str | None = None
+    country: str | None = None
+    plan: UserPlanRead
+    organizations: list[UserOrganizationMembershipRead] = []
+    purchases_total: int
+    purchases_recent: list[UserPurchaseRecentRead] = []
+    test_runs_total: int
+    test_runs_by_status: CatalogTestRunStatusCounts
+    test_runs_by_conclusion: CatalogTestRunConclusionCounts
+    test_runs_recent: list[UserTestRunRecentRead] = []
 

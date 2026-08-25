@@ -19,7 +19,14 @@ from app.modules.auth.dependencies import (
 )
 from app.modules.auth.security import create_impersonation_token, IMPERSONATION_TOKEN_MINUTES
 from app.modules.users.repository import UsersRepository
-from app.modules.users.schemas import ImpersonationTokenRead, UserCreate, UserListResponse, UserRead, UserUpdate
+from app.modules.users.schemas import (
+    ImpersonationTokenRead,
+    UserCreate,
+    UserListResponse,
+    UserRead,
+    UserStatsRead,
+    UserUpdate,
+)
 from app.modules.users.service import UsersService
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
@@ -82,6 +89,24 @@ def get_user(
         return svc.get_user(user_uuid)
     org = require_tenant_context(request, db, current_user)
     return svc.get_user_for_organization(user_uuid, organization_id=org.id)
+
+
+@router.get(
+    "/{user_uuid}/stats",
+    response_model=UserStatsRead,
+    dependencies=[Depends(require_platform_role("super_admin"))],
+)
+def get_user_stats(
+    user_uuid: UUID,
+    svc: UsersService = Depends(get_users_service),
+):
+    """Per-user usage snapshot: organizations, plan, purchases, and
+    test-execution activity for one specific user. Restricted to the
+    super_admin platform role rather than the generic `users.read`
+    permission org_owner/org_admin also hold — the same restriction as
+    `/impersonate` above, since this surfaces spend and plan details a
+    tenant admin has no business seeing about their own org's members."""
+    return svc.get_user_stats(user_uuid)
 
 
 @router.patch("/{user_uuid}", response_model=UserRead, dependencies=[Depends(require_permission("users.update"))])

@@ -47,6 +47,14 @@ class BlogRepository:
         )
         return list(self.db.execute(stmt).scalars().all()), total
 
+    def increment_views(self, post: BlogPost, *, authenticated: bool) -> None:
+        """Simple page-view counter, incremented on every successful read of
+        the article detail — not deduped per visitor/session, same as most
+        basic blog view counters. Caller is responsible for committing."""
+        post.views_total += 1
+        if authenticated:
+            post.views_authenticated += 1
+
     def distinct_tags(self, *, statuses: tuple[BlogPostStatus, ...] | None = None) -> list[str]:
         stmt = select(BlogPost.tags_json).where(BlogPost.tags_json.is_not(None))
         if statuses is not None:

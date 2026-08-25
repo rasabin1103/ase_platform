@@ -42,6 +42,13 @@ from app.models.pricing_dimension_type import PricingDimensionType
 from app.models.pricing_dimension_level import PricingDimensionLevel
 from app.models.catalog_item_dimension_selection import CatalogItemDimensionSelection
 from app.models.service_dimension_selection import ServiceDimensionSelection
+from app.models.blog_post import BlogPost
+from app.models.blog_comment import BlogComment
+from app.models.blog_reaction import BlogReaction
+from app.models.blog_share import BlogShare
+from app.models.api_credential import ApiCredential
+from app.models.test_run import TestRun
+from app.models.test_execution_config import TestExecutionConfig
 
 __all__ = [
     "User",
@@ -88,5 +95,12 @@ __all__ = [
     "PricingDimensionLevel",
     "CatalogItemDimensionSelection",
     "ServiceDimensionSelection",
+    "BlogPost",
+    "BlogComment",
+    "BlogReaction",
+    "BlogShare",
+    "ApiCredential",
+    "TestRun",
+    "TestExecutionConfig",
 ]
 
