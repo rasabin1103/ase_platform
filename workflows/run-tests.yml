@@ -1,0 +1,35 @@
+name: Run API Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          HEALTH_ENDPOINT: ${{ vars.HEALTH_ENDPOINT }}
+          TIMEOUT: "10"
+          LOG_HTTP: "false"
+          LOG_LEVEL: "INFO"
+        run: pytest -v --html=report.html --self-contained-html
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: report.html
