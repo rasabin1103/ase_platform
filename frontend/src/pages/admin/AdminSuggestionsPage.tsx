@@ -69,8 +69,8 @@ export function AdminSuggestionsPage() {
 
       <Card className="p-6">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-ase-muted">{t('adminSuggestions.filterLabel')}</label>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-48">
+          <label htmlFor="admin-suggestions-filter" className="text-xs font-medium text-ase-muted">{t('adminSuggestions.filterLabel')}</label>
+          <Select id="admin-suggestions-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-48">
             <option value="">{t('adminSuggestions.filterAll')}</option>
             <option value="pending">{t('suggestions.status.pending')}</option>
             <option value="reviewed">{t('suggestions.status.reviewed')}</option>
@@ -148,16 +148,16 @@ export function AdminSuggestionsPage() {
         <div className="space-y-4">
           <p className="text-sm text-ase-text2">{editing?.message}</p>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('adminSuggestions.statusLabel')}</label>
-            <Select value={statusDraft} onChange={(e) => setStatusDraft(e.target.value as SuggestionStatus)}>
+            <label htmlFor="admin-suggestions-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('adminSuggestions.statusLabel')}</label>
+            <Select id="admin-suggestions-status" value={statusDraft} onChange={(e) => setStatusDraft(e.target.value as SuggestionStatus)}>
               <option value="pending">{t('suggestions.status.pending')}</option>
               <option value="reviewed">{t('suggestions.status.reviewed')}</option>
               <option value="resolved">{t('suggestions.status.resolved')}</option>
             </Select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('suggestions.adminNote')}</label>
-            <Textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} rows={3} />
+            <label htmlFor="admin-suggestions-note" className="mb-1 block text-xs font-medium text-ase-muted">{t('suggestions.adminNote')}</label>
+            <Textarea id="admin-suggestions-note" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} rows={3} />
           </div>
         </div>
       </Modal>

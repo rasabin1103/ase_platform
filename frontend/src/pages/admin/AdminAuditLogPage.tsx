@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download } from 'lucide-react'
+import { Download, FileSpreadsheet } from 'lucide-react'
 import { listAuditLogs } from '../../api/auditLogs.api'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
@@ -13,6 +13,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import { downloadCsv } from '../../utils/csv'
 
 const ENTITY_TYPES = ['user', 'catalog_item', 'access_request'] as const
@@ -36,7 +37,8 @@ function actionTone(action: string): 'success' | 'warning' | 'error' | 'info' | 
 }
 
 export function AdminAuditLogPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const { currentUser } = useAuth()
   const [entityType, setEntityType] = useState('')
   const [action, setAction] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -73,6 +75,27 @@ export function AdminAuditLogPage() {
     )
   }
 
+  const handleExportExcel = async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    // Loaded on demand — ExcelJS is only needed if someone actually clicks
+    // "Export Excel", not on every visit to this page.
+    const { downloadBrandedExcel } = await import('../../utils/exportExcel')
+    downloadBrandedExcel({
+      filename: `ase-auditoria-${today}.xlsx`,
+      sheetName: t('adminAuditLog.title'),
+      title: t('adminAuditLog.title'),
+      generatedBy: currentUser?.email,
+      lang: language === 'en' ? 'en' : 'es',
+      rows: items.map((row) => ({
+        [t('adminAuditLog.columns.date')]: fmtDate(row.created_at),
+        [t('adminAuditLog.columns.actor')]: row.actor_email ?? row.actor_display_name ?? '—',
+        [t('adminAuditLog.columns.action')]: row.action,
+        [t('adminAuditLog.columns.entity')]: row.entity_id ? `${row.entity_type} #${row.entity_id}` : row.entity_type,
+        [t('adminAuditLog.columns.details')]: row.metadata_json ? JSON.stringify(row.metadata_json) : '—',
+      })),
+    })
+  }
+
   return (
     <div className="space-y-8 pb-16">
       <PremiumHero
@@ -85,8 +108,8 @@ export function AdminAuditLogPage() {
       <Card className="p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.entityType')}</label>
-            <Select value={entityType} onChange={(e) => { setEntityType(e.target.value); setOffset(0) }}>
+            <label htmlFor="admin-audit-log-entity-type" className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.entityType')}</label>
+            <Select id="admin-audit-log-entity-type" value={entityType} onChange={(e) => { setEntityType(e.target.value); setOffset(0) }}>
               <option value="">{t('adminAuditLog.filters.all')}</option>
               {ENTITY_TYPES.map((et) => (
                 <option key={et} value={et}>
@@ -96,25 +119,30 @@ export function AdminAuditLogPage() {
             </Select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.action')}</label>
+            <label htmlFor="admin-audit-log-action" className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.action')}</label>
             <Input
+              id="admin-audit-log-action"
               placeholder="user.update"
               value={action}
               onChange={(e) => { setAction(e.target.value); setOffset(0) }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.from')}</label>
-            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }} />
+            <label htmlFor="admin-audit-log-from" className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.from')}</label>
+            <Input id="admin-audit-log-from" type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.to')}</label>
-            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setOffset(0) }} />
+            <label htmlFor="admin-audit-log-to" className="mb-1 block text-xs text-ase-muted">{t('adminAuditLog.filters.to')}</label>
+            <Input id="admin-audit-log-to" type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setOffset(0) }} />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button variant="secondary" className="w-full" onClick={handleExport} disabled={items.length === 0}>
               <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
               {t('private.common.exportCsv')}
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={handleExportExcel} disabled={items.length === 0}>
+              <FileSpreadsheet className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+              {t('private.common.exportExcel')}
             </Button>
           </div>
         </div>

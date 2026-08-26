@@ -14,6 +14,7 @@ import { resolveMediaUrl } from '../../utils/mediaUrls'
 import { BlogComments } from '../../components/catalog/BlogComments'
 import { BlogReactions } from '../../components/catalog/BlogReactions'
 import { BlogShareBar } from '../../components/catalog/BlogShareBar'
+import { JsonLd, SITE_URL } from '../../components/seo/JsonLd'
 
 export function BlogPostPage() {
   const { t } = useI18n()
@@ -52,12 +53,33 @@ export function BlogPostPage() {
     )
   }
 
+  const postJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || undefined,
+    image: post.cover_image_url ? [resolveMediaUrl(post.cover_image_url)] : undefined,
+    datePublished: post.published_at || undefined,
+    author: post.author_name ? { '@type': 'Person', name: post.author_name } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Arce Sabin Engineering',
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon-512.png` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${post.slug}` },
+  }
+
   return (
     // Same outer width as the site header (max 1440px) so the article page
     // doesn't look narrower than the rest of the site — the running text
     // itself stays inside a comfortable inner reading column further down,
     // while the breadcrumb/title/cover image use the full width.
-    <div className="mx-auto w-full max-w-[min(100%,1440px)] px-5 py-14 sm:px-8 lg:px-12">
+    <div className="relative mx-auto w-full max-w-[min(100%,1440px)] px-5 py-14 sm:px-8 lg:px-12">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 opacity-60"
+        style={{ backgroundImage: 'radial-gradient(circle_at_50%_0%,rgba(56,189,248,0.12),transparent_50%)' }}
+      />
+      <JsonLd data={postJsonLd} />
       <Breadcrumbs
         items={[
           { label: t('blogPage.breadcrumbHome') as string, to: '/' },
@@ -66,8 +88,10 @@ export function BlogPostPage() {
         ]}
       />
 
-      <Eyebrow className="mt-6">{t('blogPage.badge')}</Eyebrow>
-      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">{post.title}</h1>
+      <Eyebrow className="mt-6 animate-fade-in-up">{t('blogPage.badge')}</Eyebrow>
+      <h1 className="mt-4 animate-fade-in-up text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl" style={{ animationDelay: '80ms' }}>
+        {post.title}
+      </h1>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ase-muted">
         {post.published_at && <span>{new Date(post.published_at).toLocaleDateString()}</span>}
         {post.author_name && <span>· {post.author_name}</span>}
@@ -93,7 +117,7 @@ export function BlogPostPage() {
       </div>
 
       {post.cover_image_url && (
-        <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+        <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 ease-out hover:border-ase-brand/30 hover:shadow-glow-cyan">
           <img
             src={resolveMediaUrl(post.cover_image_url) ?? undefined}
             alt=""

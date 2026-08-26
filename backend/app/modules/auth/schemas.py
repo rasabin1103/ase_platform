@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.core.password_policy import validate_password_strength
 from app.core.phone import normalize_phone_e164
 
 from app.models.enums import CreatorStatus, LoyaltyTier, UserStatus
@@ -58,6 +59,11 @@ class RegisterRequest(BaseModel):
     # frontend/src/i18n). Stored on the account so every future transactional
     # email goes out in the language the person actually reads.
     preferred_language: str = Field(default="es", min_length=2, max_length=2)
+    # Cloudflare Turnstile (captcha) response token from the frontend widget —
+    # see app/core/turnstile.py. Optional here so requests still validate
+    # when TURNSTILE_SECRET_KEY isn't configured; the backend decides whether
+    # a missing/invalid token actually blocks registration.
+    turnstile_token: str | None = Field(default=None)
 
     @field_validator("country")
     @classmethod
@@ -72,6 +78,11 @@ class RegisterRequest(BaseModel):
     def validate_preferred_language(cls, value: str) -> str:
         v = value.strip().lower()
         return v if v in ("es", "en") else "es"
+
+    @field_validator("plain_password")
+    @classmethod
+    def validate_password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class LoginRequest(BaseModel):
@@ -129,6 +140,11 @@ class PasswordResetRequestSchema(BaseModel):
 class PasswordResetConfirmSchema(BaseModel):
     token: str = Field(min_length=1, max_length=512)
     new_password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class EmailVerificationConfirmSchema(BaseModel):

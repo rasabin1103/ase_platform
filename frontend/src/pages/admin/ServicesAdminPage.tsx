@@ -240,12 +240,12 @@ export function ServicesAdminPage() {
         <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md lg:col-span-2" interactive>
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[220px] flex-1">
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.search')}</label>
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('servicesAdmin.filters.searchPlaceholder') as string} />
+              <label htmlFor="svc-filter-search" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.search')}</label>
+              <Input id="svc-filter-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('servicesAdmin.filters.searchPlaceholder') as string} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.category')}</label>
-              <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <label htmlFor="svc-filter-category" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.category')}</label>
+              <Select id="svc-filter-category" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="">{t('servicesAdmin.filters.all')}</option>
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -255,8 +255,8 @@ export function ServicesAdminPage() {
               </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.status')}</label>
-              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <label htmlFor="svc-filter-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.filters.status')}</label>
+              <Select id="svc-filter-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="">{t('servicesAdmin.filters.all')}</option>
                 <option value="active">{t('servicesAdmin.badges.active')}</option>
                 <option value="inactive">{t('servicesAdmin.badges.inactive')}</option>
@@ -344,8 +344,9 @@ export function ServicesAdminPage() {
             }}
           >
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.name')}</label>
+              <label htmlFor="svc-create-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.name')}</label>
               <Input
+                id="svc-create-name"
                 value={createForm.name}
                 onChange={(e) => {
                   const name = e.target.value
@@ -356,16 +357,18 @@ export function ServicesAdminPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.code')}</label>
+                <label htmlFor="svc-create-code" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.code')}</label>
                 <Input
+                  id="svc-create-code"
                   value={createForm.code}
                   onChange={(e) => setCreateForm((f) => ({ ...f, code: e.target.value }))}
                   placeholder={t('servicesAdmin.placeholders.code') as string}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.slug')}</label>
+                <label htmlFor="svc-create-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.slug')}</label>
                 <Input
+                  id="svc-create-slug"
                   value={createForm.slug}
                   onChange={(e) => {
                     setSlugTouched(true)
@@ -376,16 +379,18 @@ export function ServicesAdminPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.shortDescription')}</label>
+              <label htmlFor="svc-create-short-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.shortDescription')}</label>
               <Input
+                id="svc-create-short-description"
                 value={createForm.short_description}
                 onChange={(e) => setCreateForm((f) => ({ ...f, short_description: e.target.value }))}
                 placeholder={t('servicesAdmin.placeholders.shortDescription') as string}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.description')}</label>
+              <label htmlFor="svc-create-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.description')}</label>
               <Textarea
+                id="svc-create-description"
                 value={createForm.description}
                 onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder={t('servicesAdmin.placeholders.description') as string}
@@ -393,8 +398,8 @@ export function ServicesAdminPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.category')}</label>
-                <Select value={createForm.category} onChange={(e) => setCreateForm((f) => ({ ...f, category: e.target.value as ServiceCategory }))}>
+                <label htmlFor="svc-create-category" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.category')}</label>
+                <Select id="svc-create-category" value={createForm.category} onChange={(e) => setCreateForm((f) => ({ ...f, category: e.target.value as ServiceCategory }))}>
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
                       {t(`servicesAdmin.categories.${c}`) as string}
@@ -403,8 +408,8 @@ export function ServicesAdminPage() {
                 </Select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.type')}</label>
-                <Select value={createForm.service_type} onChange={(e) => setCreateForm((f) => ({ ...f, service_type: e.target.value as ServiceKind }))}>
+                <label htmlFor="svc-create-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.type')}</label>
+                <Select id="svc-create-type" value={createForm.service_type} onChange={(e) => setCreateForm((f) => ({ ...f, service_type: e.target.value as ServiceKind }))}>
                   {KINDS.map((k) => (
                     <option key={k} value={k}>
                       {t(`servicesAdmin.kinds.${k}`) as string}
@@ -415,8 +420,8 @@ export function ServicesAdminPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.priceType')}</label>
-                <Select value={createForm.price_type} onChange={(e) => setCreateForm((f) => ({ ...f, price_type: e.target.value as ServicePriceType }))}>
+                <label htmlFor="svc-create-price-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.priceType')}</label>
+                <Select id="svc-create-price-type" value={createForm.price_type} onChange={(e) => setCreateForm((f) => ({ ...f, price_type: e.target.value as ServicePriceType }))}>
                   {PRICE_TYPES.map((p) => (
                     <option key={p} value={p}>
                       {t(`servicesAdmin.priceTypes.${p}`) as string}
@@ -425,8 +430,9 @@ export function ServicesAdminPage() {
                 </Select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.displayOrder')}</label>
+                <label htmlFor="svc-create-display-order" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.displayOrder')}</label>
                 <Input
+                  id="svc-create-display-order"
                   inputMode="numeric"
                   value={createForm.display_order}
                   onChange={(e) => setCreateForm((f) => ({ ...f, display_order: e.target.value }))}
@@ -435,8 +441,9 @@ export function ServicesAdminPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
+              <label htmlFor="svc-create-price" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
               <Input
+                id="svc-create-price"
                 type="number"
                 min={0}
                 step="0.01"
@@ -454,8 +461,9 @@ export function ServicesAdminPage() {
               onUseRecommended={(price) => setCreateForm((f) => ({ ...f, price: String(price) }))}
             />
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.icon')}</label>
+              <label htmlFor="svc-create-icon" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.icon')}</label>
               <Input
+                id="svc-create-icon"
                 value={createForm.icon}
                 onChange={(e) => setCreateForm((f) => ({ ...f, icon: e.target.value }))}
                 placeholder={t('servicesAdmin.placeholders.icon') as string}
@@ -544,30 +552,30 @@ export function ServicesAdminPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.code')}</label>
-              <Input value={editForm.code} onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))} />
+              <label htmlFor="svc-edit-code" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.code')}</label>
+              <Input id="svc-edit-code" value={editForm.code} onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.name')}</label>
-              <Input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+              <label htmlFor="svc-edit-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.name')}</label>
+              <Input id="svc-edit-name" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.slug')}</label>
-            <Input value={editForm.slug} onChange={(e) => setEditForm((f) => ({ ...f, slug: e.target.value }))} />
+            <label htmlFor="svc-edit-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.slug')}</label>
+            <Input id="svc-edit-slug" value={editForm.slug} onChange={(e) => setEditForm((f) => ({ ...f, slug: e.target.value }))} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.shortDescription')}</label>
-            <Input value={editForm.short_description} onChange={(e) => setEditForm((f) => ({ ...f, short_description: e.target.value }))} />
+            <label htmlFor="svc-edit-short-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.shortDescription')}</label>
+            <Input id="svc-edit-short-description" value={editForm.short_description} onChange={(e) => setEditForm((f) => ({ ...f, short_description: e.target.value }))} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.description')}</label>
-            <Textarea value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
+            <label htmlFor="svc-edit-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.description')}</label>
+            <Textarea id="svc-edit-description" value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.category')}</label>
-              <Select value={editForm.category} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value as ServiceCategory }))}>
+              <label htmlFor="svc-edit-category" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.category')}</label>
+              <Select id="svc-edit-category" value={editForm.category} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value as ServiceCategory }))}>
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {t(`servicesAdmin.categories.${c}`) as string}
@@ -576,8 +584,8 @@ export function ServicesAdminPage() {
               </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.type')}</label>
-              <Select value={editForm.service_type} onChange={(e) => setEditForm((f) => ({ ...f, service_type: e.target.value as ServiceKind }))}>
+              <label htmlFor="svc-edit-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.type')}</label>
+              <Select id="svc-edit-type" value={editForm.service_type} onChange={(e) => setEditForm((f) => ({ ...f, service_type: e.target.value as ServiceKind }))}>
                 {KINDS.map((k) => (
                   <option key={k} value={k}>
                     {t(`servicesAdmin.kinds.${k}`) as string}
@@ -588,8 +596,8 @@ export function ServicesAdminPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.priceType')}</label>
-              <Select value={editForm.price_type} onChange={(e) => setEditForm((f) => ({ ...f, price_type: e.target.value as ServicePriceType }))}>
+              <label htmlFor="svc-edit-price-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.priceType')}</label>
+              <Select id="svc-edit-price-type" value={editForm.price_type} onChange={(e) => setEditForm((f) => ({ ...f, price_type: e.target.value as ServicePriceType }))}>
                 {PRICE_TYPES.map((p) => (
                   <option key={p} value={p}>
                     {t(`servicesAdmin.priceTypes.${p}`) as string}
@@ -598,13 +606,14 @@ export function ServicesAdminPage() {
               </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.displayOrder')}</label>
-              <Input value={editForm.display_order} onChange={(e) => setEditForm((f) => ({ ...f, display_order: e.target.value }))} />
+              <label htmlFor="svc-edit-display-order" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.displayOrder')}</label>
+              <Input id="svc-edit-display-order" value={editForm.display_order} onChange={(e) => setEditForm((f) => ({ ...f, display_order: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
+            <label htmlFor="svc-edit-price" className="mb-1 block text-xs font-medium text-ase-muted">{t('servicesAdmin.fields.price')}</label>
             <Input
+              id="svc-edit-price"
               type="number"
               min={0}
               step="0.01"

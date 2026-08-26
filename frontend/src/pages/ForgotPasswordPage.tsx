@@ -54,8 +54,8 @@ export function ForgotPasswordPage() {
 
                 <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
-                    <Input type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                    <label htmlFor="forgot-password-email" className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
+                    <Input id="forgot-password-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
                     {form.formState.errors.email && (
                       <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                     )}

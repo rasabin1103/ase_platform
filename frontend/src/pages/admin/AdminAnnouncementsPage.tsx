@@ -53,8 +53,9 @@ export function AdminAnnouncementsPage() {
             }}
           >
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.title')}</label>
+              <label htmlFor="admin-announcement-title" className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.title')}</label>
               <Input
+                id="admin-announcement-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t('adminAnnouncements.placeholders.title')}
@@ -62,8 +63,9 @@ export function AdminAnnouncementsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.body')}</label>
+              <label htmlFor="admin-announcement-body" className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.body')}</label>
               <Textarea
+                id="admin-announcement-body"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={t('adminAnnouncements.placeholders.body')}
@@ -71,8 +73,9 @@ export function AdminAnnouncementsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.link')}</label>
+              <label htmlFor="admin-announcement-link" className="mb-1 block text-xs font-medium text-ase-muted">{t('adminAnnouncements.fields.link')}</label>
               <Input
+                id="admin-announcement-link"
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
                 placeholder={t('adminAnnouncements.placeholders.link')}

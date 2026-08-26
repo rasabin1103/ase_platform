@@ -290,6 +290,69 @@ def account_deleted_inactivity_email(support_email: str, *, suspended_days: int,
     return html, text
 
 
+def booking_confirmed_email(
+    manage_url: str, *, starts_at_label: str, duration_minutes: int, is_admin_copy: bool = False,
+    counterpart_label: str | None = None, notes: str | None = None, language: str = "es",
+) -> tuple[str, str]:
+    """Returns (html, text) for a QA-consulting session confirmation —
+    sent both to the client who booked the slot and, with
+    ``is_admin_copy=True``, to the admin/team so the session shows up in
+    someone's inbox even before anyone opens the admin panel. ``notes`` is
+    the free-text the client left when booking (see ConsultingSlot.notes)."""
+    lang = _lang(language)
+    notes_html = ""
+    if notes:
+        notes_label = "Notas del cliente:" if lang == "es" else "Client notes:"
+        notes_html = f'<br /><br /><em>{notes_label}</em> "{notes}"'
+    if lang == "en":
+        title = "Consulting session booked" if is_admin_copy else "Your session is confirmed"
+        who = f" with {counterpart_label}" if (is_admin_copy and counterpart_label) else ""
+        body = (
+            f"A QA-consulting session{who} has been booked for {starts_at_label} "
+            f"({duration_minutes} min).{notes_html}"
+            if is_admin_copy
+            else f"Your QA-consulting session is confirmed for {starts_at_label} ({duration_minutes} min).{notes_html}"
+        )
+        action_label = "View bookings" if is_admin_copy else "Manage my booking"
+        footnote = "Need to reschedule? Cancel this booking and pick a new open slot."
+    else:
+        title = "Sesión de consultoría reservada" if is_admin_copy else "Tu sesión está confirmada"
+        who = f" con {counterpart_label}" if (is_admin_copy and counterpart_label) else ""
+        body = (
+            f"Se ha reservado una sesión de consultoría QA{who} para el {starts_at_label} "
+            f"({duration_minutes} min).{notes_html}"
+            if is_admin_copy
+            else f"Tu sesión de consultoría QA está confirmada para el {starts_at_label} ({duration_minutes} min).{notes_html}"
+        )
+        action_label = "Ver reservas" if is_admin_copy else "Gestionar mi reserva"
+        footnote = "¿Necesitas cambiar la hora? Cancela esta reserva y elige otra franja disponible."
+    html = _render(title=title, body=body, action_url=manage_url, action_label=action_label, footnote=footnote, language=lang)
+    text = f"{title}\n\n{body}\n\n{manage_url}\n\n{footnote}"
+    return html, text
+
+
+def booking_cancelled_email(
+    book_url: str, *, starts_at_label: str, language: str = "es",
+) -> tuple[str, str]:
+    """Returns (html, text) sent to the client when their own booked
+    session is cancelled (self-service cancellation confirmation, not a
+    notice of someone else cancelling on them)."""
+    lang = _lang(language)
+    if lang == "en":
+        title = "Your session was cancelled"
+        body = f"Your QA-consulting session for {starts_at_label} has been cancelled, as requested."
+        action_label = "Book a new session"
+        footnote = "You can pick a new available slot at any time."
+    else:
+        title = "Tu sesión ha sido cancelada"
+        body = f"Tu sesión de consultoría QA para el {starts_at_label} se ha cancelado, tal y como solicitaste."
+        action_label = "Reservar otra sesión"
+        footnote = "Puedes elegir una nueva franja disponible cuando quieras."
+    html = _render(title=title, body=body, action_url=book_url, action_label=action_label, footnote=footnote, language=lang)
+    text = f"{title}\n\n{body}\n\n{book_url}\n\n{footnote}"
+    return html, text
+
+
 # --- Weekly newsletter ----------------------------------------------------
 # The one email in this system that's a genuine recurring broadcast rather
 # than a one-off transactional notice — see app/core/newsletter.py for the

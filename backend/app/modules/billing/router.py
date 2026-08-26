@@ -12,6 +12,7 @@ from app.modules.billing.schemas import (
     CatalogCheckoutSessionResponse,
     CheckoutSessionCreate,
     CheckoutSessionResponse,
+    InvoiceListResponse,
 )
 from app.modules.billing.service import BillingError, BillingService
 
@@ -46,6 +47,22 @@ def create_catalog_checkout_session(
     except BillingError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return CatalogCheckoutSessionResponse(checkout_url=checkout_url)
+
+
+@router.get("/invoices", response_model=InvoiceListResponse)
+def list_invoices(
+    current_user: User = Depends(get_current_active_user),
+    svc: BillingService = Depends(get_service),
+):
+    # Returns an empty list (not an error) when Stripe isn't configured or
+    # the org has no Stripe customer yet — the frontend just shows an empty
+    # state rather than an error banner for the common "never subscribed"
+    # case.
+    try:
+        items = svc.list_invoices(current_user=current_user)
+    except HTTPException:
+        return InvoiceListResponse(items=[])
+    return InvoiceListResponse(items=items)
 
 
 @router.post("/portal-session", response_model=BillingPortalResponse)

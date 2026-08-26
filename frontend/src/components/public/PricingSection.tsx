@@ -10,6 +10,7 @@ import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import type { Plan } from '../../types/plan.types'
+import { JsonLd, SITE_URL } from '../seo/JsonLd'
 import {
   catalogPlansForBilling,
   localizedPlanText,
@@ -92,8 +93,47 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           ? 'lg:grid-cols-3'
           : 'lg:grid-cols-4'
 
+  // Public, crawlable pricing (this section only ever renders on Home/Plans,
+  // neither of which is behind auth or blocked in robots.txt) — a good
+  // candidate for Product/Offer structured data, unlike the catalog detail
+  // pages which sit behind login and are disallowed for crawling.
+  const plansJsonLd =
+    plans.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          itemListElement: plans.map((plan, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+              '@type': 'Product',
+              name: localizedPlanText(language, plan.name, plan.name_en),
+              description: planMarketingDescription(t, plan, language) || undefined,
+              brand: { '@type': 'Brand', name: 'Arce Sabin Engineering' },
+              offers: {
+                '@type': 'Offer',
+                url: `${SITE_URL}/plans`,
+                priceCurrency: plan.currency || 'EUR',
+                price: plan.price ?? '0',
+                availability: 'https://schema.org/InStock',
+              },
+            },
+          })),
+        }
+      : null
+
   return (
-    <section className={cn('relative border-t border-white/5', compact ? 'py-0' : '')}>
+    <section className={cn('relative overflow-hidden border-t border-white/5', compact ? 'py-0' : '')}>
+      {/* Same glow language as the admin application map — a faint brand
+       * radial behind the pricing grid, the section most likely to close a
+       * deal, so it carries the premium finish too. */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 opacity-60"
+        style={{
+          backgroundImage: 'radial-gradient(circle_at_50%_0%,rgba(232,179,104,0.10),transparent_50%)',
+        }}
+      />
+      {plansJsonLd ? <JsonLd data={plansJsonLd} /> : null}
       <div className={cn('mx-auto w-full max-w-[1440px] px-6 sm:px-8', compact ? 'py-16' : 'py-28')}>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -176,7 +216,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
 
         {!plansQuery.isLoading && !plansQuery.isError && plans.length > 0 ? (
           <div className={cn('mt-12 grid grid-cols-1 gap-6', gridColsClass)}>
-            {plans.map((plan) => {
+            {plans.map((plan, planIndex) => {
               const tone = cardTone(plan)
               const { priceLabel, suffix } = planPriceView(
                 plan,
@@ -200,23 +240,28 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 <Card
                   key={plan.id}
                   interactive
+                  style={{ animationDelay: `${Math.min(planIndex, 6) * 80}ms` }}
                   className={cn(
                     // flex-col + each section below carries a fixed min-height (badge
                     // slot, description, price row) so name/description length never
                     // shifts where the price or button land — every card in the grid
                     // reads at the same height for the same section, regardless of
                     // how short or long that plan's own copy is.
-                    'relative flex flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft',
-                    tone === 'pro' && 'border-ase-gold/35',
-                    tone === 'premium' && 'border-white/15',
+                    'relative flex animate-fade-in-up flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft transition duration-300 ease-out hover:-translate-y-1',
+                    tone === 'pro' && 'border-ase-gold/35 hover:shadow-glow-gold',
+                    tone === 'premium' && 'border-white/15 hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]',
+                    tone !== 'pro' && tone !== 'premium' && 'hover:border-ase-brand/35 hover:shadow-glow-cyan',
                   )}
                 >
                   <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
                       <div className="text-2xl font-extrabold tracking-tight text-ase-text">{planName}</div>
                       {plan.is_recommended ? (
-                        <div className="mt-2 inline-flex rounded-full border border-ase-gold/35 bg-ase-gold/10 px-2.5 py-0.5 text-xs font-semibold text-ase-gold">
-                          {t('pricing.plans.pro.badge')}
+                        <div className="relative mt-2 inline-flex">
+                          <span className="pointer-events-none absolute inset-0 -z-10 animate-glow-pulse rounded-full bg-ase-gold/25 blur-md" />
+                          <div className="inline-flex rounded-full border border-ase-gold/35 bg-ase-gold/10 px-2.5 py-0.5 text-xs font-semibold text-ase-gold">
+                            {t('pricing.plans.pro.badge')}
+                          </div>
                         </div>
                       ) : null}
                     </div>

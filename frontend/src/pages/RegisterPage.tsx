@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -11,25 +11,34 @@ import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { AuthCard } from '../components/public/AuthCard'
 import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { TurnstileWidget } from '../components/auth/TurnstileWidget'
 import { COUNTRIES } from '../data/countries'
 import { useI18n } from '../i18n'
 import { useAuth } from '../hooks/useAuth'
+import { passwordSchema } from '../utils/passwordPolicy'
 
-const schema = z.object({
-  email: z.string().email(),
-  plain_password: z.string().min(8),
-  first_name: z.string().max(100).optional().or(z.literal('')),
-  last_name: z.string().max(100).optional().or(z.literal('')),
-  display_name: z.string().max(150).optional().or(z.literal('')),
-  country: z.string().length(2, 'Please select your country'),
-})
+function buildSchema(t: (key: string) => unknown) {
+  return z.object({
+    email: z.string().email(),
+    plain_password: passwordSchema({
+      tooShort: t('password.tooShort') as string,
+      tooLong: t('password.tooLong') as string,
+      weak: t('password.weak') as string,
+    }),
+    first_name: z.string().max(100).optional().or(z.literal('')),
+    last_name: z.string().max(100).optional().or(z.literal('')),
+    display_name: z.string().max(150).optional().or(z.literal('')),
+    country: z.string().length(2, 'Please select your country'),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const { t, language } = useI18n()
   const auth = useAuth()
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   useEffect(() => {
     const token = getAccessToken()
@@ -37,7 +46,7 @@ export function RegisterPage() {
   }, [navigate])
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(buildSchema(t)),
     defaultValues: { email: '', plain_password: '', first_name: '', last_name: '', display_name: '', country: '' },
   })
 
@@ -82,44 +91,47 @@ export function RegisterPage() {
                   // The language the form was filled in — every future
                   // transactional email goes out in this language.
                   preferred_language: language,
+                  turnstile_token: turnstileToken,
                 }),
               )}
             >
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">Display name</label>
-                <Input autoComplete="nickname" placeholder="Roberto Arce" {...form.register('display_name')} />
+                <label htmlFor="register-display-name" className="mb-1 block text-xs font-medium text-ase-muted">Display name</label>
+                <Input id="register-display-name" autoComplete="nickname" placeholder="Roberto Arce" {...form.register('display_name')} />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
-                <Input type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                <label htmlFor="register-email" className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
+                <Input id="register-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
                 {form.formState.errors.email && (
                   <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">Password</label>
-                <Input type="password" autoComplete="new-password" {...form.register('plain_password')} />
-                {form.formState.errors.plain_password && (
+                <label htmlFor="register-password" className="mb-1 block text-xs font-medium text-ase-muted">Password</label>
+                <Input id="register-password" type="password" autoComplete="new-password" {...form.register('plain_password')} />
+                {form.formState.errors.plain_password ? (
                   <p className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-ase-muted">{t('password.hint') as string}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">First name</label>
-                  <Input autoComplete="given-name" {...form.register('first_name')} />
+                  <label htmlFor="register-first-name" className="mb-1 block text-xs font-medium text-ase-muted">First name</label>
+                  <Input id="register-first-name" autoComplete="given-name" {...form.register('first_name')} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">Last name</label>
-                  <Input autoComplete="family-name" {...form.register('last_name')} />
+                  <label htmlFor="register-last-name" className="mb-1 block text-xs font-medium text-ase-muted">Last name</label>
+                  <Input id="register-last-name" autoComplete="family-name" {...form.register('last_name')} />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.register.country')}</label>
-                <Select autoComplete="country" {...form.register('country')}>
+                <label htmlFor="register-country" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.register.country')}</label>
+                <Select id="register-country" autoComplete="country" {...form.register('country')}>
                   <option value="">{t('auth.register.countryPlaceholder')}</option>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -137,6 +149,8 @@ export function RegisterPage() {
                   Error al registrarse. Revisa el backend.
                 </div>
               )}
+
+              <TurnstileWidget onVerify={setTurnstileToken} />
 
               <Button size="lg" type="submit" className="w-full" disabled={mutation.isPending}>
                 {mutation.isPending ? t('auth.register.loading') : t('auth.register.submit')}

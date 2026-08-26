@@ -17,7 +17,7 @@ function RedeemedBookRow({ book }: { book: RedeemedBook }) {
     <Card className="flex items-center gap-4 p-4">
       <div className="h-16 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
         {src ? (
-          <img src={src} alt="" className="h-full w-full object-cover" />
+          <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-ase-text2">
             <BookOpen className="h-5 w-5" strokeWidth={1.75} />

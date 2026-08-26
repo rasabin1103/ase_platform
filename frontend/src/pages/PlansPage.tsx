@@ -504,34 +504,34 @@ export function PlansPage() {
               )}
             >
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.code')}</label>
-                <Input placeholder={t('plansPage.create.placeholders.code') as string} {...createForm.register('code')} />
+                <label htmlFor="plan-create-code" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.code')}</label>
+                <Input id="plan-create-code" placeholder={t('plansPage.create.placeholders.code') as string} {...createForm.register('code')} />
                 {createForm.formState.errors.code && (
                   <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.code.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.name')}</label>
-                <Input placeholder={t('plansPage.create.placeholders.name') as string} {...createForm.register('name')} />
+                <label htmlFor="plan-create-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.name')}</label>
+                <Input id="plan-create-name" placeholder={t('plansPage.create.placeholders.name') as string} {...createForm.register('name')} />
                 {createForm.formState.errors.name && (
                   <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.name.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescription')}</label>
-                <Input placeholder={t('plansPage.create.placeholders.shortDescription') as string} {...createForm.register('short_description')} />
+                <label htmlFor="plan-create-short-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescription')}</label>
+                <Input id="plan-create-short-description" placeholder={t('plansPage.create.placeholders.shortDescription') as string} {...createForm.register('short_description')} />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.description')}</label>
-                <Textarea placeholder={t('plansPage.create.placeholders.description') as string} {...createForm.register('description')} />
+                <label htmlFor="plan-create-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.description')}</label>
+                <Textarea id="plan-create-description" placeholder={t('plansPage.create.placeholders.description') as string} {...createForm.register('description')} />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.billingCycle')}</label>
-                <Select {...createForm.register('billing_cycle')}>
+                <label htmlFor="plan-create-billing-cycle" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.billingCycle')}</label>
+                <Select id="plan-create-billing-cycle" {...createForm.register('billing_cycle')}>
                   {billingCycles.map((b) => (
                     <option key={b.value} value={b.value}>
                       {b.label}
@@ -542,15 +542,15 @@ export function PlansPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.price')}</label>
-                  <Input inputMode="decimal" placeholder={t('plansPage.create.placeholders.price') as string} {...createForm.register('price')} />
+                  <label htmlFor="plan-create-price" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.price')}</label>
+                  <Input id="plan-create-price" inputMode="decimal" placeholder={t('plansPage.create.placeholders.price') as string} {...createForm.register('price')} />
                   {createForm.formState.errors.price && (
                     <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.price.message}</p>
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.currency')}</label>
-                  <Input placeholder={t('plansPage.create.placeholders.currency') as string} {...createForm.register('currency')} />
+                  <label htmlFor="plan-create-currency" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.currency')}</label>
+                  <Input id="plan-create-currency" placeholder={t('plansPage.create.placeholders.currency') as string} {...createForm.register('currency')} />
                   {createForm.formState.errors.currency && (
                     <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.currency.message}</p>
                   )}
@@ -559,18 +559,19 @@ export function PlansPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.displayOrder')}</label>
-                  <Input inputMode="numeric" placeholder="0" {...createForm.register('display_order')} />
+                  <label htmlFor="plan-create-display-order" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.displayOrder')}</label>
+                  <Input id="plan-create-display-order" inputMode="numeric" placeholder="0" {...createForm.register('display_order')} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabel')}</label>
-                  <Input placeholder={t('plansPage.create.placeholders.ctaLabel') as string} {...createForm.register('cta_label')} />
+                  <label htmlFor="plan-create-cta-label" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabel')}</label>
+                  <Input id="plan-create-cta-label" placeholder={t('plansPage.create.placeholders.ctaLabel') as string} {...createForm.register('cta_label')} />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
+                <label htmlFor="plan-create-stripe-price-id" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
                 <Input
+                  id="plan-create-stripe-price-id"
                   placeholder={t('plansPage.create.placeholders.stripePriceId') as string}
                   autoComplete="off"
                   {...createForm.register('stripe_price_id')}
@@ -581,20 +582,20 @@ export function PlansPage() {
               <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
                 <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.englishFieldsHint')}</p>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
-                  <Input placeholder={t('plansPage.create.placeholders.nameEn') as string} {...createForm.register('name_en')} />
+                  <label htmlFor="plan-create-name-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
+                  <Input id="plan-create-name-en" placeholder={t('plansPage.create.placeholders.nameEn') as string} {...createForm.register('name_en')} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
-                  <Input placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...createForm.register('short_description_en')} />
+                  <label htmlFor="plan-create-short-description-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
+                  <Input id="plan-create-short-description-en" placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...createForm.register('short_description_en')} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
-                  <Textarea placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...createForm.register('description_en')} />
+                  <label htmlFor="plan-create-description-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
+                  <Textarea id="plan-create-description-en" placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...createForm.register('description_en')} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
-                  <Input placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...createForm.register('cta_label_en')} />
+                  <label htmlFor="plan-create-cta-label-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
+                  <Input id="plan-create-cta-label-en" placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...createForm.register('cta_label_en')} />
                 </div>
               </div>
 
@@ -696,28 +697,28 @@ export function PlansPage() {
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.code')}</label>
-              <Input {...editForm.register('code')} />
+              <label htmlFor="plan-edit-code" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.code')}</label>
+              <Input id="plan-edit-code" {...editForm.register('code')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.name')}</label>
-              <Input {...editForm.register('name')} />
+              <label htmlFor="plan-edit-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.name')}</label>
+              <Input id="plan-edit-name" {...editForm.register('name')} />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescription')}</label>
-            <Input {...editForm.register('short_description')} />
+            <label htmlFor="plan-edit-short-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescription')}</label>
+            <Input id="plan-edit-short-description" {...editForm.register('short_description')} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.description')}</label>
-            <Textarea {...editForm.register('description')} />
+            <label htmlFor="plan-edit-description" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.description')}</label>
+            <Textarea id="plan-edit-description" {...editForm.register('description')} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.billingCycle')}</label>
-            <Select {...editForm.register('billing_cycle')}>
+            <label htmlFor="plan-edit-billing-cycle" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.billingCycle')}</label>
+            <Select id="plan-edit-billing-cycle" {...editForm.register('billing_cycle')}>
               {billingCycles.map((b) => (
                 <option key={b.value} value={b.value}>
                   {b.label}
@@ -728,32 +729,33 @@ export function PlansPage() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.price')}</label>
-              <Input {...editForm.register('price')} />
+              <label htmlFor="plan-edit-price" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.price')}</label>
+              <Input id="plan-edit-price" {...editForm.register('price')} />
               {editForm.formState.errors.price && (
                 <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.price.message}</p>
               )}
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.currency')}</label>
-              <Input {...editForm.register('currency')} />
+              <label htmlFor="plan-edit-currency" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.currency')}</label>
+              <Input id="plan-edit-currency" {...editForm.register('currency')} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.displayOrder')}</label>
-              <Input {...editForm.register('display_order')} />
+              <label htmlFor="plan-edit-display-order" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.displayOrder')}</label>
+              <Input id="plan-edit-display-order" {...editForm.register('display_order')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabel')}</label>
-              <Input {...editForm.register('cta_label')} />
+              <label htmlFor="plan-edit-cta-label" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabel')}</label>
+              <Input id="plan-edit-cta-label" {...editForm.register('cta_label')} />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
+            <label htmlFor="plan-edit-stripe-price-id" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.stripePriceId')}</label>
             <Input
+              id="plan-edit-stripe-price-id"
               placeholder={t('plansPage.create.placeholders.stripePriceId') as string}
               autoComplete="off"
               {...editForm.register('stripe_price_id')}
@@ -764,20 +766,20 @@ export function PlansPage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
             <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.englishFieldsHint')}</p>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
-              <Input placeholder={t('plansPage.create.placeholders.nameEn') as string} {...editForm.register('name_en')} />
+              <label htmlFor="plan-edit-name-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.nameEn')}</label>
+              <Input id="plan-edit-name-en" placeholder={t('plansPage.create.placeholders.nameEn') as string} {...editForm.register('name_en')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
-              <Input placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...editForm.register('short_description_en')} />
+              <label htmlFor="plan-edit-short-description-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.shortDescriptionEn')}</label>
+              <Input id="plan-edit-short-description-en" placeholder={t('plansPage.create.placeholders.shortDescriptionEn') as string} {...editForm.register('short_description_en')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
-              <Textarea placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...editForm.register('description_en')} />
+              <label htmlFor="plan-edit-description-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.descriptionEn')}</label>
+              <Textarea id="plan-edit-description-en" placeholder={t('plansPage.create.placeholders.descriptionEn') as string} {...editForm.register('description_en')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
-              <Input placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...editForm.register('cta_label_en')} />
+              <label htmlFor="plan-edit-cta-label-en" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.ctaLabelEn')}</label>
+              <Input id="plan-edit-cta-label-en" placeholder={t('plansPage.create.placeholders.ctaLabelEn') as string} {...editForm.register('cta_label_en')} />
             </div>
           </div>
 

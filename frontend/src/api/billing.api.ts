@@ -22,6 +22,30 @@ export async function createCatalogCheckoutSession(itemSlug: string): Promise<st
   return data.checkout_url
 }
 
+export type Invoice = {
+  id: string
+  number: string | null
+  status: string
+  amount_paid: number
+  currency: string
+  created_at: string
+  period_start: string | null
+  period_end: string | null
+  hosted_invoice_url: string | null
+  invoice_pdf: string | null
+  plan_name: string | null
+}
+
+/** Invoice history for the signed-in user's organization, reshaped for
+ * in-app display — the receipts themselves (PDF / hosted view) still live
+ * on Stripe, but the browsing experience is ASE's own branded list instead
+ * of always redirecting to the external portal. Returns an empty list
+ * (never an error) if the org has no Stripe customer yet. */
+export async function listInvoices(): Promise<Invoice[]> {
+  const { data } = await apiClient.get<{ items: Invoice[] }>('/billing/invoices')
+  return data.items
+}
+
 type BillingPortalResponse = {
   portal_url: string
 }

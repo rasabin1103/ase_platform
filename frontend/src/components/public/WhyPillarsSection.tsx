@@ -19,11 +19,12 @@ export function WhyPillarsSection() {
         </p>
 
         <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {pillars.map((p) => (
+          {pillars.map((p, idx) => (
             <Card
               key={p.title}
               interactive
-              className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-8"
+              className="relative animate-fade-in-up overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-8 transition duration-300 ease-out hover:-translate-y-1 hover:border-ase-brand/40 hover:shadow-glow-cyan"
+              style={{ animationDelay: `${idx * 90}ms` }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>

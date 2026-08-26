@@ -159,6 +159,17 @@ class SystemStatusCounts(BaseModel):
     requests_pending: int
 
 
+class SchedulerJobRead(BaseModel):
+    """One APScheduler background job (account lifecycle sweep, newsletter,
+    test-run polling, etc.) — surfaced so an admin can confirm the scheduler
+    is actually running without needing shell/log access to the Railway
+    instance (see docs/OBSERVABILITY.md)."""
+
+    id: str
+    next_run_time: datetime | None
+    pending: bool
+
+
 class SystemStatusRead(BaseModel):
     api_status: str
     uptime_seconds: float
@@ -173,4 +184,6 @@ class SystemStatusRead(BaseModel):
     email_verified_pct: float
     two_factor_adoption_pct: float
     counts: SystemStatusCounts
+    scheduler_running: bool
+    scheduler_jobs: list[SchedulerJobRead]
     checked_at: datetime

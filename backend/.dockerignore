@@ -1,0 +1,14 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.env
+.env.example
+.env.production
+tests
+scripts
+docker-compose.yml
+dev.ps1
+README.md
+check_schema_drift.py

@@ -133,7 +133,7 @@ export function OrganizationGrantPage() {
                   )}
                 >
                   <span className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ase-bg2">
-                    <img src={p.imageUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={p.imageUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-ase-text">{p.title}</span>

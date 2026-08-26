@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Language } from './translations'
 import { translations } from './translations'
 
@@ -58,6 +58,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
   }, [])
+
+  // Keep the <html lang> attribute in sync with the active language so
+  // screen readers and browser translation tools pick the right locale
+  // instead of the static "es" baked into index.html.
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = language
+    }
+  }, [language])
 
   const t = useCallback(
     <T = string,>(key: string): T => {

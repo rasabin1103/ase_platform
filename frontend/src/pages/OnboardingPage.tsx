@@ -186,8 +186,9 @@ export function OnboardingPage() {
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
           >
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-ase-muted">organization_name</label>
+              <label htmlFor="onboarding-org-name" className="mb-1 block text-xs font-medium text-ase-muted">organization_name</label>
               <Input
+                id="onboarding-org-name"
                 placeholder="Acme Corporation"
                 {...form.register('organization_name', {
                   onChange: (e) => {
@@ -200,13 +201,13 @@ export function OnboardingPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">organization_slug</label>
-              <Input placeholder="acme-corp" {...form.register('organization_slug')} />
+              <label htmlFor="onboarding-org-slug" className="mb-1 block text-xs font-medium text-ase-muted">organization_slug</label>
+              <Input id="onboarding-org-slug" placeholder="acme-corp" {...form.register('organization_slug')} />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">organization_type</label>
-              <Select {...form.register('organization_type')}>
+              <label htmlFor="onboarding-org-type" className="mb-1 block text-xs font-medium text-ase-muted">organization_type</label>
+              <Select id="onboarding-org-type" {...form.register('organization_type')}>
                 <option value="individual">individual</option>
                 <option value="business">business</option>
                 <option value="enterprise">enterprise</option>

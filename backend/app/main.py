@@ -149,6 +149,11 @@ async def lifespan(app: FastAPI):
         )
     if scheduler.get_jobs():
         scheduler.start()
+    # Exposed so the admin diagnostics endpoint (system_status) can list
+    # registered jobs and their next run time — the scheduler itself was
+    # previously just a lifespan-local variable with no way to introspect it
+    # from a request handler.
+    app.state.scheduler = scheduler
     yield
     if scheduler.running:
         scheduler.shutdown(wait=False)
@@ -221,6 +226,8 @@ from app.modules.catalog_categories.router import router as catalog_categories_r
 from app.modules.admin_data_reset.router import router as admin_data_reset_router
 from app.modules.admin_demo_data.router import router as admin_demo_data_router
 from app.modules.billing.router import router as billing_router
+from app.modules.booking.router import admin_router as admin_booking_router
+from app.modules.booking.router import router as booking_router
 from app.modules.newsletter.router import router as newsletter_router
 from app.modules.admin_newsletter.router import router as admin_newsletter_router
 from app.modules.pricing_admin.router import router as pricing_admin_router
@@ -255,6 +262,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_data_reset_router)
     app.include_router(admin_demo_data_router)
     app.include_router(billing_router)
+    app.include_router(booking_router)
+    app.include_router(admin_booking_router)
     app.include_router(newsletter_router)
     app.include_router(admin_newsletter_router)
     app.include_router(pricing_admin_router)

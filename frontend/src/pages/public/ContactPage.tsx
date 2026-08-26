@@ -63,32 +63,36 @@ export function ContactPage() {
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.name')}</label>
+              <label htmlFor="contact-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.name')}</label>
               <Input
+                id="contact-name"
                 value={values.name}
                 onChange={(e) => setValues((v) => ({ ...v, name: String(e.target.value ?? '') }))}
                 placeholder={String(t('pages.contact.fields.namePh'))}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.email')}</label>
+              <label htmlFor="contact-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.email')}</label>
               <Input
+                id="contact-email"
                 value={values.email}
                 onChange={(e) => setValues((v) => ({ ...v, email: String(e.target.value ?? '') }))}
                 placeholder="name@company.com"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.company')}</label>
+              <label htmlFor="contact-company" className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.company')}</label>
               <Input
+                id="contact-company"
                 value={values.company}
                 onChange={(e) => setValues((v) => ({ ...v, company: String(e.target.value ?? '') }))}
                 placeholder={String(t('pages.contact.fields.companyPh'))}
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.message')}</label>
+              <label htmlFor="contact-message" className="mb-1 block text-xs font-medium text-ase-muted">{t('pages.contact.fields.message')}</label>
               <textarea
+                id="contact-message"
                 className="min-h-32 w-full resize-none rounded-md border border-ase-border bg-ase-surface px-3 py-2 text-sm text-ase-text outline-none transition focus-visible:border-ase-primary/60 focus-visible:ring-2 focus-visible:ring-ase-accent/30"
                 value={values.message}
                 onChange={(e) => setValues((v) => ({ ...v, message: String(e.target.value ?? '') }))}

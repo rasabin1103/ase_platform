@@ -87,10 +87,11 @@ export function LoginPage() {
                 }}
               >
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ase-muted">
+                  <label htmlFor="login-otp-code" className="mb-1 block text-xs font-medium text-ase-muted">
                     {t('auth.login.twoFactorCodeLabel')}
                   </label>
                   <Input
+                    id="login-otp-code"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     maxLength={6}
@@ -163,8 +164,8 @@ export function LoginPage() {
 
             <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
-                <Input type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                <label htmlFor="login-email" className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
+                <Input id="login-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
                 {form.formState.errors.email && (
                   <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                 )}
@@ -172,7 +173,7 @@ export function LoginPage() {
 
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label className="block text-xs font-medium text-ase-muted">Password</label>
+                  <label htmlFor="login-password" className="block text-xs font-medium text-ase-muted">Password</label>
                   <Link
                     to="/forgot-password"
                     className="text-xs font-medium text-ase-text2 underline decoration-white/10 hover:text-ase-text hover:decoration-white/30"
@@ -180,7 +181,7 @@ export function LoginPage() {
                     {t('auth.login.forgotPassword')}
                   </Link>
                 </div>
-                <Input type="password" autoComplete="current-password" {...form.register('password')} />
+                <Input id="login-password" type="password" autoComplete="current-password" {...form.register('password')} />
                 {form.formState.errors.password && (
                   <p className="mt-1 text-sm text-ase-error">{form.formState.errors.password.message}</p>
                 )}

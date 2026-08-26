@@ -18,7 +18,10 @@ const neutrals = {
   slate: '#0F172A',
   graphite: '#111827',
   ash: '#1E293B',
-  fog: '#64748B',
+  // WCAG AA requires >=4.5:1 for normal text; the previous #64748B only
+  // cleared ~3.1-4.2:1 against our dark surfaces. #94A3B8 (slate-400) keeps
+  // the same muted-gray intent while clearing >=5.7:1 on every ase-bg*/ase-surface* tone.
+  fog: '#94A3B8',
   mist: '#CBD5E1',
   chalk: '#F8FAFC',
   line: '#334155',
@@ -105,6 +108,13 @@ export default {
         soft: '0 1px 0 rgba(255,255,255,0.04), 0 12px 32px rgba(0,0,0,0.45)',
         brand: '0 0 18px rgba(56, 189, 248, 0.28)',
         'brand-sm': '0 0 12px rgba(56, 189, 248, 0.18)',
+        // Shared "premium" glow shadows — same visual language as the
+        // admin dashboard's application map (ApplicationMapTree.tsx),
+        // reused on public-facing pages (Home, Plans, Blog) so the first
+        // customer touchpoints share that finish instead of it being an
+        // admin-only flourish.
+        'glow-cyan': '0 0 40px rgba(56, 189, 248, 0.22)',
+        'glow-gold': '0 0 40px rgba(232, 179, 104, 0.22)',
       },
       keyframes: {
         shimmer: {
@@ -118,10 +128,20 @@ export default {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-3px)' },
         },
+        fadeInUp: {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         'cap-glow': 'capGlow 4.5s ease-in-out infinite',
         'cap-float': 'capFloat 6s ease-in-out infinite',
+        'fade-in-up': 'fadeInUp 0.6s ease-out both',
+        'glow-pulse': 'glowPulse 2.8s ease-in-out infinite',
       },
     },
   },

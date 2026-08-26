@@ -1,14 +1,16 @@
-import type { PropsWithChildren } from 'react'
+import type { CSSProperties, PropsWithChildren } from 'react'
 import { cn } from './cn'
 
 type Props = PropsWithChildren & {
   className?: string
   interactive?: boolean
+  style?: CSSProperties
 }
 
-export function Card({ children, className, interactive }: Props) {
+export function Card({ children, className, interactive, style }: Props) {
   return (
     <div
+      style={style}
       className={cn(
         'rounded-xl border border-ase-border bg-ase-surface p-6 shadow-soft',
         'transition duration-200 ease-out',

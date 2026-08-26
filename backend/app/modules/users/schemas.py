@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.core.password_policy import validate_password_strength
 from app.models.enums import UserStatus
 from app.modules.catalog_admin.schemas import CatalogTestRunConclusionCounts, CatalogTestRunStatusCounts
 
@@ -16,10 +17,20 @@ class UserCreate(BaseModel):
     last_name: str | None = Field(default=None, max_length=100)
     display_name: str | None = Field(default=None, max_length=150)
 
+    @field_validator("plain_password")
+    @classmethod
+    def validate_plain_password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
+
 
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
     plain_password: str | None = Field(default=None, min_length=8, max_length=72)
+
+    @field_validator("plain_password")
+    @classmethod
+    def validate_plain_password_strength(cls, value: str | None) -> str | None:
+        return validate_password_strength(value) if value is not None else value
     first_name: str | None = Field(default=None, max_length=100)
     last_name: str | None = Field(default=None, max_length=100)
     display_name: str | None = Field(default=None, max_length=150)

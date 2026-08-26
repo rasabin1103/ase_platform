@@ -49,6 +49,7 @@ from app.models.blog_share import BlogShare
 from app.models.api_credential import ApiCredential
 from app.models.test_run import TestRun
 from app.models.test_execution_config import TestExecutionConfig
+from app.models.consulting_slot import ConsultingSlot
 
 __all__ = [
     "User",
@@ -102,5 +103,6 @@ __all__ = [
     "ApiCredential",
     "TestRun",
     "TestExecutionConfig",
+    "ConsultingSlot",
 ]
 

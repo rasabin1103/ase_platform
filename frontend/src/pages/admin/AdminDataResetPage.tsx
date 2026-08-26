@@ -168,8 +168,9 @@ export function AdminDataResetPanel() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminDataReset.passwordLabel')}</label>
+            <label htmlFor="admin-data-reset-password" className="mb-1 block text-xs text-ase-muted">{t('adminDataReset.passwordLabel')}</label>
             <Input
+              id="admin-data-reset-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

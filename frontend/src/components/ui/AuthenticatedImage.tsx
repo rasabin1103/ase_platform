@@ -64,5 +64,5 @@ export function AuthenticatedImage({ src, alt = '', className, fallback, cacheKe
       </div>
     )
   }
-  return <img src={finalSrc} alt={alt} className={cn('object-cover', className)} />
+  return <img src={finalSrc} alt={alt} loading="lazy" decoding="async" className={cn('object-cover', className)} />
 }
