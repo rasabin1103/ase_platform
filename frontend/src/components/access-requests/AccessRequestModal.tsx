@@ -83,8 +83,9 @@ export function AccessRequestModal({
       }
     >
       {modalDescription ? <p className="mb-4 text-sm text-ase-text2">{modalDescription}</p> : null}
-      <label className="mb-2 block text-xs font-medium text-ase-muted">{t('requestsPage.modalMessageLabel')}</label>
+      <label htmlFor="access-request-message" className="mb-2 block text-xs font-medium text-ase-muted">{t('requestsPage.modalMessageLabel')}</label>
       <Textarea
+        id="access-request-message"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={4}

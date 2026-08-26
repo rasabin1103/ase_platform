@@ -3,7 +3,7 @@ from __future__ import annotations
 import time as time_module
 from datetime import date, datetime, time
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -35,6 +35,7 @@ from app.modules.admin_dashboard.schemas import (
     ApplicationMapRead,
     SystemStatusCounts,
     SystemStatusDatabase,
+    SchedulerJobRead,
     SystemStatusRead,
     TopUserPurchases,
 )
@@ -271,7 +272,7 @@ def broadcast_announcement(
     response_model=SystemStatusRead,
     dependencies=[Depends(require_permission("platform.read"))],
 )
-def system_status(db: Session = Depends(get_db)):
+def system_status(request: Request, db: Session = Depends(get_db)):
     db_start = time_module.perf_counter()
     try:
         db.execute(text("SELECT 1"))
@@ -313,6 +314,17 @@ def system_status(db: Session = Depends(get_db)):
     email_verified_pct = round(100 * email_verified_count / active_users_total, 1) if active_users_total else 0.0
     two_factor_adoption_pct = round(100 * two_factor_count / active_users_total, 1) if active_users_total else 0.0
 
+    # Surfaces the APScheduler in-process scheduler (account lifecycle,
+    # newsletter, test-run polling, etc.) so an admin can confirm background
+    # jobs are actually registered/running without shell access to the
+    # Railway instance — see docs/OBSERVABILITY.md.
+    scheduler = getattr(request.app.state, "scheduler", None)
+    scheduler_running = bool(scheduler and scheduler.running)
+    scheduler_jobs = [
+        SchedulerJobRead(id=job.id, next_run_time=job.next_run_time, pending=job.pending)
+        for job in (scheduler.get_jobs() if scheduler else [])
+    ]
+
     return SystemStatusRead(
         api_status="ok",
         uptime_seconds=round(time_module.time() - STARTED_AT, 1),
@@ -329,6 +341,8 @@ def system_status(db: Session = Depends(get_db)):
         counts=SystemStatusCounts(
             users_total=users_total, catalog_total=catalog_total, requests_pending=requests_pending
         ),
+        scheduler_running=scheduler_running,
+        scheduler_jobs=scheduler_jobs,
         checked_at=datetime.utcnow(),
     )
 

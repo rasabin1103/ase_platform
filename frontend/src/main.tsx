@@ -7,8 +7,10 @@ import { AppProviders } from './app/providers'
 import { router } from './app/router'
 import { CookieNotice } from './components/layout/CookieNotice'
 import { initSentry } from './monitoring'
+import { registerServiceWorker } from './pwa'
 
 initSentry()
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

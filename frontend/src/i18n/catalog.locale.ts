@@ -223,6 +223,10 @@ export const adminDashboardEn = {
   emptyRoles: 'No role assignments yet',
   loadError: 'Could not load platform metrics. Check your connection and try again.',
   retry: 'Retry',
+  report: {
+    title: 'Analytics summary',
+    generatedOn: 'Generated on',
+  },
   applicationMap: {
     badge: 'Application map',
     title: 'Application map',
@@ -317,6 +321,10 @@ export const adminDashboardEs = {
   emptyRoles: 'Todavía no hay roles asignados',
   loadError: 'No se pudieron cargar las métricas de la plataforma. Comprueba tu conexión e inténtalo de nuevo.',
   retry: 'Reintentar',
+  report: {
+    title: 'Resumen de analítica',
+    generatedOn: 'Generado el',
+  },
   applicationMap: {
     badge: 'Mapa de la aplicación',
     title: 'Mapa de la aplicación',
@@ -920,6 +928,12 @@ export const adminSystemStatusEn = {
     last7d: 'Last 7 days',
     viewAll: 'View full log',
   },
+  scheduler: {
+    title: 'Background scheduler',
+    empty: 'No jobs registered.',
+    nextRun: 'Next run',
+    noNextRun: 'Not scheduled',
+  },
   lifecycle: {
     title: 'Account lifecycle policy',
     runNow: 'Run sweep now',
@@ -1142,6 +1156,12 @@ export const adminSystemStatusEs = {
     last24h: 'Últimas 24h',
     last7d: 'Últimos 7 días',
     viewAll: 'Ver registro completo',
+  },
+  scheduler: {
+    title: 'Tareas programadas',
+    empty: 'No hay tareas registradas.',
+    nextRun: 'Próxima ejecución',
+    noNextRun: 'Sin programar',
   },
   lifecycle: {
     title: 'Política del ciclo de vida de cuentas',
@@ -1500,6 +1520,26 @@ export const profilePageEn = {
       canceled: 'Canceled',
       expired: 'Expired',
     },
+    invoices: {
+      title: 'Invoice history',
+      subtitle: 'Every receipt for your ASE subscription, in one place.',
+      empty: 'No invoices yet.',
+      loadError: 'Could not load your invoice history.',
+      colDate: 'Date',
+      colPlan: 'Plan',
+      colAmount: 'Amount',
+      colStatus: 'Status',
+      colActions: 'Receipt',
+      viewPdf: 'View PDF',
+      viewOnline: 'View online',
+      status: {
+        paid: 'Paid',
+        open: 'Pending',
+        void: 'Voided',
+        uncollectible: 'Uncollectible',
+        draft: 'Draft',
+      },
+    },
   },
   newsletter: {
     title: 'Weekly newsletter',
@@ -1572,6 +1612,26 @@ export const profilePageEs = {
       past_due: 'Pago pendiente',
       canceled: 'Cancelado',
       expired: 'Expirado',
+    },
+    invoices: {
+      title: 'Historial de facturas',
+      subtitle: 'Todos los recibos de tu suscripción ASE, en un solo lugar.',
+      empty: 'Todavía no hay facturas.',
+      loadError: 'No se pudo cargar tu historial de facturas.',
+      colDate: 'Fecha',
+      colPlan: 'Plan',
+      colAmount: 'Importe',
+      colStatus: 'Estado',
+      colActions: 'Recibo',
+      viewPdf: 'Ver PDF',
+      viewOnline: 'Ver online',
+      status: {
+        paid: 'Pagada',
+        open: 'Pendiente',
+        void: 'Anulada',
+        uncollectible: 'Incobrable',
+        draft: 'Borrador',
+      },
     },
   },
   newsletter: {

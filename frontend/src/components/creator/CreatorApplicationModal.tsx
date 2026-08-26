@@ -63,10 +63,11 @@ export function CreatorApplicationModal({ open, onClose, onSuccess }: Props) {
         }}
       >
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-type" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.type')}
           </label>
           <select
+            id="creator-app-type"
             value={scope}
             onChange={(e) => setScope(e.target.value as Scope)}
             className={fieldClass}
@@ -78,36 +79,36 @@ export function CreatorApplicationModal({ open, onClose, onSuccess }: Props) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-experience" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.experience')}
           </label>
-          <textarea required minLength={10} value={experience} onChange={(e) => setExperience(e.target.value)} rows={3} className={fieldClass} />
+          <textarea id="creator-app-experience" required minLength={10} value={experience} onChange={(e) => setExperience(e.target.value)} rows={3} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-knowledge-areas" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.knowledgeAreas')}
           </label>
-          <textarea required minLength={2} value={knowledgeAreas} onChange={(e) => setKnowledgeAreas(e.target.value)} rows={2} className={fieldClass} />
+          <textarea id="creator-app-knowledge-areas" required minLength={2} value={knowledgeAreas} onChange={(e) => setKnowledgeAreas(e.target.value)} rows={2} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-portfolio-url" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.portfolioUrl')}
           </label>
-          <input type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} className={fieldClass} />
+          <input id="creator-app-portfolio-url" type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} className={fieldClass} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-motivation" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.motivation')}
           </label>
-          <textarea required minLength={10} value={motivation} onChange={(e) => setMotivation(e.target.value)} rows={3} className={fieldClass} />
+          <textarea id="creator-app-motivation" required minLength={10} value={motivation} onChange={(e) => setMotivation(e.target.value)} rows={3} className={fieldClass} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+          <label htmlFor="creator-app-initial-proposal" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ase-muted">
             {t('creatorApplication.fields.initialProposal')}
           </label>
-          <textarea required minLength={10} value={initialProposal} onChange={(e) => setInitialProposal(e.target.value)} rows={3} className={fieldClass} />
+          <textarea id="creator-app-initial-proposal" required minLength={10} value={initialProposal} onChange={(e) => setInitialProposal(e.target.value)} rows={3} className={fieldClass} />
         </div>
         <label className="flex items-start gap-2 text-sm text-ase-text2">
           <input type="checkbox" checked={qualityAgreement} onChange={(e) => setQualityAgreement(e.target.checked)} className="mt-1" />

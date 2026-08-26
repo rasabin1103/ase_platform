@@ -66,8 +66,8 @@ export function SuggestionBox() {
       >
         {canChooseTarget ? (
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-text2">{t('suggestions.targetLabel')}</label>
-            <Select value={target} onChange={(e) => setTarget(e.target.value as SuggestionTarget)}>
+            <label htmlFor="suggestion-target" className="mb-1 block text-xs font-medium text-ase-text2">{t('suggestions.targetLabel')}</label>
+            <Select id="suggestion-target" value={target} onChange={(e) => setTarget(e.target.value as SuggestionTarget)}>
               <option value="platform">{t('suggestions.targetPlatform')}</option>
               <option value="organization">{t('suggestions.targetOrganization')}</option>
             </Select>

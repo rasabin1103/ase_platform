@@ -100,6 +100,7 @@ export function TwoFactorPanel() {
           <img
             src={qrCode}
             alt={t('profilePage.twoFactorQrAlt') as string}
+            loading="lazy"
             className="h-40 w-40 rounded-lg border border-white/10 bg-white p-2"
           />
           <div>

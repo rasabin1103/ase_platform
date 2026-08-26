@@ -626,8 +626,9 @@ export function OrganizationsPage() {
             onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
           >
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name')}</label>
+              <label htmlFor="org-modal-create-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name')}</label>
               <Input
+                id="org-modal-create-name"
                 placeholder={t('organizationsPage.create.placeholders.name') as string}
                 {...form.register('organization_name', {
                   onChange: (e) => {
@@ -644,7 +645,7 @@ export function OrganizationsPage() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug')}</label>
+                <label htmlFor="org-modal-create-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug')}</label>
                 <button
                   type="button"
                   className={cn(
@@ -664,8 +665,8 @@ export function OrganizationsPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type')}</label>
-              <Select {...form.register('organization_type')}>
+              <label htmlFor="org-modal-create-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type')}</label>
+              <Select id="org-modal-create-type" {...form.register('organization_type')}>
                 {orgTypes.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -993,8 +994,9 @@ function renderCreateOrganizationForm({
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name')}</label>
+        <label htmlFor="org-create-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name')}</label>
         <Input
+          id="org-create-name"
           placeholder={t('organizationsPage.create.placeholders.name') as string}
           {...form.register('organization_name', {
             onChange: (e) => {
@@ -1009,7 +1011,7 @@ function renderCreateOrganizationForm({
 
       <div>
         <div className="flex items-center justify-between">
-          <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug')}</label>
+          <label htmlFor="org-create-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug')}</label>
           <button
             type="button"
             className={cn('rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-ase-text2 transition hover:bg-white/[0.05]', !computedSlug && 'opacity-50')}
@@ -1019,13 +1021,13 @@ function renderCreateOrganizationForm({
             {String(t('organizationsPage.create.helper.suggest')).replace('{{slug}}', computedSlug || na)}
           </button>
         </div>
-        <Input placeholder={t('organizationsPage.create.placeholders.slug') as string} {...form.register('organization_slug')} />
+        <Input id="org-create-slug" placeholder={t('organizationsPage.create.placeholders.slug') as string} {...form.register('organization_slug')} />
         {form.formState.errors.organization_slug && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.organization_slug.message}</p>}
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type')}</label>
-        <Select {...form.register('organization_type')}>
+        <label htmlFor="org-create-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type')}</label>
+        <Select id="org-create-type" {...form.register('organization_type')}>
           {orgTypes.map((type) => (
             <option key={type.value} value={type.value}>
               {type.label}

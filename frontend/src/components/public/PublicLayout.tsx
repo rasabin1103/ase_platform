@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ScrollToTop } from '../layout/ScrollToTop'
+import { SkipLink } from '../layout/SkipLink'
 import { RouteLoadingFallback } from '../layout/RouteLoadingFallback'
 import { PublicHeader } from './PublicHeader'
 import { PublicFooter } from './PublicFooter'
@@ -8,6 +9,7 @@ import { PublicFooter } from './PublicFooter'
 export function PublicLayout() {
   return (
     <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+      <SkipLink />
       <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
         {/* Blueprint grid — the brand's own technical/engineering signature,
@@ -23,7 +25,7 @@ export function PublicLayout() {
       </div>
 
       <PublicHeader />
-      <main className="relative">
+      <main id="main-content" tabIndex={-1} className="relative outline-none">
         <Suspense fallback={<RouteLoadingFallback />}>
           <Outlet />
         </Suspense>

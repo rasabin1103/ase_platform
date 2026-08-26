@@ -61,17 +61,19 @@ export function RedeemCodeForm({ onRedeemed, footer }: Props) {
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('redeemCode.codeLabel')}</label>
+            <label htmlFor="redeem-code" className="mb-1 block text-xs text-ase-muted">{t('redeemCode.codeLabel')}</label>
             <Input
+              id="redeem-code"
               placeholder={t('redeemCode.codePlaceholder') as string}
               {...form.register('code', { required: true })}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('redeemCode.githubUsernameLabel')}</label>
+            <label htmlFor="redeem-github-username" className="mb-1 block text-xs text-ase-muted">{t('redeemCode.githubUsernameLabel')}</label>
             <div className="relative">
               <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ase-muted" strokeWidth={1.75} />
               <Input
+                id="redeem-github-username"
                 className="pl-9"
                 placeholder={t('redeemCode.githubUsernamePlaceholder') as string}
                 {...form.register('github_username', { required: true })}

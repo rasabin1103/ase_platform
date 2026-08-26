@@ -37,10 +37,6 @@ Two other seed scripts exist outside `scripts/database/`: `backend/scripts/seed_
 
 The backend pytest suite added in this round of work (`backend/tests/conftest.py`) needs its own disposable database via `TEST_DATABASE_URL` — it truncates every table before each test, so it must never point at the same database as `DATABASE_URL`. If `TEST_DATABASE_URL` isn't set, those tests skip cleanly rather than running against the wrong database. See [DEPLOYMENT.md](DEPLOYMENT.md#7-automated-tests) for the full picture, including an older, separate set of test files that predates this work and runs directly against whichever `DATABASE_URL` is active.
 
-## Supabase SQL (`supabase/`)
+## Alembic is the only source of truth for the schema
 
-The `supabase/migrations/` folder contains **reference SQL** for core MVP tables (users, RBAC, catalog, favorites, purchases, access_requests). It has not been kept in sync with newer Alembic migrations (blog, catalog categories) — treat it as a historical starting point, not a live mirror.
-
-For a full schema matching the running app, always run Alembic. Use Supabase SQL when deploying to Supabase Postgres without Alembic, or as documentation.
-
-`supabase/seed.sql` provides optional reference data; **recommended seed path** remains Python `seed_all.py` (bcrypt passwords, idempotent logic).
+An earlier `supabase/` folder with hand-written reference SQL (users, RBAC, catalog, favorites, purchases, access_requests) has been removed — it only ever covered a handful of MVP-era tables, was never kept in sync with the ~45 modules the app has grown into since, and pointed at a `ase_backend/` path that doesn't exist in this repo. Alembic (`backend/alembic/versions/`) is now, as it already effectively was, the single place that defines and applies the schema, on any Postgres provider (Supabase, RDS, Neon, self-hosted). Always run `alembic upgrade head`; there is no alternative SQL path to keep in sync anymore.

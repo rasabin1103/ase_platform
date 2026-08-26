@@ -58,6 +58,7 @@ export const RedeemCodePage = lazy(() =>
 export const TestExecutionPage = lazy(() =>
   import('../pages/independent/TestExecutionPage').then((m) => ({ default: m.TestExecutionPage })),
 )
+export const BookingPage = lazy(() => import('../pages/independent/BookingPage').then((m) => ({ default: m.BookingPage })))
 
 // --- Organization ---
 export const OrganizationDashboardPage = lazy(() =>
@@ -89,6 +90,9 @@ export const AdminPurchasesPage = lazy(() =>
 )
 export const AdminAuditLogPage = lazy(() =>
   import('../pages/admin/AdminAuditLogPage').then((m) => ({ default: m.AdminAuditLogPage })),
+)
+export const AdminBookingPage = lazy(() =>
+  import('../pages/admin/AdminBookingPage').then((m) => ({ default: m.AdminBookingPage })),
 )
 export const AdminBookRedemptionsPage = lazy(() =>
   import('../pages/admin/AdminBookRedemptionsPage').then((m) => ({ default: m.AdminBookRedemptionsPage })),

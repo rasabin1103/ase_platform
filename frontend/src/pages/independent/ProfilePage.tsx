@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Switch } from '../../components/ui/Switch'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { InvoiceHistoryCard } from '../../components/billing/InvoiceHistoryCard'
 import { TwoFactorPanel } from '../../components/profile/TwoFactorPanel'
 import { localizedPlanText } from '../../components/public/pricingFromPlans'
 import { useAuth } from '../../hooks/useAuth'
@@ -235,6 +236,8 @@ export function ProfilePage() {
           </div>
           {billingError ? <p className="mt-3 text-sm text-ase-error">{billingError}</p> : null}
         </Card>
+
+        {currentUser?.plan_code ? <InvoiceHistoryCard /> : null}
 
         <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.newsletter.title')}</h2>

@@ -86,6 +86,11 @@ export type RegisterRequest = {
    * transactional emails (verification, password reset, etc.) go out in
    * the language the person actually reads. */
   preferred_language?: string
+  /** Cloudflare Turnstile (captcha) response token from TurnstileWidget —
+   * null when the widget isn't configured (VITE_TURNSTILE_SITE_KEY unset)
+   * or hasn't verified yet; the backend decides whether that blocks
+   * registration (no-op if TURNSTILE_SECRET_KEY isn't configured there). */
+  turnstile_token?: string | null
 }
 
 export type RegisterResponse = {

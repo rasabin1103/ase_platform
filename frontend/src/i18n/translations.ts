@@ -14,6 +14,8 @@ import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import { adminBlogEn, adminBlogEs, blogPageEn, blogPageEs } from './blog.locale'
 import { pricingAdminEn, pricingAdminEs, pricingEngineEn, pricingEngineEs } from './pricingAdmin.locale'
+/** Private `/booking` + `/admin/booking` copy (EN + ES). Merged as root keys `bookingPage`/`adminBookingPage`. */
+import { bookingPageEn, bookingPageEs, adminBookingPageEn, adminBookingPageEs } from './booking.locale'
 import {
   catalogEn,
   catalogEs,
@@ -63,6 +65,15 @@ export type Language = 'en' | 'es'
 
 export const translations = {
   en: {
+    a11y: {
+      skipToContent: 'Skip to main content',
+    },
+    password: {
+      hint: 'At least 8 characters, with an uppercase letter, a lowercase letter, a digit, and a symbol.',
+      tooShort: 'Must be at least 8 characters.',
+      tooLong: 'Must be 72 characters or fewer.',
+      weak: 'Must include an uppercase letter, a lowercase letter, a digit, and a symbol.',
+    },
     nav: {
       home: 'Home',
       whatsIncluded: "What's included",
@@ -119,6 +130,8 @@ export const translations = {
     orgMembership: orgMembershipEn,
     redeemCode: redeemCodeEn,
     testExecution: testExecutionEn,
+    bookingPage: bookingPageEn,
+    adminBookingPage: adminBookingPageEn,
     usersPage: usersPageEn,
     plansPage: plansPageEn,
     requestsPage: requestsPageEn,
@@ -873,6 +886,7 @@ export const translations = {
         bookRedemptions: 'Book redemptions',
         announcements: 'Announcements',
         system: 'System',
+        bookingAdmin: 'Consulting bookings',
         systemStatus: 'System status',
         errorLogs: 'Error logs',
         dataReset: 'Data reset',
@@ -901,6 +915,7 @@ export const translations = {
         myBooks: 'My books',
         myResources: 'My resources',
         testExecution: 'Test my products',
+        booking: 'Book a session',
         redeemCode: 'Redeem code',
         catalogManage: 'Catalog management',
         blogManage: 'Blog',
@@ -930,6 +945,8 @@ export const translations = {
         authError: 'Auth error',
         pageOf: 'Page {{page}} of {{pageCount}}',
         exportCsv: 'Export CSV',
+        exportExcel: 'Export to Excel',
+        exportPdf: 'Export report (PDF)',
       },
       dashboard: {
         welcome: 'Welcome',
@@ -947,6 +964,15 @@ export const translations = {
     },
   },
   es: {
+    a11y: {
+      skipToContent: 'Saltar al contenido principal',
+    },
+    password: {
+      hint: 'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.',
+      tooShort: 'Debe tener al menos 8 caracteres.',
+      tooLong: 'Debe tener 72 caracteres como máximo.',
+      weak: 'Debe incluir mayúscula, minúscula, número y símbolo.',
+    },
     nav: {
       home: 'Inicio',
       whatsIncluded: 'Qué incluye',
@@ -1003,6 +1029,8 @@ export const translations = {
     orgMembership: orgMembershipEs,
     redeemCode: redeemCodeEs,
     testExecution: testExecutionEs,
+    bookingPage: bookingPageEs,
+    adminBookingPage: adminBookingPageEs,
     usersPage: usersPageEs,
     plansPage: plansPageEs,
     requestsPage: requestsPageEs,
@@ -1756,6 +1784,7 @@ export const translations = {
         bookRedemptions: 'Canjeos de libros',
         announcements: 'Anuncios',
         system: 'Sistema',
+        bookingAdmin: 'Reservas de consultoría',
         systemStatus: 'Estado del sistema',
         errorLogs: 'Registro de errores',
         dataReset: 'Reinicio de datos',
@@ -1784,6 +1813,7 @@ export const translations = {
         myBooks: 'Mis libros',
         myResources: 'Mis recursos',
         testExecution: 'Probar mis productos',
+        booking: 'Reservar sesión',
         redeemCode: 'Canjear código',
         catalogManage: 'Gestión catálogo',
         blogManage: 'Blog',
@@ -1813,6 +1843,8 @@ export const translations = {
         authError: 'Error de sesión',
         pageOf: 'Página {{page}} de {{pageCount}}',
         exportCsv: 'Exportar CSV',
+        exportExcel: 'Exportar a Excel',
+        exportPdf: 'Exportar informe (PDF)',
       },
       dashboard: {
         welcome: 'Bienvenido',

@@ -74,24 +74,26 @@ export function AdminErrorLogsPanel() {
       <Card className="p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.errorType')}</label>
+            <label htmlFor="admin-error-logs-type" className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.errorType')}</label>
             <Input
+              id="admin-error-logs-type"
               placeholder="ProgrammingError"
               value={errorType}
               onChange={(e) => { setErrorType(e.target.value); setOffset(0) }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.path')}</label>
+            <label htmlFor="admin-error-logs-path" className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.path')}</label>
             <Input
+              id="admin-error-logs-path"
               placeholder="/api/v1/auth/login"
               value={path}
               onChange={(e) => { setPath(e.target.value); setOffset(0) }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.method')}</label>
-            <Select value={method} onChange={(e) => { setMethod(e.target.value); setOffset(0) }}>
+            <label htmlFor="admin-error-logs-method" className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.method')}</label>
+            <Select id="admin-error-logs-method" value={method} onChange={(e) => { setMethod(e.target.value); setOffset(0) }}>
               <option value="">{t('adminErrorLogs.filters.all')}</option>
               {METHODS.map((m) => (
                 <option key={m} value={m}>
@@ -101,12 +103,12 @@ export function AdminErrorLogsPanel() {
             </Select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.from')}</label>
-            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }} />
+            <label htmlFor="admin-error-logs-from" className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.from')}</label>
+            <Input id="admin-error-logs-from" type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.to')}</label>
-            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setOffset(0) }} />
+            <label htmlFor="admin-error-logs-to" className="mb-1 block text-xs text-ase-muted">{t('adminErrorLogs.filters.to')}</label>
+            <Input id="admin-error-logs-to" type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setOffset(0) }} />
           </div>
         </div>
         <div className="mt-3 flex justify-end">

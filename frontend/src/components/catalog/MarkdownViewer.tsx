@@ -102,7 +102,9 @@ const MARKDOWN_COMPONENTS: Components = {
     <th className={cn('border-b border-white/10 bg-white/[0.04] px-3 py-1.5 text-left font-semibold text-ase-text', className)} {...props} />
   ),
   td: ({ className, ...props }) => <td className={cn('border-b border-white/[0.06] px-3 py-1.5 text-ase-text2', className)} {...props} />,
-  img: ({ className, ...props }) => <img className={cn('my-3 max-w-full rounded-lg border border-white/10', className)} {...props} />,
+  img: ({ className, ...props }) => (
+    <img loading="lazy" className={cn('my-3 max-w-full rounded-lg border border-white/10', className)} {...props} />
+  ),
   pre: ({ className, ...props }) => (
     <pre className={cn('mb-3 overflow-x-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[12px]', className)} {...props} />
   ),

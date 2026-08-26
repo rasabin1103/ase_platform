@@ -32,7 +32,14 @@ export function BlogListPage() {
   const items = query.data?.items ?? []
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-14">
+    <div className="relative mx-auto w-full max-w-6xl px-6 py-14">
+      {/* Same glow language as the admin application map — a faint brand
+       * radial behind the blog header, so this first-contact page shares
+       * the premium finish. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 opacity-60"
+        style={{ backgroundImage: 'radial-gradient(circle_at_50%_0%,rgba(56,189,248,0.12),transparent_50%)' }}
+      />
       <Breadcrumbs
         items={[
           { label: t('blogPage.breadcrumbHome') as string, to: '/' },
@@ -77,9 +84,13 @@ export function BlogListPage() {
           <EmptyState title={t('blogPage.empty')} description={t('blogPage.emptyHint')} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((post) => (
+            {items.map((post, index) => (
               <Link key={post.slug} to={`/blog/${post.slug}`}>
-                <Card className="group h-full overflow-hidden rounded-2xl border-white/[0.08] bg-ase-surface/60 p-0 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20" interactive>
+                <Card
+                  style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+                  className="group h-full animate-fade-in-up overflow-hidden rounded-2xl border-white/[0.08] bg-ase-surface/60 p-0 backdrop-blur transition duration-300 ease-out hover:-translate-y-1 hover:border-ase-brand/35 hover:shadow-glow-cyan"
+                  interactive
+                >
                   <div className="h-40 overflow-hidden border-b border-white/[0.06] bg-white/[0.03]">
                     {post.cover_image_url ? (
                       <img

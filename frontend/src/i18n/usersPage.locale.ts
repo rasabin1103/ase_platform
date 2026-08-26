@@ -120,7 +120,7 @@ export const usersPageEn = {
   errors: {
     loadTitle: 'Could not load users',
     loadSubtitle: 'Please try again or refresh your session.',
-    passwordMin: 'Min 8 characters',
+    passwordMin: 'Min 8 characters, with uppercase, lowercase, digit and symbol',
   },
   statsModal: {
     title: 'User stats',
@@ -267,7 +267,7 @@ export const usersPageEs = {
   errors: {
     loadTitle: 'No se pudo cargar usuarios',
     loadSubtitle: 'Inténtalo de nuevo o refresca tu sesión.',
-    passwordMin: 'Mínimo 8 caracteres',
+    passwordMin: 'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo',
   },
   statsModal: {
     title: 'Estadísticas del usuario',

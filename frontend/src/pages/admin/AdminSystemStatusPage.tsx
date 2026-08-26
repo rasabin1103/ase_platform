@@ -201,6 +201,33 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
           </Card>
 
           <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">
+                {t('adminSystemStatus.scheduler.title')}
+              </span>
+              <Badge variant={data.scheduler_running ? 'success' : 'default'}>
+                {data.scheduler_running ? t('adminSystemStatus.status.enabled') : t('adminSystemStatus.status.disabled')}
+              </Badge>
+            </div>
+            {data.scheduler_jobs.length === 0 ? (
+              <p className="mt-3 text-xs text-ase-muted">{t('adminSystemStatus.scheduler.empty')}</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {data.scheduler_jobs.map((job) => (
+                  <div key={job.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-sm">
+                    <span className="font-mono text-xs text-ase-text2">{job.id}</span>
+                    <span className="text-xs text-ase-muted">
+                      {job.next_run_time
+                        ? `${t('adminSystemStatus.scheduler.nextRun')}: ${fmtDate(job.next_run_time)}`
+                        : t('adminSystemStatus.scheduler.noNextRun')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">

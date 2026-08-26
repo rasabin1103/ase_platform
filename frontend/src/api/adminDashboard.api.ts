@@ -161,6 +161,8 @@ export type SystemStatus = {
   email_verified_pct: number
   two_factor_adoption_pct: number
   counts: { users_total: number; catalog_total: number; requests_pending: number }
+  scheduler_running: boolean
+  scheduler_jobs: { id: string; next_run_time: string | null; pending: boolean }[]
   checked_at: string
 }
 

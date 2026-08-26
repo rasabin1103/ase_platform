@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download } from 'lucide-react'
+import { Download, FileSpreadsheet } from 'lucide-react'
 import { getAdminPurchasesSummary, listAdminPurchases } from '../../api/adminDashboard.api'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -15,6 +15,7 @@ import {
   PremiumOrb,
 } from '../../components/admin/premium/PremiumAdminUi'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import { downloadCsv } from '../../utils/csv'
 
 const LIMIT = 50
@@ -28,7 +29,8 @@ function fmtDate(iso: string) {
 }
 
 export function AdminPurchasesPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const { currentUser } = useAuth()
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -68,6 +70,26 @@ export function AdminPurchasesPage() {
         created_at: row.created_at,
       })),
     )
+  }
+
+  const handleExportExcel = async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    // Loaded on demand — ExcelJS is only needed if someone actually clicks
+    // "Export Excel", not on every visit to this page.
+    const { downloadBrandedExcel } = await import('../../utils/exportExcel')
+    downloadBrandedExcel({
+      filename: `ase-compras-${today}.xlsx`,
+      sheetName: t('adminPurchases.title'),
+      title: t('adminPurchases.title'),
+      generatedBy: currentUser?.email,
+      lang: language === 'en' ? 'en' : 'es',
+      rows: items.map((row) => ({
+        [t('adminPurchases.colUser')]: row.user_email,
+        [t('adminPurchases.colItem')]: row.item_title,
+        [t('adminPurchases.colType')]: row.item_type,
+        [t('adminPurchases.colDate')]: fmtDate(row.created_at),
+      })),
+    })
   }
 
   return (
@@ -148,10 +170,16 @@ export function AdminPurchasesPage() {
               <Button variant="ghost" size="sm" onClick={clearFilters} disabled={!hasFilters}>
                 {t('adminPurchases.filters.clear')}
               </Button>
-              <Button variant="secondary" size="sm" onClick={handleExport} disabled={items.length === 0}>
-                <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
-                {t('private.common.exportCsv')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={handleExport} disabled={items.length === 0}>
+                  <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+                  {t('private.common.exportCsv')}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleExportExcel} disabled={items.length === 0}>
+                  <FileSpreadsheet className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+                  {t('private.common.exportExcel')}
+                </Button>
+              </div>
             </div>
           </Card>
 

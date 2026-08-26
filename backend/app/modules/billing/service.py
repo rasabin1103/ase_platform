@@ -184,6 +184,57 @@ class BillingService:
             raise BillingError("Stripe did not return a checkout URL.")
         return session.url
 
+    def list_invoices(self, *, current_user: User) -> list[dict]:
+        """Returns the organization's Stripe invoices reshaped for in-app
+        display — used by the branded "Facturación" view so returning
+        clients see their receipt history inside ASE's own UI instead of
+        always being bounced to Stripe's hosted portal. The actual PDF/
+        hosted invoice page still lives on Stripe (hosted_invoice_url /
+        invoice_pdf) since building our own PDF renderer for legal invoices
+        would just duplicate what Stripe already generates correctly."""
+        _require_stripe_configured()
+
+        org_id = get_default_organization_id(self.db, current_user)
+        if org_id is None:
+            return []
+        org = self.db.get(Organization, org_id)
+        if org is None or not org.stripe_customer_id:
+            return []
+
+        invoices = stripe.Invoice.list(customer=org.stripe_customer_id, limit=24)
+
+        results: list[dict] = []
+        for inv in invoices.data:
+            plan_name = None
+            lines = inv.get("lines", {}).get("data") or []
+            if lines:
+                plan_name = lines[0].get("description")
+
+            results.append(
+                {
+                    "id": inv["id"],
+                    "number": inv.get("number"),
+                    "status": inv.get("status") or "unknown",
+                    "amount_paid": (inv.get("amount_paid") or 0) / 100,
+                    "currency": (inv.get("currency") or "eur").upper(),
+                    "created_at": datetime.fromtimestamp(inv["created"], tz=timezone.utc).isoformat(),
+                    "period_start": (
+                        datetime.fromtimestamp(inv["period_start"], tz=timezone.utc).isoformat()
+                        if inv.get("period_start")
+                        else None
+                    ),
+                    "period_end": (
+                        datetime.fromtimestamp(inv["period_end"], tz=timezone.utc).isoformat()
+                        if inv.get("period_end")
+                        else None
+                    ),
+                    "hosted_invoice_url": inv.get("hosted_invoice_url"),
+                    "invoice_pdf": inv.get("invoice_pdf"),
+                    "plan_name": plan_name,
+                }
+            )
+        return results
+
     def create_portal_session(self, *, current_user: User) -> str:
         """Stripe's hosted Customer Portal — lets the user manage their
         payment method, download invoices, and cancel/change plan without

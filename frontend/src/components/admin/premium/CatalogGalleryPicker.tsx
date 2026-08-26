@@ -88,7 +88,7 @@ export function CatalogGalleryPicker({ images, coverKey, onChange, onCoverChange
                   isCover ? 'border-ase-primary' : 'border-white/10',
                 )}
               >
-                <img src={img.previewUrl} alt="" className="h-full w-full object-cover" />
+                <img src={img.previewUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
                 {isCover ? (
                   <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ase-primary text-ase-bg">
                     <Star className="h-3 w-3" strokeWidth={2.5} fill="currentColor" />

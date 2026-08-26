@@ -150,6 +150,19 @@ class SubscriptionStatus(str, Enum):
     expired = "expired"
 
 
+class ConsultingSlotStatus(str, Enum):
+    """Lifecycle of a single bookable QA-consulting time slot. `open` slots
+    are admin-created and visible to any authenticated user; `booked` means
+    a user has claimed it; cancelling a booking resets the slot back to
+    `open` rather than using a separate `cancelled` state, so it becomes
+    bookable again — `cancelled` is reserved for slots the admin pulls
+    entirely (e.g. no longer available) rather than freed-up bookings."""
+
+    open = "open"
+    booked = "booked"
+    cancelled = "cancelled"
+
+
 class LoyaltyTier(str, Enum):
     """Reward tier based on how many consecutive 6-month milestones a user
     has reached as an active subscriber (see app/core/loyalty.py). Ordered

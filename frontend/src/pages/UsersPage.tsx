@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
 import type { UserUpdateRequest } from '../types/user.types'
 import { downloadCsv } from '../utils/csv'
+import { passwordSchema } from '../utils/passwordPolicy'
 import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -91,7 +92,11 @@ export function UsersPage() {
     () =>
       z.object({
         email: z.string().email(),
-        plain_password: z.string().min(8, t('usersPage.errors.passwordMin') as string),
+        plain_password: passwordSchema({
+          tooShort: t('usersPage.errors.passwordMin') as string,
+          tooLong: t('password.tooLong') as string,
+          weak: t('password.weak') as string,
+        }),
         first_name: z.string().max(100).optional().or(z.literal('')),
         last_name: z.string().max(100).optional().or(z.literal('')),
         display_name: z.string().max(150).optional().or(z.literal('')),
@@ -104,7 +109,16 @@ export function UsersPage() {
     () =>
       z.object({
         email: z.string().email().optional().or(z.literal('')),
-        plain_password: z.string().min(8, t('usersPage.errors.passwordMin') as string).optional().or(z.literal('')),
+        plain_password: z
+          .literal('')
+          .or(
+            passwordSchema({
+              tooShort: t('usersPage.errors.passwordMin') as string,
+              tooLong: t('password.tooLong') as string,
+              weak: t('password.weak') as string,
+            }),
+          )
+          .optional(),
         first_name: z.string().max(100).optional().or(z.literal('')),
         last_name: z.string().max(100).optional().or(z.literal('')),
         display_name: z.string().max(150).optional().or(z.literal('')),
@@ -479,33 +493,33 @@ export function UsersPage() {
         <div className="mb-4 text-sm text-ase-text2">{t('usersPage.edit.subtitle')}</div>
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
-            <Input placeholder={t('usersPage.create.placeholders.email') as string} {...editForm.register('email')} />
+            <label htmlFor="user-edit-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
+            <Input id="user-edit-email" placeholder={t('usersPage.create.placeholders.email') as string} {...editForm.register('email')} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
-            <Input type="password" placeholder={t('usersPage.edit.optionalPassword') as string} {...editForm.register('plain_password')} />
+            <label htmlFor="user-edit-password" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
+            <Input id="user-edit-password" type="password" placeholder={t('usersPage.edit.optionalPassword') as string} {...editForm.register('plain_password')} />
             {editForm.formState.errors.plain_password && (
               <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.plain_password.message}</p>
             )}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
-              <Input placeholder={t('usersPage.create.placeholders.firstName') as string} {...editForm.register('first_name')} />
+              <label htmlFor="user-edit-first-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
+              <Input id="user-edit-first-name" placeholder={t('usersPage.create.placeholders.firstName') as string} {...editForm.register('first_name')} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.lastName')}</label>
-              <Input placeholder={t('usersPage.create.placeholders.lastName') as string} {...editForm.register('last_name')} />
+              <label htmlFor="user-edit-last-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.lastName')}</label>
+              <Input id="user-edit-last-name" placeholder={t('usersPage.create.placeholders.lastName') as string} {...editForm.register('last_name')} />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.displayName')}</label>
-            <Input placeholder={t('usersPage.create.placeholders.displayName') as string} {...editForm.register('display_name')} />
+            <label htmlFor="user-edit-display-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.displayName')}</label>
+            <Input id="user-edit-display-name" placeholder={t('usersPage.create.placeholders.displayName') as string} {...editForm.register('display_name')} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
-            <Select {...editForm.register('status')}>
+            <label htmlFor="user-edit-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
+            <Select id="user-edit-status" {...editForm.register('status')}>
               {statusOptions.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
@@ -860,32 +874,32 @@ function CreateUserForm({
       })}
     >
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
-        <Input placeholder={t('usersPage.create.placeholders.email') as string} {...form.register('email')} />
+        <label htmlFor="user-create-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
+        <Input id="user-create-email" placeholder={t('usersPage.create.placeholders.email') as string} {...form.register('email')} />
         {form.formState.errors.email && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>}
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
-        <Input type="password" placeholder={t('usersPage.create.placeholders.temporaryPassword') as string} {...form.register('plain_password')} />
+        <label htmlFor="user-create-password" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
+        <Input id="user-create-password" type="password" placeholder={t('usersPage.create.placeholders.temporaryPassword') as string} {...form.register('plain_password')} />
         {form.formState.errors.plain_password && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
-          <Input placeholder={t('usersPage.create.placeholders.firstName') as string} {...form.register('first_name')} />
+          <label htmlFor="user-create-first-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
+          <Input id="user-create-first-name" placeholder={t('usersPage.create.placeholders.firstName') as string} {...form.register('first_name')} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.lastName')}</label>
-          <Input placeholder={t('usersPage.create.placeholders.lastName') as string} {...form.register('last_name')} />
+          <label htmlFor="user-create-last-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.lastName')}</label>
+          <Input id="user-create-last-name" placeholder={t('usersPage.create.placeholders.lastName') as string} {...form.register('last_name')} />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.displayName')}</label>
-        <Input placeholder={t('usersPage.create.placeholders.displayName') as string} {...form.register('display_name')} />
+        <label htmlFor="user-create-display-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.displayName')}</label>
+        <Input id="user-create-display-name" placeholder={t('usersPage.create.placeholders.displayName') as string} {...form.register('display_name')} />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
-        <Select {...form.register('status')}>
+        <label htmlFor="user-create-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
+        <Select id="user-create-status" {...form.register('status')}>
           {statusOptions.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}

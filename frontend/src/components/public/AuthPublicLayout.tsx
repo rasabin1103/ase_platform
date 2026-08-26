@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ScrollToTop } from '../layout/ScrollToTop'
+import { SkipLink } from '../layout/SkipLink'
 import { RouteLoadingFallback } from '../layout/RouteLoadingFallback'
 import { PublicHeader } from './PublicHeader'
 import { PublicFooter } from './PublicFooter'
@@ -8,6 +9,7 @@ import { PublicFooter } from './PublicFooter'
 export function AuthPublicLayout() {
   return (
     <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+      <SkipLink />
       <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-80 left-1/2 h-[720px] w-[1200px] -translate-x-1/2 rounded-full bg-gradient-to-r from-ase-primary/20 via-ase-accent/14 to-transparent blur-3xl" />
@@ -18,7 +20,7 @@ export function AuthPublicLayout() {
       </div>
 
       <PublicHeader />
-      <main className="relative">
+      <main id="main-content" tabIndex={-1} className="relative outline-none">
         <Suspense fallback={<RouteLoadingFallback />}>
           <Outlet />
         </Suspense>

@@ -65,6 +65,7 @@ export function AudiobookPlayer({
         <img
           src={coverUrl}
           alt=""
+          loading="lazy"
           className={cn(
             'mx-auto w-full rounded-lg border border-white/10 object-cover',
             maximized ? 'max-h-[60vh]' : 'max-h-80',

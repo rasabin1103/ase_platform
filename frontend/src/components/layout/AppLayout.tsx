@@ -4,6 +4,7 @@ import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../../auth
 import { useAuth } from '../../hooks/useAuth'
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed'
 import { ScrollToTop } from './ScrollToTop'
+import { SkipLink } from './SkipLink'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { ImpersonationBanner } from './ImpersonationBanner'
@@ -31,6 +32,7 @@ export function AppLayout() {
 
   return (
     <div className="relative flex h-full overflow-x-hidden bg-ase-bg">
+      <SkipLink />
       <ScrollToTop />
       <Sidebar collapsed={sidebarCollapsed} onClose={closeSidebar} />
       <div className="relative flex min-w-0 flex-1 flex-col">
@@ -38,7 +40,7 @@ export function AppLayout() {
         <ImpersonationBanner />
         <UnverifiedEmailBanner />
         <TwoFactorGraceModal />
-        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 outline-none sm:px-6 lg:px-8 lg:py-7">
           <div className="w-full min-w-0">
             <Suspense fallback={<RouteLoadingFallback />}>
               <Outlet />

@@ -229,8 +229,9 @@ export function RequestsPage() {
           </div>
         }
       >
-        <label className="mb-2 block text-xs font-medium text-ase-muted">{t('requestsPage.rejectNotesLabel')}</label>
+        <label htmlFor="requests-reject-notes" className="mb-2 block text-xs font-medium text-ase-muted">{t('requestsPage.rejectNotesLabel')}</label>
         <Textarea
+          id="requests-reject-notes"
           value={rejectNotes}
           onChange={(e) => setRejectNotes(e.target.value)}
           rows={3}

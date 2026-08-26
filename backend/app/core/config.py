@@ -141,6 +141,13 @@ class Settings(BaseSettings):
     # always works with or without this key.
     DEEPL_API_KEY: str | None = None
 
+    # Cloudflare Turnstile (captcha) on POST /auth/register — see
+    # app/core/turnstile.py. Get the secret key from the Cloudflare Turnstile
+    # dashboard (dash.cloudflare.com -> Turnstile). If left empty, captcha
+    # verification is skipped entirely, so local dev/tests keep working
+    # without an account configured.
+    TURNSTILE_SECRET_KEY: str | None = None
+
     @property
     def sqlalchemy_database_url(self) -> str:
         if self.DATABASE_URL:

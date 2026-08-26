@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { FileDown } from 'lucide-react'
 import { getAdminAnalytics, getAdminStats, getApplicationMap } from '../../api/adminDashboard.api'
 import { getCatalogTestStatsSummary } from '../../api/catalogAdmin.api'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
@@ -20,6 +22,7 @@ import {
 } from '../../components/admin/premium/PremiumAdminUi'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
@@ -39,7 +42,8 @@ const QUICK_LINKS = [
 ] as const
 
 export function AdminDashboardPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const { currentUser } = useAuth()
   const statsQuery = useQuery({ queryKey: ['admin-stats'], queryFn: getAdminStats })
   const analyticsQuery = useQuery({ queryKey: ['admin-analytics'], queryFn: getAdminAnalytics })
   const testStatsQuery = useQuery({ queryKey: ['admin-catalog-test-stats-summary'], queryFn: getCatalogTestStatsSummary })
@@ -51,6 +55,68 @@ export function AdminDashboardPage() {
 
   const catalogTotal = stats?.catalog_total ?? 0
   const byType = analytics?.catalog_by_type ?? stats?.catalog_by_type ?? {}
+
+  const handleExportPdf = async () => {
+    const now = new Date()
+    const dateSlug = now.toISOString().slice(0, 10)
+    // Loaded on demand — jsPDF (and its optional html2canvas dependency)
+    // add ~600KB and are only ever needed if someone actually clicks
+    // "Export report", not on every dashboard visit.
+    const { downloadAnalyticsPdf } = await import('../../utils/exportAnalyticsPdf')
+    downloadAnalyticsPdf({
+      title: t('adminDashboard.report.title'),
+      dateLabel: `${t('adminDashboard.report.generatedOn')}: ${now.toLocaleString()}`,
+      filename: `ase-analitica-${dateSlug}.pdf`,
+      generatedBy: currentUser?.email,
+      lang: language === 'en' ? 'en' : 'es',
+      kpis: [
+        { label: t('adminDashboard.metrics.catalog'), value: stats?.catalog_total ?? 0 },
+        { label: t('adminDashboard.metrics.users'), value: stats?.users_total ?? 0 },
+        { label: t('adminDashboard.metrics.usersActive'), value: stats?.users_active ?? 0 },
+        { label: t('adminDashboard.metrics.purchases'), value: stats?.purchases_total ?? 0 },
+        {
+          label: t('adminDashboard.metrics.revenue'),
+          value: (analytics?.revenue_total ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'EUR' }),
+        },
+        { label: t('adminDashboard.metrics.products'), value: byType.product ?? 0 },
+        { label: t('adminDashboard.metrics.courses'), value: byType.course ?? 0 },
+        { label: t('adminDashboard.metrics.books'), value: byType.book ?? 0 },
+        { label: t('adminDashboard.metrics.resources'), value: byType.resource ?? 0 },
+        { label: t('adminDashboard.sections.ratings.title') as string, value: analytics?.ratings_total ?? 0 },
+      ],
+      barCharts: [
+        {
+          title: language === 'en' ? 'Catalog by type' : 'Catálogo por tipo',
+          data: [
+            { label: t('adminDashboard.metrics.products'), value: byType.product ?? 0 },
+            { label: t('adminDashboard.metrics.courses'), value: byType.course ?? 0 },
+            { label: t('adminDashboard.metrics.books'), value: byType.book ?? 0 },
+            { label: t('adminDashboard.metrics.resources'), value: byType.resource ?? 0 },
+          ].filter((d) => d.value > 0),
+        },
+        {
+          title: t('adminDashboard.sections.usersByRole.title') as string,
+          data: Object.entries(analytics?.users_by_role ?? {})
+            .map(([role, value]) => ({ label: (t(`adminDashboard.roleLabels.${role}`) as string) ?? role, value }))
+            .filter((d) => d.value > 0),
+        },
+      ],
+      pieCharts: [
+        {
+          title: t('adminDashboard.sections.organizations.title') as string,
+          data: Object.entries(analytics?.organizations_by_type ?? {})
+            .map(([type, value]) => ({ label: t(`organizationsPage.types.${type}`) as string, value }))
+            .filter((d) => d.value > 0),
+        },
+        {
+          title: t('adminDashboard.sections.requests.title') as string,
+          data: Object.entries(analytics?.requests_by_status ?? {})
+            .map(([reqStatus, value]) => ({ label: t(`adminDashboard.requestStatus.${reqStatus}`) as string, value }))
+            .filter((d) => d.value > 0),
+        },
+      ],
+    })
+  }
 
   return (
     <div className="space-y-8 pb-16">
@@ -95,6 +161,18 @@ export function AdminDashboardPage() {
           onAction={() => void statsQuery.refetch()}
         />
       ) : (
+        <>
+        <div className="flex justify-end">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={statsQuery.isLoading || analyticsQuery.isLoading}
+          >
+            <FileDown className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+            {t('private.common.exportPdf')}
+          </Button>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <PremiumMetricCard
             label={t('adminDashboard.metrics.catalog')}
@@ -126,6 +204,7 @@ export function AdminDashboardPage() {
             format="currency"
           />
         </div>
+        </>
       )}
 
       {testStatsRows.length > 0 || testStatsQuery.isLoading || testStatsQuery.isError ? (

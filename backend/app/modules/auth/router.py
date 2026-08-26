@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.media_storage import validate_image_upload
 from app.core.media_urls import resolve_user_avatar_url, user_has_stored_avatar
 from app.core.rate_limit import limiter
+from app.core.turnstile import verify_turnstile_token
 from app.models.enums import MembershipStatus, OrganizationStatus, OrganizationType, SubscriptionStatus
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
@@ -65,7 +66,10 @@ def get_service(db: Session = Depends(get_db)) -> AuthService:
 
 @router.post("/register", response_model=MeResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/hour")
-def register(request: Request, payload: RegisterRequest, svc: AuthService = Depends(get_service)):
+async def register(request: Request, payload: RegisterRequest, svc: AuthService = Depends(get_service)):
+    remote_ip = request.client.host if request.client else None
+    if not await verify_turnstile_token(payload.turnstile_token, remote_ip):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="captcha_failed")
     return svc.register(payload)
 
 

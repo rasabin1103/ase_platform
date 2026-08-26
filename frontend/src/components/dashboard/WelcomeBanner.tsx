@@ -81,7 +81,7 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
           fallback={<span className={cn('font-semibold text-ase-text2', fallbackTextSize)}>{initials}</span>}
         />
       ) : avatarSrc ? (
-        <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+        <img src={avatarSrc} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className={cn('flex h-full w-full items-center justify-center font-semibold text-ase-text2', fallbackTextSize)}>
           {initials}
