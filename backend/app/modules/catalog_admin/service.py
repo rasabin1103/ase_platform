@@ -154,9 +154,22 @@ class CatalogAdminService:
                 )
             ).scalars().all()
         }
-        item.dimension_selections = [
-            sel for sel in item.dimension_selections if sel.dimension_type_id not in valid_type_ids
-        ]
+        # Removed here (not reassigned as a filtered list) and flushed right
+        # away, before any replacement row is appended: `dimension_type_id`
+        # has a DB-level UNIQUE constraint per (catalog_item_id,
+        # dimension_type_id), but the old and new selections for the same
+        # type are otherwise unrelated rows (their own PK, no FK the ORM
+        # tracks between them) — the unit of work has no reason to order
+        # this DELETE before that INSERT on its own, and when it doesn't,
+        # re-picking a different level for a type the item already had a
+        # selection for fails with a UniqueViolation on the new row. An
+        # explicit flush makes the delete-before-insert ordering certain
+        # instead of incidental.
+        to_remove = [sel for sel in item.dimension_selections if sel.dimension_type_id in valid_type_ids]
+        for sel in to_remove:
+            item.dimension_selections.remove(sel)
+        if to_remove:
+            self.db.flush()
         seen: set[int] = set()
         for inp in selections:
             if inp.dimension_type_id not in valid_type_ids or inp.dimension_type_id in seen:
@@ -209,9 +222,14 @@ class CatalogAdminService:
                     ).scalars().all()
                 )
                 matched = match_dimension_level_for_quantity(levels, item.page_count)
-                item.dimension_selections = [
-                    sel for sel in item.dimension_selections if sel.dimension_type_id != dtype.id
-                ]
+                # Same delete-before-insert ordering issue as
+                # _sync_dimension_selections above — flush the removal
+                # before appending the newly-matched level for this type.
+                existing = [sel for sel in item.dimension_selections if sel.dimension_type_id == dtype.id]
+                for sel in existing:
+                    item.dimension_selections.remove(sel)
+                if existing:
+                    self.db.flush()
                 if matched is not None:
                     item.dimension_selections.append(
                         CatalogItemDimensionSelection(dimension_type_id=dtype.id, dimension_level_id=matched.id)
@@ -242,6 +260,17 @@ class CatalogAdminService:
             stmt = stmt.where(CatalogItem.id != exclude_item_id)
         if self.db.execute(stmt).scalar_one_or_none() is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Redeem code already in use")
+
+    def _check_slug_available(self, slug: str, *, exclude_item_id: int | None = None) -> None:
+        """Shared by create() and update() — an edited slug goes through the
+        exact same uniqueness rule a new item's slug does, just excluding
+        the item being edited itself (otherwise saving without touching the
+        slug field would always "conflict" with its own current value)."""
+        stmt = select(CatalogItem.id).where(CatalogItem.slug == slug)
+        if exclude_item_id is not None:
+            stmt = stmt.where(CatalogItem.id != exclude_item_id)
+        if self.db.execute(stmt).scalar_one_or_none() is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
 
     def _sync_cover_image(self, item: CatalogItem) -> None:
         """Mirror the legacy single-image fields (``image_data``/``image_mime``
@@ -298,8 +327,7 @@ class CatalogAdminService:
         return self.repo.distinct_tags()
 
     def create(self, payload: CatalogItemAdminCreate) -> CatalogItemAdminRead:
-        if self.repo.get_by_slug(payload.slug):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
+        self._check_slug_available(payload.slug)
         # Normalize blank -> NULL so the DB unique constraint never treats two
         # "no code set" books as a conflicting pair of empty strings.
         payload.repo_redeem_code = (payload.repo_redeem_code or "").strip() or None
@@ -409,6 +437,8 @@ class CatalogAdminService:
         if "repo_redeem_code" in data:
             data["repo_redeem_code"] = (data["repo_redeem_code"] or "").strip() or None
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)
+        if "slug" in data:
+            self._check_slug_available(data["slug"], exclude_item_id=item.id)
         for key, value in data.items():
             setattr(item, key, value)
         self._ensure_english_fields(

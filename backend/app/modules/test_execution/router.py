@@ -10,13 +10,19 @@ from app.core.database import get_db
 from app.models.api_credential import ApiCredential
 from app.models.test_run import TestRun
 from app.models.user import User
-from app.modules.auth.dependencies import get_current_user
+from app.modules.auth.dependencies import get_current_user, require_permission
 from app.modules.test_execution.dependencies import get_current_api_credential, get_current_api_user
 from app.modules.test_execution.schemas import (
+    AdminApproveRefRequest,
+    AdminApproveRefResponse,
+    AdminResetQuotaRequest,
+    AdminResetQuotaResponse,
+    AdminRevokeRefRequest,
     ApiCredentialCreateRequest,
     ApiCredentialCreateResponse,
     ApiCredentialRead,
     ApiCredentialUpdateRequest,
+    ApprovedRefRead,
     PrivateTestRunTriggerRequest,
     RunnableFrameworkRead,
     TestExecutionConfigValueRead,
@@ -31,16 +37,19 @@ from app.modules.test_execution.schemas import (
     TestScenarioUpdateRequest,
 )
 from app.modules.test_execution.service import (
+    ApprovedRefNotFoundError,
     CredentialNotFoundError,
     DuplicateScenarioNameError,
     FrameworkNotRunnableError,
     MissingVariablesError,
     NotEntitledError,
     QuotaExceededError,
+    RefNotApprovedError,
     ReportNotFoundError,
     RunNotFoundError,
     ScenarioNotFoundError,
     TestExecutionService,
+    UserNotFoundError,
 )
 
 # --- Private router: credential management + own run history, JWT-authenticated ---
@@ -48,6 +57,13 @@ router = APIRouter(prefix="/api/v1/test-execution", tags=["test-execution"])
 
 # --- Public router: run triggering + status, HTTP Basic client_id/client_secret ---
 public_router = APIRouter(prefix="/api/v1/public/test-execution", tags=["test-execution-api"])
+
+# --- Admin router: support/ops actions on a specific buyer's quota. Reuses
+# "catalog.manage" rather than a dedicated permission code — same rationale
+# as catalog_categories/booking/blog_admin/pricing_admin: this is a small
+# adjacent surface to catalog administration, not a standalone module that
+# warrants its own RBAC entry.
+admin_router = APIRouter(prefix="/api/v1/admin/test-execution", tags=["test-execution-admin"])
 
 
 def get_service(db: Session = Depends(get_db)) -> TestExecutionService:
@@ -249,6 +265,22 @@ def delete_framework_scenario(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
 
 
+@router.get("/frameworks/{slug}/approved-refs", response_model=list[ApprovedRefRead])
+def list_my_approved_refs(
+    slug: str,
+    user: User = Depends(get_current_user),
+    svc: TestExecutionService = Depends(get_service),
+):
+    """Every git ref (besides the default branch, always implicitly
+    available) this buyer has been approved to run — powers the "version"
+    picker (original vs. my branch) on the private dashboard."""
+    try:
+        refs = svc.list_approved_refs(user_id=user.id, slug=slug)
+    except FrameworkNotRunnableError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
+    return [ApprovedRefRead(**r) for r in refs]
+
+
 @router.post("/frameworks/{slug}/trigger", response_model=TestRunRead, status_code=status.HTTP_201_CREATED)
 def trigger_run_from_dashboard(
     slug: str,
@@ -272,6 +304,11 @@ def trigger_run_from_dashboard(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
     except NotEntitledError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this framework")
+    except RefNotApprovedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This branch/ref has not been approved for your account: {exc.ref}",
+        )
     except QuotaExceededError as exc:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -410,6 +447,11 @@ def trigger_run(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
     except NotEntitledError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this framework")
+    except RefNotApprovedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This branch/ref has not been approved for your account: {exc.ref}",
+        )
     except QuotaExceededError as exc:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -449,3 +491,78 @@ def list_runs_api(
     runs, total = svc.list_runs(user_id=user.id, slug=slug, limit=limit, offset=offset)
     items = [_run_to_read(r, slug=svc.slug_for_run(r)) for r in runs]
     return TestRunListResponse(items=items, limit=limit, offset=offset, total=total)
+
+
+# ---------------------------------------------------------------------------
+# Admin: reset one buyer's run quota for one framework — e.g. for a demo
+# account, or as a support courtesy. Never touches TestRun history (see
+# TestQuotaReset's docstring for why a hard delete is the wrong tool here).
+# ---------------------------------------------------------------------------
+
+
+@admin_router.post(
+    "/frameworks/{slug}/reset-quota",
+    response_model=AdminResetQuotaResponse,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def admin_reset_quota(
+    slug: str,
+    payload: AdminResetQuotaRequest,
+    svc: TestExecutionService = Depends(get_service),
+):
+    try:
+        result = svc.reset_quota(user_email=payload.userEmail, slug=slug)
+    except UserNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user with this email")
+    except FrameworkNotRunnableError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
+    return AdminResetQuotaResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# Admin: approve/revoke a non-default git ref for a buyer — see
+# TestApprovedRef's docstring. Lets a buyer with push access to their own
+# branch (the "clone the framework, contribute on a branch" flow) run that
+# branch from the dashboard only once an admin has reviewed and approved it.
+# ---------------------------------------------------------------------------
+
+
+@admin_router.post(
+    "/frameworks/{slug}/approved-refs",
+    response_model=AdminApproveRefResponse,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def admin_approve_ref(
+    slug: str,
+    payload: AdminApproveRefRequest,
+    svc: TestExecutionService = Depends(get_service),
+):
+    try:
+        result = svc.admin_approve_ref(
+            user_email=payload.userEmail, slug=slug, ref=payload.ref, label=payload.label,
+        )
+    except UserNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user with this email")
+    except FrameworkNotRunnableError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
+    return AdminApproveRefResponse(**result)
+
+
+@admin_router.delete(
+    "/frameworks/{slug}/approved-refs",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permission("catalog.manage"))],
+)
+def admin_revoke_ref(
+    slug: str,
+    payload: AdminRevokeRefRequest,
+    svc: TestExecutionService = Depends(get_service),
+):
+    try:
+        svc.admin_revoke_ref(user_email=payload.userEmail, slug=slug, ref=payload.ref)
+    except UserNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user with this email")
+    except FrameworkNotRunnableError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No runnable framework with this slug")
+    except ApprovedRefNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such approved ref for this user")

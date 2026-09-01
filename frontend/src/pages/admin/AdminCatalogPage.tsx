@@ -116,8 +116,10 @@ function AdminCatalogItemsPanel() {
     pendingCoverKey: string | null = null,
   ) => {
     if (existingId) {
+      // `type` stays fixed once created — `slug` is editable (see
+      // AdminCatalogItemModal), so it's intentionally kept in `rest` here.
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { type: _t, slug: _s, ...rest } = values
+      const { type: _t, ...rest } = values
       await updateAdminCatalogItem(existingId, rest)
       if (imageFile) await uploadCatalogItemImage(existingId, imageFile)
       return

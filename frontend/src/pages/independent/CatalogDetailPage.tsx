@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import {
   ArrowLeft,
   Check,
@@ -152,13 +152,33 @@ export function CatalogDetailPage() {
     enabled: Boolean(slug),
   })
 
+  // Checkout now opens in a new tab (buyOrCheckoutCatalogItem), so this tab
+  // never navigates away and never reloads on its own — without this, an
+  // item bought in the other tab would keep showing "Comprar" here until a
+  // manual refresh. Re-checking whenever the user comes back to this tab
+  // (switching back, or closing the checkout tab) picks up the purchase as
+  // soon as the webhook has granted it, with no extra UI needed. Harmless
+  // to run for an already-purchased or still-loading item — invalidate
+  // just marks the query stale, it only refetches while this tab is
+  // mounted and visible.
+  useEffect(() => {
+    if (!slug) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        qc.invalidateQueries({ queryKey: ['consumer-catalog', slug] })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [slug, qc])
+
   const favMutation = useMutation({
     mutationFn: () => toggleCatalogFavorite(slug!),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['consumer-catalog', slug] }),
   })
 
   const buyMutation = useMutation({
-    mutationFn: () => buyOrCheckoutCatalogItem(slug!, query.data?.price),
+    mutationFn: () => buyOrCheckoutCatalogItem(slug!, query.data?.price, language),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['consumer-catalog', slug] }),
   })
 
@@ -231,6 +251,8 @@ export function CatalogDetailPage() {
           <ImageCarousel
             images={item.images ?? []}
             fallbackUrl={item.imageUrl}
+            fit="contain"
+            zoomable
             aspectClassName={cn('border border-white/10', catalogImageAspectClass(catalogType))}
             overlay={
               <>
@@ -458,6 +480,12 @@ export function CatalogDetailPage() {
           }
           closeLabel={t('catalog.resource.close')}
           className={viewerMaximized ? 'h-[92vh] w-[96vw] max-w-none' : 'max-w-6xl'}
+          // Modal already renders its own maximize toggle by default — this
+          // title has its own (next to the file path, wired to
+          // viewerMaximized so it also resizes the DocxViewer/XlsxViewer/
+          // PdfViewer/MarkdownViewer scroll area below, not just the outer
+          // dialog frame). Without this, both showed up side by side.
+          allowFullscreen={false}
         >
           {contentQuery.isLoading ? (
             <Skeleton className="h-64 w-full rounded-lg" />

@@ -10,6 +10,7 @@ import { Sidebar } from './Sidebar'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import { UnverifiedEmailBanner } from './UnverifiedEmailBanner'
 import { TwoFactorGraceModal } from './TwoFactorGraceModal'
+import { SessionExpiryModal } from './SessionExpiryModal'
 import { SuspendedAccountGate } from './SuspendedAccountGate'
 import { RouteLoadingFallback } from './RouteLoadingFallback'
 
@@ -40,6 +41,7 @@ export function AppLayout() {
         <ImpersonationBanner />
         <UnverifiedEmailBanner />
         <TwoFactorGraceModal />
+        <SessionExpiryModal />
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 outline-none sm:px-6 lg:px-8 lg:py-7">
           <div className="w-full min-w-0">
             <Suspense fallback={<RouteLoadingFallback />}>

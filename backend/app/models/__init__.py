@@ -49,6 +49,8 @@ from app.models.blog_share import BlogShare
 from app.models.api_credential import ApiCredential
 from app.models.test_run import TestRun
 from app.models.test_execution_config import TestExecutionConfig
+from app.models.test_quota_reset import TestQuotaReset
+from app.models.test_approved_ref import TestApprovedRef
 from app.models.consulting_slot import ConsultingSlot
 
 __all__ = [
@@ -103,6 +105,8 @@ __all__ = [
     "ApiCredential",
     "TestRun",
     "TestExecutionConfig",
+    "TestQuotaReset",
+    "TestApprovedRef",
     "ConsultingSlot",
 ]
 

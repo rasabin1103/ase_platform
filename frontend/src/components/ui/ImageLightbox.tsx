@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 type Props = {
@@ -31,7 +32,14 @@ export function ImageLightbox({ src, alt = '', onClose }: Props) {
 
   if (!src) return null
 
-  return (
+  // Rendered into document.body via a portal rather than inline where the
+  // component is used — inline would put `fixed inset-0` inside whatever
+  // ancestor happens to be there, and any ancestor with a CSS transform
+  // (e.g. a card's `hover:-translate-y-1` or `group-hover:scale-...`)
+  // turns into a new containing block for fixed-position descendants,
+  // silently breaking full-viewport centering. A portal sidesteps that
+  // regardless of where the trigger image lives in the tree.
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
       onClick={onClose}
@@ -54,6 +62,7 @@ export function ImageLightbox({ src, alt = '', onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="max-h-[90vh] max-w-[92vw] cursor-zoom-out rounded-lg object-contain shadow-2xl"
       />
-    </div>
+    </div>,
+    document.body,
   )
 }

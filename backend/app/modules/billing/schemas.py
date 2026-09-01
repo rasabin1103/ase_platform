@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -35,6 +37,14 @@ class CheckoutSessionResponse(BaseModel):
 
 class CatalogCheckoutSessionCreate(BaseModel):
     item_slug: str
+    # Which language the app was showing when the buyer clicked "Comprar" —
+    # picks title_en/short_description_en vs the base (Spanish) fields for
+    # the Stripe Checkout line item. Optional and defaults to Spanish
+    # server-side: this only affects product_data text and never anything
+    # security- or price-relevant, so an old frontend build that doesn't
+    # send it yet just gets the previous (Spanish) behavior instead of a
+    # validation error.
+    language: Literal["es", "en"] | None = None
 
 
 class CatalogCheckoutSessionResponse(BaseModel):

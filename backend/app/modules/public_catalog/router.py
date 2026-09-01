@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.media_urls import catalog_has_stored_image
 from app.modules.plans.schemas import PlanListResponse, PlanRead
 from app.modules.public_catalog.schemas import (
     CaseStudyPublic,
@@ -14,6 +16,7 @@ from app.modules.public_catalog.schemas import (
 from app.modules.public_catalog.service import (
     get_catalog_stats,
     get_public_pricing_plans,
+    get_published_catalog_item_or_404,
     list_active_case_studies,
     list_active_team_members,
     list_active_testimonials,
@@ -63,3 +66,16 @@ def read_public_testimonials(db: Session = Depends(get_db)) -> list[TestimonialP
 def read_public_case_studies(db: Session = Depends(get_db)) -> list[CaseStudyPublic]:
     """Active (confirmed real) case studies only — no auth."""
     return [CaseStudyPublic.model_validate(c) for c in list_active_case_studies(db)]
+
+
+@router.get("/catalog-cover/{item_id}", tags=["public"])
+def read_public_catalog_cover_image(item_id: int, db: Session = Depends(get_db)) -> Response:
+    """Binary cover image for a published catalog item — no auth. Exists
+    solely so a third party with no session of its own (Stripe, fetching a
+    Checkout line item's product image) can load it; the app's own <img>
+    tags keep using the authenticated /media/catalog/{id}/image instead. See
+    media_urls.resolve_catalog_stripe_image_url."""
+    item = get_published_catalog_item_or_404(db, item_id)
+    if not catalog_has_stored_image(item):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    return Response(content=bytes(item.image_data), media_type=item.image_mime or "image/jpeg")

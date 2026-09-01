@@ -24,6 +24,7 @@ import {
   getTestRunReport,
   getTestRunSummary,
   listApiCredentials,
+  listApprovedRefs,
   listFrameworkScenarios,
   listMyTestRuns,
   listRunnableFrameworks,
@@ -33,6 +34,7 @@ import {
   triggerTestRun,
   updateFrameworkScenario,
   type ApiCredentialCreateResponse,
+  type DynamicRequestDetail,
   type RunnableFramework,
   type TestRunConclusion,
   type TestRunStatus,
@@ -44,6 +46,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Pagination } from '../../components/ui/Pagination'
+import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
@@ -87,6 +90,15 @@ function ProgressBar({ percent }: { percent: number }) {
   )
 }
 
+function isValidJson(text: string): boolean {
+  try {
+    JSON.parse(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
 type FrameworkRunPanelProps = {
   framework: RunnableFramework
   onTriggered: () => void
@@ -106,6 +118,18 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
   const scenariosKey = ['test-execution-scenarios', framework.slug]
   const scenariosQuery = useQuery({ queryKey: scenariosKey, queryFn: () => listFrameworkScenarios(framework.slug) })
   const scenarios = scenariosQuery.data ?? []
+
+  // Admin-approved branches this buyer may run instead of the default
+  // branch (see TestApprovedRef) — the "clone the framework, push a
+  // branch, get it reviewed" flow. Empty for everyone until an admin
+  // approves at least one ref, so the selector below only ever appears
+  // once there's actually a choice to make.
+  const approvedRefsQuery = useQuery({
+    queryKey: ['test-execution-approved-refs', framework.slug],
+    queryFn: () => listApprovedRefs(framework.slug),
+  })
+  const approvedRefs = approvedRefsQuery.data ?? []
+  const [selectedRef, setSelectedRef] = useState<string>('')
 
   const [scenarioUuid, setScenarioUuid] = useState<string | null>(null)
   // Auto-pick the default (or first) scenario once the list loads for this
@@ -135,8 +159,10 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
           type: f.type,
           required: f.required,
           description: f.description ?? null,
+          options: f.options ?? null,
+          default: f.default ?? null,
           hasValue: false,
-          value: null as string | null,
+          value: f.type !== 'secret' && f.default ? f.default : (null as string | null),
         }))
   const valuesLoading = scenarioUuid !== null && scenarioDetailQuery.isLoading
 
@@ -195,7 +221,7 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
   const runMut = useMutation({
     mutationFn: async () => {
       const uuid = await ensureScenario(buildPayload())
-      return triggerTestRun(framework.slug, { scenarioUuid: uuid })
+      return triggerTestRun(framework.slug, { scenarioUuid: uuid, ref: selectedRef || undefined })
     },
     onSuccess: () => {
       invalidateScenario()
@@ -232,6 +258,12 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
     },
   })
 
+  const hasInvalidJson = values.some((v) => {
+    if (v.type !== 'json') return false
+    const raw = draft[v.key] ?? ''
+    return raw.trim() !== '' && !isValidJson(raw)
+  })
+
   const canRun = framework.remainingRuns > 0
   const remainingLabel = String(t('testExecution.panel.remaining'))
     .replace('{{remaining}}', String(framework.remainingRuns))
@@ -245,10 +277,44 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
     setDefaultScenarioMut.isPending ||
     deleteScenarioMut.isPending
 
+  // Tooltip text explaining why a disabled action button can't be used right
+  // now — checked in priority order (a quota block is more informative than
+  // a generic "busy" message, for example). Returns undefined when the
+  // button is actually enabled, so callers can pass it straight to `title`.
+  const runDisabledReason = (): string | undefined => {
+    if (!canRun) return t('testExecution.panel.disabledQuota') as string
+    if (hasInvalidJson) return t('testExecution.panel.disabledInvalidJson') as string
+    if (valuesLoading) return t('testExecution.panel.disabledLoading') as string
+    if (busy) return t('testExecution.panel.disabledBusy') as string
+    return undefined
+  }
+
+  const saveDisabledReason = (): string | undefined => {
+    if (hasInvalidJson) return t('testExecution.panel.disabledInvalidJson') as string
+    if (valuesLoading) return t('testExecution.panel.disabledLoading') as string
+    if (busy) return t('testExecution.panel.disabledBusy') as string
+    return undefined
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-ase-text2">{t('testExecution.panel.hint')}</p>
       <p className="text-xs text-ase-muted">{remainingLabel}</p>
+
+      {/* --- Version picker (original vs. an admin-approved branch) ------ */}
+      {approvedRefs.length > 0 ? (
+        <label className="block max-w-xs">
+          <span className="mb-1 block text-xs text-ase-muted">{t('testExecution.panel.versionLabel')}</span>
+          <Select value={selectedRef} onChange={(e) => setSelectedRef(e.target.value)}>
+            <option value="">{t('testExecution.panel.versionOriginal')}</option>
+            {approvedRefs.map((r) => (
+              <option key={r.ref} value={r.ref}>
+                {r.label || r.ref}
+              </option>
+            ))}
+          </Select>
+        </label>
+      ) : null}
 
       {/* --- Scenario picker --------------------------------------------- */}
       <div>
@@ -260,6 +326,7 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
             variant="ghost"
             size="sm"
             disabled={busy}
+            title={busy ? (t('testExecution.panel.disabledBusy') as string) : undefined}
             onClick={() => {
               const name = window.prompt(t('testExecution.scenarios.addPrompt') as string)
               if (name && name.trim()) addScenarioMut.mutate(name.trim())
@@ -361,24 +428,54 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
         <p className="text-sm text-ase-muted">{t('testExecution.config.empty')}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {values.map((v) => (
-            <label key={v.key} className="block">
-              <span className="mb-1 block text-xs text-ase-muted">
-                {v.label}
-                {v.required ? <span className="text-ase-error"> *</span> : null}
-              </span>
-              <Input
-                type={v.type === 'secret' ? 'password' : 'text'}
-                placeholder={v.type === 'secret' && v.hasValue ? (t('testExecution.config.alreadySet') as string) : ''}
-                value={draft[v.key] ?? ''}
-                onChange={(e) => {
-                  setDraft((prev) => ({ ...prev, [v.key]: e.target.value }))
-                  if (v.type === 'secret') setTouchedSecrets((prev) => ({ ...prev, [v.key]: true }))
-                }}
-              />
-              {v.description ? <p className="mt-1 text-[11px] leading-snug text-ase-muted">{v.description}</p> : null}
-            </label>
-          ))}
+          {values.map((v) => {
+            const rawValue = draft[v.key] ?? ''
+            const jsonError = v.type === 'json' && rawValue.trim() !== '' ? isValidJson(rawValue) : true
+            return (
+              <label key={v.key} className={`block ${v.type === 'json' ? 'sm:col-span-2' : ''}`}>
+                <span className="mb-1 block text-xs text-ase-muted">
+                  {v.label}
+                  {v.required ? <span className="text-ase-error"> *</span> : null}
+                </span>
+                {v.type === 'choice' ? (
+                  <Select
+                    value={rawValue}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, [v.key]: e.target.value }))}
+                  >
+                    <option value="">—</option>
+                    {(v.options ?? []).map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt || '—'}
+                      </option>
+                    ))}
+                  </Select>
+                ) : v.type === 'json' ? (
+                  <>
+                    <textarea
+                      rows={3}
+                      className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-xs text-ase-text focus:border-ase-brand/40 focus:outline-none"
+                      value={rawValue}
+                      onChange={(e) => setDraft((prev) => ({ ...prev, [v.key]: e.target.value }))}
+                    />
+                    {!jsonError ? (
+                      <p className="mt-1 text-[11px] text-ase-error">{t('testExecution.config.invalidJson')}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <Input
+                    type={v.type === 'secret' ? 'password' : 'text'}
+                    placeholder={v.type === 'secret' && v.hasValue ? (t('testExecution.config.alreadySet') as string) : ''}
+                    value={rawValue}
+                    onChange={(e) => {
+                      setDraft((prev) => ({ ...prev, [v.key]: e.target.value }))
+                      if (v.type === 'secret') setTouchedSecrets((prev) => ({ ...prev, [v.key]: true }))
+                    }}
+                  />
+                )}
+                {v.description ? <p className="mt-1 text-[11px] leading-snug text-ase-muted">{v.description}</p> : null}
+              </label>
+            )
+          })}
         </div>
       )}
 
@@ -395,13 +492,19 @@ function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelProps) {
 
       <div className="flex flex-wrap justify-end gap-2">
         {values.length > 0 ? (
-          <Button variant="secondary" onClick={() => saveMut.mutate()} disabled={busy || valuesLoading}>
+          <Button
+            variant="secondary"
+            onClick={() => saveMut.mutate()}
+            disabled={busy || valuesLoading || hasInvalidJson}
+            title={saveDisabledReason()}
+          >
             {saveMut.isPending ? t('testExecution.config.saving') : t('testExecution.config.save')}
           </Button>
         ) : null}
         <Button
           onClick={() => runMut.mutate()}
-          disabled={!canRun || busy || valuesLoading}
+          disabled={!canRun || busy || valuesLoading || hasInvalidJson}
+          title={runDisabledReason()}
           leftIcon={<PlayCircle className="h-4 w-4" strokeWidth={1.75} />}
         >
           {runMut.isPending ? t('testExecution.frameworks.triggering') : t('testExecution.frameworks.tryNow')}
@@ -445,6 +548,94 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-wide text-ase-muted">{label}</div>
       <div className="text-sm font-medium text-ase-text">{value}</div>
+    </div>
+  )
+}
+
+// Pretty-prints an arbitrary JSON-ish value (or shows it as-is if it's
+// already a plain string, e.g. a non-JSON response body) — shared by the
+// dynamic-request card's params/body/response blocks below.
+function JsonBlock({ value }: { value: unknown }) {
+  if (value === null || value === undefined) return <span className="text-ase-muted">—</span>
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+  return (
+    <pre className="max-h-64 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-snug text-ase-text2">
+      {text}
+    </pre>
+  )
+}
+
+const DYNAMIC_RESULT_BADGE: Record<string, 'default' | 'info' | 'success' | 'warning' | 'error'> = {
+  PASSED: 'success',
+  FAILED: 'error',
+  REPORTED: 'info',
+}
+
+/** Renders the buyer's arbitrary-endpoint call (method/url/status/body) as
+ * its own card, parsed server-side from the `request_result.json` artifact
+ * their test_dynamic_request.py produces — see
+ * TestExecutionService._get_dynamic_request_detail. Only rendered when that
+ * artifact exists for this run (health-only runs, or frameworks whose repo
+ * doesn't produce one, simply don't show this section). */
+function DynamicRequestCard({ detail }: { detail: DynamicRequestDetail }) {
+  const { t } = useI18n()
+  const statusTone = detail.statusCode >= 200 && detail.statusCode < 300 ? 'success' : detail.statusCode >= 400 ? 'error' : 'warning'
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-ase-text">{t('testExecution.report.dynamicRequest.title')}</h3>
+        <div className="flex items-center gap-2">
+          <Badge variant={statusTone}>{detail.statusCode}</Badge>
+          <Badge variant={DYNAMIC_RESULT_BADGE[detail.result] ?? 'default'}>
+            {t(`testExecution.report.dynamicRequest.result.${detail.result}`) as string}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-xs">
+        <span className="rounded-md bg-white/10 px-2 py-1 font-semibold uppercase text-ase-text">{detail.method}</span>
+        <span className="truncate text-ase-text2">{detail.url}</span>
+      </div>
+
+      <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {detail.elapsedMs !== null ? (
+          <MiniStat label={t('testExecution.report.dynamicRequest.elapsed') as string} value={`${Math.round(detail.elapsedMs)} ms`} />
+        ) : null}
+        {detail.expectedStatus !== null ? (
+          <MiniStat label={t('testExecution.report.dynamicRequest.expectedStatus') as string} value={String(detail.expectedStatus)} />
+        ) : null}
+      </div>
+
+      {detail.schemaError ? (
+        <div className="mb-3 rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-xs text-ase-error">
+          {t('testExecution.report.dynamicRequest.schemaError')}: {detail.schemaError}
+        </div>
+      ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {detail.body != null ? (
+          <div>
+            <div className="mb-1 text-[11px] uppercase tracking-wide text-ase-muted">
+              {t('testExecution.report.dynamicRequest.requestBody')}
+            </div>
+            <JsonBlock value={detail.body} />
+          </div>
+        ) : null}
+        {detail.params != null ? (
+          <div>
+            <div className="mb-1 text-[11px] uppercase tracking-wide text-ase-muted">
+              {t('testExecution.report.dynamicRequest.requestParams')}
+            </div>
+            <JsonBlock value={detail.params} />
+          </div>
+        ) : null}
+        <div className="sm:col-span-2">
+          <div className="mb-1 text-[11px] uppercase tracking-wide text-ase-muted">
+            {t('testExecution.report.dynamicRequest.responseBody')}
+          </div>
+          <JsonBlock value={detail.responseBody} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -576,6 +767,8 @@ function RunReportModal({ runUuid, onClose }: RunReportModalProps) {
             ) : (
               <p className="text-sm text-ase-muted">{t('testExecution.report.noSummary')}</p>
             )}
+
+            {s.dynamicRequest ? <DynamicRequestCard detail={s.dynamicRequest} /> : null}
 
             <div>
               <h3 className="mb-2 text-sm font-semibold text-ase-text">{t('testExecution.report.jobs')}</h3>
@@ -916,6 +1109,13 @@ export function TestExecutionPage() {
               <Button
                 type="submit"
                 disabled={!newCredentialName.trim() || createMut.isPending}
+                title={
+                  createMut.isPending
+                    ? (t('testExecution.credentials.createDisabledBusy') as string)
+                    : !newCredentialName.trim()
+                      ? (t('testExecution.credentials.createDisabledEmpty') as string)
+                      : undefined
+                }
                 leftIcon={<PlusCircle className="h-4 w-4" strokeWidth={1.75} />}
               >
                 {t('testExecution.credentials.create')}

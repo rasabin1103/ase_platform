@@ -75,6 +75,38 @@ def resolve_catalog_cover_url(item: CatalogItem) -> str:
     return resolve_catalog_image_url(item)
 
 
+# --- Catalog cover image, public variant (unauthenticated) ------------------
+# The catalog's own /media/catalog/{id}/image is gated behind catalog.read on
+# purpose (see module docstring above) — fine for the app's own <img> tags,
+# which always carry an auth token, but useless to a third party fetching the
+# URL directly with no session of its own. Stripe Checkout is exactly that:
+# it fetches `images` server-side to render the product on its hosted page.
+# This dedicated public path exists only for that (and anything similar
+# later), mirroring the public blog cover pattern right below.
+
+
+def catalog_cover_image_public_path(item_id: int) -> str:
+    return f"/api/v1/public/catalog-cover/{item_id}"
+
+
+def resolve_catalog_stripe_image_url(item: CatalogItem, *, backend_public_url: str | None) -> str | None:
+    """Best-effort absolute, publicly-fetchable image URL for a catalog item,
+    suitable for Stripe's Checkout `product_data.images`. Returns None rather
+    than a URL Stripe can't actually reach:
+    - a stored image (image_data) needs BACKEND_PUBLIC_URL configured, since
+      it can only be served from this backend's own public endpoint;
+    - a legacy external image_url is used as-is only if it's already an
+      absolute http(s) URL (an admin could in theory have entered something
+      else historically)."""
+    if catalog_has_stored_image(item):
+        if not backend_public_url:
+            return None
+        return f"{backend_public_url.rstrip('/')}{catalog_cover_image_public_path(item.id)}"
+    if item.image_url and item.image_url.startswith(("http://", "https://")):
+        return item.image_url
+    return None
+
+
 # --- Blog cover image (public, unauthenticated) -----------------------------
 # Served from a dedicated public path (not /api/v1/media/...) because that
 # router is gated behind `catalog.read`, while the blog is meant to be

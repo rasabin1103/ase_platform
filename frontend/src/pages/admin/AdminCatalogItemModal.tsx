@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
+import { MarkdownField } from '../../components/admin/premium/MarkdownField'
 import { CatalogGalleryManager } from '../../components/admin/premium/CatalogGalleryManager'
 import { CatalogGalleryPicker, type PendingGalleryImage } from '../../components/admin/premium/CatalogGalleryPicker'
 import { PricingEngineSection } from '../../components/admin/premium/PricingEngineSection'
@@ -100,7 +101,24 @@ function variableKeySlug(text: string) {
     .slice(0, 100)
 }
 
-const emptyVariable: TestInputVariableDef = { key: '', label: '', type: 'text', required: false, description: '' }
+const emptyVariable: TestInputVariableDef = {
+  key: '', label: '', type: 'text', required: false, description: '', options: [], default: '',
+}
+
+/** `options` is stored as a `string[]`, but the admin edits it as one
+ * comma-separated line — simplest input for a short fixed list like HTTP
+ * methods, and matches how CategoryFieldDef's own `select` options editor
+ * works elsewhere in this same file. */
+function optionsToText(options: string[] | null | undefined): string {
+  return (options ?? []).join(', ')
+}
+
+function textToOptions(text: string): string[] {
+  return text
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0)
+}
 
 export function AdminCatalogItemModal({
   open,
@@ -320,6 +338,8 @@ export function AdminCatalogItemModal({
           uploadLabel={t('adminCatalog.uploadPhoto')}
           previewSrc={initial?.image_url}
           onFileSelect={setImageFile}
+          fit="contain"
+          zoomable
         />
         {isEdit && initial ? (
           <CatalogGalleryManager itemId={initial.id} />
@@ -357,18 +377,16 @@ export function AdminCatalogItemModal({
               <Input
                 className={cn(inputErrClass(Boolean(errors.slug)))}
                 {...form.register('slug', { required: requiredMsg })}
-                disabled={isEdit}
               />
-              {!isEdit ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => form.setValue('slug', slugify(titleWatch || ''))}
-                >
-                  →
-                </Button>
-              ) : null}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => form.setValue('slug', slugify(titleWatch || ''))}
+              >
+                →
+              </Button>
             </div>
+            {isEdit ? <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.slugEditHint')}</p> : null}
             <FieldError message={errors.slug?.message as string | undefined} />
           </label>
           <label className="block">
@@ -445,24 +463,17 @@ export function AdminCatalogItemModal({
               {t('adminCatalog.fields.longDescription')}
               <RequiredMark />
             </span>
-            <textarea
-              className={cn(
-                'w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text',
-                inputErrClass(Boolean(errors.long_description)),
-              )}
-              rows={4}
-              {...form.register('long_description', { required: requiredMsg })}
-            />
+            <MarkdownField form={form} name="long_description" rows={6} required requiredMessage={requiredMsg} hasError={Boolean(errors.long_description)} />
             <FieldError message={errors.long_description?.message as string | undefined} />
             <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.longDescriptionMarkdownHint')}</p>
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.longDescriptionEn')}</span>
-            <textarea
-              className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
-              rows={4}
+            <MarkdownField
+              form={form}
+              name="long_description_en"
+              rows={6}
               placeholder={t('adminCatalog.placeholders.longDescriptionEn') as string}
-              {...form.register('long_description_en')}
             />
             <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.translationHint')}</p>
           </label>
@@ -750,6 +761,8 @@ export function AdminCatalogItemModal({
                             >
                               <option value="text">{t('adminCatalog.testVariableTypes.text')}</option>
                               <option value="secret">{t('adminCatalog.testVariableTypes.secret')}</option>
+                              <option value="choice">{t('adminCatalog.testVariableTypes.choice')}</option>
+                              <option value="json">{t('adminCatalog.testVariableTypes.json')}</option>
                             </Select>
                           </label>
                           <label className="block">
@@ -763,6 +776,54 @@ export function AdminCatalogItemModal({
                             />
                           </label>
                         </div>
+                        {variable.type === 'choice' ? (
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.options')}
+                            </span>
+                            <Input
+                              placeholder={t('adminCatalog.testVariableFields.optionsPlaceholder') as string}
+                              value={optionsToText(variable.options)}
+                              onChange={(e) => updateTestVariable(index, { options: textToOptions(e.target.value) })}
+                            />
+                            <p className="mt-1 text-[11px] leading-snug text-ase-muted">
+                              {t('adminCatalog.testVariableFields.optionsHint')}
+                            </p>
+                          </label>
+                        ) : null}
+                        {variable.type !== 'secret' ? (
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] text-ase-muted">
+                              {t('adminCatalog.testVariableFields.default')}
+                            </span>
+                            {variable.type === 'json' ? (
+                              <textarea
+                                rows={2}
+                                className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-xs text-ase-text"
+                                placeholder={t('adminCatalog.testVariableFields.defaultJsonPlaceholder') as string}
+                                value={variable.default ?? ''}
+                                onChange={(e) => updateTestVariable(index, { default: e.target.value })}
+                              />
+                            ) : variable.type === 'choice' ? (
+                              <Select
+                                value={variable.default ?? ''}
+                                onChange={(e) => updateTestVariable(index, { default: e.target.value })}
+                              >
+                                <option value="">—</option>
+                                {(variable.options ?? []).map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt || '—'}
+                                  </option>
+                                ))}
+                              </Select>
+                            ) : (
+                              <Input
+                                value={variable.default ?? ''}
+                                onChange={(e) => updateTestVariable(index, { default: e.target.value })}
+                              />
+                            )}
+                          </label>
+                        ) : null}
                         <div className="flex items-center justify-between">
                           <label className="flex items-center gap-2 text-[11px] text-ase-muted">
                             <input

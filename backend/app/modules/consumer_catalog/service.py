@@ -304,7 +304,16 @@ class ConsumerCatalogService:
             favorite_slugs=self.favorite_slugs(user_id),
             purchased_slugs=self.purchased_slugs(user_id),
         )
-        return reads[0]
+        read = reads[0]
+        # _to_read's hasResourceContent only proves repo_path + a resolvable
+        # repo are configured, not that this specific viewer has anything to
+        # actually see — confirm it for real here, single-item page only
+        # (see _resource_content_exists).
+        if read.hasResourceContent:
+            owns = self._owns_resource(item, user_id=user_id)
+            if not self._resource_content_exists(item, owns=owns):
+                read = read.model_copy(update={"hasResourceContent": False})
+        return read
 
     def toggle_favorite(self, slug: str, *, user_id: int) -> CatalogItemRead:
         item = self._require_item(slug)
@@ -447,6 +456,50 @@ class ConsumerCatalogService:
                 detail="You must own this item (directly or via your plan) to access its content",
             )
         return item
+
+    def _resource_content_exists(self, item: CatalogItem, *, owns: bool) -> bool:
+        """Live check used only on the single-item detail page (never on the
+        list — one GitHub call per browsed item is fine, one per catalog row
+        is not) to catch the case an admin has typed a repo_path but never
+        actually uploaded anything there: hasResourceContent from _to_read
+        only proves repo_path + a resolvable repo are both set, not that
+        *this viewer* has anything to actually see.
+
+        Ownership-aware, because get_resource_content itself is: an owner
+        can see whatever's in the main folder, so "the folder isn't empty"
+        is close enough to every one of that method's owner-branch matchers
+        without duplicating all of them here. A non-owner of a priced item
+        can only ever be served a preview — a preview*.pdf sitting directly
+        in the folder (or, for a book, anything inside its "preview"
+        subfolder) — never the owner's full content, so hasResourceContent
+        must check for exactly that, or "Ver muestra" renders for every
+        priced item with *any* content at all and then 403s "you must own
+        this item" on click for anyone who hasn't bought it and the admin
+        never uploaded a preview for.
+
+        A clean 404 (path doesn't exist) means nothing to show — hide the
+        button. Any other failure (missing token, GitHub outage) fails open
+        (assume content exists) so a transient/config issue never wrongly
+        hides a button that's actually fine; the content endpoint itself
+        still errors clearly if someone does click through during an
+        outage."""
+        if not settings.GITHUB_ACCESS_TOKEN:
+            return True
+        repo_url = self._resolve_repo_url(item)
+        is_book = item.type == CatalogItemType.book
+        path = f"{item.repo_path.rstrip('/')}/preview" if (not owns and is_book) else item.repo_path
+        try:
+            entries = list_directory(repo_url=repo_url, path=path, token=settings.GITHUB_ACCESS_TOKEN)
+        except GithubContentError as exc:
+            if exc.status_code == 404:
+                return False
+            return True
+        if owns or is_book:
+            return bool(entries)
+        return any(
+            entry.get("type") == "file" and _looks_like_preview_pdf(str(entry.get("name", "")))
+            for entry in entries
+        )
 
     @staticmethod
     def _require_github_token() -> str:

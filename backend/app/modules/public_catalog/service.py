@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from datetime import datetime
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -178,6 +179,21 @@ def list_active_testimonials(db: Session) -> list[Testimonial]:
         .scalars()
         .all()
     )
+
+
+def get_published_catalog_item_or_404(db: Session, item_id: int) -> CatalogItem:
+    """Used by the cover-image endpoint — only a published item's image is
+    servable without auth, matching get_published_post_or_404's rationale for
+    the blog (no probing/leaking a draft's cover by id)."""
+    item = db.execute(
+        select(CatalogItem).where(
+            CatalogItem.id == item_id,
+            CatalogItem.status == CatalogItemStatus.published,
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    return item
 
 
 def list_active_case_studies(db: Session) -> list[CaseStudy]:

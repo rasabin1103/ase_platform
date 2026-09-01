@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import re
 import zipfile
 from datetime import datetime, timezone
@@ -17,7 +18,10 @@ from app.models.api_credential import ApiCredential
 from app.models.catalog_item import CatalogItem
 from app.models.enums import ApiCredentialStatus, TestRunStatus
 from app.models.test_execution_config import TestExecutionConfig
+from app.models.test_approved_ref import TestApprovedRef
+from app.models.test_quota_reset import TestQuotaReset
 from app.models.test_run import TestRun
+from app.models.user import User
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 
 # GitHub Actions' own run.status values, mapped onto our TestRunStatus —
@@ -86,6 +90,27 @@ class QuotaExceededError(TestExecutionError):
 
 class RunNotFoundError(TestExecutionError):
     pass
+
+
+class UserNotFoundError(TestExecutionError):
+    """No user with the given email — raised by the admin reset-quota flow,
+    which looks a buyer up by email rather than internal id."""
+
+
+class RefNotApprovedError(TestExecutionError):
+    """Raised when a trigger call names a git ref other than the repo's
+    default branch, and that (user, catalog_item, ref) combination has no
+    matching TestApprovedRef row. The default branch (ref omitted) never
+    hits this check — only ever relevant once a buyer has push access to
+    their own branches and might otherwise dispatch an unreviewed one."""
+
+    def __init__(self, ref: str):
+        super().__init__(f"Ref not approved for this user/framework: {ref!r}")
+        self.ref = ref
+
+
+class ApprovedRefNotFoundError(TestExecutionError):
+    """No TestApprovedRef row matches — raised by the admin revoke flow."""
 
 
 class ReportNotFoundError(TestExecutionError):
@@ -210,7 +235,122 @@ class TestExecutionService:
             # a run — see TestExecutionError docstrings / TestRun model.
             TestRun.status != TestRunStatus.failed_to_dispatch,
         )
+        # An admin-granted reset (see TestQuotaReset / reset_quota below)
+        # only ever narrows the count going forward — pre-reset runs stay in
+        # the buyer's history (list_runs isn't touched) but stop counting
+        # against the quota once a reset exists for this pair.
+        reset_at = self._quota_reset_at(user_id=user_id, catalog_item_id=catalog_item_id)
+        if reset_at is not None:
+            stmt = stmt.where(TestRun.created_at >= reset_at)
         return int(self.db.execute(stmt).scalar_one())
+
+    def _quota_reset_at(self, *, user_id: int, catalog_item_id: int) -> datetime | None:
+        stmt = select(TestQuotaReset.reset_at).where(
+            TestQuotaReset.user_id == user_id, TestQuotaReset.catalog_item_id == catalog_item_id,
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def reset_quota(self, *, user_email: str, slug: str) -> dict:
+        """Admin action: gives one buyer a fresh batch of runs for one
+        framework, without touching their TestRun history (see
+        TestQuotaReset's docstring for why a hard delete is the wrong tool
+        here). Upserts the (user, catalog_item) row rather than inserting a
+        new one each time — only the single most recent reset matters."""
+        user = self.db.execute(select(User).where(User.email == user_email)).scalar_one_or_none()
+        if user is None:
+            raise UserNotFoundError(user_email)
+
+        item = self.db.execute(
+            select(CatalogItem).where(CatalogItem.slug == slug, CatalogItem.test_workflow_file.isnot(None)),
+        ).scalar_one_or_none()
+        if item is None:
+            raise FrameworkNotRunnableError(slug)
+
+        existing = self.db.execute(
+            select(TestQuotaReset).where(
+                TestQuotaReset.user_id == user.id, TestQuotaReset.catalog_item_id == item.id,
+            ),
+        ).scalar_one_or_none()
+        now = datetime.now(timezone.utc)
+        if existing is not None:
+            existing.reset_at = now
+        else:
+            self.db.add(TestQuotaReset(user_id=user.id, catalog_item_id=item.id, reset_at=now))
+        self.db.commit()
+
+        return {
+            "slug": item.slug,
+            "userEmail": user.email,
+            "includedRuns": item.test_included_runs or 0,
+            "usedRuns": self._used_runs(user_id=user.id, catalog_item_id=item.id),
+        }
+
+    # --- Approved-ref allowlist (buyer-branch review workflow) --------------
+
+    def _is_ref_approved(self, *, user_id: int, catalog_item_id: int, ref: str) -> bool:
+        stmt = select(TestApprovedRef.id).where(
+            TestApprovedRef.user_id == user_id,
+            TestApprovedRef.catalog_item_id == catalog_item_id,
+            TestApprovedRef.ref == ref,
+        )
+        return self.db.execute(stmt).scalar_one_or_none() is not None
+
+    def list_approved_refs(self, *, user_id: int, slug: str) -> list[dict]:
+        """Buyer-facing: every ref an admin has approved for them on this
+        framework, so the private dashboard can offer a "version" picker
+        (the default branch is always implicitly available and isn't
+        represented by a row here)."""
+        item = self._get_runnable_item(slug)
+        stmt = select(TestApprovedRef).where(
+            TestApprovedRef.user_id == user_id, TestApprovedRef.catalog_item_id == item.id,
+        ).order_by(TestApprovedRef.approved_at.desc())
+        rows = self.db.execute(stmt).scalars().all()
+        return [{"ref": r.ref, "label": r.label, "approvedAt": r.approved_at} for r in rows]
+
+    def admin_approve_ref(self, *, user_email: str, slug: str, ref: str, label: str | None = None) -> dict:
+        """Admin action: lets one buyer dispatch this framework against
+        `ref` (typically their own reviewed branch) in addition to the
+        default branch. Upserts on (user, item, ref) — re-approving the
+        same ref just refreshes its label/timestamp rather than erroring."""
+        user = self.db.execute(select(User).where(User.email == user_email)).scalar_one_or_none()
+        if user is None:
+            raise UserNotFoundError(user_email)
+        item = self._get_runnable_item(slug)
+
+        existing = self.db.execute(
+            select(TestApprovedRef).where(
+                TestApprovedRef.user_id == user.id,
+                TestApprovedRef.catalog_item_id == item.id,
+                TestApprovedRef.ref == ref,
+            ),
+        ).scalar_one_or_none()
+        now = datetime.now(timezone.utc)
+        if existing is not None:
+            existing.label = label
+            existing.approved_at = now
+        else:
+            self.db.add(
+                TestApprovedRef(user_id=user.id, catalog_item_id=item.id, ref=ref, label=label, approved_at=now),
+            )
+        self.db.commit()
+        return {"slug": item.slug, "userEmail": user.email, "ref": ref, "label": label}
+
+    def admin_revoke_ref(self, *, user_email: str, slug: str, ref: str) -> None:
+        user = self.db.execute(select(User).where(User.email == user_email)).scalar_one_or_none()
+        if user is None:
+            raise UserNotFoundError(user_email)
+        item = self._get_runnable_item(slug)
+        row = self.db.execute(
+            select(TestApprovedRef).where(
+                TestApprovedRef.user_id == user.id,
+                TestApprovedRef.catalog_item_id == item.id,
+                TestApprovedRef.ref == ref,
+            ),
+        ).scalar_one_or_none()
+        if row is None:
+            raise ApprovedRefNotFoundError(ref)
+        self.db.delete(row)
+        self.db.commit()
 
     def list_runnable_frameworks(self, *, user_id: int) -> list[dict]:
         # Every product with a workflow configured is a candidate — free
@@ -309,6 +449,11 @@ class TestExecutionService:
                     # raising, so the "Configurar" form still opens and the
                     # buyer can just re-enter the value.
                     has_value = False
+            # A field with a schema-level default is prefilled for the buyer
+            # even before they've saved anything, so the form never opens on
+            # a blank required field the admin already told us how to fill.
+            if not has_value and value is None and field.get("default"):
+                value = field.get("default")
             result.append(
                 {
                     "key": key,
@@ -316,6 +461,8 @@ class TestExecutionService:
                     "type": field.get("type", "text"),
                     "required": bool(field.get("required", False)),
                     "description": field.get("description"),
+                    "options": field.get("options"),
+                    "default": field.get("default"),
                     "hasValue": has_value,
                     "value": value,
                 }
@@ -462,8 +609,12 @@ class TestExecutionService:
             if ciphertext is not None:
                 try:
                     resolved[key] = decrypt_value(ciphertext)
-                except DecryptionError:
                     continue
+                except DecryptionError:
+                    pass
+            default = field.get("default")
+            if default:
+                resolved[key] = default
 
         missing = [
             f.get("key", "") for f in schema
@@ -501,6 +652,12 @@ class TestExecutionService:
 
         if not self._owns_item(item, user_id=user_id):
             raise NotEntitledError()
+
+        # Omitted ref -> the repo's default branch, always allowed. Any
+        # explicit ref (a buyer's own reviewed feature branch, most likely)
+        # must have a matching TestApprovedRef row — see RefNotApprovedError.
+        if ref and not self._is_ref_approved(user_id=user_id, catalog_item_id=item.id, ref=ref):
+            raise RefNotApprovedError(ref)
 
         included = item.test_included_runs or 0
         used = self._used_runs(user_id=user_id, catalog_item_id=item.id)
@@ -619,6 +776,81 @@ class TestExecutionService:
         except zipfile.BadZipFile:
             raise ReportNotFoundError()
 
+    def _get_dynamic_request_detail(self, *, run: TestRun, item: CatalogItem | None) -> dict | None:
+        """Best-effort read of the buyer's `request_result.json` artifact
+        (written by their test_dynamic_request.py — see the workflow this
+        platform dispatches) — the structured method/url/status/body detail
+        for a single arbitrary-endpoint run. Renders as its own card in the
+        ASE report view instead of making the buyer download a raw GitHub
+        Actions artifact just to see what an endpoint returned. Returns None
+        for anything that doesn't have this artifact — a health-only run,
+        an older framework repo that doesn't produce one, an expired
+        artifact — this is always an addition to the summary, never
+        something callers should treat as required."""
+        if run.github_run_id is None or item is None or not item.test_repo_url:
+            return None
+
+        token = settings.GITHUB_ACCESS_TOKEN or ""
+        try:
+            artifacts = github_client.list_workflow_run_artifacts(
+                repo_url=item.test_repo_url, token=token, run_id=run.github_run_id,
+            )
+        except github_client.GithubWorkflowError:
+            return None
+
+        candidates = [a for a in artifacts if not a.get("expired")]
+        # Unlike get_run_report_html, this deliberately does NOT fall back to
+        # "the first artifact" when nothing matches — misreporting the html
+        # report (or some unrelated artifact) as request/response detail
+        # would be worse than just showing nothing.
+        artifact = next(
+            (
+                a for a in candidates
+                if "request-result" in str(a.get("name", "")).lower()
+                or "request_result" in str(a.get("name", "")).lower()
+            ),
+            None,
+        )
+        if artifact is None:
+            return None
+
+        try:
+            zip_bytes = github_client.download_artifact_zip(
+                repo_url=item.test_repo_url, token=token, artifact_id=artifact["id"],
+            )
+        except github_client.GithubWorkflowError:
+            return None
+
+        try:
+            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+                json_names = [n for n in zf.namelist() if n.lower().endswith(".json")]
+                if not json_names:
+                    return None
+                with zf.open(json_names[0]) as f:
+                    raw = json.loads(f.read().decode("utf-8", errors="replace"))
+        except (zipfile.BadZipFile, ValueError):
+            return None
+
+        if not isinstance(raw, dict):
+            return None
+        req = raw.get("request") or {}
+        resp = raw.get("response") or {}
+        return {
+            "method": req.get("method", ""),
+            "url": req.get("url", ""),
+            "endpoint": req.get("endpoint"),
+            "params": req.get("params"),
+            "body": req.get("body"),
+            "statusCode": resp.get("status_code", 0),
+            "responseHeaders": resp.get("headers") or {},
+            "responseBody": resp.get("body"),
+            "elapsedMs": resp.get("elapsed_ms"),
+            "result": raw.get("result", "REPORTED"),
+            "expectedStatus": raw.get("expected_status"),
+            "expectedSchema": raw.get("expected_schema"),
+            "schemaError": raw.get("schema_error"),
+        }
+
     # Raw job logs can run long for a big test suite — this is a display
     # cap, not a GitHub limit, so the response stays a reasonable size; the
     # tail is kept (not the head) since that's where a failure's traceback
@@ -708,6 +940,7 @@ class TestExecutionService:
         except ReportNotFoundError:
             html_report = None
         test_summary = _extract_test_summary(html_report) if html_report else None
+        dynamic_request = self._get_dynamic_request_detail(run=run, item=item)
 
         duration_seconds: int | None = None
         if run.started_at is not None:
@@ -729,6 +962,7 @@ class TestExecutionService:
             "testSummary": test_summary,
             "jobs": jobs,
             "originalReportAvailable": html_report is not None,
+            "dynamicRequest": dynamic_request,
         }
 
     def list_runs(

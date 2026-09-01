@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiClient } from '../../api/client'
 import { isApiMediaPath, resolveMediaUrl, toApiClientPath } from '../../utils/mediaUrls'
 import { cn } from './cn'
+import { ImageLightbox } from './ImageLightbox'
 
 type Props = {
   src: string | null | undefined
@@ -9,9 +10,29 @@ type Props = {
   className?: string
   fallback?: React.ReactNode
   cacheKey?: string | number
+  /** 'cover' (default) crops to fill the box — right for avatars/thumbnails
+   * where losing the edges is fine. 'contain' always shows the whole image,
+   * letterboxed inside the box instead of cropped — use this anywhere the
+   * uploaded image itself is the product (catalog item photos), so nothing
+   * an admin uploads ever gets silently cut off. */
+  fit?: 'cover' | 'contain'
+  /** When true, clicking the image opens a full-screen zoom overlay using
+   * this component's own already-resolved src (the fetched blob URL, if
+   * it came from an authenticated path) — self-contained, the caller never
+   * needs to know that URL itself. */
+  zoomable?: boolean
 }
 
-export function AuthenticatedImage({ src, alt = '', className, fallback, cacheKey }: Props) {
+export function AuthenticatedImage({
+  src,
+  alt = '',
+  className,
+  fallback,
+  cacheKey,
+  fit = 'cover',
+  zoomable = false,
+}: Props) {
+  const [zoomOpen, setZoomOpen] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
   const direct = src && !isApiMediaPath(src) ? resolveMediaUrl(src) : null
@@ -64,5 +85,21 @@ export function AuthenticatedImage({ src, alt = '', className, fallback, cacheKe
       </div>
     )
   }
-  return <img src={finalSrc} alt={alt} loading="lazy" decoding="async" className={cn('object-cover', className)} />
+  return (
+    <>
+      <img
+        src={finalSrc}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onClick={zoomable ? () => setZoomOpen(true) : undefined}
+        className={cn(
+          fit === 'contain' ? 'object-contain' : 'object-cover',
+          zoomable && 'cursor-zoom-in',
+          className,
+        )}
+      />
+      {zoomable && zoomOpen ? <ImageLightbox src={finalSrc} alt={alt} onClose={() => setZoomOpen(false)} /> : null}
+    </>
+  )
 }

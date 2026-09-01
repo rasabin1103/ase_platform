@@ -73,6 +73,7 @@ export function CatalogPremiumCard({
         <AuthenticatedImage
           src={item.imageUrl}
           alt=""
+          fit="contain"
           className={cn(
             'h-full w-full transition duration-500 ease-out group-hover:scale-[1.07]',
             featured && 'min-h-[180px] lg:min-h-full',
