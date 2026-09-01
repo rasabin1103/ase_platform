@@ -15,9 +15,26 @@ type Props = {
   className?: string
   /** Decorative content (badges, etc.) absolutely positioned over the main image frame. */
   overlay?: ReactNode
+  /** 'cover' (default) crops to fill the frame. 'contain' always shows the
+   * whole image, letterboxed instead of cropped — use for catalog item
+   * photos so nothing an admin uploaded is ever silently cut off. */
+  fit?: 'cover' | 'contain'
+  /** When true, clicking the main image opens a full-screen zoom overlay.
+   * Only applies to the main frame — the small thumbnail strip below stays
+   * click-to-select, since that's a stronger expectation there. */
+  zoomable?: boolean
 }
 
-export function ImageCarousel({ images, fallbackUrl, alt = '', aspectClassName, className, overlay }: Props) {
+export function ImageCarousel({
+  images,
+  fallbackUrl,
+  alt = '',
+  aspectClassName,
+  className,
+  overlay,
+  fit = 'cover',
+  zoomable = false,
+}: Props) {
   const gallery = useMemo(() => {
     if (images.length > 0) return images
     if (fallbackUrl) return [{ url: fallbackUrl, isCover: true }]
@@ -43,7 +60,7 @@ export function ImageCarousel({ images, fallbackUrl, alt = '', aspectClassName, 
   return (
     <div className={className}>
       <div className={cn('group relative overflow-hidden rounded-2xl bg-ase-bg2', aspectClassName)}>
-        <AuthenticatedImage src={current?.url} alt={alt} className="h-full w-full" />
+        <AuthenticatedImage src={current?.url} alt={alt} fit={fit} zoomable={zoomable} className="h-full w-full" />
         {overlay}
         {gallery.length > 1 ? (
           <>

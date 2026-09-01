@@ -43,7 +43,9 @@ def create_catalog_checkout_session(
     svc: BillingService = Depends(get_service),
 ):
     try:
-        checkout_url = svc.create_catalog_checkout_session(current_user=current_user, item_slug=payload.item_slug)
+        checkout_url = svc.create_catalog_checkout_session(
+            current_user=current_user, item_slug=payload.item_slug, language=payload.language
+        )
     except BillingError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return CatalogCheckoutSessionResponse(checkout_url=checkout_url)

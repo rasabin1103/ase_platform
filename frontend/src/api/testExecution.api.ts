@@ -20,9 +20,11 @@ export type ApiCredentialCreateResponse = ApiCredential & { clientSecret: string
 export type TestInputVariableDef = {
   key: string
   label: string
-  type: 'text' | 'secret'
+  type: 'text' | 'secret' | 'choice' | 'json'
   required: boolean
   description?: string | null
+  options?: string[] | null
+  default?: string | null
 }
 
 export type RunnableFramework = {
@@ -40,9 +42,11 @@ export type RunnableFramework = {
 export type TestExecutionConfigValue = {
   key: string
   label: string
-  type: 'text' | 'secret'
+  type: 'text' | 'secret' | 'choice' | 'json'
   required: boolean
   description: string | null
+  options: string[] | null
+  default: string | null
   hasValue: boolean
   value: string | null
 }
@@ -64,6 +68,16 @@ export type TestScenarioSummary = {
 
 export type TestScenario = TestScenarioSummary & {
   values: TestExecutionConfigValue[]
+}
+
+// A git ref (branch/tag) an admin has approved for this buyer to dispatch
+// this framework against, besides the always-available default branch —
+// see the backend's TestApprovedRef for the review workflow this supports
+// (buyer clones the framework, pushes a branch, admin reviews + approves).
+export type ApprovedRef = {
+  ref: string
+  label: string | null
+  approvedAt: string
 }
 
 export type TestRunStatus = 'pending' | 'queued' | 'in_progress' | 'completed' | 'failed_to_dispatch'
@@ -167,6 +181,28 @@ export type TestRunTestCounts = {
   error?: number | null
 }
 
+// Parsed `request_result.json` artifact from a buyer's
+// test_dynamic_request.py — the one arbitrary-endpoint call that run made,
+// rendered as its own card instead of a raw downloadable GitHub Actions
+// artifact. `params`/`body`/`responseBody`/`expectedSchema` are unknown
+// because they're whatever JSON shape the buyer's own endpoint/inputs
+// produced — display-only, never interpreted.
+export type DynamicRequestDetail = {
+  method: string
+  url: string
+  endpoint: string | null
+  params: unknown
+  body: unknown
+  statusCode: number
+  responseHeaders: Record<string, string>
+  responseBody: unknown
+  elapsedMs: number | null
+  result: string
+  expectedStatus: number | null
+  expectedSchema: unknown
+  schemaError: string | null
+}
+
 export type TestRunSummary = {
   runUuid: string
   frameworkTitle: string
@@ -182,6 +218,7 @@ export type TestRunSummary = {
   testSummary: TestRunTestCounts | null
   jobs: TestRunJob[]
   originalReportAvailable: boolean
+  dynamicRequest: DynamicRequestDetail | null
 }
 
 // Structured data behind the ASE-branded report view — never 404s just
@@ -205,6 +242,11 @@ export async function getTestRunLogs(runUuid: string, jobIndex = 0) {
 }
 
 // --- Buyer-configured variables — saved "scenarios" -------------------------
+
+export async function listApprovedRefs(slug: string) {
+  const { data } = await apiClient.get<ApprovedRef[]>(`/test-execution/frameworks/${slug}/approved-refs`)
+  return data
+}
 
 export async function listFrameworkScenarios(slug: string) {
   const { data } = await apiClient.get<{ items: TestScenarioSummary[] }>(

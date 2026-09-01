@@ -22,9 +22,16 @@ export type DimensionSelection = {
 export type TestInputVariableDef = {
   key: string
   label: string
-  type: 'text' | 'secret'
+  // 'choice' mirrors GitHub's workflow_dispatch `type: choice` (a fixed
+  // dropdown, e.g. HTTP method) — `options` holds the allowed values.
+  // 'json' is UI-side hinting only (GitHub inputs are always strings): it
+  // renders a textarea with client-side JSON validation instead of a
+  // single-line input, for fields like a request body or headers map.
+  type: 'text' | 'secret' | 'choice' | 'json'
   required: boolean
   description?: string | null
+  options?: string[] | null
+  default?: string | null
 }
 
 export type CatalogItemAdmin = {
@@ -114,7 +121,11 @@ export type CatalogItemAdminPayload = {
   test_input_schema?: TestInputVariableDef[]
 }
 
-export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type' | 'slug'>>
+// `type` stays fixed once created (changing the underlying kind of a
+// catalog item is a different action entirely) — `slug` is editable, see
+// AdminCatalogItemModal's slug field and the backend's
+// CatalogAdminService._check_slug_available.
+export type CatalogItemAdminUpdatePayload = Partial<Omit<CatalogItemAdminPayload, 'type'>>
 
 export async function listAdminCatalog(params?: {
   limit?: number

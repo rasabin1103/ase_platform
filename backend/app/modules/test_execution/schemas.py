@@ -43,6 +43,8 @@ class TestInputVariableRead(BaseModel):
     type: str = "text"
     required: bool = False
     description: str | None = None
+    options: list[str] | None = None
+    default: str | None = None
 
 
 class RunnableFrameworkRead(BaseModel):
@@ -69,6 +71,8 @@ class TestExecutionConfigValueRead(BaseModel):
     type: str
     required: bool
     description: str | None = None
+    options: list[str] | None = None
+    default: str | None = None
     hasValue: bool = False
     value: str | None = None
 
@@ -193,6 +197,30 @@ class TestRunTestCountsRead(BaseModel):
     error: int | None = None
 
 
+class DynamicRequestDetailRead(BaseModel):
+    """Parsed `request_result.json` artifact from a buyer's
+    test_dynamic_request.py — the exact method/url/status/body of the one
+    arbitrary-endpoint call that run made, so it can be rendered as its own
+    card instead of a raw downloadable artifact. `params`/`body`/
+    `responseBody`/`expectedSchema` are `Any` because they're whatever JSON
+    shape the buyer's own endpoint and inputs produced — a list, an object,
+    a bare string, a number, doesn't matter, this is display-only."""
+
+    method: str
+    url: str
+    endpoint: str | None = None
+    params: object | None = None
+    body: object | None = None
+    statusCode: int
+    responseHeaders: dict[str, str] = {}
+    responseBody: object | None = None
+    elapsedMs: float | None = None
+    result: str
+    expectedStatus: int | None = None
+    expectedSchema: object | None = None
+    schemaError: str | None = None
+
+
 class TestRunSummaryRead(BaseModel):
     """Structured data behind the ASE-branded report view — built entirely
     from GitHub's Jobs API plus a best-effort scrape of the raw artifact,
@@ -215,3 +243,47 @@ class TestRunSummaryRead(BaseModel):
     testSummary: TestRunTestCountsRead | None = None
     jobs: list[TestRunJobRead] = []
     originalReportAvailable: bool = False
+    dynamicRequest: DynamicRequestDetailRead | None = None
+
+
+class AdminResetQuotaRequest(BaseModel):
+    """Admin-only: which buyer to grant a fresh run quota to, by email
+    rather than internal id — matches how an admin identifies a customer
+    day-to-day (support ticket, account lookup)."""
+
+    userEmail: str = Field(min_length=1, max_length=255)
+
+
+class AdminResetQuotaResponse(BaseModel):
+    slug: str
+    userEmail: str
+    includedRuns: int
+    usedRuns: int
+
+
+class ApprovedRefRead(BaseModel):
+    """One git ref (branch/tag) this buyer is allowed to dispatch this
+    framework against, in addition to the always-allowed default branch —
+    powers the buyer-facing "version" picker (original vs. my branch)."""
+
+    ref: str
+    label: str | None = None
+    approvedAt: datetime
+
+
+class AdminApproveRefRequest(BaseModel):
+    userEmail: str = Field(min_length=1, max_length=255)
+    ref: str = Field(min_length=1, max_length=255)
+    label: str | None = Field(default=None, max_length=200)
+
+
+class AdminApproveRefResponse(BaseModel):
+    slug: str
+    userEmail: str
+    ref: str
+    label: str | None = None
+
+
+class AdminRevokeRefRequest(BaseModel):
+    userEmail: str = Field(min_length=1, max_length=255)
+    ref: str = Field(min_length=1, max_length=255)

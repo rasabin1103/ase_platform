@@ -110,6 +110,14 @@ export const translations = {
       cta: 'Activate now',
       later: 'Remind me later',
     },
+    sessionExpiry: {
+      title: 'Your session is about to expire',
+      body: "You've been inactive for a while — for your security, your session will close automatically unless you choose to stay signed in.",
+      refreshFailed: "We couldn't renew your session — you'll be signed out in a moment.",
+      cta: 'Stay signed in',
+      continuing: 'Renewing…',
+      logoutNow: 'Log out now',
+    },
     suspendedGate: {
       badge: 'Account deactivated',
       twoFactor: {
@@ -1008,6 +1016,14 @@ export const translations = {
       bodyToday: 'Hoy es tu último día para activar 2FA en tu cuenta, o se desactivará automáticamente por seguridad.',
       cta: 'Activar ahora',
       later: 'Recordarmelo después',
+    },
+    sessionExpiry: {
+      title: 'Tu sesión está a punto de cerrarse',
+      body: 'Llevas un rato inactivo — por tu seguridad, la sesión se cerrará automáticamente a menos que elijas seguir conectado.',
+      refreshFailed: 'No hemos podido renovar tu sesión — se cerrará en un momento.',
+      cta: 'Seguir conectado',
+      continuing: 'Renovando…',
+      logoutNow: 'Cerrar sesión ahora',
     },
     suspendedGate: {
       badge: 'Cuenta desactivada',

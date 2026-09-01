@@ -45,13 +45,29 @@ class TestInputVariableDef(BaseModel):
     """One admin-declared workflow_dispatch input a framework's workflow
     expects (e.g. BASE_URL) — see CatalogItem.test_input_schema_json. `key`
     must match an input name under `on.workflow_dispatch.inputs` in the
-    workflow YAML at test_repo_url, or GitHub silently ignores it."""
+    workflow YAML at test_repo_url, or GitHub silently ignores it.
+
+    `type` mirrors the handful of GitHub Actions `workflow_dispatch.inputs`
+    shapes an admin actually needs to expose to buyers:
+      - "text": free text, rendered as a plain input.
+      - "secret": free text, masked in the buyer-facing UI (existing).
+      - "choice": a fixed set of options (GitHub's `type: choice`) —
+        `options` holds the allowed values, e.g. HTTP methods.
+      - "json": free text expected to be a JSON document (GitHub only ever
+        sends inputs as strings, so this is UI-side hinting/validation only
+        — a textarea with client-side JSON.parse validation instead of a
+        single-line input) — e.g. a request body or headers map.
+    `options` is only meaningful for type == "choice". `default` pre-fills
+    the buyer's form and is used by _resolve_variables() when the buyer
+    leaves an optional field empty."""
 
     key: str = Field(min_length=1, max_length=100)
     label: str = Field(min_length=1, max_length=200)
-    type: str = Field(default="text")  # "text" | "secret" — secret masks the value in the buyer-facing UI
+    type: str = Field(default="text")  # "text" | "secret" | "choice" | "json"
     required: bool = False
     description: str | None = Field(default=None, max_length=500)
+    options: list[str] | None = Field(default=None, max_length=50)
+    default: str | None = Field(default=None, max_length=2000)
 
 
 class CatalogItemAdminBase(BaseModel):
@@ -131,6 +147,12 @@ class CatalogItemAdminCreate(CatalogItemAdminBase):
 
 class CatalogItemAdminUpdate(BaseModel):
     title: str | None = None
+    # Editable on update (unlike `type`, which stays fixed once created —
+    # changing the underlying kind of a catalog item is a different action
+    # entirely). Changing the slug changes the item's public URL, so the
+    # admin UI should warn about that, but the platform itself doesn't
+    # forbid it — see CatalogAdminService.update's uniqueness check.
+    slug: str | None = Field(default=None, min_length=1, max_length=160)
     category: str | None = None
     short_description: str | None = None
     long_description: str | None = None

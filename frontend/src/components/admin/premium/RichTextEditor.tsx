@@ -2,8 +2,11 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TiptapImage from '@tiptap/extension-image'
 import TiptapLink from '@tiptap/extension-link'
+import TiptapUnderline from '@tiptap/extension-underline'
 import {
   Bold,
+  Code,
+  Code2,
   Heading2,
   Heading3,
   Image as ImageIcon,
@@ -11,9 +14,11 @@ import {
   Link as LinkIcon,
   List,
   ListOrdered,
+  Minus,
   Quote,
   Redo,
   Strikethrough,
+  Underline,
   Undo,
 } from 'lucide-react'
 import { cn } from '../../ui/cn'
@@ -69,6 +74,7 @@ export function RichTextEditor({ initialContent, onChange, placeholder, classNam
       }),
       TiptapLink.configure({ openOnClick: false, autolink: true }),
       TiptapImage.configure({ inline: false }),
+      TiptapUnderline,
     ],
     content: initialContent,
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
@@ -85,7 +91,9 @@ export function RichTextEditor({ initialContent, onChange, placeholder, classNam
           '[&_blockquote]:border-l-2 [&_blockquote]:border-cyan-300/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-ase-muted',
           '[&_code]:rounded [&_code]:bg-white/[0.08] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
           '[&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-black/30 [&_pre]:p-3',
+          '[&_pre_code]:bg-transparent [&_pre_code]:px-0 [&_pre_code]:py-0',
           '[&_img]:my-3 [&_img]:max-w-full [&_img]:rounded-xl',
+          '[&_hr]:my-5 [&_hr]:border-white/10',
         ),
       },
     },
@@ -104,6 +112,13 @@ export function RichTextEditor({ initialContent, onChange, placeholder, classNam
         </ToolbarButton>
         <ToolbarButton label="Strikethrough" active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}>
           <Strikethrough className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Underline"
+          active={editor.isActive('underline')}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <Underline className="h-4 w-4" />
         </ToolbarButton>
         <span className="mx-1 h-5 w-px bg-white/10" />
         <ToolbarButton
@@ -133,6 +148,19 @@ export function RichTextEditor({ initialContent, onChange, placeholder, classNam
         </ToolbarButton>
         <ToolbarButton label="Quote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
           <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Inline code" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>
+          <Code className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Code block"
+          active={editor.isActive('codeBlock')}
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        >
+          <Code2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Divider" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+          <Minus className="h-4 w-4" />
         </ToolbarButton>
         <span className="mx-1 h-5 w-px bg-white/10" />
         <ToolbarButton

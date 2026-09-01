@@ -437,6 +437,47 @@ def require_permission(permission_code: str) -> Callable[..., None]:
     return _dep
 
 
+def require_personal_permission(permission_code: str) -> Callable[..., None]:
+    """Like require_permission, but for actions that are about the user
+    themselves — buying, favoriting, rating a catalog item, viewing/
+    downloading a resource they own — rather than about a specific
+    organization's resources. These must never depend on whichever
+    organization happens to be "active" in the workspace switcher: a user
+    who has an Enterprise Dashboard org selected (e.g. as that org's
+    org_owner) should still be able to buy something for themselves without
+    switching back to their personal workspace first. Checks the permission
+    across *all* of the user's active memberships instead of only the
+    currently resolved org.
+
+    Only safe to use for codes that are exclusively granted to the personal-
+    workspace role (independent_user) or super_admin — never to a role that
+    also carries organization-scoped write permissions, since aggregating
+    across memberships would otherwise let an org_owner of Org A "borrow" a
+    permission they only actually hold in Org B. purchases.manage_own and
+    favorites.manage_own are exactly that (see MVP_ROLE_PERMISSIONS /
+    role_permissions — no B2B role grants either); don't reuse this for an
+    org-scoped code like products.manage or courses.manage."""
+
+    def _dep(
+        db: Session = Depends(get_db),
+        user: User = Depends(get_current_user),
+    ) -> None:
+        if user.status in (UserStatus.suspended, UserStatus.deleted):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not allowed")
+
+        if is_super_admin(db, user):
+            return
+
+        codes = expand_permission_codes(permission_code)
+        user_perms = set(get_user_permissions(db, user_id=user.id, organization_id=None))
+        if codes.intersection(user_perms):
+            return
+
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Missing permission")
+
+    return _dep
+
+
 def get_rbac_context(
     db: Session,
     user: User,

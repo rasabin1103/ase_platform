@@ -221,7 +221,11 @@ from app.modules.admin_account_lifecycle.router import router as admin_account_l
 from app.modules.blog_admin.router import router as blog_admin_router
 from app.modules.public_blog.router import router as public_blog_router
 from app.modules.blog_engagement.router import router as blog_engagement_router
-from app.modules.test_execution.router import router as test_execution_router, public_router as test_execution_public_router
+from app.modules.test_execution.router import (
+    router as test_execution_router,
+    public_router as test_execution_public_router,
+    admin_router as test_execution_admin_router,
+)
 from app.modules.catalog_categories.router import router as catalog_categories_router
 from app.modules.admin_data_reset.router import router as admin_data_reset_router
 from app.modules.admin_demo_data.router import router as admin_demo_data_router
@@ -255,6 +259,7 @@ def create_app() -> FastAPI:
     app.include_router(blog_engagement_router)
     app.include_router(test_execution_router)
     app.include_router(test_execution_public_router)
+    app.include_router(test_execution_admin_router)
     app.include_router(catalog_categories_router)
     app.include_router(notifications_router)
     app.include_router(suggestions_router)

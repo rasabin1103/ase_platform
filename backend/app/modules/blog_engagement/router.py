@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
-from app.modules.auth.dependencies import get_current_user, get_current_user_optional, require_permission
+from app.modules.auth.dependencies import get_current_user, get_current_user_optional, require_personal_permission
 from app.modules.blog_engagement.schemas import (
     CommentCreateRequest,
     CommentListResponse,
@@ -39,7 +39,7 @@ def list_comments(
     "/{slug}/comments",
     response_model=CommentRead,
     status_code=201,
-    dependencies=[Depends(require_permission("ratings.manage_own"))],
+    dependencies=[Depends(require_personal_permission("ratings.manage_own"))],
 )
 def create_comment(
     slug: str,
@@ -53,7 +53,7 @@ def create_comment(
 @router.delete(
     "/{slug}/comments/{comment_id}",
     status_code=204,
-    dependencies=[Depends(require_permission("ratings.manage_own"))],
+    dependencies=[Depends(require_personal_permission("ratings.manage_own"))],
 )
 def delete_comment(
     slug: str,
@@ -79,7 +79,7 @@ def get_reaction(
 @router.post(
     "/{slug}/reaction",
     response_model=ReactionCountsRead,
-    dependencies=[Depends(require_permission("ratings.manage_own"))],
+    dependencies=[Depends(require_personal_permission("ratings.manage_own"))],
 )
 def set_reaction(
     slug: str,
@@ -95,7 +95,7 @@ def set_reaction(
 @router.delete(
     "/{slug}/reaction",
     response_model=ReactionCountsRead,
-    dependencies=[Depends(require_permission("ratings.manage_own"))],
+    dependencies=[Depends(require_personal_permission("ratings.manage_own"))],
 )
 def remove_reaction(
     slug: str,

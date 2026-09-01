@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemType
 from app.models.user import User
-from app.modules.auth.dependencies import get_current_user, require_permission
+from app.modules.auth.dependencies import get_current_user, require_permission, require_personal_permission
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.schemas import (
@@ -95,12 +95,12 @@ def list_consumer_catalog_tags(svc: ConsumerCatalogService = Depends(get_service
     return svc.list_tags()
 
 
-@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_permission("favorites.manage_own"))])
+@router.post("/{slug}/favorite", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("favorites.manage_own"))])
 def toggle_favorite(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     return svc.toggle_favorite(slug, user_id=user.id)
 
 
-@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_permission("purchases.manage_own"))])
+@router.post("/{slug}/purchase", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("purchases.manage_own"))])
 def purchase_item(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     if user.email_verified_at is None:
         raise HTTPException(
@@ -118,7 +118,7 @@ def get_catalog_item(slug: str, user: User = Depends(get_current_user), svc: Con
 @router.get(
     "/{slug}/resource-content",
     response_model=ResourceContentRead,
-    dependencies=[Depends(require_permission("purchases.manage_own"))],
+    dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
 )
 def get_resource_content(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     """Read-only in-platform viewer. Full content requires owning this item
@@ -141,7 +141,7 @@ def get_book_download_formats(slug: str, svc: ConsumerCatalogService = Depends(g
     return svc.get_book_download_formats(slug)
 
 
-@router.get("/{slug}/resource-download", dependencies=[Depends(require_permission("purchases.manage_own"))])
+@router.get("/{slug}/resource-download", dependencies=[Depends(require_personal_permission("purchases.manage_own"))])
 def download_resource(
     slug: str,
     format: str | None = None,
@@ -162,7 +162,7 @@ def download_resource(
 @router.get(
     "/{slug}/audiobook/chapters",
     response_model=AudiobookChapterListRead,
-    dependencies=[Depends(require_permission("purchases.manage_own"))],
+    dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
 )
 def list_audiobook_chapters(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
     """Platform-hosted audiobook chapters (repo_path's "audiolibro"
@@ -175,7 +175,7 @@ def list_audiobook_chapters(slug: str, user: User = Depends(get_current_user), s
 @router.get(
     "/{slug}/audiobook/chapter",
     response_model=AudiobookChapterContentRead,
-    dependencies=[Depends(require_permission("purchases.manage_own"))],
+    dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
 )
 def get_audiobook_chapter(
     slug: str,
@@ -190,7 +190,7 @@ def get_audiobook_chapter(
     return svc.get_audiobook_chapter(slug, user_id=user.id, name=name)
 
 
-@router.post("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+@router.post("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("ratings.manage_own"))])
 def rate_catalog_item(
     slug: str,
     payload: RateItemRequest,
@@ -200,7 +200,7 @@ def rate_catalog_item(
     return svc.rate(slug, user_id=user.id, is_positive=payload.isPositive, tags=payload.tags)
 
 
-@router.delete("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+@router.delete("/{slug}/rating", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("ratings.manage_own"))])
 def remove_catalog_item_rating(
     slug: str,
     user: User = Depends(get_current_user),
@@ -221,7 +221,7 @@ def list_catalog_item_reviews(
     return svc.list_reviews(slug, limit=limit, offset=offset)
 
 
-@router.post("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+@router.post("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("ratings.manage_own"))])
 def submit_catalog_item_review(
     slug: str,
     payload: ReviewRequest,
@@ -231,7 +231,7 @@ def submit_catalog_item_review(
     return svc.submit_review(slug, user_id=user.id, rating=payload.rating, comment=payload.comment)
 
 
-@router.delete("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_permission("ratings.manage_own"))])
+@router.delete("/{slug}/review", response_model=CatalogItemRead, dependencies=[Depends(require_personal_permission("ratings.manage_own"))])
 def remove_catalog_item_review(
     slug: str,
     user: User = Depends(get_current_user),

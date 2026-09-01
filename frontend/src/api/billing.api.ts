@@ -14,10 +14,15 @@ export async function createCheckoutSession(planId: number): Promise<string> {
 
 /** Creates a one-time-payment Stripe Checkout session for a single priced
  * catalog item. Only valid for items with price > 0 — free items should
- * keep using the direct purchaseCatalogItem() call. */
-export async function createCatalogCheckoutSession(itemSlug: string): Promise<string> {
+ * keep using the direct purchaseCatalogItem() call. `language` should be
+ * whatever the app's language toggle is currently set to (see useI18n) —
+ * the backend uses it to pick title_en/short_description_en vs the base
+ * Spanish fields for what Stripe shows on the Checkout page; omit it and
+ * the backend just falls back to Spanish. */
+export async function createCatalogCheckoutSession(itemSlug: string, language?: 'es' | 'en'): Promise<string> {
   const { data } = await apiClient.post<CheckoutSessionResponse>('/billing/catalog-checkout-session', {
     item_slug: itemSlug,
+    language,
   })
   return data.checkout_url
 }

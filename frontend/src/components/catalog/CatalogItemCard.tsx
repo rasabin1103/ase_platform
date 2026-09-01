@@ -62,6 +62,7 @@ export function CatalogItemCard({
         <AuthenticatedImage
           src={item.imageUrl}
           alt=""
+          fit="contain"
           className="h-full w-full transition duration-500 ease-out group-hover:scale-[1.08]"
         />
         {item.type === 'book' ? (

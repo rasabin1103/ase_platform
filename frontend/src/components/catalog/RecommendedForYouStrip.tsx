@@ -19,7 +19,7 @@ import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
  * just a simple, explainable heuristic over real data.
  */
 export function RecommendedForYouStrip() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const qc = useQueryClient()
   const [pendingSlug, setPendingSlug] = useState<string | null>(null)
 
@@ -47,7 +47,7 @@ export function RecommendedForYouStrip() {
   const buyMutation = useMutation({
     mutationFn: (slug: string) => {
       const target = catalogQuery.data?.items.find((i) => i.slug === slug)
-      return buyOrCheckoutCatalogItem(slug, target?.price)
+      return buyOrCheckoutCatalogItem(slug, target?.price, language)
     },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {

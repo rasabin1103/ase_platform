@@ -20,6 +20,18 @@ export async function verifyLoginTwoFactor(challenge_token: string, code: string
   return data
 }
 
+/** Trades a still-valid refresh token for a brand-new access+refresh pair,
+ * without re-entering credentials — powers "stay signed in" on the
+ * session-expiry warning (see SessionExpiryModal). Throws (401) once the
+ * refresh token itself has expired or been revoked; the caller falls back
+ * to a normal logout in that case. */
+export async function refreshTokens(refresh_token: string) {
+  const { data } = await apiClient.post<{ access_token: string; refresh_token: string }>('/auth/refresh', {
+    refresh_token,
+  })
+  return data
+}
+
 export async function setupTwoFactor() {
   const { data } = await apiClient.post<TwoFactorSetupResponse>('/auth/2fa/setup')
   return data

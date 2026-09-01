@@ -46,6 +46,15 @@ class Settings(BaseSettings):
     # emails (password reset, email verification). No trailing slash.
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Public base URL of this backend itself (e.g. the Railway domain) — used
+    # only to turn a relative path like /api/v1/public/catalog-cover/{id}
+    # into an absolute https:// URL for third parties that fetch it directly
+    # over the internet with no auth of their own, such as Stripe rendering a
+    # product image on the Checkout page. Left unset, catalog checkout simply
+    # omits the image instead of sending Stripe a URL it can't reach. No
+    # trailing slash.
+    BACKEND_PUBLIC_URL: str | None = None
+
     # Transactional email (password reset, email verification) via a plain
     # SMTP server — bring your own (Gmail Workspace, cPanel mail, Zoho,
     # your hosting provider's mail, etc.). If SMTP_HOST is left empty, email

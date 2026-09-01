@@ -36,7 +36,7 @@ type Props = {
 }
 
 export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, catalogBasePath }: Props) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [topRated, setTopRated] = useState(false)
@@ -92,7 +92,7 @@ export function CatalogListPage({ type, mode = 'type', titleKey, subtitleKey, ca
   const buyMutation = useMutation({
     mutationFn: (slug: string) => {
       const target = query.data?.items.find((i) => i.slug === slug)
-      return buyOrCheckoutCatalogItem(slug, target?.price)
+      return buyOrCheckoutCatalogItem(slug, target?.price, language)
     },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {

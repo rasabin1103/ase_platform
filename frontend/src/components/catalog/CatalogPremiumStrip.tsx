@@ -23,7 +23,7 @@ type Props = {
 }
 
 export function CatalogPremiumStrip({ type, titleKey, subtitleKey, catalogPath, limit = 3 }: Props) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const qc = useQueryClient()
   const [pendingSlug, setPendingSlug] = useState<string | null>(null)
 
@@ -44,7 +44,7 @@ export function CatalogPremiumStrip({ type, titleKey, subtitleKey, catalogPath, 
   const buyMutation = useMutation({
     mutationFn: (slug: string) => {
       const target = query.data?.items.find((i) => i.slug === slug)
-      return buyOrCheckoutCatalogItem(slug, target?.price)
+      return buyOrCheckoutCatalogItem(slug, target?.price, language)
     },
     onMutate: (slug) => setPendingSlug(slug),
     onSettled: () => {

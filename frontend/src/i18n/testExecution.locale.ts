@@ -11,6 +11,12 @@ export const testExecutionEn = {
   panel: {
     hint: 'Fill in the values this product needs for your own environment, then run it.',
     remaining: '{{remaining}} of {{total}} runs left',
+    disabledQuota: "You've used all your included runs for this product — no runs left to trigger.",
+    disabledInvalidJson: 'Fix the invalid JSON field(s) below before continuing.',
+    disabledLoading: "Still loading this scenario's values — wait a moment.",
+    disabledBusy: 'Another action for this product is already in progress — wait for it to finish.',
+    versionLabel: 'Version',
+    versionOriginal: 'Original',
   },
   credentials: {
     title: 'API credentials (advanced — for your own CI/CD)',
@@ -18,6 +24,8 @@ export const testExecutionEn = {
     empty: 'No API credentials yet.',
     emptyHint: 'Create one to start triggering runs from your own CI/CD.',
     create: 'New credential',
+    createDisabledEmpty: 'Enter a name for the credential first.',
+    createDisabledBusy: 'Creating the credential…',
     namePlaceholder: 'e.g. CI pipeline (prod)',
     columns: { name: 'Name', clientId: 'Client ID', status: 'Status', lastUsed: 'Last used', created: 'Created' },
     status: { active: 'Active', revoked: 'Revoked' },
@@ -50,6 +58,7 @@ export const testExecutionEn = {
   config: {
     empty: 'This product needs no extra setup — just run it.',
     alreadySet: 'Already set — leave blank to keep it',
+    invalidJson: 'This must be valid JSON.',
     save: 'Save without running',
     saving: 'Saving…',
     saveError: 'Could not save the configuration.',
@@ -105,6 +114,20 @@ export const testExecutionEn = {
     logsTitle: 'Detailed output',
     logsError: 'Could not load the detailed output for this run.',
     close: 'Close',
+    dynamicRequest: {
+      title: 'Request detail',
+      elapsed: 'Time',
+      expectedStatus: 'Expected status',
+      schemaError: 'Schema validation failed',
+      requestBody: 'Request body',
+      requestParams: 'Query params',
+      responseBody: 'Response body',
+      result: {
+        PASSED: 'Passed',
+        FAILED: 'Failed',
+        REPORTED: 'Reported (no expectation set)',
+      },
+    },
   },
   status: {
     pending: 'Pending',
@@ -135,6 +158,12 @@ export const testExecutionEs = {
   panel: {
     hint: 'Rellena los datos que este producto necesita de tu propio entorno y ejecútalo.',
     remaining: '{{remaining}} de {{total}} ejecuciones restantes',
+    disabledQuota: 'Has agotado tus ejecuciones incluidas para este producto — no te quedan ejecuciones disponibles.',
+    disabledInvalidJson: 'Corrige el/los campo(s) JSON inválido(s) de abajo antes de continuar.',
+    disabledLoading: 'Todavía se están cargando los valores de este escenario — espera un momento.',
+    disabledBusy: 'Ya hay otra acción en curso para este producto — espera a que termine.',
+    versionLabel: 'Versión',
+    versionOriginal: 'Original',
   },
   credentials: {
     title: 'Credenciales API (avanzado — para tu propio CI/CD)',
@@ -142,6 +171,8 @@ export const testExecutionEs = {
     empty: 'Todavía no tienes credenciales API.',
     emptyHint: 'Crea una para empezar a disparar ejecuciones desde tu propio CI/CD.',
     create: 'Nueva credencial',
+    createDisabledEmpty: 'Escribe primero un nombre para la credencial.',
+    createDisabledBusy: 'Creando la credencial…',
     namePlaceholder: 'ej. Pipeline CI (prod)',
     columns: { name: 'Nombre', clientId: 'Client ID', status: 'Estado', lastUsed: 'Último uso', created: 'Creada' },
     status: { active: 'Activa', revoked: 'Revocada' },
@@ -174,6 +205,7 @@ export const testExecutionEs = {
   config: {
     empty: 'Este producto no necesita configuración adicional — solo ejecútalo.',
     alreadySet: 'Ya configurado — deja en blanco para mantenerlo',
+    invalidJson: 'Esto debe ser un JSON válido.',
     save: 'Guardar sin ejecutar',
     saving: 'Guardando…',
     saveError: 'No se pudo guardar la configuración.',
@@ -229,6 +261,20 @@ export const testExecutionEs = {
     logsTitle: 'Salida detallada',
     logsError: 'No se pudo cargar la salida detallada de esta ejecución.',
     close: 'Cerrar',
+    dynamicRequest: {
+      title: 'Detalle de la petición',
+      elapsed: 'Tiempo',
+      expectedStatus: 'Status esperado',
+      schemaError: 'Falló la validación del esquema',
+      requestBody: 'Body de la petición',
+      requestParams: 'Query params',
+      responseBody: 'Body de la respuesta',
+      result: {
+        PASSED: 'Superado',
+        FAILED: 'Fallido',
+        REPORTED: 'Reportado (sin expectativa definida)',
+      },
+    },
   },
   status: {
     pending: 'Pendiente',

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi, afterEach } from 'vitest'
 import { buyOrCheckoutCatalogItem } from './catalogPurchaseFlow'
 import * as billingApi from './billing.api'
 import * as consumerCatalogApi from './consumerCatalog.api'
@@ -18,20 +18,13 @@ vi.mock('./consumerCatalog.api', async (importOriginal) => {
 })
 
 describe('buyOrCheckoutCatalogItem', () => {
-  const originalLocation = window.location
-
-  beforeEach(() => {
-    // window.location.href is not assignable in jsdom by default — replace
-    // the whole object with a writable stand-in so we can assert the
-    // Stripe redirect without actually navigating.
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { ...originalLocation, href: '' },
-    })
-  })
+  // jsdom doesn't implement window.open — stub it so the priced-item branch
+  // (which opens Stripe Checkout in a new tab, see catalogPurchaseFlow.ts)
+  // can run and be asserted against without touching real navigation.
+  const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
+    openSpy.mockClear()
     vi.clearAllMocks()
   })
 
@@ -56,16 +49,24 @@ describe('buyOrCheckoutCatalogItem', () => {
     expect(billingApi.createCatalogCheckoutSession).not.toHaveBeenCalled()
   })
 
-  it('creates a Stripe checkout session and redirects for a priced item, without granting it directly', async () => {
+  it('creates a Stripe checkout session and opens it in a new tab, without granting the item directly', async () => {
     vi.mocked(billingApi.createCatalogCheckoutSession).mockResolvedValue('https://checkout.stripe.com/session-123')
 
     const result = await buyOrCheckoutCatalogItem('priced-item', '29.99')
 
-    expect(billingApi.createCatalogCheckoutSession).toHaveBeenCalledWith('priced-item')
+    expect(billingApi.createCatalogCheckoutSession).toHaveBeenCalledWith('priced-item', undefined)
     expect(consumerCatalogApi.purchaseCatalogItem).not.toHaveBeenCalled()
-    expect(window.location.href).toBe('https://checkout.stripe.com/session-123')
+    expect(openSpy).toHaveBeenCalledWith('https://checkout.stripe.com/session-123', '_blank', 'noopener,noreferrer')
     // Priced items never resolve to a CatalogItem here — the backend only
     // grants access once the checkout.session.completed webhook fires.
     expect(result).toBeNull()
+  })
+
+  it('forwards the app language through to the checkout session request', async () => {
+    vi.mocked(billingApi.createCatalogCheckoutSession).mockResolvedValue('https://checkout.stripe.com/session-123')
+
+    await buyOrCheckoutCatalogItem('priced-item', '29.99', 'en')
+
+    expect(billingApi.createCatalogCheckoutSession).toHaveBeenCalledWith('priced-item', 'en')
   })
 })

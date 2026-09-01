@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.audit import record_audit_log
 from app.core.config import settings
 from app.core.creator import ensure_personal_workspace
+from app.core.media_urls import resolve_catalog_stripe_image_url
 from app.models.catalog_item import CatalogItem
 from app.models.enums import CatalogItemStatus, MembershipStatus, SubscriptionProvider, SubscriptionStatus
 from app.models.organization import Organization
@@ -119,13 +120,22 @@ class BillingService:
             raise BillingError("Stripe did not return a checkout URL.")
         return session.url
 
-    def create_catalog_checkout_session(self, *, current_user: User, item_slug: str) -> str:
+    def create_catalog_checkout_session(
+        self, *, current_user: User, item_slug: str, language: str | None = None
+    ) -> str:
         """One-time payment Checkout for a single priced catalog item. This
         is the only path that can grant a priced item — the direct
         POST /consumer-catalog/{slug}/purchase endpoint refuses anything
         with price > 0 (see ConsumerCatalogService.purchase), so there's no
         way to end up with access to a paid item without actually paying
-        for it through here."""
+        for it through here.
+
+        `language` is whatever the app's language toggle was set to when
+        the buyer clicked "Comprar" (see CatalogDetailPage) — used only to
+        pick title_en/short_description_en vs the base Spanish fields for
+        Stripe's product_data, same fallback-to-Spanish-if-missing rule as
+        the frontend's own localizedCatalogText. Never affects price,
+        currency, or anything else Stripe actually charges."""
         _require_stripe_configured()
 
         item = self.db.execute(select(CatalogItem).where(CatalogItem.slug == item_slug)).scalar_one_or_none()
@@ -151,6 +161,21 @@ class BillingService:
         customer_id = self._get_or_create_stripe_customer(org, current_user)
         unit_amount = int((item.price * 100).to_integral_value())
 
+        title = item.title_en if (language == "en" and item.title_en) else item.title
+        short_description = (
+            item.short_description_en if (language == "en" and item.short_description_en) else item.short_description
+        )
+
+        # Stripe's own product_data.description cap is 500 chars — matches
+        # short_description's own column limit, so this is a no-op today,
+        # but stays defensive if that column limit ever changes.
+        product_data: dict[str, object] = {"name": title}
+        if short_description:
+            product_data["description"] = short_description[:500]
+        image_url = resolve_catalog_stripe_image_url(item, backend_public_url=settings.BACKEND_PUBLIC_URL)
+        if image_url:
+            product_data["images"] = [image_url]
+
         session = stripe.checkout.Session.create(
             mode="payment",
             customer=customer_id,
@@ -159,7 +184,7 @@ class BillingService:
                     "price_data": {
                         "currency": item.currency.lower(),
                         "unit_amount": unit_amount,
-                        "product_data": {"name": item.title},
+                        "product_data": product_data,
                     },
                     "quantity": 1,
                 }
