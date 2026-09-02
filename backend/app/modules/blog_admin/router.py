@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import record_audit_log
 from app.core.database import get_db
-from app.core.media_storage import validate_image_upload
+from app.core.media_storage import process_image_upload
 from app.models.blog_post import BlogPost
 from app.models.enums import BlogPostStatus
 from app.models.user import User
@@ -60,7 +60,7 @@ async def upload_blog_cover_image(
 ):
     content = await file.read()
     try:
-        mime = validate_image_upload(content, file.content_type)
+        content, mime = process_image_upload(content, file.content_type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     svc.upload_cover_image(post_id, content, mime)
