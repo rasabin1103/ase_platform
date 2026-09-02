@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import record_audit_log
 from app.core.database import get_db
-from app.core.media_storage import validate_image_upload
+from app.core.media_storage import process_image_upload
 from app.core.media_urls import catalog_has_stored_image
 from app.core.translation import translation_configured
 from app.models.catalog_item import CatalogItem
@@ -96,7 +96,7 @@ async def upload_catalog_image(
 ):
     content = await file.read()
     try:
-        mime = validate_image_upload(content, file.content_type)
+        content, mime = process_image_upload(content, file.content_type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     svc.upload_cover_image(item_id, content, mime)
@@ -140,7 +140,7 @@ async def add_catalog_item_image(
 ):
     content = await file.read()
     try:
-        mime = validate_image_upload(content, file.content_type)
+        content, mime = process_image_upload(content, file.content_type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return svc.add_image_upload(item_id, content, mime)

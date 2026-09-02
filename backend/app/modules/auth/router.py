@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.media_storage import validate_image_upload
+from app.core.media_storage import AVATAR_MAX_DIMENSION, process_image_upload
 from app.core.media_urls import resolve_user_avatar_url, user_has_stored_avatar
 from app.core.rate_limit import limiter
 from app.core.turnstile import verify_turnstile_token
@@ -264,7 +264,7 @@ async def upload_my_avatar(
 ):
     content = await file.read()
     try:
-        mime = validate_image_upload(content, file.content_type)
+        content, mime = process_image_upload(content, file.content_type, max_dimension=AVATAR_MAX_DIMENSION)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     user.avatar_data = bytes(content)
