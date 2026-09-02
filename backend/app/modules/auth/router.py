@@ -288,7 +288,15 @@ def _avatar_bytes(user: User) -> bytes:
 def get_my_avatar(user: User = Depends(get_current_user)):
     if not user_has_stored_avatar(user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found")
-    return Response(content=_avatar_bytes(user), media_type=user.avatar_mime or "image/jpeg")
+    # Own avatar barely changes and gets requested on every authenticated
+    # page (header, profile menu, etc.) — caching it is one of the bigger
+    # levers against repeat Supabase DB egress. "private" (not "public")
+    # since this is served from an authenticated, per-caller endpoint.
+    return Response(
+        content=_avatar_bytes(user),
+        media_type=user.avatar_mime or "image/jpeg",
+        headers={"Cache-Control": "private, max-age=86400"},
+    )
 
 
 @router.get("/users/{user_uuid}/avatar")
@@ -296,7 +304,13 @@ def get_user_avatar(user_uuid: UUID, db: Session = Depends(get_db)):
     user = db.execute(select(User).where(User.uuid == user_uuid)).scalar_one_or_none()
     if user is None or not user_has_stored_avatar(user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found")
-    return Response(content=_avatar_bytes(user), media_type=user.avatar_mime or "image/jpeg")
+    # No-auth endpoint (other people's avatars show up in comments, team
+    # lists, admin user lists, etc.) — safe to cache publicly.
+    return Response(
+        content=_avatar_bytes(user),
+        media_type=user.avatar_mime or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.patch("/me", response_model=MeResponse)

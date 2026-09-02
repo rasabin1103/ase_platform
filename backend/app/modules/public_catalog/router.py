@@ -78,4 +78,10 @@ def read_public_catalog_cover_image(item_id: int, db: Session = Depends(get_db))
     item = get_published_catalog_item_or_404(db, item_id)
     if not catalog_has_stored_image(item):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    return Response(content=bytes(item.image_data), media_type=item.image_mime or "image/jpeg")
+    # See the matching comment in media/router.py: caching this cuts repeat
+    # Supabase DB egress from re-fetching the same unchanged image bytes.
+    return Response(
+        content=bytes(item.image_data),
+        media_type=item.image_mime or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )

@@ -108,7 +108,14 @@ def get_catalog_image_admin(item_id: int, db: Session = Depends(get_db)):
     item = db.get(CatalogItem, item_id)
     if item is None or not catalog_has_stored_image(item):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    return Response(content=bytes(item.image_data), media_type=item.image_mime or "image/jpeg")
+    # Admin-only, but this is exactly the endpoint hit hardest while
+    # actively editing catalog items (every list/detail view in the admin
+    # UI re-requests it) — caching it matters just as much as the public one.
+    return Response(
+        content=bytes(item.image_data),
+        media_type=item.image_mime or "image/jpeg",
+        headers={"Cache-Control": "private, max-age=86400"},
+    )
 
 
 @router.get(

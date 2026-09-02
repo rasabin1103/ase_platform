@@ -69,4 +69,9 @@ def read_public_blog_cover_image(post_id: int, db: Session = Depends(get_db)):
     post = get_published_post_or_404(db, post_id)
     if not blog_has_stored_image(post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    return Response(content=bytes(post.cover_image_data), media_type=post.cover_image_mime or "image/jpeg")
+    # See media/router.py: caching this cuts repeat Supabase DB egress.
+    return Response(
+        content=bytes(post.cover_image_data),
+        media_type=post.cover_image_mime or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
