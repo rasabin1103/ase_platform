@@ -78,7 +78,12 @@ def get_blog_cover_image_admin(post_id: int, db: Session = Depends(get_db)):
     post = db.get(BlogPost, post_id)
     if post is None or not post.cover_image_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    return Response(content=bytes(post.cover_image_data), media_type=post.cover_image_mime or "image/jpeg")
+    # See catalog_admin/router.py: admin editing views re-request this a lot.
+    return Response(
+        content=bytes(post.cover_image_data),
+        media_type=post.cover_image_mime or "image/jpeg",
+        headers={"Cache-Control": "private, max-age=86400"},
+    )
 
 
 @router.get("/{post_id}", response_model=BlogPostAdminRead, dependencies=[_MANAGE])
