@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
 import { createBillingPortalSession } from '../../api/billing.api'
+import { clearProfileLinksDraft, getProfileLinksDraft, setProfileLinksDraft } from '../../auth/auth.store'
 import type { UserLink } from '../../types/auth.types'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
@@ -107,25 +108,45 @@ export function ProfilePage() {
     onError: () => setNewsletterError(t('profilePage.newsletter.error') as string),
   })
 
-  const [links, setLinks] = useState<Array<{ label: string; url: string }>>([])
+  // Restored synchronously on mount so a remount (switching browser tabs
+  // and coming back, navigating away and returning) never shows an empty
+  // list first, even for a split second.
+  const [links, setLinks] = useState<Array<{ label: string; url: string }>>(() => getProfileLinksDraft() ?? [])
   const [linksSaved, setLinksSaved] = useState(false)
   const [linksError, setLinksError] = useState<string | null>(null)
+  // Whether `links` has been populated at least once — either from a
+  // pending local draft (restored above) or from the server. Gates the
+  // effects below so a just-restored draft is never clobbered by the
+  // server value, and so we don't start persisting drafts before there's
+  // real data to persist.
+  const [linksHydrated, setLinksHydrated] = useState(() => getProfileLinksDraft() !== null)
 
   // `links` starts from currentUser.links but is then locally editable
-  // (add/remove/edit rows below) before saving — so it can't be pure
-  // derived state. Re-sync it when the underlying data identity changes,
-  // during render (React's blessed pattern for this) rather than via a
-  // synchronous setState inside an effect.
-  const [prevUserLinks, setPrevUserLinks] = useState(currentUser?.links)
-  if (currentUser?.links !== prevUserLinks) {
-    setPrevUserLinks(currentUser?.links)
-    setLinks((currentUser?.links ?? []).map((l: UserLink) => ({ label: l.label, url: l.url })))
+  // (add/remove/edit rows below) before saving. Hydrate from the server
+  // exactly once, and only if there wasn't already a pending draft — a
+  // draft means the user has unsaved edits that must win over the server.
+  // Done during render (React's supported pattern for this — see
+  // react.dev/learn/you-might-not-need-an-effect) rather than in a
+  // useEffect, so it doesn't trigger an extra commit.
+  if (!linksHydrated && currentUser) {
+    setLinksHydrated(true)
+    setLinks((currentUser.links ?? []).map((l: UserLink) => ({ label: l.label, url: l.url })))
   }
+
+  // Persist every edit to localStorage so unsaved changes survive a
+  // remount of this page instead of silently disappearing — this is the
+  // fix for "los enlaces se pierden al cambiar de pestaña".
+  useEffect(() => {
+    if (!linksHydrated) return
+    setProfileLinksDraft(links)
+  }, [links, linksHydrated])
 
   const linksMut = useMutation({
     mutationFn: replaceMyLinks,
     onSuccess: (me) => {
       applyCurrentUser(me)
+      setLinks((me.links ?? []).map((l: UserLink) => ({ label: l.label, url: l.url })))
+      clearProfileLinksDraft()
       setLinksError(null)
       setLinksSaved(true)
       setTimeout(() => setLinksSaved(false), 3000)

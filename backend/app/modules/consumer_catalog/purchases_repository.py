@@ -65,6 +65,25 @@ class CatalogPurchasesRepository:
         )
         return set(self.db.execute(stmt).scalars().all())
 
+    def permanently_owned_slugs_for_user(self, user_id: int) -> set[str]:
+        """Subset of slugs_for_user() the caller actually paid for (directly
+        purchased, admin-granted, or claimed free) — anything with a
+        non-null permanent_access_granted_at. Excludes plan-only access,
+        which is real access but not something the user spent money on for
+        that specific item; used to keep "total invested"-style dashboard
+        stats from double-counting a €9.99/mo plan as if the user had
+        separately bought every item it happens to include at that item's
+        full individual price (see IndependentProgressPanel.tsx)."""
+        stmt = (
+            select(CatalogItem.slug)
+            .join(CatalogPurchase, CatalogPurchase.catalog_item_id == CatalogItem.id)
+            .where(
+                CatalogPurchase.user_id == user_id,
+                CatalogPurchase.permanent_access_granted_at.isnot(None),
+            )
+        )
+        return set(self.db.execute(stmt).scalars().all())
+
     def add(
         self,
         user_id: int,

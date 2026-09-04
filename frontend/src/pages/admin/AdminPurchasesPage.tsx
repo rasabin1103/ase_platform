@@ -1,8 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download, FileSpreadsheet } from 'lucide-react'
-import { getAdminPurchasesSummary, listAdminPurchases } from '../../api/adminDashboard.api'
+import { Download, FileSpreadsheet, Info } from 'lucide-react'
+import {
+  getAdminPurchasesSummary,
+  listAdminPurchases,
+  listAdminSubscriptions,
+  type AdminPurchase,
+  type AdminSubscription,
+} from '../../api/adminDashboard.api'
 import { Card } from '../../components/ui/Card'
+import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Input } from '../../components/ui/Input'
@@ -14,11 +21,18 @@ import {
   PremiumMetricCard,
   PremiumOrb,
 } from '../../components/admin/premium/PremiumAdminUi'
+import { cn } from '../../components/ui/cn'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import { downloadCsv } from '../../utils/csv'
 
 const LIMIT = 50
+
+type PurchasesTab = 'items' | 'plans'
+const TABS: { key: PurchasesTab; labelKey: string }[] = [
+  { key: 'items', labelKey: 'adminPurchases.tabs.items' },
+  { key: 'plans', labelKey: 'adminPurchases.tabs.plans' },
+]
 
 function fmtDate(iso: string) {
   try {
@@ -28,38 +42,75 @@ function fmtDate(iso: string) {
   }
 }
 
+function fmtMoney(value: number | null, currency: string) {
+  if (value == null) return '—'
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value)
+  } catch {
+    return `${value.toFixed(2)} ${currency}`
+  }
+}
+
 export function AdminPurchasesPage() {
   const { t, language } = useI18n()
   const { currentUser } = useAuth()
+  const [tab, setTab] = useState<PurchasesTab>('items')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [offset, setOffset] = useState(0)
+  const [itemsOffset, setItemsOffset] = useState(0)
+  const [plansOffset, setPlansOffset] = useState(0)
 
   const summaryQuery = useQuery({ queryKey: ['admin-purchases-summary'], queryFn: getAdminPurchasesSummary })
-  const filters = useMemo(
+
+  const itemsFilters = useMemo(
     () => ({
       limit: LIMIT,
-      offset,
+      offset: itemsOffset,
       search: search.trim() || undefined,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
     }),
-    [search, dateFrom, dateTo, offset],
+    [search, dateFrom, dateTo, itemsOffset],
   )
-  const listQuery = useQuery({ queryKey: ['admin-purchases', filters], queryFn: () => listAdminPurchases(filters) })
+  const plansFilters = useMemo(
+    () => ({
+      limit: LIMIT,
+      offset: plansOffset,
+      search: search.trim() || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+    }),
+    [search, dateFrom, dateTo, plansOffset],
+  )
+
+  const itemsQuery = useQuery({ queryKey: ['admin-purchases', itemsFilters], queryFn: () => listAdminPurchases(itemsFilters) })
+  // Only fetched once the "Planes" tab is actually opened — no reason to
+  // pay for a second list query on every visit to this page when most
+  // admin traffic is probably still checking individual purchases.
+  const plansQuery = useQuery({
+    queryKey: ['admin-subscriptions', plansFilters],
+    queryFn: () => listAdminSubscriptions(plansFilters),
+    enabled: tab === 'plans',
+  })
+
   const summary = summaryQuery.data
-  const items = listQuery.data?.items ?? []
+  const items = itemsQuery.data?.items ?? []
+  const plans = plansQuery.data?.items ?? []
 
   const hasFilters = Boolean(search || dateFrom || dateTo)
   const clearFilters = () => {
     setSearch('')
     setDateFrom('')
     setDateTo('')
-    setOffset(0)
+    setItemsOffset(0)
+    setPlansOffset(0)
   }
 
-  const handleExport = () => {
+  const sourceLabel = (source: string) => (t(`adminPurchases.sourceLabels.${source}`) as string) ?? source
+  const statusLabel = (status: string) => (t(`adminPurchases.statusLabels.${status}`) as string) ?? status
+
+  const handleExportItems = () => {
     downloadCsv(
       'purchases',
       items.map((row) => ({
@@ -67,15 +118,14 @@ export function AdminPurchasesPage() {
         user_email: row.user_email,
         item_title: row.item_title,
         item_type: row.item_type,
+        source: row.source,
         created_at: row.created_at,
       })),
     )
   }
 
-  const handleExportExcel = async () => {
+  const handleExportItemsExcel = async () => {
     const today = new Date().toISOString().slice(0, 10)
-    // Loaded on demand — ExcelJS is only needed if someone actually clicks
-    // "Export Excel", not on every visit to this page.
     const { downloadBrandedExcel } = await import('../../utils/exportExcel')
     downloadBrandedExcel({
       filename: `ase-compras-${today}.xlsx`,
@@ -87,10 +137,50 @@ export function AdminPurchasesPage() {
         [t('adminPurchases.colUser')]: row.user_email,
         [t('adminPurchases.colItem')]: row.item_title,
         [t('adminPurchases.colType')]: row.item_type,
+        [t('adminPurchases.colSource')]: sourceLabel(row.source),
         [t('adminPurchases.colDate')]: fmtDate(row.created_at),
       })),
     })
   }
+
+  const handleExportPlans = () => {
+    downloadCsv(
+      'subscriptions',
+      plans.map((row) => ({
+        id: row.id,
+        organization_name: row.organization_name,
+        owner_email: row.owner_email,
+        plan_name: row.plan_name,
+        plan_price: row.plan_price,
+        status: row.status,
+        tenure_months: row.tenure_months,
+        starts_at: row.starts_at,
+      })),
+    )
+  }
+
+  const handleExportPlansExcel = async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const { downloadBrandedExcel } = await import('../../utils/exportExcel')
+    downloadBrandedExcel({
+      filename: `ase-planes-${today}.xlsx`,
+      sheetName: t('adminPurchases.tabs.plans'),
+      title: t('adminPurchases.tabs.plans'),
+      generatedBy: currentUser?.email,
+      lang: language === 'en' ? 'en' : 'es',
+      rows: plans.map((row) => ({
+        [t('adminPurchases.colOrg')]: row.organization_name,
+        [t('adminPurchases.colOwner')]: row.owner_email,
+        [t('adminPurchases.colPlan')]: row.plan_name,
+        [t('adminPurchases.colPrice')]: fmtMoney(row.plan_price, row.plan_currency),
+        [t('adminPurchases.colStatus')]: statusLabel(row.status),
+        [t('adminPurchases.colTenure')]: row.tenure_months,
+        [t('adminPurchases.colStarted')]: fmtDate(row.starts_at),
+      })),
+    })
+  }
+
+  const isItemsTab = tab === 'items'
 
   return (
     <div className="space-y-8 pb-16">
@@ -126,12 +216,18 @@ export function AdminPurchasesPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <PremiumMetricCard
           label={t('adminPurchases.totalPurchases')}
           value={summary?.purchases_total ?? 0}
           icon="🛒"
           accent="from-violet-300 to-fuchsia-500"
+        />
+        <PremiumMetricCard
+          label={t('adminPurchases.totalPlanSubscriptions')}
+          value={summary?.plan_subscriptions_total ?? 0}
+          icon="📋"
+          accent="from-cyan-300 to-blue-500"
         />
         <PremiumMetricCard
           label={t('adminPurchases.totalRevenue')}
@@ -142,6 +238,26 @@ export function AdminPurchasesPage() {
         />
       </div>
 
+      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-3 backdrop-blur">
+        <div className="flex flex-wrap gap-2">
+          {TABS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setTab(item.key)}
+              className={cn(
+                'rounded-full border px-4 py-1.5 text-xs font-semibold transition',
+                tab === item.key
+                  ? 'border-amber-300/40 bg-amber-400/15 text-amber-100'
+                  : 'border-white/10 bg-white/[0.03] text-ase-muted hover:text-ase-text',
+              )}
+            >
+              {t(item.labelKey)}
+            </button>
+          ))}
+        </div>
+      </Card>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           <Card className="p-4">
@@ -150,20 +266,32 @@ export function AdminPurchasesPage() {
                 <Input
                   placeholder={t('adminPurchases.filters.search')}
                   value={search}
-                  onChange={(e) => { setSearch(e.target.value); setOffset(0) }}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setItemsOffset(0)
+                    setPlansOffset(0)
+                  }}
                 />
               </div>
               <Input
                 type="date"
                 aria-label={t('adminPurchases.filters.dateFrom')}
                 value={dateFrom}
-                onChange={(e) => { setDateFrom(e.target.value); setOffset(0) }}
+                onChange={(e) => {
+                  setDateFrom(e.target.value)
+                  setItemsOffset(0)
+                  setPlansOffset(0)
+                }}
               />
               <Input
                 type="date"
                 aria-label={t('adminPurchases.filters.dateTo')}
                 value={dateTo}
-                onChange={(e) => { setDateTo(e.target.value); setOffset(0) }}
+                onChange={(e) => {
+                  setDateTo(e.target.value)
+                  setItemsOffset(0)
+                  setPlansOffset(0)
+                }}
               />
             </div>
             <div className="mt-3 flex items-center justify-between gap-2">
@@ -171,11 +299,21 @@ export function AdminPurchasesPage() {
                 {t('adminPurchases.filters.clear')}
               </Button>
               <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={handleExport} disabled={items.length === 0}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={isItemsTab ? handleExportItems : handleExportPlans}
+                  disabled={isItemsTab ? items.length === 0 : plans.length === 0}
+                >
                   <Download className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
                   {t('private.common.exportCsv')}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={handleExportExcel} disabled={items.length === 0}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={isItemsTab ? handleExportItemsExcel : handleExportPlansExcel}
+                  disabled={isItemsTab ? items.length === 0 : plans.length === 0}
+                >
                   <FileSpreadsheet className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
                   {t('private.common.exportExcel')}
                 </Button>
@@ -183,30 +321,95 @@ export function AdminPurchasesPage() {
             </div>
           </Card>
 
-          {listQuery.isLoading ? (
+          {isItemsTab ? (
+            itemsQuery.isLoading ? (
+              <Skeleton className="h-64 rounded-[2rem]" />
+            ) : itemsQuery.isError ? (
+              <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
+            ) : (
+              <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+                <div className="grid grid-cols-[1fr_1fr_90px_100px_150px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
+                  <span>{t('adminPurchases.colUser')}</span>
+                  <span>{t('adminPurchases.colItem')}</span>
+                  <span>{t('adminPurchases.colType')}</span>
+                  <span>{t('adminPurchases.colSource')}</span>
+                  <span>{t('adminPurchases.colDate')}</span>
+                </div>
+                {items.length === 0 ? (
+                  <div className="px-4 py-10">
+                    <EmptyState title={t('adminPurchases.emptyItems')} />
+                  </div>
+                ) : (
+                  items.map((row: AdminPurchase) => (
+                    <div
+                      key={row.id}
+                      className="grid grid-cols-[1fr_1fr_90px_100px_150px] gap-2 px-4 py-3 text-sm text-ase-text2"
+                    >
+                      <span className="truncate text-ase-text">{row.user_email}</span>
+                      <span className="truncate font-medium text-ase-text">{row.item_title}</span>
+                      <span>{row.item_type}</span>
+                      <span>
+                        <Badge variant={row.source === 'stripe_checkout' ? 'success' : 'default'}>
+                          {sourceLabel(row.source)}
+                        </Badge>
+                      </span>
+                      <span>{fmtDate(row.created_at)}</span>
+                    </div>
+                  ))
+                )}
+                <Pagination limit={LIMIT} offset={itemsOffset} total={itemsQuery.data?.total ?? 0} onOffsetChange={setItemsOffset} />
+              </Card>
+            )
+          ) : plansQuery.isLoading ? (
             <Skeleton className="h-64 rounded-[2rem]" />
-          ) : listQuery.isError ? (
+          ) : plansQuery.isError ? (
             <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
           ) : (
             <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
-              <div className="grid grid-cols-[1fr_1fr_100px_160px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
-                <span>{t('adminPurchases.colUser')}</span>
-                <span>{t('adminPurchases.colItem')}</span>
-                <span>{t('adminPurchases.colType')}</span>
-                <span>{t('adminPurchases.colDate')}</span>
+              <div className="grid grid-cols-[1fr_1fr_110px_90px_110px_130px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
+                <span>{t('adminPurchases.colOrg')}</span>
+                <span>{t('adminPurchases.colOwner')}</span>
+                <span>{t('adminPurchases.colPlan')}</span>
+                <span>{t('adminPurchases.colStatus')}</span>
+                <span>{t('adminPurchases.colTenure')}</span>
+                <span>{t('adminPurchases.colStarted')}</span>
               </div>
-              {items.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-[1fr_1fr_100px_160px] gap-2 px-4 py-3 text-sm text-ase-text2"
-                >
-                  <span className="text-ase-text">{row.user_email}</span>
-                  <span className="font-medium text-ase-text">{row.item_title}</span>
-                  <span>{row.item_type}</span>
-                  <span>{fmtDate(row.created_at)}</span>
+              {plans.length === 0 ? (
+                <div className="px-4 py-10">
+                  <EmptyState title={t('adminPurchases.emptyPlans')} />
                 </div>
-              ))}
-              <Pagination limit={LIMIT} offset={offset} total={listQuery.data?.total ?? 0} onOffsetChange={setOffset} />
+              ) : (
+                plans.map((row: AdminSubscription) => (
+                  <div
+                    key={row.id}
+                    className="grid grid-cols-[1fr_1fr_110px_90px_110px_130px] gap-2 px-4 py-3 text-sm text-ase-text2"
+                  >
+                    <span className="truncate text-ase-text">{row.organization_name}</span>
+                    <span className="truncate">{row.owner_email}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 truncate font-medium text-ase-text">
+                      <span className="truncate">{row.plan_name}</span>
+                      <span
+                        className="inline-flex shrink-0"
+                        role="img"
+                        aria-label={`${t('adminPurchases.colPrice')}: ${fmtMoney(row.plan_price, row.plan_currency)}`}
+                        title={`${t('adminPurchases.colPrice')}: ${fmtMoney(row.plan_price, row.plan_currency)}`}
+                      >
+                        <Info className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
+                      </span>
+                    </span>
+                    <span>
+                      <Badge variant={row.status === 'active' ? 'success' : row.status === 'trialing' ? 'info' : 'warning'}>
+                        {statusLabel(row.status)}
+                      </Badge>
+                    </span>
+                    <span className="tabular-nums">
+                      {row.tenure_months} {t('adminPurchases.months')}
+                    </span>
+                    <span>{fmtDate(row.starts_at)}</span>
+                  </div>
+                ))
+              )}
+              <Pagination limit={LIMIT} offset={plansOffset} total={plansQuery.data?.total ?? 0} onOffsetChange={setPlansOffset} />
             </Card>
           )}
         </div>

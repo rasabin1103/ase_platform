@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import BillingCycle, CatalogItemType
+from app.models.enums import BillingCycle, CatalogItemType, PlanStatus
 
 
 class PlanFeatureCreate(BaseModel):
@@ -56,6 +56,12 @@ class PlanCreate(BaseModel):
     price: Decimal | None = Field(default=None)
     currency: str = Field(default="EUR", min_length=3, max_length=3)
     is_active: bool = True
+    # Primary field for the admin to edit going forward — is_active above is
+    # derived from it automatically (see PlansService.create/update) so
+    # every is_active-based query keeps working. Sending is_active directly
+    # still works for backward compatibility but status, when present,
+    # wins.
+    status: PlanStatus = PlanStatus.active
     description: str | None = None
     short_description: str | None = Field(default=None, max_length=500)
     display_order: int = 0
@@ -80,6 +86,7 @@ class PlanUpdate(BaseModel):
     price: Decimal | None = None
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     is_active: bool | None = None
+    status: PlanStatus | None = None
     description: str | None = None
     short_description: str | None = Field(default=None, max_length=500)
     display_order: int | None = None
@@ -101,6 +108,7 @@ class PlanRead(BaseModel):
     price: Decimal | None
     currency: str
     is_active: bool
+    status: PlanStatus
     created_at: datetime
     updated_at: datetime
     description: str | None = None

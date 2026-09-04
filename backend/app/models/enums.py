@@ -137,6 +137,26 @@ class BillingCycle(str, Enum):
     one_time = "one_time"
 
 
+class PlanStatus(str, Enum):
+    """Lifecycle state a plan is shown in on the public pricing page —
+    distinct from (but kept in sync with) Plan.is_active, which existing
+    queries use to decide whether a plan is visible at all.
+
+    active: normal, visible and purchasable.
+    coming_soon: visible on the public site (still counted as is_active for
+      the public catalog listing) but checkout is explicitly refused — see
+      BillingService.create_checkout_session. Lets an admin announce a plan
+      before its Stripe price is finalized without letting anyone pay for
+      it yet.
+    inactive: fully hidden from the public catalog (is_active=False), same
+      as the old plain deactivate() behavior.
+    """
+
+    active = "active"
+    coming_soon = "coming_soon"
+    inactive = "inactive"
+
+
 class SubscriptionProvider(str, Enum):
     stripe = "stripe"
     manual = "manual"

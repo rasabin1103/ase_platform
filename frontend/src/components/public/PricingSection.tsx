@@ -115,7 +115,8 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 url: `${SITE_URL}/plans`,
                 priceCurrency: plan.currency || 'EUR',
                 price: plan.price ?? '0',
-                availability: 'https://schema.org/InStock',
+                availability:
+                  plan.status === 'coming_soon' ? 'https://schema.org/PreOrder' : 'https://schema.org/InStock',
               },
             },
           })),
@@ -230,9 +231,11 @@ export function PricingSection({ compact }: { compact?: boolean }) {
               const planName = localizedPlanText(language, plan.name, plan.name_en)
               const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
               const planTier = tierFromPlanCode(plan.code)
+              const isComingSoon = plan.status === 'coming_soon'
               const isSelfServeTier = planTier === 'free' || planTier === 'pro' || planTier === 'business'
               const isPaidCheckoutTier = planTier === 'pro' || planTier === 'business'
-              const canCheckout = isPaidCheckoutTier && auth.isAuthenticated && Boolean(plan.stripe_price_id)
+              const canCheckout =
+                isPaidCheckoutTier && auth.isAuthenticated && Boolean(plan.stripe_price_id) && !isComingSoon
               const ctaHref = isSelfServeTier ? (auth.isAuthenticated ? '/dashboard' : '/register') : '/contact'
               const isCheckingOutThisPlan = checkoutMutation.isPending && checkoutMutation.variables === plan.id
 
@@ -256,7 +259,11 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
                       <div className="text-2xl font-extrabold tracking-tight text-ase-text">{planName}</div>
-                      {plan.is_recommended ? (
+                      {isComingSoon ? (
+                        <div className="mt-2 inline-flex rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-200">
+                          {t('pricing.comingSoonBadge')}
+                        </div>
+                      ) : plan.is_recommended ? (
                         <div className="relative mt-2 inline-flex">
                           <span className="pointer-events-none absolute inset-0 -z-10 animate-glow-pulse rounded-full bg-ase-gold/25 blur-md" />
                           <div className="inline-flex rounded-full border border-ase-gold/35 bg-ase-gold/10 px-2.5 py-0.5 text-xs font-semibold text-ase-gold">
@@ -277,7 +284,11 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   </div>
 
                   <div className="mt-6">
-                    {canCheckout ? (
+                    {isComingSoon ? (
+                      <Button size="lg" variant="secondary" className="w-full cursor-not-allowed opacity-60" disabled>
+                        {t('pricing.comingSoonCta')}
+                      </Button>
+                    ) : canCheckout ? (
                       <Button
                         size="lg"
                         variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}

@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.creator import ensure_personal_workspace
 from app.core.media_urls import resolve_catalog_stripe_image_url
 from app.models.catalog_item import CatalogItem
-from app.models.enums import CatalogItemStatus, MembershipStatus, SubscriptionProvider, SubscriptionStatus
+from app.models.enums import CatalogItemStatus, MembershipStatus, PlanStatus, SubscriptionProvider, SubscriptionStatus
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.plan import Plan
@@ -40,6 +40,41 @@ _STRIPE_STATUS_MAP: dict[str, SubscriptionStatus] = {
 }
 
 
+def _subscription_period_start(stripe_sub: object) -> int:
+    """Stripe moved `current_period_start`/`current_period_end` off the
+    Subscription object and onto each subscription item as of the "Basil"
+    API version (2025-03-31) — this account is on an even newer version, so
+    the top-level field is simply gone (KeyError, not just None). We only
+    ever create one line item per subscription (see create_checkout_session),
+    so the first item's period start is unambiguous. Falls back to the
+    top-level field first in case this ever runs against an older API
+    version pinned elsewhere."""
+    top_level = _field(stripe_sub, "current_period_start")
+    if top_level is not None:
+        return top_level  # type: ignore[return-value]
+    items_data = _field(_field(stripe_sub, "items", {}), "data") or []
+    if items_data:
+        item_start = _field(items_data[0], "current_period_start")
+        if item_start is not None:
+            return item_start  # type: ignore[return-value]
+    raise BillingError("Stripe subscription has no current_period_start on either the subscription or its items.")
+
+
+def _field(obj: object, key: str, default: object = None) -> object:
+    """Safe key lookup for Stripe SDK response objects (Event/Session/
+    Invoice/Subscription/...). These support `obj["key"]` (raises KeyError
+    if absent) and `in`, but — unlike a plain dict — NOT `.get()`; calling
+    `.get()` on one raises AttributeError instead of doing a lookup, since
+    stripe-python's StripeObject only defines __getitem__/__contains__, not
+    the Mapping protocol. This was silently breaking every webhook this
+    app ever received (checkout.session.completed included) until caught
+    here — see the matching fix in _get_or_create_stripe_customer."""
+    try:
+        return obj[key] if key in obj else default  # type: ignore[operator]
+    except TypeError:
+        return default
+
+
 def _require_stripe_configured() -> None:
     if not settings.STRIPE_SECRET_KEY:
         raise HTTPException(
@@ -60,7 +95,18 @@ class BillingService:
 
     def _get_or_create_stripe_customer(self, org: Organization, user: User) -> str:
         if org.stripe_customer_id:
-            return org.stripe_customer_id
+            try:
+                customer = stripe.Customer.retrieve(org.stripe_customer_id)
+                if not getattr(customer, "deleted", False):
+                    return org.stripe_customer_id
+            except stripe.InvalidRequestError:
+                # Stored ID doesn't resolve against whichever API key is
+                # currently configured — most commonly because it was
+                # created under a different key (test vs live; this bit us
+                # switching this org between the two locally) or the
+                # customer was deleted directly in the Stripe Dashboard.
+                # Mint a fresh one instead of failing the whole checkout.
+                pass
 
         customer = stripe.Customer.create(
             email=user.email,
@@ -89,6 +135,8 @@ class BillingService:
         plan = self.db.get(Plan, plan_id)
         if plan is None or not plan.is_active:
             raise BillingError("Plan not found or inactive.")
+        if plan.status == PlanStatus.coming_soon:
+            raise BillingError("This plan is coming soon and not open for purchase yet.")
         if not plan.stripe_price_id:
             raise BillingError("This plan is not yet sellable online (missing Stripe price).")
 
@@ -231,30 +279,30 @@ class BillingService:
         results: list[dict] = []
         for inv in invoices.data:
             plan_name = None
-            lines = inv.get("lines", {}).get("data") or []
+            lines = _field(_field(inv, "lines", {}), "data") or []
             if lines:
-                plan_name = lines[0].get("description")
+                plan_name = _field(lines[0], "description")
 
             results.append(
                 {
                     "id": inv["id"],
-                    "number": inv.get("number"),
-                    "status": inv.get("status") or "unknown",
-                    "amount_paid": (inv.get("amount_paid") or 0) / 100,
-                    "currency": (inv.get("currency") or "eur").upper(),
+                    "number": _field(inv, "number"),
+                    "status": _field(inv, "status") or "unknown",
+                    "amount_paid": (_field(inv, "amount_paid") or 0) / 100,
+                    "currency": (_field(inv, "currency") or "eur").upper(),
                     "created_at": datetime.fromtimestamp(inv["created"], tz=timezone.utc).isoformat(),
                     "period_start": (
                         datetime.fromtimestamp(inv["period_start"], tz=timezone.utc).isoformat()
-                        if inv.get("period_start")
+                        if _field(inv, "period_start")
                         else None
                     ),
                     "period_end": (
                         datetime.fromtimestamp(inv["period_end"], tz=timezone.utc).isoformat()
-                        if inv.get("period_end")
+                        if _field(inv, "period_end")
                         else None
                     ),
-                    "hosted_invoice_url": inv.get("hosted_invoice_url"),
-                    "invoice_pdf": inv.get("invoice_pdf"),
+                    "hosted_invoice_url": _field(inv, "hosted_invoice_url"),
+                    "invoice_pdf": _field(inv, "invoice_pdf"),
                     "plan_name": plan_name,
                 }
             )
@@ -316,11 +364,13 @@ class BillingService:
         self.db.commit()
 
     def _upsert_subscription_from_stripe(self, stripe_sub: dict) -> None:
-        metadata = stripe_sub.get("metadata") or {}
-        org_id = metadata.get("organization_id")
-        plan_id = metadata.get("plan_id")
+        metadata = _field(stripe_sub, "metadata") or {}
+        org_id = _field(metadata, "organization_id")
+        plan_id = _field(metadata, "plan_id")
         if org_id is None or plan_id is None:
-            logger.warning("Stripe subscription %s has no organization_id/plan_id metadata; skipping", stripe_sub.get("id"))
+            logger.warning(
+                "Stripe subscription %s has no organization_id/plan_id metadata; skipping", _field(stripe_sub, "id")
+            )
             return
 
         sub = (
@@ -328,18 +378,18 @@ class BillingService:
             .filter(Subscription.provider_subscription_id == stripe_sub["id"])
             .one_or_none()
         )
-        stripe_status = str(stripe_sub.get("status", "active"))
+        stripe_status = str(_field(stripe_sub, "status", "active"))
         mapped_status = _STRIPE_STATUS_MAP.get(stripe_status, SubscriptionStatus.active)
 
-        starts_at = datetime.fromtimestamp(stripe_sub["current_period_start"], tz=timezone.utc)
+        starts_at = datetime.fromtimestamp(_subscription_period_start(stripe_sub), tz=timezone.utc)
         ends_at = (
             datetime.fromtimestamp(stripe_sub["cancel_at"], tz=timezone.utc)
-            if stripe_sub.get("cancel_at")
+            if _field(stripe_sub, "cancel_at")
             else None
         )
         trial_ends_at = (
             datetime.fromtimestamp(stripe_sub["trial_end"], tz=timezone.utc)
-            if stripe_sub.get("trial_end")
+            if _field(stripe_sub, "trial_end")
             else None
         )
 
@@ -367,20 +417,20 @@ class BillingService:
             self._grant_plan_entitlements(organization_id=int(org_id), plan_id=int(plan_id))
 
     def _grant_catalog_purchase_from_session(self, session_data: dict) -> None:
-        metadata = session_data.get("metadata") or {}
-        item_id = metadata.get("catalog_item_id")
-        user_id = metadata.get("user_id")
+        metadata = _field(session_data, "metadata") or {}
+        item_id = _field(metadata, "catalog_item_id")
+        user_id = _field(metadata, "user_id")
         if item_id is None or user_id is None:
             logger.warning(
                 "Stripe checkout session %s (mode=payment) has no catalog_item_id/user_id metadata; skipping",
-                session_data.get("id"),
+                _field(session_data, "id"),
             )
             return
         CatalogPurchasesRepository(self.db).add(
             int(user_id),
             int(item_id),
             source="stripe_checkout",
-            stripe_checkout_session_id=session_data.get("id"),
+            stripe_checkout_session_id=_field(session_data, "id"),
         )
         self.db.commit()
 
@@ -422,10 +472,10 @@ class BillingService:
         data = event["data"]["object"]
 
         if event_type == "checkout.session.completed":
-            if data.get("mode") == "payment":
+            if _field(data, "mode") == "payment":
                 self._grant_catalog_purchase_from_session(data)
             else:
-                subscription_id = data.get("subscription")
+                subscription_id = _field(data, "subscription")
                 if subscription_id:
                     stripe_sub = stripe.Subscription.retrieve(subscription_id)
                     self._upsert_subscription_from_stripe(stripe_sub)
@@ -434,7 +484,7 @@ class BillingService:
         elif event_type == "customer.subscription.deleted":
             self._mark_canceled(data["id"])
         elif event_type == "invoice.payment_failed":
-            subscription_id = data.get("subscription")
+            subscription_id = _field(data, "subscription")
             if subscription_id:
                 sub = (
                     self.db.query(Subscription)

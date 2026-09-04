@@ -12,6 +12,7 @@ from app.models.case_study import CaseStudy
 from app.models.catalog_item import CatalogItem
 from app.models.course import Course
 from app.models.enums import CatalogItemStatus, CatalogItemType, CourseStatus
+from app.models.plan import Plan
 from app.models.service import Service
 from app.models.team_member import TeamMember
 from app.models.testimonial import Testimonial
@@ -21,6 +22,7 @@ from app.modules.public_catalog.schemas import (
     CatalogByType,
     CatalogPlans,
     CatalogStatsResponse,
+    PlanSavingsRead,
     PlatformStatus,
 )
 
@@ -32,6 +34,55 @@ def get_public_pricing_plans(db: Session) -> tuple[list, int]:
     """Same active-plan query used by the public pricing catalog endpoint."""
     svc = PlansService(db)
     return svc.list(limit=200, offset=0, is_active=True, billing_cycle=None)
+
+
+def get_plan_savings(db: Session, *, item_slug: str | None = None) -> list[PlanSavingsRead]:
+    """"Buy separately vs. subscribe" numbers for every sellable, non-empty
+    plan — powers the savings modal shown when a buyer is about to check
+    out a single priced item (see PlanSavingsModal.tsx / IndependentProgressPanel's
+    own per-user version of the same comparison). A plan only appears here
+    if it's active, has a Stripe price (can actually be subscribed to), and
+    includes at least one catalog item (nothing to compare otherwise).
+    Priced items only count toward includedItemsValue — a plan that only
+    bundles free items would show a nonsensical "savings" figure.
+
+    `item_slug`, when given, narrows the result to only plans that actually
+    include that specific item — so "you'd save €X with this plan" shown
+    next to one item's Buy button is never about a plan that has nothing to
+    do with it."""
+    plans = (
+        db.execute(select(Plan).where(Plan.is_active.is_(True), Plan.stripe_price_id.isnot(None)))
+        .scalars()
+        .all()
+    )
+    results: list[PlanSavingsRead] = []
+    for plan in plans:
+        if item_slug is not None and not any(pci.slug == item_slug for pci in plan.included_catalog_items):
+            continue
+        priced_items = [
+            pci for pci in plan.included_catalog_items if pci.catalog_item.price and pci.catalog_item.price > 0
+        ]
+        if not priced_items or plan.price is None:
+            continue
+        included_value = sum(float(pci.catalog_item.price) for pci in priced_items)
+        plan_price = float(plan.price)
+        savings = included_value - plan_price
+        if savings <= 0:
+            continue
+        results.append(
+            PlanSavingsRead(
+                planId=plan.id,
+                code=plan.code,
+                name=plan.name,
+                price=plan_price,
+                currency=plan.currency,
+                includedItemCount=len(priced_items),
+                includedItemsValue=included_value,
+                savings=savings,
+            )
+        )
+    results.sort(key=lambda r: r.savings, reverse=True)
+    return results
 
 
 def _safe_count(db: Session, stmt) -> int:

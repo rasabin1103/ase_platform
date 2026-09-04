@@ -86,6 +86,7 @@ function mapCatalogPricingPlan(item: CatalogPricingPlanApi): Plan {
     annual_price: item.annualPrice ?? null,
     currency: item.currency || 'EUR',
     is_active: true,
+    status: 'active',
     created_at: now,
     updated_at: now,
     description: item.description ?? null,
@@ -100,4 +101,27 @@ function mapCatalogPricingPlan(item: CatalogPricingPlanApi): Plan {
 export async function listPlansCatalog(): Promise<Plan[]> {
   const { data } = await apiClient.get<CatalogPricingPlansResponse | Plan[]>('/public/catalog-pricing-plans')
   return normalizePlansListPayload(data)
+}
+
+export type PlanSavings = {
+  planId: number
+  code: string
+  name: string
+  price: number
+  currency: string
+  includedItemCount: number
+  includedItemsValue: number
+  savings: number
+}
+
+/** "Buy separately vs. subscribe" comparison for every sellable plan that
+ * includes the given item — no auth required. Powers the savings prompt
+ * shown next to a priced item's Buy button (see PlanSavingsModal). Returns
+ * an empty list when no plan includes this item, or none would actually
+ * save the buyer money. */
+export async function getPlanSavings(itemSlug: string): Promise<PlanSavings[]> {
+  const { data } = await apiClient.get<{ items: PlanSavings[] }>('/public/plan-savings', {
+    params: { item_slug: itemSlug },
+  })
+  return data.items
 }

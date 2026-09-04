@@ -39,6 +39,7 @@ export type CatalogItem = {
   tags?: string[]
   isFavorite: boolean
   isPurchased: boolean
+  isPlanIncluded: boolean
   upvotes: number
   downvotes: number
   netScore: number

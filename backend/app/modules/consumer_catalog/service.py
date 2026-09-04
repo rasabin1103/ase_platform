@@ -156,12 +156,16 @@ class ConsumerCatalogService:
     def purchased_slugs(self, user_id: int) -> set[str]:
         return self.purchases.slugs_for_user(user_id)
 
+    def permanently_owned_slugs(self, user_id: int) -> set[str]:
+        return self.purchases.permanently_owned_slugs_for_user(user_id)
+
     def _to_read(
         self,
         item: CatalogItem,
         *,
         favorite_slugs: set[str],
         purchased_slugs: set[str],
+        permanently_owned_slugs: set[str] | None = None,
         rating_summaries: dict[int, RatingSummary] | None = None,
         my_ratings: dict[int, object] | None = None,
         review_summaries: dict[int, tuple[float, int]] | None = None,
@@ -197,6 +201,11 @@ class ConsumerCatalogService:
             tags=item.tags_json or [],
             isFavorite=item.slug in favorite_slugs,
             isPurchased=item.slug in purchased_slugs,
+            isPlanIncluded=(
+                item.slug in purchased_slugs
+                and permanently_owned_slugs is not None
+                and item.slug not in permanently_owned_slugs
+            ),
             upvotes=summary.upvotes if summary else 0,
             downvotes=summary.downvotes if summary else 0,
             netScore=summary.net_score if summary else 0,
@@ -240,11 +249,13 @@ class ConsumerCatalogService:
         summaries = self.ratings.summaries_for_items(catalog_item_ids=item_ids)
         my_ratings = self.ratings.my_ratings_for_items(user_id=user_id, catalog_item_ids=item_ids)
         review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
+        permanently_owned = self.permanently_owned_slugs(user_id)
         return [
             self._to_read(
                 i,
                 favorite_slugs=favorite_slugs,
                 purchased_slugs=purchased_slugs,
+                permanently_owned_slugs=permanently_owned,
                 rating_summaries=summaries,
                 my_ratings=my_ratings,
                 review_summaries=review_summaries,
