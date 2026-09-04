@@ -16,7 +16,7 @@ import { Badge } from '../components/ui/Badge'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
 import { CatalogItemPicker } from '../components/admin/premium/CatalogItemPicker'
-import type { BillingCycle, Plan } from '../types/plan.types'
+import type { BillingCycle, Plan, PlanStatus } from '../types/plan.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { Switch } from '../components/ui/Switch'
@@ -32,7 +32,7 @@ type CreateValues = {
   currency: string
   display_order?: string | ''
   is_recommended: boolean
-  is_active: boolean
+  status: PlanStatus
   cta_label?: string | ''
   stripe_price_id?: string | ''
   name_en?: string | ''
@@ -51,7 +51,7 @@ type EditValues = {
   currency?: string | ''
   display_order?: string | ''
   is_recommended?: boolean
-  is_active?: boolean
+  status?: PlanStatus
   cta_label?: string | ''
   stripe_price_id?: string | ''
   name_en?: string | ''
@@ -83,6 +83,8 @@ export function PlansPage() {
   })
   const catalogItems = catalogQuery.data?.items ?? []
 
+  const planStatuses: PlanStatus[] = ['active', 'coming_soon', 'inactive']
+
   const billingCycles = useMemo<Array<{ value: BillingCycle; label: string }>>(
     () => [
       { value: 'monthly', label: t('plansPage.badges.monthly') as string },
@@ -112,7 +114,7 @@ export function PlansPage() {
           .or(z.literal(''))
           .refine((v) => !v || !Number.isNaN(Number(v)), 'display_order must be a number'),
         is_recommended: z.boolean(),
-        is_active: z.boolean(),
+        status: z.enum(['active', 'coming_soon', 'inactive']),
         cta_label: z.string().max(80).optional().or(z.literal('')),
         stripe_price_id: z.string().max(255).optional().or(z.literal('')),
         name_en: z.string().max(200).optional().or(z.literal('')),
@@ -143,7 +145,7 @@ export function PlansPage() {
           .or(z.literal(''))
           .refine((v) => !v || !Number.isNaN(Number(v)), 'display_order must be a number'),
         is_recommended: z.boolean().optional(),
-        is_active: z.boolean().optional(),
+        status: z.enum(['active', 'coming_soon', 'inactive']).optional(),
         cta_label: z.string().max(80).optional().or(z.literal('')),
         stripe_price_id: z.string().max(255).optional().or(z.literal('')),
         name_en: z.string().max(200).optional().or(z.literal('')),
@@ -185,7 +187,7 @@ export function PlansPage() {
       currency: 'EUR',
       display_order: '',
       is_recommended: false,
-      is_active: true,
+      status: 'active',
       cta_label: '',
       stripe_price_id: '',
       name_en: '',
@@ -195,7 +197,7 @@ export function PlansPage() {
     },
   })
 
-  const createFormIsActive = useWatch({ control: createForm.control, name: 'is_active' })
+  const createFormStatus = useWatch({ control: createForm.control, name: 'status' })
   const createFormIsRecommended = useWatch({ control: createForm.control, name: 'is_recommended' })
 
   const editForm = useForm<EditValues>({
@@ -210,7 +212,7 @@ export function PlansPage() {
       currency: 'EUR',
       display_order: '',
       is_recommended: false,
-      is_active: true,
+      status: 'active',
       cta_label: '',
       stripe_price_id: '',
       name_en: '',
@@ -220,7 +222,7 @@ export function PlansPage() {
     },
   })
 
-  const editFormIsActive = useWatch({ control: editForm.control, name: 'is_active' })
+  const editFormStatus = useWatch({ control: editForm.control, name: 'status' })
   const editFormIsRecommended = useWatch({ control: editForm.control, name: 'is_recommended' })
 
   const createMutation = useMutation({
@@ -236,7 +238,7 @@ export function PlansPage() {
         currency: 'EUR',
         display_order: '',
         is_recommended: false,
-        is_active: true,
+        status: 'active',
         cta_label: '',
         stripe_price_id: '',
         name_en: '',
@@ -425,7 +427,7 @@ export function PlansPage() {
                           <span className="text-ase-muted">{t('plansPage.price.custom')}</span>
                         )}
                       </TD>
-                      <TD>{p.is_active ? <Badge variant="success">{t('plansPage.badges.active')}</Badge> : <Badge variant="warning">{t('plansPage.badges.inactive')}</Badge>}</TD>
+                      <TD>{statusBadge(t, p.status)}</TD>
                       <TD className="hidden xl:table-cell">
                         {p.is_recommended ? <Badge variant="info">{t('plansPage.badges.recommended')}</Badge> : <span className="text-ase-muted">{na}</span>}
                       </TD>
@@ -447,7 +449,7 @@ export function PlansPage() {
                                 currency: p.currency,
                                 display_order: typeof p.display_order === 'number' ? String(p.display_order) : '',
                                 is_recommended: Boolean(p.is_recommended),
-                                is_active: p.is_active,
+                                status: p.status,
                                 cta_label: p.cta_label ?? '',
                                 stripe_price_id: p.stripe_price_id ?? '',
                                 name_en: p.name_en ?? '',
@@ -488,7 +490,7 @@ export function PlansPage() {
                   billing_cycle: values.billing_cycle,
                   price: values.price ? Number(values.price) : null,
                   currency: values.currency.toUpperCase(),
-                  is_active: values.is_active,
+                  status: values.status,
                   is_recommended: values.is_recommended,
                   short_description: values.short_description ? values.short_description : null,
                   description: values.description ? values.description : null,
@@ -601,8 +603,17 @@ export function PlansPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isActive')}</div>
-                  <Switch checked={Boolean(createFormIsActive)} onCheckedChange={(v) => createForm.setValue('is_active', v)} />
+                  <label htmlFor="plan-create-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.status')}</label>
+                  <Select id="plan-create-status" {...createForm.register('status')}>
+                    {planStatuses.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`plansPage.status.${s}`)}
+                      </option>
+                    ))}
+                  </Select>
+                  {createFormStatus === 'coming_soon' ? (
+                    <p className="mt-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.comingSoonHint')}</p>
+                  ) : null}
                 </div>
                 <div>
                   <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isRecommended')}</div>
@@ -672,7 +683,7 @@ export function PlansPage() {
                     currency: values.currency ? values.currency.toUpperCase() : null,
                     display_order: values.display_order ? Number(values.display_order) : null,
                     is_recommended: typeof values.is_recommended === 'boolean' ? values.is_recommended : null,
-                    is_active: typeof values.is_active === 'boolean' ? values.is_active : null,
+                    status: values.status ?? null,
                     cta_label: values.cta_label ? values.cta_label : null,
                     catalog_item_ids: editCatalogItemIds,
                     stripe_price_id: values.stripe_price_id ? values.stripe_price_id.trim() : null,
@@ -785,11 +796,17 @@ export function PlansPage() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isActive')}</div>
-              <Switch
-                checked={Boolean(editFormIsActive)}
-                onCheckedChange={(v) => editForm.setValue('is_active', v)}
-              />
+              <label htmlFor="plan-edit-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('plansPage.create.fields.status')}</label>
+              <Select id="plan-edit-status" {...editForm.register('status')}>
+                {planStatuses.map((s) => (
+                  <option key={s} value={s}>
+                    {t(`plansPage.status.${s}`)}
+                  </option>
+                ))}
+              </Select>
+              {editFormStatus === 'coming_soon' ? (
+                <p className="mt-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.comingSoonHint')}</p>
+              ) : null}
             </div>
             <div>
               <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.isRecommended')}</div>
@@ -866,6 +883,16 @@ function billingBadge(t: (k: string) => unknown, cycle: BillingCycle) {
   )
 }
 
+function statusBadge(t: (k: string) => unknown, status: Plan['status']) {
+  if (status === 'coming_soon') {
+    return <Badge variant="info">{t('plansPage.status.coming_soon') as string}</Badge>
+  }
+  if (status === 'inactive') {
+    return <Badge variant="warning">{t('plansPage.status.inactive') as string}</Badge>
+  }
+  return <Badge variant="success">{t('plansPage.status.active') as string}</Badge>
+}
+
 function PricingCard({ plan }: { plan: Plan }) {
   const { t } = useI18n()
   const price = fmtMoney(plan.price, plan.currency)
@@ -886,7 +913,7 @@ function PricingCard({ plan }: { plan: Plan }) {
           <div className="mt-1 flex flex-wrap items-center gap-2">
             {billingBadge(t, plan.billing_cycle)}
             {plan.is_recommended ? <Badge variant="info">{t('plansPage.badges.recommended')}</Badge> : null}
-            {plan.is_active ? <Badge variant="success">{t('plansPage.badges.active')}</Badge> : <Badge variant="warning">{t('plansPage.badges.inactive')}</Badge>}
+            {statusBadge(t, plan.status)}
           </div>
         </div>
         <div className="text-right">

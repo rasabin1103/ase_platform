@@ -6,6 +6,11 @@ const ACTIVE_ORG_UUID_KEY = 'ase.active_organization_uuid'
 // re-login. Cleared as soon as the admin returns.
 const IMPERSONATOR_ACCESS_TOKEN_KEY = 'ase.impersonator_access_token'
 const IMPERSONATOR_REFRESH_TOKEN_KEY = 'ase.impersonator_refresh_token'
+// Unsaved draft of the profile page's "links" (social/contact) list — kept
+// in localStorage (not just component state) so it survives a remount of
+// ProfilePage, e.g. the user switching browser tabs and coming back, or
+// navigating to another page and returning before hitting "Guardar".
+const PROFILE_LINKS_DRAFT_KEY = 'ase.profile_links_draft'
 
 export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY)
@@ -67,5 +72,31 @@ export function setActiveOrganizationUuid(uuid: string) {
 
 export function clearActiveOrganizationUuid() {
   localStorage.removeItem(ACTIVE_ORG_UUID_KEY)
+}
+
+export type ProfileLinkDraft = { label: string; url: string }
+
+export function getProfileLinksDraft(): ProfileLinkDraft[] | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_LINKS_DRAFT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return null
+    return parsed as ProfileLinkDraft[]
+  } catch {
+    return null
+  }
+}
+
+export function setProfileLinksDraft(links: ProfileLinkDraft[]) {
+  try {
+    localStorage.setItem(PROFILE_LINKS_DRAFT_KEY, JSON.stringify(links))
+  } catch {
+    // best-effort — private browsing / quota exceeded shouldn't break editing
+  }
+}
+
+export function clearProfileLinksDraft() {
+  localStorage.removeItem(PROFILE_LINKS_DRAFT_KEY)
 }
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useState, type ReactNode } from 'react'
+import { Area, AreaChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Badge } from '../../ui/Badge'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -76,6 +76,69 @@ export function PremiumMetricCard({
           {hint ? <div className="mt-2 text-xs text-ase-text2">{hint}</div> : null}
         </div>
         <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
+      </div>
+    </Card>
+  )
+}
+
+/** KPI card with a "vs last month" delta badge — used for the headline
+ * metrics an admin checks trend on daily (users, individual purchases, plan
+ * signups). `changePct` null means there's no previous-month baseline (see
+ * analytics._change_pct on the backend), rendered as a "new" badge instead
+ * of a meaningless percentage. Comparison window is month-to-date vs the
+ * same day-of-month range last month, not two full calendar months — see
+ * `_mtd_comparison_range`. */
+export function PremiumComparisonStat({
+  label,
+  icon,
+  current,
+  previous,
+  changePct,
+  newLabel,
+  vsLabel,
+}: {
+  label: string
+  icon: string
+  current: number
+  previous: number
+  changePct: number | null
+  newLabel: string
+  vsLabel: string
+}) {
+  const isUp = changePct != null && changePct > 0
+  const isDown = changePct != null && changePct < 0
+  return (
+    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
+          <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{current.toLocaleString()}</div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            {changePct == null ? (
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 font-semibold text-ase-muted">
+                {newLabel}
+              </span>
+            ) : (
+              <span
+                className={cn(
+                  'rounded-full border px-2 py-0.5 font-semibold tabular-nums',
+                  isUp && 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+                  isDown && 'border-rose-400/30 bg-rose-400/10 text-rose-300',
+                  !isUp && !isDown && 'border-white/10 bg-white/[0.05] text-ase-muted',
+                )}
+              >
+                {isUp ? '▲' : isDown ? '▼' : '—'} {Math.abs(changePct)}%
+              </span>
+            )}
+            <span className="truncate text-ase-text2">
+              {vsLabel} {previous.toLocaleString()}
+            </span>
+          </div>
+        </div>
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">
+          {icon}
+        </div>
       </div>
     </Card>
   )
@@ -158,6 +221,150 @@ export function PremiumChartCard({
               />
               <Area type="monotone" dataKey="value" stroke={color} fill={`url(#grad-${title})`} strokeWidth={2} />
             </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+export type TrendSeriesData = {
+  days: number[]
+  current: (number | null)[]
+  previous_month: (number | null)[]
+  avg_6_months: (number | null)[]
+}
+
+/** "This month vs. last month" / "this month vs. the average of the last 6
+ * months" — one chart, two lines, with a toggle for which comparison line
+ * is shown. Both comparison series come from the same API response (see
+ * TrendComparisonsRead on the backend), so flipping the toggle is a pure
+ * client-side re-slice, no refetch. The x-axis is trimmed to the last day
+ * either line actually has data for, so a short month (or "today" being
+ * early in the month) doesn't leave a long empty tail. */
+export function PremiumTrendCompareChart({
+  title,
+  data,
+  unit = 'count',
+  currentColor = '#22d3ee',
+  currentLabel,
+  previousMonthLabel,
+  avg6MonthsLabel,
+  toggle1mLabel,
+  toggle6mLabel,
+  valueFormatter,
+  className,
+}: {
+  title: string
+  data: TrendSeriesData
+  unit?: 'count' | 'currency'
+  currentColor?: string
+  currentLabel: string
+  previousMonthLabel: string
+  avg6MonthsLabel: string
+  toggle1mLabel: string
+  toggle6mLabel: string
+  valueFormatter?: (v: number) => string
+  className?: string
+}) {
+  const [mode, setMode] = useState<'1m' | '6m'>('1m')
+
+  const comparisonSeries = mode === '1m' ? data.previous_month : data.avg_6_months
+  const comparisonLabel = mode === '1m' ? previousMonthLabel : avg6MonthsLabel
+  const lastIdx = data.days.reduce(
+    (last, _day, i) => (data.current[i] != null || comparisonSeries[i] != null ? i : last),
+    -1,
+  )
+  const chartData = data.days.slice(0, lastIdx + 1).map((day, i) => ({
+    day,
+    current: data.current[i],
+    comparison: comparisonSeries[i],
+  }))
+
+  const fmt = (v: number) =>
+    valueFormatter ? valueFormatter(v) : unit === 'currency' ? v.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) : String(v)
+
+  return (
+    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{title}</div>
+        <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5">
+          {(['1m', '6m'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition',
+                mode === m ? 'bg-ase-brand/20 text-ase-brand' : 'text-ase-muted hover:text-ase-text',
+              )}
+            >
+              {m === '1m' ? toggle1mLabel : toggle6mLabel}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-4 text-[11px] text-ase-text2">
+        <span className="flex items-center gap-1.5">
+          <span className="h-0.5 w-3 rounded-full" style={{ backgroundColor: currentColor }} />
+          {currentLabel}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-0.5 w-3 rounded-full border-t border-dashed border-ase-muted" />
+          {comparisonLabel}
+        </span>
+      </div>
+      <div className="mt-3 h-52">
+        {chartData.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-ase-muted">—</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ left: -8, right: 8, top: 8, bottom: 0 }}>
+              <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                width={36}
+                allowDecimals={unit === 'currency'}
+                domain={[0, 'auto']}
+              />
+              <Tooltip
+                contentStyle={{ background: '#0f1118', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
+                labelFormatter={(day) => `${title} · ${day}`}
+                formatter={(v, name) => {
+                  const n = typeof v === 'number' ? v : Number(v ?? 0)
+                  return [fmt(n), name === 'current' ? currentLabel : comparisonLabel]
+                }}
+              />
+              {/* connectNulls: with sparse day-to-day data (a small platform
+                  might only have one or two purchases a month) a lone
+                  non-null point among 30 nulls draws nothing at all without
+                  this — the line needs to bridge the gaps between the days
+                  that actually happened to keep the trend visible. It still
+                  correctly stops at the last real point rather than
+                  drawing into days that haven't happened yet, since there's
+                  no further data for it to connect to. */}
+              <Line
+                type="monotone"
+                dataKey="current"
+                stroke={currentColor}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: currentColor, strokeWidth: 0 }}
+                activeDot={{ r: 5 }}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="comparison"
+                stroke="#94a3b8"
+                strokeWidth={1.75}
+                strokeDasharray="4 3"
+                dot={{ r: 2, fill: '#94a3b8', strokeWidth: 0 }}
+                activeDot={{ r: 4 }}
+                connectNulls
+              />
+            </LineChart>
           </ResponsiveContainer>
         )}
       </div>

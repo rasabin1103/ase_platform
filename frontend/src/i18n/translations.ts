@@ -381,6 +381,8 @@ export const translations = {
       customPrice: 'Custom',
       checkoutLoading: 'Redirecting to payment…',
       checkoutError: 'We could not start checkout. Please try again in a moment.',
+      comingSoonBadge: 'Coming soon',
+      comingSoonCta: 'Coming soon',
       plans: {
         free: {
           name: 'Free',
@@ -688,9 +690,9 @@ export const translations = {
       privacy: {
         badge: 'Legal',
         title: 'Privacy Policy',
-        lastUpdated: 'Last updated: August 12, 2026',
+        lastUpdated: 'Last updated: September 4, 2026',
         intro:
-          'This Privacy Policy explains how Arce Sabin Engineering collects, uses and protects your personal data when you use our platform. It applies to the public site, the client dashboard and the marketplace.',
+          'This Privacy Policy explains how Arce Sabin Engineering collects, uses and protects your personal data when you use our platform, including when you make a purchase or subscribe to a plan. It applies to the public site, the client dashboard and the marketplace.',
         sections: [
           {
             heading: 'Who is responsible for your data',
@@ -700,22 +702,22 @@ export const translations = {
           {
             heading: 'Data we collect',
             body:
-              'Account data: name, email address, hashed password, and organization membership.\nUsage data: purchases, catalog access, book redemption codes, and your GitHub username — only if you redeem a book that grants repository access.\nSupport data: anything you send us through the contact form or a support request.\nTechnical data: IP address and basic request logs, kept for security purposes.',
+              'Account data: name, email address, hashed password, and organization membership.\nPayment data: when you make a purchase or subscribe to a plan, our payment processor, Stripe, collects and processes your card and billing details directly on its own secure systems. We never receive or store your full card number — we only receive back limited information such as payment status, the last 4 digits of the card, invoice records and billing history, to confirm your purchase and manage your subscription.\nUsage data: purchases, catalog access, book redemption codes, and your GitHub username — only if you redeem a book that grants repository access.\nSupport data: anything you send us through the contact form or a support request.\nTechnical data: IP address and basic request logs, kept for security purposes.',
           },
           {
             heading: 'Why we process your data',
             body:
-              'To provide and maintain your account and purchases, under the legal basis of contract performance.\nTo send transactional emails such as password resets and email verification, also under contract performance.\nTo keep security and audit logs, under our legitimate interest in preventing fraud and abuse.\nTo respond to messages you send us, based on the consent you give when submitting the contact form.',
+              'To provide and maintain your account and purchases, under the legal basis of contract performance.\nTo process payments and manage subscriptions through our payment processor, Stripe, also under contract performance.\nTo send transactional emails such as password resets, email verification and payment receipts, also under contract performance.\nTo keep security and audit logs, under our legitimate interest in preventing fraud and abuse.\nTo respond to messages you send us, based on the consent you give when submitting the contact form.',
           },
           {
             heading: 'How long we keep it',
             body:
-              'We keep account data for as long as your account is active. If you delete your account, we retain the minimum record required for legal, tax or security purposes and anonymize the rest.',
+              'We keep account data for as long as your account is active. Billing and invoice records are kept for as long as required by Spanish tax law even after account closure. If you delete your account, we retain the minimum record required for legal, tax or security purposes and anonymize the rest.',
           },
           {
             heading: 'Who we share it with',
             body:
-              'We do not sell your data. We share it only with service providers acting on our behalf: hosting and database infrastructure, our email delivery provider, and — only if you use the book redemption feature — GitHub, to grant you repository access using the GitHub username you provide. These providers process data solely under our instructions.',
+              'We do not sell your data. We share it only with service providers acting on our behalf: hosting and database infrastructure, our email delivery provider, Stripe, to process payments and manage subscriptions, and — only if you use the book redemption feature — GitHub, to grant you repository access using the GitHub username you provide. These providers process data solely under our instructions, except Stripe, which also acts as an independent data controller for the payment data it processes directly from you — see Stripe’s own privacy policy at stripe.com/privacy.',
           },
           {
             heading: 'International transfers',
@@ -735,7 +737,7 @@ export const translations = {
           {
             heading: 'Security',
             body:
-              'We apply reasonable technical and organizational measures to protect your data, including password hashing, encrypted connections and access controls. No system is completely secure, and we continuously work to improve our safeguards.',
+              'We apply reasonable technical and organizational measures to protect your data, including password hashing, encrypted connections and access controls. Payment card details are handled entirely by Stripe, a PCI-DSS Level 1 certified payment processor — our servers never receive or store your full card number. No system is completely secure, and we continuously work to improve our safeguards.',
           },
           {
             heading: 'Minors',
@@ -756,9 +758,9 @@ export const translations = {
       terms: {
         badge: 'Legal',
         title: 'Terms of Service',
-        lastUpdated: 'Last updated: August 12, 2026',
+        lastUpdated: 'Last updated: September 4, 2026',
         intro:
-          'These Terms of Service govern your access to and use of the Arce Sabin Engineering platform, including the marketplace, client dashboard and organization tools.',
+          'These Terms of Service govern your access to and use of the Arce Sabin Engineering platform, including the marketplace, client dashboard, paid plans and organization tools.',
         sections: [
           {
             heading: 'Acceptance of these terms',
@@ -778,7 +780,27 @@ export const translations = {
           {
             heading: 'Purchases and digital content',
             body:
-              'Purchases grant you a personal, non-transferable license to access the corresponding digital product, course or resource, for your own use or your organization\'s use as applicable. Purchases are processed as described at checkout; specific refund terms, if any, are shown at the time of purchase.',
+              'Purchases grant you a personal, non-transferable license to access the corresponding digital product, course, resource or plan, for your own use or your organization\'s use as applicable. Purchases are processed as described at checkout; specific refund terms, if any, are shown at the time of purchase.',
+          },
+          {
+            heading: 'Payment processing',
+            body:
+              'All payments are processed securely by Stripe, our third-party payment processor. We never receive or store your full card number — see our Privacy Policy for details on how payment data is handled. By making a purchase, you also agree to Stripe\'s own terms of service, available at stripe.com/legal.',
+          },
+          {
+            heading: 'Prices and taxes',
+            body:
+              'Prices are shown in euros (EUR) and include VAT/IVA where applicable, unless stated otherwise at checkout. We may change prices for future purchases or subscription renewals; any price change to an active subscription will be notified to you in advance.',
+          },
+          {
+            heading: 'Right of withdrawal for digital content',
+            body:
+              'Under Spanish and EU consumer law, the standard 14-day right of withdrawal does not apply to digital content not supplied on a tangible medium once its performance has begun with your prior express consent. By completing a purchase and thereby gaining immediate access to the corresponding product, course, resource or plan, you expressly request immediate performance and acknowledge that you lose your right of withdrawal from that moment on.',
+          },
+          {
+            heading: 'Subscription cancellation and refunds',
+            body:
+              'Plan subscriptions renew automatically each billing period until cancelled. You can cancel at any time from your account\'s billing portal; cancellation takes effect at the end of the current billing period and you keep access until then. Except where required by law or expressly stated at checkout, purchases and subscription charges already billed are non-refundable.',
           },
           {
             heading: 'Book redemption codes and GitHub access',
@@ -1285,6 +1307,8 @@ export const translations = {
       empty: 'No hay planes públicos disponibles en este momento.',
       retry: 'Reintentar',
       customPrice: 'Personalizado',
+      comingSoonBadge: 'Próximamente',
+      comingSoonCta: 'Próximamente',
       checkoutLoading: 'Redirigiendo al pago…',
       checkoutError: 'No se pudo iniciar el pago. Inténtalo de nuevo en un momento.',
       plans: {
@@ -1594,9 +1618,9 @@ export const translations = {
       privacy: {
         badge: 'Legal',
         title: 'Política de Privacidad',
-        lastUpdated: 'Última actualización: 12 de agosto de 2026',
+        lastUpdated: 'Última actualización: 4 de septiembre de 2026',
         intro:
-          'Esta Política de Privacidad explica cómo Arce Sabin Engineering recopila, utiliza y protege tus datos personales cuando usas nuestra plataforma. Se aplica al sitio público, al panel de cliente y al marketplace.',
+          'Esta Política de Privacidad explica cómo Arce Sabin Engineering recopila, utiliza y protege tus datos personales cuando usas nuestra plataforma, incluido cuando realizas una compra o te suscribes a un plan. Se aplica al sitio público, al panel de cliente y al marketplace.',
         sections: [
           {
             heading: 'Responsable del tratamiento',
@@ -1606,22 +1630,22 @@ export const translations = {
           {
             heading: 'Datos que recopilamos',
             body:
-              'Datos de cuenta: nombre, correo electrónico, contraseña cifrada y pertenencia a organizaciones.\nDatos de uso: compras, acceso al catálogo, códigos de canje de libros y tu nombre de usuario de GitHub — solo si canjeas un libro que da acceso a un repositorio.\nDatos de soporte: cualquier información que nos envíes a través del formulario de contacto o una solicitud de soporte.\nDatos técnicos: dirección IP y registros básicos de peticiones, conservados por motivos de seguridad.',
+              'Datos de cuenta: nombre, correo electrónico, contraseña cifrada y pertenencia a organizaciones.\nDatos de pago: cuando realizas una compra o te suscribes a un plan, nuestro procesador de pagos, Stripe, recoge y trata tus datos de tarjeta y facturación directamente en sus propios sistemas seguros. Nosotros nunca recibimos ni almacenamos tu número de tarjeta completo — solo recibimos información limitada como el estado del pago, los últimos 4 dígitos de la tarjeta, y el historial de facturas, para confirmar tu compra y gestionar tu suscripción.\nDatos de uso: compras, acceso al catálogo, códigos de canje de libros y tu nombre de usuario de GitHub — solo si canjeas un libro que da acceso a un repositorio.\nDatos de soporte: cualquier información que nos envíes a través del formulario de contacto o una solicitud de soporte.\nDatos técnicos: dirección IP y registros básicos de peticiones, conservados por motivos de seguridad.',
           },
           {
             heading: 'Por qué tratamos tus datos',
             body:
-              'Para proporcionar y mantener tu cuenta y tus compras, sobre la base de la ejecución de un contrato.\nPara enviar correos transaccionales como el restablecimiento de contraseña y la verificación de correo, también sobre la base contractual.\nPara mantener registros de seguridad y auditoría, sobre la base de nuestro interés legítimo en prevenir fraude y abuso.\nPara responder a los mensajes que nos envías, sobre la base del consentimiento que otorgas al enviar el formulario de contacto.',
+              'Para proporcionar y mantener tu cuenta y tus compras, sobre la base de la ejecución de un contrato.\nPara procesar pagos y gestionar suscripciones a través de nuestro procesador de pagos, Stripe, también sobre la base contractual.\nPara enviar correos transaccionales como el restablecimiento de contraseña, la verificación de correo y los recibos de pago, también sobre la base contractual.\nPara mantener registros de seguridad y auditoría, sobre la base de nuestro interés legítimo en prevenir fraude y abuso.\nPara responder a los mensajes que nos envías, sobre la base del consentimiento que otorgas al enviar el formulario de contacto.',
           },
           {
             heading: 'Cuánto tiempo los conservamos',
             body:
-              'Conservamos los datos de tu cuenta mientras esté activa. Si eliminas tu cuenta, conservamos el registro mínimo necesario por motivos legales, fiscales o de seguridad, y anonimizamos el resto.',
+              'Conservamos los datos de tu cuenta mientras esté activa. Los registros de facturación se conservan durante el plazo exigido por la normativa fiscal española incluso tras el cierre de la cuenta. Si eliminas tu cuenta, conservamos el registro mínimo necesario por motivos legales, fiscales o de seguridad, y anonimizamos el resto.',
           },
           {
             heading: 'Con quién los compartimos',
             body:
-              'No vendemos tus datos. Los compartimos únicamente con proveedores que actúan en nuestro nombre: infraestructura de alojamiento y base de datos, nuestro proveedor de envío de correo, y — solo si usas la función de canje de libros — GitHub, para darte acceso al repositorio usando el nombre de usuario que nos indiques. Estos proveedores tratan los datos exclusivamente siguiendo nuestras instrucciones.',
+              'No vendemos tus datos. Los compartimos únicamente con proveedores que actúan en nuestro nombre: infraestructura de alojamiento y base de datos, nuestro proveedor de envío de correo, Stripe, para procesar pagos y gestionar suscripciones, y — solo si usas la función de canje de libros — GitHub, para darte acceso al repositorio usando el nombre de usuario que nos indiques. Estos proveedores tratan los datos siguiendo nuestras instrucciones, salvo Stripe, que también actúa como responsable independiente del tratamiento de los datos de pago que recoge directamente de ti — consulta la propia política de privacidad de Stripe en stripe.com/privacy.',
           },
           {
             heading: 'Transferencias internacionales',
@@ -1641,7 +1665,7 @@ export const translations = {
           {
             heading: 'Seguridad',
             body:
-              'Aplicamos medidas técnicas y organizativas razonables para proteger tus datos, incluyendo cifrado de contraseñas, conexiones cifradas y controles de acceso. Ningún sistema es completamente seguro, y trabajamos de forma continua para mejorar nuestras garantías.',
+              'Aplicamos medidas técnicas y organizativas razonables para proteger tus datos, incluyendo cifrado de contraseñas, conexiones cifradas y controles de acceso. Los datos de tarjeta de pago los gestiona íntegramente Stripe, procesador de pagos certificado PCI-DSS de nivel 1 — nuestros servidores nunca reciben ni almacenan tu número de tarjeta completo. Ningún sistema es completamente seguro, y trabajamos de forma continua para mejorar nuestras garantías.',
           },
           {
             heading: 'Menores de edad',
@@ -1662,9 +1686,9 @@ export const translations = {
       terms: {
         badge: 'Legal',
         title: 'Términos de Servicio',
-        lastUpdated: 'Última actualización: 12 de agosto de 2026',
+        lastUpdated: 'Última actualización: 4 de septiembre de 2026',
         intro:
-          'Estos Términos de Servicio regulan el acceso y uso de la plataforma de Arce Sabin Engineering, incluyendo el marketplace, el panel de cliente y las herramientas de organización.',
+          'Estos Términos de Servicio regulan el acceso y uso de la plataforma de Arce Sabin Engineering, incluyendo el marketplace, el panel de cliente, los planes de pago y las herramientas de organización.',
         sections: [
           {
             heading: 'Aceptación de estos términos',
@@ -1684,7 +1708,27 @@ export const translations = {
           {
             heading: 'Compras y contenido digital',
             body:
-              'Las compras te otorgan una licencia personal e intransferible para acceder al producto, curso o recurso digital correspondiente, para tu uso propio o el de tu organización según corresponda. Las compras se procesan tal como se describe en el momento de la compra; las condiciones concretas de reembolso, si las hubiera, se muestran en ese momento.',
+              'Las compras te otorgan una licencia personal e intransferible para acceder al producto, curso, recurso o plan digital correspondiente, para tu uso propio o el de tu organización según corresponda. Las compras se procesan tal como se describe en el momento de la compra; las condiciones concretas de reembolso, si las hubiera, se muestran en ese momento.',
+          },
+          {
+            heading: 'Procesamiento de pagos',
+            body:
+              'Todos los pagos se procesan de forma segura a través de Stripe, nuestro proveedor de pagos. Nosotros nunca recibimos ni almacenamos tu número de tarjeta completo — consulta nuestra Política de Privacidad para más detalles sobre cómo se tratan los datos de pago. Al realizar una compra, también aceptas las condiciones propias de Stripe, disponibles en stripe.com/legal.',
+          },
+          {
+            heading: 'Precios e impuestos',
+            body:
+              'Los precios se muestran en euros (EUR) e incluyen el IVA cuando corresponda, salvo que se indique lo contrario en el momento de la compra. Podemos modificar los precios para compras futuras o renovaciones de suscripción; cualquier cambio de precio en una suscripción activa se te notificará con antelación.',
+          },
+          {
+            heading: 'Derecho de desistimiento en contenido digital',
+            body:
+              'Conforme a la normativa española y europea de consumidores, el derecho de desistimiento estándar de 14 días no se aplica al contenido digital que no se suministre en un soporte material una vez haya comenzado su ejecución con tu consentimiento previo y expreso. Al completar una compra y obtener así acceso inmediato al producto, curso, recurso o plan correspondiente, solicitas expresamente el inicio inmediato de la prestación y reconoces que pierdes tu derecho de desistimiento desde ese momento.',
+          },
+          {
+            heading: 'Cancelación de suscripciones y reembolsos',
+            body:
+              'Las suscripciones a planes se renuevan automáticamente en cada periodo de facturación hasta que se cancelen. Puedes cancelar en cualquier momento desde el portal de facturación de tu cuenta; la cancelación surte efecto al final del periodo de facturación en curso y mantienes el acceso hasta entonces. Salvo que la ley lo exija o se indique expresamente en el momento de la compra, las compras y cargos de suscripción ya facturados no son reembolsables.',
           },
           {
             heading: 'Códigos de canje de libros y acceso a GitHub',

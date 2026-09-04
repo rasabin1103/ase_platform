@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -23,7 +24,17 @@ from app.models.member_role import MemberRole
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.role import Role
+from app.models.subscription import Subscription
 from app.models.user import User
+
+# A catalog_purchases row with this source was never an acquisition event of
+# its own — it's a side effect of the org's plan already including the item
+# (see CatalogPurchase.source), granted automatically by the subscription
+# webhook with no user action involved. Every "individual purchases" metric
+# below excludes it so a €9.99/mo plan bundling 5 items doesn't get counted
+# as "5 purchases" on top of the subscription itself — mirrors the same fix
+# applied to the buyer-facing dashboard's "Total invertido" stat.
+_PLAN_ENTITLEMENT_SOURCE = "plan_entitlement"
 
 
 def _month_buckets(months: int = 6) -> list[str]:
@@ -43,6 +54,168 @@ def _month_buckets(months: int = 6) -> list[str]:
 def _series_from_rows(rows: list[tuple], buckets: list[str]) -> list[dict]:
     mapping = {str(k): float(v) for k, v in rows}
     return [{"month": m, "value": mapping.get(m, 0.0)} for m in buckets]
+
+
+def _mtd_comparison_range(now: datetime) -> tuple[datetime, datetime, datetime, datetime]:
+    """Month-to-date comparison window: the current month from day 1 through
+    now, against the *same day-of-month range* in the previous calendar
+    month — not two full calendar months, which would always make an
+    in-progress month look artificially behind (e.g. comparing 4 days of
+    September against all 31 days of August). The previous-month cutoff is
+    capped to that month's actual last day (e.g. "up to day 31" becomes "up
+    to day 28" when the previous month is February)."""
+    current_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    prev_month_index = now.year * 12 + (now.month - 1) - 1
+    prev_year, prev_month0 = divmod(prev_month_index, 12)
+    prev_month = prev_month0 + 1
+    prev_month_days = calendar.monthrange(prev_year, prev_month)[1]
+    day_cutoff = min(now.day, prev_month_days)
+    previous_start = datetime(prev_year, prev_month, 1, tzinfo=timezone.utc)
+    previous_end = datetime(prev_year, prev_month, day_cutoff, 23, 59, 59, 999999, tzinfo=timezone.utc)
+    return current_start, now, previous_start, previous_end
+
+
+def _change_pct(current: int, previous: int) -> float | None:
+    """None when there's no previous-month baseline to compare against
+    (division by zero is undefined, and "+∞%" isn't a useful number to show
+    an admin) — the frontend shows a "new" badge in that case instead."""
+    if previous == 0:
+        return None
+    return round(((current - previous) / previous) * 100, 1)
+
+
+def compute_tenure_months(starts_at: datetime, ends_at: datetime | None, *, now: datetime | None = None) -> int:
+    """Elapsed calendar months from `starts_at` to `ends_at` (if the
+    subscription already ended) or to `now` otherwise — "how many months has
+    this org been on this plan" for the admin purchases view's "Planes" tab.
+    Calendar-month arithmetic (same idea as `_month_buckets` above), not a
+    day-count division, so a subscription that started on the 31st doesn't
+    get shorted by landing in a shorter month. Clamped to >= 0."""
+    reference = ends_at if ends_at is not None else (now or datetime.now(timezone.utc))
+    months = (reference.year - starts_at.year) * 12 + (reference.month - starts_at.month)
+    if reference.day < starts_at.day:
+        months -= 1
+    return max(0, months)
+
+
+def _shift_month(now: datetime, delta: int) -> tuple[int, int]:
+    """(year, month) for `delta` calendar months before `now` — delta=0 is
+    the current month, delta=1 is last month, etc. Same exact-month
+    arithmetic as `_month_buckets`."""
+    total = now.year * 12 + (now.month - 1) - delta
+    year, month0 = divmod(total, 12)
+    return year, month0 + 1
+
+
+def _build_trend_series(
+    db: Session,
+    *,
+    time_column,
+    value_expr,
+    extra_where=None,
+    join=None,
+    now: datetime | None = None,
+) -> dict:
+    """One metric's data for the dashboard's "this month vs. last month / vs.
+    the last 6 months" line charts (see PremiumTrendCompareChart on the
+    frontend). Single query, grouped by (calendar month, day-of-month), then
+    sliced in Python into three same-length series so the frontend can swap
+    the comparison line with no extra request:
+
+    - `current`: this month, day 1 through today — days after today are left
+      null rather than 0, so the line doesn't nosedive into "no data yet".
+    - `previous_month`: the immediately preceding calendar month, in full.
+    - `avg_6_months`: for each day-of-month, the average of that day's value
+      across the 6 months before the current one — a smoothed baseline for
+      the "vs. 6 previous months" toggle, using only the months that
+      actually have that day (not every month has a 31st).
+
+    `days` always runs 1..31 regardless of how long the relevant months
+    actually are, so the chart's x-axis lines up day-for-day across months
+    of different lengths — a value simply stays null past a shorter month's
+    last day."""
+    now = now or datetime.now(timezone.utc)
+    cur_year, cur_month = _shift_month(now, 0)
+    since_year, since_month = _shift_month(now, 6)
+    since = datetime(since_year, since_month, 1, tzinfo=timezone.utc)
+
+    month_key = func.to_char(func.date_trunc("month", time_column), "YYYY-MM")
+    day_key = func.extract("day", time_column)
+
+    where_clauses = [time_column >= since]
+    if extra_where is not None:
+        where_clauses.append(extra_where)
+
+    stmt = select(month_key, day_key, value_expr)
+    if join is not None:
+        # e.g. (CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+        # — required whenever `value_expr` reaches into a related table
+        # (revenue needs CatalogItem.price); without an explicit join
+        # condition here, SQLAlchemy would pull that table into the FROM
+        # clause with nothing relating it back to the row being grouped, an
+        # unintended cross join that would wildly overcount revenue.
+        target, condition = join
+        stmt = stmt.join(target, condition)
+    stmt = stmt.where(*where_clauses).group_by(month_key, day_key)
+
+    rows = db.execute(stmt).all()
+
+    by_month: dict[str, dict[int, float]] = {}
+    for mkey, day, value in rows:
+        by_month.setdefault(str(mkey), {})[int(day)] = float(value or 0)
+
+    days = list(range(1, 32))
+    cur_key = f"{cur_year:04d}-{cur_month:02d}"
+    prev_year, prev_month = _shift_month(now, 1)
+    prev_key = f"{prev_year:04d}-{prev_month:02d}"
+    prev6_keys = [f"{y:04d}-{m:02d}" for y, m in (_shift_month(now, d) for d in range(1, 7))]
+
+    today = now.day
+    current = [by_month.get(cur_key, {}).get(d) if d <= today else None for d in days]
+    previous_month = [by_month.get(prev_key, {}).get(d) for d in days]
+    avg_6_months = []
+    for d in days:
+        samples = [by_month[k][d] for k in prev6_keys if k in by_month and d in by_month[k]]
+        avg_6_months.append(round(sum(samples) / len(samples), 2) if samples else None)
+
+    return {"days": days, "current": current, "previous_month": previous_month, "avg_6_months": avg_6_months}
+
+
+def build_trend_comparisons(db: Session, *, now: datetime | None = None) -> dict:
+    """The three "this month vs. last month / vs. 6-month average" charts on
+    the dashboard: individual-product revenue, new plan signups, new users.
+    See `_build_trend_series` for the shared shape."""
+    now = now or datetime.now(timezone.utc)
+
+    individual_revenue = _build_trend_series(
+        db,
+        time_column=CatalogPurchase.created_at,
+        value_expr=func.coalesce(func.sum(CatalogItem.price), 0),
+        extra_where=CatalogPurchase.source != _PLAN_ENTITLEMENT_SOURCE,
+        join=(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id),
+        now=now,
+    )
+
+    plan_signups = _build_trend_series(
+        db,
+        time_column=Subscription.created_at,
+        value_expr=func.count(),
+        now=now,
+    )
+
+    users = _build_trend_series(
+        db,
+        time_column=User.created_at,
+        value_expr=func.count(),
+        extra_where=User.status.notin_([UserStatus.deleted, UserStatus.suspended]),
+        now=now,
+    )
+
+    return {
+        "individual_revenue": individual_revenue,
+        "plan_signups": plan_signups,
+        "users": users,
+    }
 
 
 def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
@@ -90,6 +263,94 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         .where(CatalogPurchase.created_at >= since)
         .group_by(revenue_month)
     ).all()
+
+    # "vs last month" headline comparison for the three metrics an admin
+    # cares most about tracking week to week — see _mtd_comparison_range for
+    # why this is a fair (same day-of-month) window rather than two full
+    # calendar months.
+    now = datetime.now(timezone.utc)
+    cur_start, cur_end, prev_start, prev_end = _mtd_comparison_range(now)
+
+    trends = build_trend_comparisons(db, now=now)
+
+    users_current = int(
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(
+                User.created_at >= cur_start,
+                User.created_at <= cur_end,
+                User.status.notin_([UserStatus.deleted, UserStatus.suspended]),
+            )
+        ).scalar_one()
+    )
+    users_previous = int(
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(
+                User.created_at >= prev_start,
+                User.created_at <= prev_end,
+                User.status.notin_([UserStatus.deleted, UserStatus.suspended]),
+            )
+        ).scalar_one()
+    )
+
+    individual_purchases_current = int(
+        db.execute(
+            select(func.count())
+            .select_from(CatalogPurchase)
+            .where(
+                CatalogPurchase.created_at >= cur_start,
+                CatalogPurchase.created_at <= cur_end,
+                CatalogPurchase.source != _PLAN_ENTITLEMENT_SOURCE,
+            )
+        ).scalar_one()
+    )
+    individual_purchases_previous = int(
+        db.execute(
+            select(func.count())
+            .select_from(CatalogPurchase)
+            .where(
+                CatalogPurchase.created_at >= prev_start,
+                CatalogPurchase.created_at <= prev_end,
+                CatalogPurchase.source != _PLAN_ENTITLEMENT_SOURCE,
+            )
+        ).scalar_one()
+    )
+
+    plan_signups_current = int(
+        db.execute(
+            select(func.count())
+            .select_from(Subscription)
+            .where(Subscription.created_at >= cur_start, Subscription.created_at <= cur_end)
+        ).scalar_one()
+    )
+    plan_signups_previous = int(
+        db.execute(
+            select(func.count())
+            .select_from(Subscription)
+            .where(Subscription.created_at >= prev_start, Subscription.created_at <= prev_end)
+        ).scalar_one()
+    )
+
+    month_comparison = {
+        "users": {
+            "current": users_current,
+            "previous": users_previous,
+            "change_pct": _change_pct(users_current, users_previous),
+        },
+        "individual_purchases": {
+            "current": individual_purchases_current,
+            "previous": individual_purchases_previous,
+            "change_pct": _change_pct(individual_purchases_current, individual_purchases_previous),
+        },
+        "plan_signups": {
+            "current": plan_signups_current,
+            "previous": plan_signups_previous,
+            "change_pct": _change_pct(plan_signups_current, plan_signups_previous),
+        },
+    }
 
     by_type: dict[str, int] = {t.value: 0 for t in CatalogItemType}
     type_rows = db.execute(select(CatalogItem.type, func.count()).group_by(CatalogItem.type)).all()
@@ -201,6 +462,8 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
             revenue_rows,
             buckets,
         ),
+        "trends": trends,
+        "month_comparison": month_comparison,
         "catalog_by_type": by_type,
         "revenue_total": revenue_total,
         "top_users": [{"email": email, "purchase_count": int(cnt)} for email, cnt in top_users_rows],

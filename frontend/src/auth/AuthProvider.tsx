@@ -6,6 +6,7 @@ import type { AuthContextValue } from './AuthContext'
 import {
   clearActiveOrganizationUuid,
   clearImpersonatorTokens,
+  clearProfileLinksDraft,
   clearTokens,
   getAccessToken,
   getRefreshToken,
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearTokens()
     clearImpersonatorTokens()
     clearActiveOrganizationUuid()
+    clearProfileLinksDraft()
     setCurrentUser(null)
     setIsImpersonating(false)
     setIsLoading(false)

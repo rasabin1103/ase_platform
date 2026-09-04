@@ -10,11 +10,13 @@ from app.modules.plans.schemas import PlanListResponse, PlanRead
 from app.modules.public_catalog.schemas import (
     CaseStudyPublic,
     CatalogStatsResponse,
+    PlanSavingsListResponse,
     TeamMemberPublic,
     TestimonialPublic,
 )
 from app.modules.public_catalog.service import (
     get_catalog_stats,
+    get_plan_savings,
     get_public_pricing_plans,
     get_published_catalog_item_or_404,
     list_active_case_studies,
@@ -48,6 +50,18 @@ def list_catalog_pricing_plans(
 def read_catalog_stats(db: Session = Depends(get_db)) -> CatalogStatsResponse:
     """Aggregate public catalog counts and platform health (no auth)."""
     return get_catalog_stats(db)
+
+
+@router.get("/plan-savings", response_model=PlanSavingsListResponse, tags=["public"])
+def read_plan_savings(
+    item_slug: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> PlanSavingsListResponse:
+    """"Buy separately vs. subscribe" comparison for every sellable plan —
+    no auth, since this is shown alongside a catalog item's price to any
+    visitor deciding whether to buy it standalone. Pass item_slug to narrow
+    this to plans that actually include that item. See get_plan_savings."""
+    return PlanSavingsListResponse(items=get_plan_savings(db, item_slug=item_slug))
 
 
 @router.get("/team", response_model=list[TeamMemberPublic], tags=["public"])

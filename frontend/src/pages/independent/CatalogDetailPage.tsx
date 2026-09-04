@@ -24,8 +24,10 @@ import {
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import { AudiobookPlayer } from '../../components/catalog/AudiobookPlayer'
 import { PlatformAudiobookPlayer } from '../../components/catalog/PlatformAudiobookPlayer'
+import { PlanSavingsModal } from '../../components/catalog/PlanSavingsModal'
 import type { AccessTargetType } from '../../api/access_requests.api'
 import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
+import { getPlanSavings } from '../../api/plansCatalog.api'
 import {
   downloadResource,
   getBookDownloadFormats,
@@ -145,6 +147,7 @@ export function CatalogDetailPage() {
   const [viewerMaximized, setViewerMaximized] = useState(false)
   const [audiobookOpen, setAudiobookOpen] = useState(false)
   const [audiobookMaximized, setAudiobookMaximized] = useState(false)
+  const [planSavingsModalOpen, setPlanSavingsModalOpen] = useState(false)
 
   const query = useQuery({
     queryKey: ['consumer-catalog', slug],
@@ -184,6 +187,26 @@ export function CatalogDetailPage() {
 
   const item = query.data
   const isFree = Boolean(item) && !Number(item!.price)
+
+  // "You could save on this" prompt: only worth fetching for a priced item
+  // the user doesn't already own (isPurchased already covers plan-based
+  // access, see permanently_owned_slugs_for_user) — otherwise there's
+  // nothing to compare against. See PlanSavingsModal / get_plan_savings.
+  const planSavingsQuery = useQuery({
+    queryKey: ['plan-savings', slug],
+    queryFn: () => getPlanSavings(slug!),
+    enabled: Boolean(slug) && !isFree && !item?.isPurchased,
+    staleTime: 60_000,
+  })
+  const hasPlanSavings = (planSavingsQuery.data?.length ?? 0) > 0
+
+  const handleBuyClick = () => {
+    if (hasPlanSavings) {
+      setPlanSavingsModalOpen(true)
+      return
+    }
+    buyMutation.mutate()
+  }
   // hasResourceContent already accounts for ownership/plan access on the
   // backend (and lets a free — price 0 — item through with no purchase
   // needed at all), so no extra isPurchased check is needed here.
@@ -318,7 +341,7 @@ export function CatalogDetailPage() {
                   variant={item.isPurchased ? 'success' : 'primary'}
                   leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
                   disabled={buyMutation.isPending || item.isPurchased}
-                  onClick={() => buyMutation.mutate()}
+                  onClick={handleBuyClick}
                 >
                   {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
                 </Button>
@@ -590,6 +613,16 @@ export function CatalogDetailPage() {
           )}
         </Modal>
       ) : null}
+
+      <PlanSavingsModal
+        open={planSavingsModalOpen}
+        itemSlug={slug!}
+        onClose={() => setPlanSavingsModalOpen(false)}
+        onBuyAlone={() => {
+          setPlanSavingsModalOpen(false)
+          buyMutation.mutate()
+        }}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <BulletList title={t('catalog.benefits')} items={benefits} icon={<ListChecks className="h-4 w-4" strokeWidth={1.75} />} />

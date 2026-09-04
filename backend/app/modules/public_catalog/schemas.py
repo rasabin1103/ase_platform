@@ -52,6 +52,27 @@ class TestimonialPublic(BaseModel):
     is_featured: bool = False
 
 
+class PlanSavingsRead(BaseModel):
+    """Per-plan "buy it all separately vs. subscribe" comparison — powers
+    the savings modal shown when a buyer is about to purchase a single
+    priced item (see PlanSavingsModal.tsx). Only ever computed for plans
+    that are actually sellable (stripe_price_id set) and include at least
+    one catalog item, otherwise there's nothing to compare."""
+
+    planId: int
+    code: str
+    name: str
+    price: float
+    currency: str
+    includedItemCount: int
+    includedItemsValue: float
+    savings: float
+
+
+class PlanSavingsListResponse(BaseModel):
+    items: list[PlanSavingsRead]
+
+
 class CaseStudyPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

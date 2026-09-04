@@ -1,5 +1,10 @@
 export type BillingCycle = 'monthly' | 'yearly' | 'one_time'
 
+/** active: visible + purchasable. coming_soon: visible on the public
+ * pricing page but checkout is refused — for announcing a plan before it's
+ * ready to sell. inactive: fully hidden from the public site. */
+export type PlanStatus = 'active' | 'coming_soon' | 'inactive'
+
 export type PlanFeature = {
   id: number
   plan_id: number
@@ -28,6 +33,7 @@ export type Plan = {
   price: string | null
   currency: string
   is_active: boolean
+  status: PlanStatus
   created_at: string
   updated_at: string
   description?: string | null
@@ -69,6 +75,7 @@ export type PlanCreateRequest = {
   price?: number | string | null
   currency?: string
   is_active?: boolean
+  status?: PlanStatus
   description?: string | null
   short_description?: string | null
   display_order?: number
@@ -94,6 +101,7 @@ export type PlanUpdateRequest = {
   price?: number | string | null
   currency?: string | null
   is_active?: boolean | null
+  status?: PlanStatus | null
   description?: string | null
   short_description?: string | null
   display_order?: number | null

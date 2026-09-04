@@ -14,11 +14,13 @@ import {
   InsightBar,
   PremiumBreakdownCard,
   PremiumChartCard,
+  PremiumComparisonStat,
   PremiumHero,
   PremiumInsightsCard,
   PremiumMetricCard,
   PremiumOrb,
   PremiumSplitStat,
+  PremiumTrendCompareChart,
 } from '../../components/admin/premium/PremiumAdminUi'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { useI18n } from '../../i18n'
@@ -73,7 +75,11 @@ export function AdminDashboardPage() {
         { label: t('adminDashboard.metrics.catalog'), value: stats?.catalog_total ?? 0 },
         { label: t('adminDashboard.metrics.users'), value: stats?.users_total ?? 0 },
         { label: t('adminDashboard.metrics.usersActive'), value: stats?.users_active ?? 0 },
+        // Individual acquisitions only, kept separate from active plan
+        // subscriptions below — see the "Compras" tab split (a bundled
+        // plan item was never its own purchase on top of the plan itself).
         { label: t('adminDashboard.metrics.purchases'), value: stats?.purchases_total ?? 0 },
+        { label: t('adminDashboard.metrics.planSignups'), value: stats?.plan_subscriptions_total ?? 0 },
         {
           label: t('adminDashboard.metrics.revenue'),
           value: (analytics?.revenue_total ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'EUR' }),
@@ -100,6 +106,39 @@ export function AdminDashboardPage() {
             .map(([role, value]) => ({ label: (t(`adminDashboard.roleLabels.${role}`) as string) ?? role, value }))
             .filter((d) => d.value > 0),
         },
+        ...(analytics?.month_comparison
+          ? [
+              {
+                title: t('adminDashboard.comparison.title') as string,
+                data: [
+                  {
+                    label: `${t('adminDashboard.metrics.newUsers')} (${t('adminDashboard.trend.thisMonth')})`,
+                    value: analytics.month_comparison.users.current,
+                  },
+                  {
+                    label: `${t('adminDashboard.metrics.newUsers')} (${t('adminDashboard.trend.previousMonth')})`,
+                    value: analytics.month_comparison.users.previous,
+                  },
+                  {
+                    label: `${t('adminDashboard.metrics.individualPurchases')} (${t('adminDashboard.trend.thisMonth')})`,
+                    value: analytics.month_comparison.individual_purchases.current,
+                  },
+                  {
+                    label: `${t('adminDashboard.metrics.individualPurchases')} (${t('adminDashboard.trend.previousMonth')})`,
+                    value: analytics.month_comparison.individual_purchases.previous,
+                  },
+                  {
+                    label: `${t('adminDashboard.metrics.planSignups')} (${t('adminDashboard.trend.thisMonth')})`,
+                    value: analytics.month_comparison.plan_signups.current,
+                  },
+                  {
+                    label: `${t('adminDashboard.metrics.planSignups')} (${t('adminDashboard.trend.previousMonth')})`,
+                    value: analytics.month_comparison.plan_signups.previous,
+                  },
+                ],
+              },
+            ]
+          : []),
       ],
       pieCharts: [
         {
@@ -207,6 +246,46 @@ export function AdminDashboardPage() {
         </>
       )}
 
+      {analyticsQuery.isLoading ? (
+        <Skeleton className="h-28 w-full rounded-2xl" />
+      ) : analytics?.month_comparison ? (
+        <div>
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-[0.14em] text-ase-muted">
+            {t('adminDashboard.comparison.title')}
+          </h2>
+          <p className="mb-3 text-xs text-ase-text2">{t('adminDashboard.comparison.subtitle')}</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <PremiumComparisonStat
+              label={t('adminDashboard.metrics.newUsers')}
+              icon="◉"
+              current={analytics.month_comparison.users.current}
+              previous={analytics.month_comparison.users.previous}
+              changePct={analytics.month_comparison.users.change_pct}
+              newLabel={t('adminDashboard.comparison.new') as string}
+              vsLabel={t('adminDashboard.comparison.vsLastMonth') as string}
+            />
+            <PremiumComparisonStat
+              label={t('adminDashboard.metrics.individualPurchases')}
+              icon="🛍️"
+              current={analytics.month_comparison.individual_purchases.current}
+              previous={analytics.month_comparison.individual_purchases.previous}
+              changePct={analytics.month_comparison.individual_purchases.change_pct}
+              newLabel={t('adminDashboard.comparison.new') as string}
+              vsLabel={t('adminDashboard.comparison.vsLastMonth') as string}
+            />
+            <PremiumComparisonStat
+              label={t('adminDashboard.metrics.planSignups')}
+              icon="📋"
+              current={analytics.month_comparison.plan_signups.current}
+              previous={analytics.month_comparison.plan_signups.previous}
+              changePct={analytics.month_comparison.plan_signups.change_pct}
+              newLabel={t('adminDashboard.comparison.new') as string}
+              vsLabel={t('adminDashboard.comparison.vsLastMonth') as string}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {testStatsRows.length > 0 || testStatsQuery.isLoading || testStatsQuery.isError ? (
         <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
           <h2 className="text-lg font-semibold text-ase-text">{t('adminDashboard.sections.testExecutions.title')}</h2>
@@ -262,26 +341,47 @@ export function AdminDashboardPage() {
           ) : (
             <>
               <PremiumChartCard
-                title={t('adminDashboard.charts.users')}
-                data={analytics?.users_growth ?? []}
-                color="#22d3ee"
-              />
-              <PremiumChartCard
                 title={t('adminDashboard.charts.catalog')}
                 data={analytics?.catalog_growth ?? []}
                 color="#a78bfa"
               />
-              <PremiumChartCard
-                title={t('adminDashboard.charts.purchases')}
-                data={analytics?.purchases_growth ?? []}
-                color="#34d399"
-              />
-              <PremiumChartCard
-                title={t('adminDashboard.charts.revenue')}
-                data={analytics?.revenue_growth ?? []}
-                color="#fbbf24"
-                valueFormatter={(v) => v.toLocaleString(undefined, { style: 'currency', currency: 'EUR' })}
-              />
+              {analytics?.trends ? (
+                <>
+                  <PremiumTrendCompareChart
+                    title={t('adminDashboard.charts.users') as string}
+                    data={analytics.trends.users}
+                    unit="count"
+                    currentColor="#22d3ee"
+                    currentLabel={t('adminDashboard.trend.thisMonth') as string}
+                    previousMonthLabel={t('adminDashboard.trend.previousMonth') as string}
+                    avg6MonthsLabel={t('adminDashboard.trend.avg6Months') as string}
+                    toggle1mLabel={t('adminDashboard.trend.toggle1m') as string}
+                    toggle6mLabel={t('adminDashboard.trend.toggle6m') as string}
+                  />
+                  <PremiumTrendCompareChart
+                    title={t('adminDashboard.charts.individualRevenue') as string}
+                    data={analytics.trends.individual_revenue}
+                    unit="currency"
+                    currentColor="#34d399"
+                    currentLabel={t('adminDashboard.trend.thisMonth') as string}
+                    previousMonthLabel={t('adminDashboard.trend.previousMonth') as string}
+                    avg6MonthsLabel={t('adminDashboard.trend.avg6Months') as string}
+                    toggle1mLabel={t('adminDashboard.trend.toggle1m') as string}
+                    toggle6mLabel={t('adminDashboard.trend.toggle6m') as string}
+                  />
+                  <PremiumTrendCompareChart
+                    title={t('adminDashboard.charts.planSignups') as string}
+                    data={analytics.trends.plan_signups}
+                    unit="count"
+                    currentColor="#f472b6"
+                    currentLabel={t('adminDashboard.trend.thisMonth') as string}
+                    previousMonthLabel={t('adminDashboard.trend.previousMonth') as string}
+                    avg6MonthsLabel={t('adminDashboard.trend.avg6Months') as string}
+                    toggle1mLabel={t('adminDashboard.trend.toggle1m') as string}
+                    toggle6mLabel={t('adminDashboard.trend.toggle6m') as string}
+                  />
+                </>
+              ) : null}
             </>
           )}
         </div>

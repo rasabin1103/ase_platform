@@ -1,11 +1,14 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { Heart, ShoppingBag, Wallet } from 'lucide-react'
+import { Heart, PiggyBank, ShoppingBag, Wallet } from 'lucide-react'
 import { listConsumerCatalog } from '../../../api/consumerCatalog.api'
+import { listPlansCatalog } from '../../../api/plansCatalog.api'
 import { Eyebrow } from '../../ui/Eyebrow'
 import { Card } from '../../ui/Card'
+import { cn } from '../../ui/cn'
 import { useI18n } from '../../../i18n'
+import { useAuth } from '../../../hooks/useAuth'
 import type { CatalogItemType } from '../../../types/catalog.types'
 import { CATALOG_TYPE_COLORS as TYPE_COLORS } from '../../catalog/catalogTypeColors'
 
@@ -19,6 +22,7 @@ function formatMoney(amount: number, currency: string) {
 
 export function IndependentProgressPanel() {
   const { t } = useI18n()
+  const { currentUser } = useAuth()
 
   const purchasedQuery = useQuery({
     queryKey: ['consumer-catalog', 'strip', 'purchased-summary'],
@@ -32,17 +36,43 @@ export function IndependentProgressPanel() {
     staleTime: 30_000,
   })
 
+  // Only fetched when the user actually has an active plan — used solely to
+  // compute the "saved with your plan" stat below.
+  const plansQuery = useQuery({
+    queryKey: ['plans-catalog', 'savings'],
+    queryFn: listPlansCatalog,
+    enabled: Boolean(currentUser?.plan_code),
+    staleTime: 60_000,
+  })
+
   const purchasedItems = useMemo(() => purchasedQuery.data?.items ?? [], [purchasedQuery.data])
   const favoritesCount = favoritesQuery.data?.total ?? favoritesQuery.data?.items.length ?? 0
 
-  const { chartData, totalSpent, currency } = useMemo(() => {
+  const { chartData, totalSpent, currency, planSavings } = useMemo(() => {
     const byType = new Map<CatalogItemType, number>()
-    let sum = 0
+    // "Total invertido" counts what was paid for directly (individual
+    // purchases) plus, separately, what the active plan itself costs — an
+    // item the user only has access to because their org's plan includes it
+    // (isPlanIncluded) was never bought at its own listed price, so summing
+    // that in would make a €9.99/mo plan look like it cost the sum of
+    // everything it happens to unlock. But someone who both bought an item
+    // individually AND pays for a plan (e.g. an €8.99 item plus a €9.99/mo
+    // subscription) really has spent 18.98 — the plan's own price has to be
+    // added in too, not just skipped, since it's real money that isn't
+    // reflected by any single catalog item's price.
+    let individualSum = 0
+    let planItemsValue = 0
     let curr = 'EUR'
     for (const item of purchasedItems) {
       byType.set(item.type, (byType.get(item.type) ?? 0) + 1)
       const price = Number(item.price)
-      if (!Number.isNaN(price)) sum += price
+      if (!Number.isNaN(price)) {
+        if (item.isPlanIncluded) {
+          planItemsValue += price
+        } else {
+          individualSum += price
+        }
+      }
       if (item.currency) curr = item.currency
     }
     const data = (Array.from(byType.entries()) as Array<[CatalogItemType, number]>).map(([type, count]) => ({
@@ -51,8 +81,23 @@ export function IndependentProgressPanel() {
       name: t(`catalog.groupLabels.${type}`) as string,
       color: TYPE_COLORS[type],
     }))
-    return { chartData: data, totalSpent: sum, currency: curr }
-  }, [purchasedItems, t])
+
+    const currentPlan = plansQuery.data?.find((p) => p.code === currentUser?.plan_code)
+    const planPrice = currentPlan?.price != null ? Number(currentPlan.price) : null
+    const validPlanPrice = planPrice != null && !Number.isNaN(planPrice) ? planPrice : 0
+
+    // Savings = what the plan-included items would have cost bought one by
+    // one, minus what the plan itself costs — only meaningful (and only
+    // shown) once we know the current plan's price.
+    const savings = planPrice != null && !Number.isNaN(planPrice) ? planItemsValue - planPrice : null
+
+    return {
+      chartData: data,
+      totalSpent: individualSum + validPlanPrice,
+      currency: curr,
+      planSavings: savings,
+    }
+  }, [purchasedItems, t, plansQuery.data, currentUser?.plan_code])
 
   const isLoading = purchasedQuery.isLoading || favoritesQuery.isLoading
   const hasPurchases = purchasedItems.length > 0
@@ -111,7 +156,7 @@ export function IndependentProgressPanel() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-7">
+          <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-7', Boolean(planSavings && planSavings > 0) && 'sm:grid-cols-2 lg:grid-cols-4')}>
             <StatTile
               icon={<Wallet className="h-[18px] w-[18px]" strokeWidth={1.75} />}
               label={t('independentDashboard.progress.totalSpent')}
@@ -127,6 +172,14 @@ export function IndependentProgressPanel() {
               label={t('independentDashboard.progress.favoritesSaved')}
               value={String(favoritesCount)}
             />
+            {planSavings && planSavings > 0 ? (
+              <StatTile
+                icon={<PiggyBank className="h-[18px] w-[18px]" strokeWidth={1.75} />}
+                label={t('independentDashboard.progress.planSavings')}
+                value={formatMoney(planSavings, currency)}
+                highlight
+              />
+            ) : null}
           </div>
         </div>
       )}
@@ -134,14 +187,34 @@ export function IndependentProgressPanel() {
   )
 }
 
-function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatTile({
+  icon,
+  label,
+  value,
+  highlight = false,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  highlight?: boolean
+}) {
   return (
-    <Card interactive className="flex flex-col gap-3 p-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+    <Card
+      interactive
+      className={cn('flex flex-col gap-3 p-4', highlight && 'border-emerald-400/30 bg-emerald-400/[0.06]')}
+    >
+      <span
+        className={cn(
+          'flex h-9 w-9 items-center justify-center rounded-xl border',
+          highlight
+            ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+            : 'border-ase-brand/25 bg-ase-brand/10 text-ase-brand',
+        )}
+      >
         {icon}
       </span>
       <div>
-        <div className="text-lg font-extrabold text-ase-text">{value}</div>
+        <div className={cn('text-lg font-extrabold', highlight ? 'text-emerald-300' : 'text-ase-text')}>{value}</div>
         <div className="text-xs font-medium text-ase-muted">{label}</div>
       </div>
     </Card>

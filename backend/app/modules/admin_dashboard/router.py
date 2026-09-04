@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time as time_module
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, text
@@ -16,9 +16,12 @@ from app.models.access_request import AccessRequest
 from app.models.book_repo_redemption import BookRepoRedemption
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_purchase import CatalogPurchase
-from app.models.enums import AccessRequestStatus, CatalogItemType, UserStatus
+from app.models.enums import AccessRequestStatus, CatalogItemType, SubscriptionStatus, UserStatus
+from app.models.organization import Organization
+from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.user import User
-from app.modules.admin_dashboard.analytics import build_admin_analytics, build_application_map
+from app.modules.admin_dashboard.analytics import build_admin_analytics, build_application_map, compute_tenure_months
 from app.modules.admin_dashboard.schemas import (
     AdminAnalyticsRead,
     AdminBookRedemptionListResponse,
@@ -32,6 +35,8 @@ from app.modules.admin_dashboard.schemas import (
     AdminSearchResponse,
     AdminSearchUserHit,
     AdminStatsRead,
+    AdminSubscriptionListResponse,
+    AdminSubscriptionRead,
     ApplicationMapRead,
     SystemStatusCounts,
     SystemStatusDatabase,
@@ -65,7 +70,23 @@ def admin_stats(db: Session = Depends(get_db)):
     users_active = int(
         db.execute(select(func.count()).select_from(User).where(User.status == UserStatus.active)).scalar_one()
     )
-    purchases_total = int(db.execute(select(func.count()).select_from(CatalogPurchase)).scalar_one())
+    # Excludes plan_entitlement rows — same reasoning as the /admin/purchases
+    # list and build_admin_analytics above: an item auto-granted by an org's
+    # subscription isn't its own "purchase" on top of the subscription
+    # itself. plan_subscriptions_total (active/trialing Subscription count)
+    # is the parallel figure for the "Planes" side.
+    purchases_total = int(
+        db.execute(
+            select(func.count()).select_from(CatalogPurchase).where(CatalogPurchase.source != "plan_entitlement")
+        ).scalar_one()
+    )
+    plan_subscriptions_total = int(
+        db.execute(
+            select(func.count())
+            .select_from(Subscription)
+            .where(Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]))
+        ).scalar_one()
+    )
     requests_pending = int(
         db.execute(
             select(func.count()).select_from(AccessRequest).where(AccessRequest.status == AccessRequestStatus.pending)
@@ -77,6 +98,7 @@ def admin_stats(db: Session = Depends(get_db)):
         users_total=users_total,
         users_active=users_active,
         purchases_total=purchases_total,
+        plan_subscriptions_total=plan_subscriptions_total,
         requests_pending=requests_pending,
     )
 
@@ -94,14 +116,25 @@ def list_admin_purchases(
     date_to: date | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
+    # A "plan_entitlement" row isn't a purchase this admin view should list —
+    # it's an item the org's subscription bundled in automatically, not
+    # something the user individually acquired (see CatalogPurchase.source).
+    # It's already represented by the org's row in GET /admin/subscriptions,
+    # so leaving it in here would double-count the same access grant across
+    # both the "Productos" and "Planes" tabs.
     base_query = (
         select(CatalogPurchase, User.email, CatalogItem.title, CatalogItem.type)
         .join(User, User.id == CatalogPurchase.user_id)
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+        .where(CatalogPurchase.source != "plan_entitlement")
     )
-    count_query = select(func.count()).select_from(CatalogPurchase).join(
-        User, User.id == CatalogPurchase.user_id
-    ).join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+    count_query = (
+        select(func.count())
+        .select_from(CatalogPurchase)
+        .join(User, User.id == CatalogPurchase.user_id)
+        .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+        .where(CatalogPurchase.source != "plan_entitlement")
+    )
 
     if search:
         needle = f"%{search.strip()}%"
@@ -129,11 +162,91 @@ def list_admin_purchases(
             user_email=email,
             item_title=title,
             item_type=itype.value if hasattr(itype, "value") else str(itype),
+            source=p.source,
             created_at=p.created_at,
         )
         for p, email, title, itype in rows
     ]
     return AdminPurchaseListResponse(items=items, limit=limit, offset=offset, total=total)
+
+
+@router.get(
+    "/subscriptions",
+    response_model=AdminSubscriptionListResponse,
+    dependencies=[Depends(require_permission("purchases.read_all"))],
+)
+def list_admin_subscriptions(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, max_length=200),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """The "Planes" counterpart to /admin/purchases's "Productos" list — one
+    row per organization subscription, with how many months they've been on
+    it. Kept as a separate endpoint (rather than folded into /purchases)
+    because a subscription isn't a CatalogPurchase row at all — it's tracked
+    on its own Subscription/Plan/Organization chain."""
+    # Same exclusion as admin_stats/build_admin_analytics: a soft-deleted
+    # owner's leftover subscription row is stale demo/test data, not a real
+    # customer to show alongside active ones.
+    owner_active = User.status.notin_([UserStatus.deleted, UserStatus.suspended])
+    base_query = (
+        select(Subscription, Organization.name, User.email, Plan.name, Plan.code, Plan.price, Plan.currency)
+        .join(Organization, Organization.id == Subscription.organization_id)
+        .join(User, User.id == Organization.owner_user_id)
+        .join(Plan, Plan.id == Subscription.plan_id)
+        .where(owner_active)
+    )
+    count_query = (
+        select(func.count())
+        .select_from(Subscription)
+        .join(Organization, Organization.id == Subscription.organization_id)
+        .join(User, User.id == Organization.owner_user_id)
+        .join(Plan, Plan.id == Subscription.plan_id)
+        .where(owner_active)
+    )
+
+    if search:
+        needle = f"%{search.strip()}%"
+        clause = or_(User.email.ilike(needle), Organization.name.ilike(needle), Plan.name.ilike(needle))
+        base_query = base_query.where(clause)
+        count_query = count_query.where(clause)
+    if date_from:
+        clause = Subscription.starts_at >= datetime.combine(date_from, time.min)
+        base_query = base_query.where(clause)
+        count_query = count_query.where(clause)
+    if date_to:
+        clause = Subscription.starts_at <= datetime.combine(date_to, time.max)
+        base_query = base_query.where(clause)
+        count_query = count_query.where(clause)
+
+    total = int(db.execute(count_query).scalar_one())
+    rows = db.execute(
+        base_query.order_by(Subscription.starts_at.desc()).limit(limit).offset(offset)
+    ).all()
+    now = datetime.now(timezone.utc)
+    items = [
+        AdminSubscriptionRead(
+            id=s.id,
+            organization_id=s.organization_id,
+            organization_name=org_name,
+            owner_email=owner_email,
+            plan_id=s.plan_id,
+            plan_name=plan_name,
+            plan_code=plan_code,
+            plan_price=float(plan_price) if plan_price is not None else None,
+            plan_currency=plan_currency or "EUR",
+            status=s.status.value if hasattr(s.status, "value") else str(s.status),
+            provider=s.provider.value if hasattr(s.provider, "value") else str(s.provider),
+            starts_at=s.starts_at,
+            ends_at=s.ends_at,
+            tenure_months=compute_tenure_months(s.starts_at, s.ends_at, now=now),
+        )
+        for s, org_name, owner_email, plan_name, plan_code, plan_price, plan_currency in rows
+    ]
+    return AdminSubscriptionListResponse(items=items, limit=limit, offset=offset, total=total)
 
 
 @router.get(
@@ -377,9 +490,24 @@ def admin_application_map(db: Session = Depends(get_db)):
 )
 def admin_purchases_summary(db: Session = Depends(get_db)):
     data = build_admin_analytics(db)
-    purchases_total = int(db.execute(select(func.count()).select_from(CatalogPurchase)).scalar_one())
+    # Same exclusion as list_admin_purchases / admin_stats — a
+    # plan_entitlement row isn't its own purchase on top of the
+    # subscription that granted it.
+    purchases_total = int(
+        db.execute(
+            select(func.count()).select_from(CatalogPurchase).where(CatalogPurchase.source != "plan_entitlement")
+        ).scalar_one()
+    )
+    plan_subscriptions_total = int(
+        db.execute(
+            select(func.count())
+            .select_from(Subscription)
+            .where(Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]))
+        ).scalar_one()
+    )
     return AdminPurchasesSummaryRead(
         purchases_total=purchases_total,
+        plan_subscriptions_total=plan_subscriptions_total,
         revenue_total=data["revenue_total"],
         top_users=[TopUserPurchases(**u) for u in data["top_users"]],
     )

@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, Enum, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.enums import BillingCycle
+from app.models.enums import BillingCycle, PlanStatus
 from app.models.mixins import IdPkMixin, TimestampMixin
 
 if TYPE_CHECKING:
@@ -40,6 +40,19 @@ class Plan(Base, IdPkMixin, TimestampMixin):
     price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="EUR")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    # Source of truth the admin edits from now on — is_active above is kept
+    # in sync automatically by PlansService (active/coming_soon -> True,
+    # inactive -> False) so every existing is_active-based query (public
+    # catalog listing, billing checkout guard, admin filters) keeps working
+    # unchanged. coming_soon is the only state where the two diverge in
+    # meaning: is_active=True (still shown publicly) but not purchasable —
+    # see PlanStatus's docstring and BillingService.create_checkout_session.
+    status: Mapped[PlanStatus] = mapped_column(
+        Enum(PlanStatus, name="plan_status", native_enum=True),
+        nullable=False,
+        default=PlanStatus.active,
+        server_default=PlanStatus.active.value,
+    )
 
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     description_en: Mapped[str | None] = mapped_column(Text, nullable=True)

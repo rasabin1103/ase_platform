@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import MembershipStatus
 from app.models.enums import OrganizationStatus
+from app.models.enums import OrganizationType
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.user import User
@@ -43,9 +44,18 @@ class OrganizationsRepository:
         # seed script's "ASE Platform" org) only exists as an anchor for the
         # super_admin's RBAC role assignment, not a real tenant, so it has
         # no business appearing in any admin-facing organization list.
+        #
+        # `individual`-type orgs are excluded too — every independent user
+        # gets one auto-created as their personal workspace (see
+        # OrganizationsService / onboarding), it's not a team anyone
+        # actually manages. This admin listing is for real multi-member
+        # tenants an admin would look at "their org's" data for; the same
+        # exclusion already applies to the dashboard's application map (see
+        # admin_dashboard.analytics.build_application_map).
         base = select(Organization).where(
             Organization.status != OrganizationStatus.deleted,
             Organization.is_platform_core.is_(False),
+            Organization.type != OrganizationType.individual,
         )
         if not include_suspended:
             base = base.where(Organization.status != OrganizationStatus.suspended)

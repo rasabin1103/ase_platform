@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.translation import translate_es_to_en
 from app.models.catalog_item import CatalogItem
+from app.models.enums import PlanStatus
 from app.models.plan import Plan
 from app.models.plan_catalog_item import PlanCatalogItem
 from app.modules.plans.repository import PlansRepository
@@ -29,6 +30,15 @@ class PlansService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = PlansRepository(db)
+
+    @staticmethod
+    def _is_active_for_status(status: PlanStatus) -> bool:
+        """coming_soon still needs to show up on the public catalog listing
+        (which filters on is_active=True), it just can't be checked out —
+        see BillingService.create_checkout_session. Only `inactive` hides a
+        plan from the public site entirely, matching the old plain
+        is_active=False behavior."""
+        return status != PlanStatus.inactive
 
     def _paid_discount_ladder(self) -> dict[int, Decimal]:
         """Every currently active plan with a real (non-custom, > 0) price,
@@ -138,7 +148,8 @@ class PlansService:
             billing_cycle=payload.billing_cycle,
             price=payload.price,
             currency=payload.currency,
-            is_active=payload.is_active,
+            status=payload.status,
+            is_active=self._is_active_for_status(payload.status),
             description=payload.description,
             short_description=payload.short_description,
             display_order=payload.display_order,
@@ -188,8 +199,19 @@ class PlansService:
             plan.price = payload.price
         if payload.currency is not None:
             plan.currency = payload.currency
-        if payload.is_active is not None:
+        if payload.status is not None:
+            plan.status = payload.status
+            plan.is_active = self._is_active_for_status(payload.status)
+        elif payload.is_active is not None:
+            # Backward-compat path for any caller that still sends the old
+            # plain boolean without `status` — keep status roughly in sync
+            # (coming_soon can only be reached via an explicit status, never
+            # inferred from a bare is_active).
             plan.is_active = payload.is_active
+            if not payload.is_active:
+                plan.status = PlanStatus.inactive
+            elif plan.status == PlanStatus.inactive:
+                plan.status = PlanStatus.active
         if payload.description is not None:
             plan.description = payload.description
         if payload.short_description is not None:
@@ -223,5 +245,6 @@ class PlansService:
     def deactivate(self, plan_id: int) -> Plan:
         plan = self.get(plan_id)
         plan.is_active = False
+        plan.status = PlanStatus.inactive
         self.db.commit()
         return self._attach_annual_price(self.repo.get(plan_id))  # type: ignore[return-value]

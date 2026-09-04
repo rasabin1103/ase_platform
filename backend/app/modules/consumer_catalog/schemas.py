@@ -71,6 +71,14 @@ class CatalogItemRead(BaseModel):
     tags: list[str] = []
     isFavorite: bool = False
     isPurchased: bool = False
+    # True only when the current user's access to this item comes solely
+    # from their organization's active plan subscription — never actually
+    # paid for at this item's own price. False for a direct purchase, an
+    # admin grant, a free claim, OR when the user has no access at all.
+    # Lets the frontend exclude plan-bundled items from "total spent"-style
+    # sums (see IndependentProgressPanel.tsx) without double-counting a
+    # €9.99/mo plan as if every item it includes was bought separately.
+    isPlanIncluded: bool = False
     upvotes: int = 0
     downvotes: int = 0
     netScore: int = 0

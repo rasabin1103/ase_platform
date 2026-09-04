@@ -6,6 +6,7 @@ export type AdminStats = {
   users_total: number
   users_active: number
   purchases_total: number
+  plan_subscriptions_total: number
   requests_pending: number
 }
 
@@ -16,7 +17,43 @@ export type AdminPurchase = {
   user_email: string
   item_title: string
   item_type: string
+  source: string
   created_at: string
+}
+
+export type AdminSubscription = {
+  id: number
+  organization_id: number
+  organization_name: string
+  owner_email: string
+  plan_id: number
+  plan_name: string
+  plan_code: string
+  plan_price: number | null
+  plan_currency: string
+  status: string
+  provider: string
+  starts_at: string
+  ends_at: string | null
+  tenure_months: number
+}
+
+export type AdminSubscriptionListResponse = {
+  items: AdminSubscription[]
+  limit: number
+  offset: number
+  total: number
+}
+
+export async function listAdminSubscriptions(params?: {
+  limit?: number
+  offset?: number
+  search?: string
+  date_from?: string
+  date_to?: string
+}) {
+  const { data } = await apiClient.get<AdminSubscriptionListResponse>('/admin/subscriptions', { params })
+  return data
 }
 
 export type AdminPurchaseListResponse = {
@@ -46,11 +83,36 @@ export type TimeSeriesPoint = { month: string; value: number }
 
 export type RatingTagCount = { tag: string; count: number }
 
+export type MonthComparisonItem = { current: number; previous: number; change_pct: number | null }
+
+export type MonthComparison = {
+  users: MonthComparisonItem
+  individual_purchases: MonthComparisonItem
+  plan_signups: MonthComparisonItem
+}
+
+export type TrendSeries = {
+  days: number[]
+  current: (number | null)[]
+  previous_month: (number | null)[]
+  avg_6_months: (number | null)[]
+}
+
+export type TrendComparisons = {
+  individual_revenue: TrendSeries
+  plan_signups: TrendSeries
+  users: TrendSeries
+}
+
 export type AdminAnalytics = {
   users_growth: TimeSeriesPoint[]
   catalog_growth: TimeSeriesPoint[]
   purchases_growth: TimeSeriesPoint[]
   revenue_growth: TimeSeriesPoint[]
+  // The three toggleable "this month vs. last month / vs. 6 previous
+  // months" line charts — see build_trend_comparisons.
+  trends: TrendComparisons | null
+  month_comparison: MonthComparison | null
   catalog_by_type: Record<string, number>
   revenue_total: number
   top_users: { email: string; purchase_count: number }[]
@@ -66,6 +128,7 @@ export type AdminAnalytics = {
 
 export type AdminPurchasesSummary = {
   purchases_total: number
+  plan_subscriptions_total: number
   revenue_total: number
   top_users: { email: string; purchase_count: number }[]
 }
