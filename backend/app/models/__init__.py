@@ -52,6 +52,8 @@ from app.models.test_execution_config import TestExecutionConfig
 from app.models.test_quota_reset import TestQuotaReset
 from app.models.test_approved_ref import TestApprovedRef
 from app.models.consulting_slot import ConsultingSlot
+from app.models.resource_view import ResourceView
+from app.models.user_preferences_profile import UserPreferencesProfile
 
 __all__ = [
     "User",
@@ -108,5 +110,7 @@ __all__ = [
     "TestQuotaReset",
     "TestApprovedRef",
     "ConsultingSlot",
+    "ResourceView",
+    "UserPreferencesProfile",
 ]
 

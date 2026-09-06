@@ -60,6 +60,24 @@ def _subscription_period_start(stripe_sub: object) -> int:
     raise BillingError("Stripe subscription has no current_period_start on either the subscription or its items.")
 
 
+def _subscription_period_end(stripe_sub: object) -> int | None:
+    """Mirror of _subscription_period_start for `current_period_end` — see
+    that function's docstring for why both the top-level and per-item
+    fields are checked. Unlike period_start this is allowed to come back
+    None (defensive only; Stripe always sends it for a real subscription)
+    rather than raising, since callers use it for display fields, not to
+    gate whether checkout can proceed."""
+    top_level = _field(stripe_sub, "current_period_end")
+    if top_level is not None:
+        return top_level  # type: ignore[return-value]
+    items_data = _field(_field(stripe_sub, "items", {}), "data") or []
+    if items_data:
+        item_end = _field(items_data[0], "current_period_end")
+        if item_end is not None:
+            return item_end  # type: ignore[return-value]
+    return None
+
+
 def _field(obj: object, key: str, default: object = None) -> object:
     """Safe key lookup for Stripe SDK response objects (Event/Session/
     Invoice/Subscription/...). These support `obj["key"]` (raises KeyError
@@ -274,7 +292,24 @@ class BillingService:
         if org is None or not org.stripe_customer_id:
             return []
 
-        invoices = stripe.Invoice.list(customer=org.stripe_customer_id, limit=24)
+        try:
+            invoices = stripe.Invoice.list(customer=org.stripe_customer_id, limit=24)
+        except stripe.InvalidRequestError:
+            # Same root cause as _get_or_create_stripe_customer above: the
+            # stored customer id doesn't resolve against whichever API key
+            # is currently active (test vs live — this org was billed
+            # under the other mode, or STRIPE_SECRET_KEY was swapped since;
+            # see task #17), or it was deleted directly in the Stripe
+            # Dashboard. There's nothing to list either way — an empty
+            # invoice history is the honest answer, not a 500 every time
+            # this profile page loads.
+            logger.warning(
+                "Stripe customer %s for organization %s not found under the current API key mode — "
+                "returning an empty invoice list instead of failing.",
+                org.stripe_customer_id,
+                org.id,
+            )
+            return []
 
         results: list[dict] = []
         for inv in invoices.data:
@@ -328,6 +363,60 @@ class BillingService:
             return_url=f"{settings.FRONTEND_URL}/profile",
         )
         return session.url
+
+    def _get_active_subscription_for_user(self, current_user: User) -> Subscription:
+        org_id = get_default_organization_id(self.db, current_user)
+        if org_id is None:
+            raise BillingError("No workspace is associated with this user.")
+        sub = (
+            self.db.execute(
+                select(Subscription)
+                .where(
+                    Subscription.organization_id == org_id,
+                    Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]),
+                    Subscription.provider == SubscriptionProvider.stripe,
+                )
+                .order_by(Subscription.created_at.desc())
+                .limit(1)
+            )
+            .scalars()
+            .first()
+        )
+        if sub is None or not sub.provider_subscription_id:
+            raise BillingError("No active subscription found for your account.")
+        return sub
+
+    def cancel_subscription(self, *, current_user: User) -> Subscription:
+        """Schedules cancellation at the end of the current billing period —
+        never an immediate cutoff, so the user keeps access (and doesn't
+        get a partial-period refund dispute) until the date they already
+        paid through. Mirrors what clicking "Cancel plan" in Stripe's own
+        Customer Portal does. The webhook (customer.subscription.updated)
+        will also confirm this shortly after, but we update the local row
+        immediately so the profile page reflects it without waiting."""
+        _require_stripe_configured()
+        sub = self._get_active_subscription_for_user(current_user)
+
+        stripe_sub = stripe.Subscription.modify(sub.provider_subscription_id, cancel_at_period_end=True)
+        cancel_at = _field(stripe_sub, "cancel_at")
+        sub.ends_at = datetime.fromtimestamp(cancel_at, tz=timezone.utc) if cancel_at else sub.current_period_end
+        self.db.commit()
+        return sub
+
+    def resume_subscription(self, *, current_user: User) -> Subscription:
+        """Undoes a scheduled cancellation (cancel_at_period_end) while the
+        subscription is still within its paid period — Stripe allows this
+        right up until the period actually ends and the subscription
+        transitions to canceled."""
+        _require_stripe_configured()
+        sub = self._get_active_subscription_for_user(current_user)
+        if sub.ends_at is None:
+            raise BillingError("This subscription is not scheduled for cancellation.")
+
+        stripe.Subscription.modify(sub.provider_subscription_id, cancel_at_period_end=False)
+        sub.ends_at = None
+        self.db.commit()
+        return sub
 
     # --- Webhook handling -------------------------------------------------
 
@@ -392,6 +481,8 @@ class BillingService:
             if _field(stripe_sub, "trial_end")
             else None
         )
+        period_end_ts = _subscription_period_end(stripe_sub)
+        current_period_end = datetime.fromtimestamp(period_end_ts, tz=timezone.utc) if period_end_ts else None
 
         if sub is None:
             sub = Subscription(
@@ -403,6 +494,7 @@ class BillingService:
                 starts_at=starts_at,
                 ends_at=ends_at,
                 trial_ends_at=trial_ends_at,
+                current_period_end=current_period_end,
             )
             self.db.add(sub)
         else:
@@ -410,6 +502,7 @@ class BillingService:
             sub.status = mapped_status
             sub.ends_at = ends_at
             sub.trial_ends_at = trial_ends_at
+            sub.current_period_end = current_period_end
 
         self.db.commit()
 

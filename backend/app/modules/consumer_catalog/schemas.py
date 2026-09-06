@@ -69,6 +69,12 @@ class CatalogItemRead(BaseModel):
     requirements: list[str] = []
     includedItems: list[str] = []
     tags: list[str] = []
+    # Loose series grouping (see CatalogItem.series_name/series_order) —
+    # null means this item isn't part of a series. When set, the frontend
+    # can call GET .../series for the full progress/recommendation view
+    # (see SeriesProgressRead below).
+    seriesName: str | None = None
+    seriesOrder: int | None = None
     isFavorite: bool = False
     isPurchased: bool = False
     # True only when the current user's access to this item comes solely
@@ -182,3 +188,70 @@ class AudiobookChapterContentRead(BaseModel):
     name: str
     contentBase64: str
     mimeType: str
+
+
+class MyPurchaseRead(BaseModel):
+    """One row of "Mis compras" — a real CatalogPurchase transaction, not
+    just "do I own this" (see CatalogItemRead.isPurchased, which is what
+    the catalog/library views use instead). Deliberately separate from the
+    library: this is about the purchase record itself (when, how, what it
+    cost), the library is about the content you can open."""
+
+    item: CatalogItemRead
+    purchased_at: datetime
+    # "free" | "stripe_checkout" | "plan_entitlement" | "admin_grant" — see
+    # CatalogPurchase.source. The frontend maps this to a human label.
+    source: str
+    organization_name: str | None = None
+    # Whether GET .../detail can pull live Stripe data for this row (only
+    # true for source == "stripe_checkout" with a stored session id).
+    has_payment_detail: bool = False
+
+
+class MyPurchaseListResponse(BaseModel):
+    items: list[MyPurchaseRead]
+
+
+class MyPurchaseDetailRead(BaseModel):
+    """Lazily-fetched detail for one purchase — kept separate from
+    MyPurchaseRead so listing purchases never has to wait on a live Stripe
+    API round trip; only fetched when the buyer actually opens "más
+    información" for that item (see ConsumerCatalogService.get_purchase_detail)."""
+
+    amount_paid: Decimal | None = None
+    currency: str | None = None
+    discount_amount: Decimal | None = None
+    payment_status: str | None = None
+    receipt_url: str | None = None
+    # Repo-testable products only: the specific approved git ref this buyer
+    # is allowed to run, if any (see TestApprovedRef) — otherwise "standard"
+    # (there is no other versioning concept for non-testable items today).
+    acquired_version: str = "standard"
+
+
+class SeriesItemRead(BaseModel):
+    """One entry in a series' ordered item list — deliberately lighter than
+    the full CatalogItemRead (this is a compact rail/list, not a catalog
+    grid), see SeriesProgressRead."""
+
+    slug: str
+    type: CatalogItemType
+    title: str
+    titleEn: str | None = None
+    imageUrl: str
+    seriesOrder: int | None = None
+    isPurchased: bool = False
+
+
+class SeriesProgressRead(BaseModel):
+    """Powers the "you're N/M through this series" panel + "up next"
+    recommendation on an item's detail page (see
+    ConsumerCatalogService.get_series_progress). `nextItem` is the
+    lowest-order item in the series the buyer doesn't yet own — null once
+    every item is owned, or if the series has only one item."""
+
+    seriesName: str
+    items: list[SeriesItemRead]
+    ownedCount: int
+    totalCount: int
+    nextItem: SeriesItemRead | None = None

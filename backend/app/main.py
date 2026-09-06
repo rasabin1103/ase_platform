@@ -235,6 +235,7 @@ from app.modules.booking.router import router as booking_router
 from app.modules.newsletter.router import router as newsletter_router
 from app.modules.admin_newsletter.router import router as admin_newsletter_router
 from app.modules.pricing_admin.router import router as pricing_admin_router
+from app.modules.user_preferences.router import router as user_preferences_router
 
 
 def create_app() -> FastAPI:
@@ -272,6 +273,7 @@ def create_app() -> FastAPI:
     app.include_router(newsletter_router)
     app.include_router(admin_newsletter_router)
     app.include_router(pricing_admin_router)
+    app.include_router(user_preferences_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)
@@ -331,6 +333,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Without this, the browser's fetch/XHR only exposes the CORS "simple
+    # response header" safelist to JS (Cache-Control, Content-Type, etc.) —
+    # Content-Disposition is NOT in that list. downloadResource() on the
+    # frontend reads this header to name the saved file and falls back to
+    # "<slug>.txt" when it's missing, which is why every download (PDFs,
+    # ePubs, zips...) was being saved as a .txt regardless of real type.
+    expose_headers=["Content-Disposition"],
 )
 
 # Registered last so it's the outermost middleware — every response

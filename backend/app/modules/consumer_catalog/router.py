@@ -17,10 +17,13 @@ from app.modules.consumer_catalog.schemas import (
     BookDownloadFormatsRead,
     CatalogItemListResponse,
     CatalogItemRead,
+    MyPurchaseDetailRead,
+    MyPurchaseListResponse,
     RateItemRequest,
     ResourceContentRead,
     ReviewListResponse,
     ReviewRequest,
+    SeriesProgressRead,
     UserCatalogStateRead,
     UserCatalogStateUpdate,
 )
@@ -58,6 +61,57 @@ def update_my_catalog_state(
     )
     db.commit()
     return get_my_catalog_state(user, db)
+
+
+@router.get("/me/recent", response_model=CatalogItemListResponse)
+def list_my_recently_opened(
+    limit: int = Query(default=6, ge=1, le=20),
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    """Items this user has actually opened (viewer, download, or an
+    audiobook chapter), most-recent-first — powers the "continue where you
+    left off" strip on the independent dashboard."""
+    return svc.list_recently_opened(user_id=user.id, limit=limit)
+
+
+@router.get("/me/recommended", response_model=CatalogItemListResponse)
+def list_my_recommendations(
+    limit: int = Query(default=8, ge=1, le=24),
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    """Server-side "recommended for you" — ranks unpurchased items using the
+    same-type-as-owned heuristic plus (when answered) the user's preferences
+    survey (see ConsumerCatalogService.get_recommendations)."""
+    return svc.get_recommendations(user_id=user.id, limit=limit)
+
+
+@router.get(
+    "/me/purchases",
+    response_model=MyPurchaseListResponse,
+    dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
+)
+def list_my_purchases(user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    """"Mis compras" — the transaction record (when, how, what it cost),
+    separate from "Mi biblioteca" (what you can open). See MyPurchaseRead."""
+    return svc.list_my_purchases(user.id)
+
+
+@router.get(
+    "/me/purchases/{slug}/detail",
+    response_model=MyPurchaseDetailRead,
+    dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
+)
+def get_my_purchase_detail(
+    slug: str,
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
+    """Lazily-fetched "más información" for one purchase — only hits Stripe
+    when the row actually has a stored checkout session id (see
+    ConsumerCatalogService.get_purchase_detail)."""
+    return svc.get_purchase_detail(user_id=user.id, slug=slug)
 
 
 @router.get("", response_model=CatalogItemListResponse, dependencies=[Depends(require_permission("catalog.read"))])
@@ -126,6 +180,18 @@ def get_resource_content(slug: str, user: User = Depends(get_current_user), svc:
     the folder has a preview*.pdf, in which case that's served instead
     (see ConsumerCatalogService.get_resource_content)."""
     return svc.get_resource_content(slug, user_id=user.id)
+
+
+@router.get(
+    "/{slug}/series",
+    response_model=SeriesProgressRead,
+    dependencies=[Depends(require_permission("catalog.read"))],
+)
+def get_catalog_item_series(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+    """Series progress + "up next" recommendation for an item that belongs
+    to one (see CatalogItemRead.seriesName) — 404 for an item with no
+    series, same as any other missing resource."""
+    return svc.get_series_progress(slug, user_id=user.id)
 
 
 @router.get(

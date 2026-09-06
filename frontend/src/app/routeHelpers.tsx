@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useRbac } from '../rbac/useRbac'
+import { useI18n } from '../i18n'
 import {
   AdminDashboardPage,
   CatalogListPage,
@@ -75,14 +77,57 @@ export function FavoritesPage() {
   )
 }
 
-export function MyPurchasesPage() {
+type LibraryTabKey = 'all' | 'product' | 'course' | 'book' | 'resource'
+
+const LIBRARY_TABS: Array<{
+  key: LibraryTabKey
+  mode: 'purchases' | 'myProducts' | 'myCourses' | 'myBooks' | 'myResources'
+  labelKey: string
+}> = [
+  { key: 'all', mode: 'purchases', labelKey: 'catalog.pages.myLibrary.tabs.all' },
+  { key: 'product', mode: 'myProducts', labelKey: 'catalog.groupLabels.product' },
+  { key: 'course', mode: 'myCourses', labelKey: 'catalog.groupLabels.course' },
+  { key: 'book', mode: 'myBooks', labelKey: 'catalog.groupLabels.book' },
+  { key: 'resource', mode: 'myResources', labelKey: 'catalog.groupLabels.resource' },
+]
+
+/** Consolidates what used to be four separate sidebar entries (Mis
+ * productos / Mis cursos / Mis libros / Mis recursos) into one "Mi
+ * biblioteca" page with an internal tab bar — same underlying data
+ * (CatalogListPage with purchased_only modes), just switched locally
+ * instead of via four different routes. "Mis compras" (MyPurchasesPage,
+ * in pages/independent, lazy-loaded via lazyPages.tsx) stays a separate
+ * page on purpose — that one's about the transaction record (date, price
+ * paid, invoice...), this one's about the content you own. */
+export function MyLibraryPage() {
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<LibraryTabKey>('all')
+  const tab = LIBRARY_TABS.find((tb) => tb.key === activeTab) ?? LIBRARY_TABS[0]
+
   return (
-    <CatalogListPage
-      mode="purchases"
-      titleKey="catalog.pages.purchases.title"
-      subtitleKey="catalog.pages.purchases.subtitle"
-      catalogBasePath="/my-purchases"
-    />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-ase-text">{t('catalog.pages.myLibrary.title')}</h1>
+        <p className="mt-1 text-sm text-ase-muted">{t('catalog.pages.myLibrary.subtitle')}</p>
+      </div>
+      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
+        {LIBRARY_TABS.map((tb) => (
+          <button
+            key={tb.key}
+            type="button"
+            onClick={() => setActiveTab(tb.key)}
+            className={
+              activeTab === tb.key
+                ? 'rounded-xl border border-ase-brand/40 bg-ase-brand/15 px-3.5 py-2 text-sm font-semibold text-ase-brand transition'
+                : 'rounded-xl border border-white/10 bg-ase-surface px-3.5 py-2 text-sm font-semibold text-ase-text2 transition hover:border-white/20'
+            }
+          >
+            {t(tb.labelKey)}
+          </button>
+        ))}
+      </div>
+      <CatalogListPage key={tab.key} mode={tab.mode} hideHeader catalogBasePath="/my-library" />
+    </div>
   )
 }
 

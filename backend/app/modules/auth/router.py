@@ -34,6 +34,7 @@ from app.modules.auth.dependencies import (
     user_has_role_assigned,
 )
 from app.models.user_link import UserLink
+from app.models.user_preferences_profile import UserPreferencesProfile
 from app.modules.auth.schemas import (
     EmailVerificationConfirmSchema,
     LoginRequest,
@@ -56,6 +57,7 @@ from app.modules.auth.schemas import (
     WorkspaceRead,
 )
 from app.modules.auth.service import AuthService
+from app.modules.user_preferences.service import UserPreferencesService
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -209,13 +211,24 @@ def me(
     active_workspace_uuid = get_default_organization_uuid(db, user)
     links = [UserLinkRead.model_validate(link) for link in user.links]
 
+    # Only independent/consumer users ever see the preferences survey — org
+    # members browsing on behalf of a team aren't shown it.
+    is_consumer_for_survey = bool(global_independent or rbac.get("consumer_mode"))
+    needs_preferences_survey = False
+    if is_consumer_for_survey:
+        prefs_profile = db.execute(
+            select(UserPreferencesProfile).where(UserPreferencesProfile.user_id == user.id)
+        ).scalar_one_or_none()
+        needs_preferences_survey = UserPreferencesService.needs_survey(prefs_profile)
+
     # Plan badge — resolved from the latest active/trialing Subscription on
     # the user's default workspace. Free/no-plan accounts get all-None here.
     plan_code = plan_name = plan_name_en = subscription_status = None
+    plan_started_at = plan_current_period_end = plan_ends_at = None
     plan_org_id = get_default_organization_id(db, user)
     if plan_org_id is not None:
         plan_row = db.execute(
-            select(Plan, Subscription.status)
+            select(Plan, Subscription)
             .join(Subscription, Subscription.plan_id == Plan.id)
             .where(
                 Subscription.organization_id == plan_org_id,
@@ -225,11 +238,17 @@ def me(
             .limit(1)
         ).first()
         if plan_row is not None:
-            plan, sub_status = plan_row
+            plan, sub = plan_row
             plan_code = plan.code
             plan_name = plan.name
             plan_name_en = plan.name_en
-            subscription_status = sub_status.value
+            subscription_status = sub.status.value
+            plan_started_at = sub.starts_at
+            plan_ends_at = sub.ends_at
+            # Only surface "next charge" when nothing is scheduled to end
+            # the subscription — once ends_at is set, plan_ends_at is the
+            # only date worth showing (there won't be another charge).
+            plan_current_period_end = sub.current_period_end if sub.ends_at is None else None
 
     return profile.model_copy(
         update={
@@ -245,7 +264,11 @@ def me(
             "plan_name": plan_name,
             "plan_name_en": plan_name_en,
             "subscription_status": subscription_status,
+            "plan_started_at": plan_started_at,
+            "plan_current_period_end": plan_current_period_end,
+            "plan_ends_at": plan_ends_at,
             "loyalty_tier": user.loyalty_tier,
+            "needs_preferences_survey": needs_preferences_survey,
             **rbac,
         }
     )

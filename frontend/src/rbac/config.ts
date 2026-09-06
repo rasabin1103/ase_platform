@@ -6,7 +6,6 @@ import {
   Boxes,
   Building2,
   CalendarClock,
-  CircleCheckBig,
   CircleUser,
   ClipboardCheck,
   Clock,
@@ -22,7 +21,6 @@ import {
   Megaphone,
   MessageSquare,
   Package,
-  PackageCheck,
   Receipt,
   Activity,
   Newspaper,
@@ -64,10 +62,12 @@ export const INDEPENDENT_NAV_GROUPS: NavGroupDef[] = [
     items: [
       { to: '/favorites', labelKey: 'private.nav.favorites', icon: Heart },
       { to: '/my-purchases', labelKey: 'private.nav.myPurchases', icon: ShoppingBag },
-      { to: '/my-products', labelKey: 'private.nav.myProducts', icon: Package },
-      { to: '/my-courses', labelKey: 'private.nav.myCourses', icon: CircleCheckBig },
-      { to: '/my-books', labelKey: 'private.nav.myBooks', icon: Library },
-      { to: '/my-resources', labelKey: 'private.nav.myResources', icon: PackageCheck },
+      // Consolidates what used to be four separate entries (Mis productos /
+      // Mis cursos / Mis libros / Mis recursos) into one page with tabs —
+      // see MyLibraryPage in app/routeHelpers.tsx. The old /my-products
+      // etc. routes still work (nothing links to them from the nav
+      // anymore) so nothing that bookmarked one of them breaks.
+      { to: '/my-library', labelKey: 'private.nav.myLibrary', icon: Library },
       { to: '/test-execution', labelKey: 'private.nav.testExecution', icon: Activity },
       { to: '/booking', labelKey: 'private.nav.booking', icon: CalendarClock },
       { to: '/redeem-code', labelKey: 'private.nav.redeemCode', icon: KeyRound },
@@ -170,6 +170,10 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/catalog/resources',
     '/favorites',
     '/my-purchases',
+    '/my-library',
+    // Old per-type routes: no longer linked from the nav (see
+    // groups.library above) but kept reachable so nothing bookmarked
+    // breaks — still gated the same as before.
     '/my-products',
     '/my-courses',
     '/my-books',

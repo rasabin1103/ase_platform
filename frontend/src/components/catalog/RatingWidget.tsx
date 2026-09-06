@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { Info, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 import { rateCatalogItem, removeCatalogItemRating } from '../../api/consumerCatalog.api'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
@@ -74,6 +74,9 @@ export function RatingWidget({ item, compact = false }: { item: CatalogItem; com
         <ThumbsDown className="h-3.5 w-3.5" strokeWidth={1.75} />
         <span>{item.downvotes ?? 0}</span>
         <span className={cn('font-semibold', netScoreClass)}>({netScore >= 0 ? '+' : ''}{netScore})</span>
+        <span title={t('catalog.rating.infoTooltip') as string} className="inline-flex shrink-0 cursor-help">
+          <Info className="h-3.5 w-3.5 text-ase-muted/70" strokeWidth={1.75} />
+        </span>
       </div>
     )
   }
@@ -109,6 +112,9 @@ export function RatingWidget({ item, compact = false }: { item: CatalogItem; com
           <ThumbsDown className="h-3.5 w-3.5" strokeWidth={1.75} fill={item.myRating && !item.myRating.isPositive ? 'currentColor' : 'none'} />
           {item.downvotes ?? 0}
         </button>
+        <span title={t('catalog.rating.infoTooltip') as string} className="inline-flex shrink-0 cursor-help">
+          <Info className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
+        </span>
         {hasVoted ? (
           <button
             type="button"

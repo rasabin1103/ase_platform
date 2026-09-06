@@ -60,6 +60,10 @@ export type CatalogItemAdmin = {
   requirements: string[]
   included_items: string[]
   tags: string[]
+  // Loose series grouping — items sharing the same series_name belong to
+  // one series, any type. Null means "not part of a series".
+  series_name: string | null
+  series_order: number | null
   repo_url: string | null
   repo_redeem_code: string | null
   repo_path: string | null
@@ -109,6 +113,8 @@ export type CatalogItemAdminPayload = {
   requirements?: string[]
   included_items?: string[]
   tags?: string[]
+  series_name?: string | null
+  series_order?: number | null
   repo_url?: string | null
   repo_redeem_code?: string | null
   repo_path?: string | null

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_rating import CatalogItemRating
 from app.models.enums import CatalogItemStatus, CatalogItemType
+from app.models.resource_view import ResourceView
 
 
 class ConsumerCatalogRepository:
@@ -98,17 +99,66 @@ class ConsumerCatalogRepository:
             tags=tags,
         )
 
-    def distinct_tags(self, *, statuses: tuple[CatalogItemStatus, ...] | None = None) -> list[str]:
-        """Flatten every catalog item's tags_json into a sorted, de-duplicated
+    def recent_items_for_user(self, user_id: int, *, limit: int = 6) -> list[CatalogItem]:
+        """Catalog items this user has actually opened (viewer, download, or
+        an audiobook chapter — see ConsumerCatalogService._record_resource_view),
+        newest-opened first. Powers the "continue where you left off" strip
+        on the independent dashboard."""
+        rows = self.db.execute(
+            select(CatalogItem)
+            .join(ResourceView, ResourceView.catalog_item_id == CatalogItem.id)
+            .where(ResourceView.user_id == user_id)
+            .order_by(ResourceView.last_opened_at.desc())
+            .limit(limit)
+        ).scalars().all()
+        return list(rows)
+
+    def series_siblings(
+        self, series_name: str, *, statuses: tuple[CatalogItemStatus, ...] | None = None
+    ) -> list[CatalogItem]:
+        """Every item sharing this series_name, ordered by series_order (nulls
+        last, so an admin who forgot to set an order still sees something
+        sane rather than a query error) then id as a stable tiebreaker.
+        Powers ConsumerCatalogService.get_series_progress."""
+        stmt = select(CatalogItem).where(CatalogItem.series_name == series_name)
+        if statuses is not None:
+            stmt = stmt.where(CatalogItem.status.in_(statuses))
+        stmt = stmt.order_by(CatalogItem.series_order.is_(None), CatalogItem.series_order, CatalogItem.id)
+        return list(self.db.execute(stmt).scalars().all())
+
+    def distinct_tags(self, *, statuses: tuple[CatalogItemStatus, ...] | None = None, limit: int = 10) -> list[str]:
+        """Flatten every catalog item's tags_json into a short, de-duplicated
         list — powers the tag-filter chips on both the admin and consumer
         catalog listings. Cheap enough to compute on demand at this scale
-        (a handful of hundred items at most)."""
+        (a handful of hundred items at most).
+
+        Two things this guards against, both real issues an admin typing
+        free-text tags will eventually hit: (1) "Python" and "python" (or
+        stray leading/trailing whitespace) being treated as two different
+        tags just because a `set` compares strings exactly — normalized
+        case-insensitively here, keeping the first-seen casing as the
+        display form; (2) an unbounded number of distinct tags turning the
+        filter bar into a wall of chips — capped to the `limit` most-used
+        tags (ties broken alphabetically) rather than an arbitrary alphabetic
+        slice, so the chips shown are the ones actually worth filtering by.
+        """
         stmt = select(CatalogItem.tags_json).where(CatalogItem.tags_json.is_not(None))
         if statuses is not None:
             stmt = stmt.where(CatalogItem.status.in_(statuses))
         rows = self.db.execute(stmt).scalars().all()
-        tags: set[str] = set()
+
+        display_form: dict[str, str] = {}  # casefolded tag -> first-seen display casing
+        counts: dict[str, int] = {}
         for row in rows:
-            if row:
-                tags.update(row)
-        return sorted(tags, key=str.casefold)
+            if not row:
+                continue
+            for raw in row:
+                tag = raw.strip() if isinstance(raw, str) else ""
+                if not tag:
+                    continue
+                key = tag.casefold()
+                display_form.setdefault(key, tag)
+                counts[key] = counts.get(key, 0) + 1
+
+        ranked = sorted(counts.keys(), key=lambda k: (-counts[k], k))[:limit]
+        return sorted((display_form[k] for k in ranked), key=str.casefold)

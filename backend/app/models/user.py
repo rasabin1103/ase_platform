@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.organization import Organization
     from app.models.organization_member import OrganizationMember
     from app.models.user_link import UserLink
+    from app.models.user_preferences_profile import UserPreferencesProfile
 
 
 class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
@@ -133,6 +134,16 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
         cascade="all,delete-orphan",
         passive_deletes=True,
         order_by="UserLink.display_order",
+    )
+
+    # Optional post-registration "tell us about yourself" survey answers —
+    # see app/models/user_preferences_profile.py for why this isn't named
+    # anything with "onboarding". uselist=False makes this a one-to-one
+    # (None until the user has been shown the survey at least once).
+    preferences_profile: Mapped["UserPreferencesProfile | None"] = relationship(
+        uselist=False,
+        cascade="all,delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

@@ -63,3 +63,24 @@ export async function createBillingPortalSession(): Promise<string> {
   const { data } = await apiClient.post<BillingPortalResponse>('/billing/portal-session')
   return data.portal_url
 }
+
+export type SubscriptionAction = {
+  status: string
+  starts_at: string
+  ends_at: string | null
+  current_period_end: string | null
+}
+
+/** Schedules cancellation at the end of the current billing period — access
+ * (and further charges) continue until `ends_at`, never an immediate cutoff. */
+export async function cancelSubscription(): Promise<SubscriptionAction> {
+  const { data } = await apiClient.post<SubscriptionAction>('/billing/cancel-subscription')
+  return data
+}
+
+/** Undoes a scheduled cancellation while the subscription is still within
+ * its paid period — the plan goes back to auto-renewing normally. */
+export async function resumeSubscription(): Promise<SubscriptionAction> {
+  const { data } = await apiClient.post<SubscriptionAction>('/billing/resume-subscription')
+  return data
+}

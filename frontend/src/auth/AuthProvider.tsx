@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { MeResponse } from '../types/auth.types'
 import { me } from '../api/auth.api'
 import { AuthContext } from './AuthContext'
@@ -22,26 +23,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<MeResponse | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isImpersonating, setIsImpersonating] = useState<boolean>(() => readIsImpersonating())
+  const queryClient = useQueryClient()
+
+  // Guards against a stale /me response clobbering fresher state — e.g. a
+  // request fired for the previous session that's still in flight when a
+  // login/impersonation switch kicks off a new one. Whichever call started
+  // LAST wins, regardless of which one's network response lands first; any
+  // response that isn't from the most recently started call is discarded.
+  // This is what used to let a just-logged-out admin's account data briefly
+  // (or, on an unlucky race, indefinitely until F5) survive into a freshly
+  // logged-in user's session, showing the wrong role's menu.
+  const requestSeq = useRef(0)
 
   const loadCurrentUser = useCallback(async () => {
+    const seq = ++requestSeq.current
     const token = getAccessToken()
     if (!token) {
-      setCurrentUser(null)
-      setIsLoading(false)
+      if (seq === requestSeq.current) {
+        setCurrentUser(null)
+        setIsLoading(false)
+      }
       return
     }
     setIsLoading(true)
     try {
       const user = await me()
+      if (seq !== requestSeq.current) return // superseded by a newer call
       setCurrentUser(user)
       if (user.active_workspace_uuid) {
         setActiveOrganizationUuid(user.active_workspace_uuid)
       }
     } catch {
+      if (seq !== requestSeq.current) return
       clearTokens()
       setCurrentUser(null)
     } finally {
-      setIsLoading(false)
+      if (seq === requestSeq.current) setIsLoading(false)
     }
   }, [])
 
@@ -55,11 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (tokens: { access_token: string; refresh_token: string }) => {
+      // Drop anything cached under the previous session (if any — e.g. an
+      // admin logging out and straight into a different account without a
+      // full page reload) before the new user's data starts loading, so no
+      // component can render role-scoped query data left over from someone
+      // else's session while the switch is in flight.
+      queryClient.clear()
+      clearActiveOrganizationUuid()
       setAccessToken(tokens.access_token)
       setRefreshToken(tokens.refresh_token)
       await loadCurrentUser()
     },
-    [loadCurrentUser],
+    [loadCurrentUser, queryClient],
   )
 
   const applyCurrentUser = useCallback((user: MeResponse) => {
@@ -70,14 +94,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    // Bump the request sequence first so any /me call still in flight from
+    // the session that's ending is discarded the moment it resolves,
+    // instead of racing the next login's own loadCurrentUser() call.
+    requestSeq.current += 1
     clearTokens()
     clearImpersonatorTokens()
     clearActiveOrganizationUuid()
     clearProfileLinksDraft()
+    queryClient.clear()
     setCurrentUser(null)
     setIsImpersonating(false)
     setIsLoading(false)
-  }, [])
+  }, [queryClient])
 
   const startImpersonation = useCallback(
     async (accessToken: string) => {
@@ -86,11 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentAccess && currentRefresh) {
         stashImpersonatorTokens({ access_token: currentAccess, refresh_token: currentRefresh })
       }
+      queryClient.clear()
+      clearActiveOrganizationUuid()
       setAccessToken(accessToken)
       setIsImpersonating(true)
       await loadCurrentUser()
     },
-    [loadCurrentUser],
+    [loadCurrentUser, queryClient],
   )
 
   const stopImpersonation = useCallback(async () => {
@@ -101,12 +132,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout()
       return
     }
+    queryClient.clear()
+    clearActiveOrganizationUuid()
     setAccessToken(stashed.access_token)
     setRefreshToken(stashed.refresh_token)
     clearImpersonatorTokens()
     setIsImpersonating(false)
     await loadCurrentUser()
-  }, [loadCurrentUser, logout])
+  }, [loadCurrentUser, logout, queryClient])
 
   const value = useMemo<AuthContextValue>(
     () => ({

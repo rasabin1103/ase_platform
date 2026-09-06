@@ -2,17 +2,27 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import zipfile
 from collections.abc import Callable
+from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.github_client import GithubContentError, get_file_content, list_directory
 from app.core.media_urls import resolve_catalog_cover_url, resolve_catalog_gallery
 from app.models.catalog_item import CatalogItem
+from app.models.catalog_purchase import CatalogPurchase
 from app.models.enums import CatalogItemStatus, CatalogItemType
+from app.models.organization import Organization
+from app.models.resource_view import ResourceView
+from app.models.test_approved_ref import TestApprovedRef
+from app.models.user_preferences_profile import UserPreferencesProfile
 from app.modules.auth.dependencies import is_super_admin
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
@@ -26,12 +36,19 @@ from app.modules.consumer_catalog.schemas import (
     CatalogItemImagePublicRead,
     CatalogItemListResponse,
     CatalogItemRead,
+    MyPurchaseDetailRead,
+    MyPurchaseListResponse,
+    MyPurchaseRead,
     MyRatingRead,
     MyReviewRead,
     ResourceContentRead,
     ReviewListResponse,
     ReviewRead,
+    SeriesItemRead,
+    SeriesProgressRead,
 )
+
+logger = logging.getLogger(__name__)
 
 # Viewer safety cap — plenty for a script/config file, keeps a huge
 # accidental upload from blowing up the response or the browser tab.
@@ -141,6 +158,74 @@ _FORMAT_SUBFOLDER_ALIASES: dict[str, tuple[str, ...]] = {
 CONSUMER_LIST_STATUSES = (CatalogItemStatus.published, CatalogItemStatus.coming_soon, CatalogItemStatus.request_only)
 CONSUMER_DETAIL_STATUSES = CONSUMER_LIST_STATUSES
 
+# --- Recommendation scoring keyword tables ------------------------------
+# get_recommendations() below combines the pre-existing "same type as
+# something you already own" heuristic with the user's optional preferences
+# profile (see app/modules/user_preferences/). Every profile answer comes
+# from a small fixed vocabulary (see user_preferences/schemas.py) rather
+# than free text specifically so it can be matched here with plain
+# substring search against each item's tags_json/category/title — no
+# NLP/fuzzy matching, same "simple, explainable heuristic over real data"
+# spirit as the strip's original docstring.
+_TECHNOLOGY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "selenium": ("selenium",),
+    "cypress": ("cypress",),
+    "playwright": ("playwright",),
+    "appium": ("appium",),
+    "postman_api": ("postman", "api"),
+    "jmeter_performance": ("jmeter", "performance", "rendimiento", "carga"),
+    "python": ("python",),
+    "java": ("java",),
+    "javascript_typescript": ("javascript", "typescript", " js", " ts"),
+    "jira": ("jira",),
+}
+_IMPROVEMENT_GOAL_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "test_automation": ("automat", "selenium", "cypress", "playwright", "appium"),
+    "qa_strategy_process": ("estrategia", "strategy", "proceso", "process", "calidad", "quality"),
+    "cicd_devops": ("ci/cd", "cicd", "devops", "pipeline", "jenkins", "github actions"),
+    "programming_skills": ("programaci", "programming", "código", "code", "python", "java", "javascript"),
+    "team_management": ("gestión", "gestion", "management", "liderazgo", "leadership", "equipo", "team"),
+    "certifications": ("certificaci", "certification", "istqb"),
+}
+_ROLE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "qa_manual": ("manual", "qa"),
+    "qa_automation": ("automat",),
+    "qa_lead_manager": ("gestión", "gestion", "lead", "manager", "liderazgo", "leadership"),
+    "developer": ("desarroll", "developer", "programaci", "programming"),
+    "devops": ("devops", "ci/cd", "cicd"),
+    "product_manager": ("producto", "product"),
+}
+
+
+def _catalog_item_haystack(item: CatalogItem) -> str:
+    parts = [item.title or "", item.category or ""]
+    if item.tags_json:
+        parts.extend(str(tag) for tag in item.tags_json)
+    return " ".join(parts).lower()
+
+
+def _score_item_for_profile(
+    item: CatalogItem,
+    *,
+    preferred_types: set[CatalogItemType],
+    profile: "UserPreferencesProfile | None",
+) -> int:
+    score = 1 if item.type in preferred_types else 0
+    if profile is None:
+        return score
+    haystack = _catalog_item_haystack(item)
+    if profile.level and item.level is not None and profile.level == item.level.value:
+        score += 3
+    for tech in profile.technologies or []:
+        if any(kw in haystack for kw in _TECHNOLOGY_KEYWORDS.get(tech, (tech,))):
+            score += 2
+    for goal in profile.improvement_goals or []:
+        if any(kw in haystack for kw in _IMPROVEMENT_GOAL_KEYWORDS.get(goal, ())):
+            score += 2
+    if profile.role and any(kw in haystack for kw in _ROLE_KEYWORDS.get(profile.role, ())):
+        score += 1
+    return score
+
 
 class ConsumerCatalogService:
     def __init__(self, db: Session):
@@ -158,6 +243,124 @@ class ConsumerCatalogService:
 
     def permanently_owned_slugs(self, user_id: int) -> set[str]:
         return self.purchases.permanently_owned_slugs_for_user(user_id)
+
+    def list_my_purchases(self, user_id: int) -> MyPurchaseListResponse:
+        """"Mis compras" — the transaction record, separate from the
+        library (see MyPurchaseRead's docstring). One row per
+        CatalogPurchase, newest first."""
+        rows = self.purchases.list_for_user(user_id)
+        if not rows:
+            return MyPurchaseListResponse(items=[])
+
+        item_ids = [r.catalog_item_id for r in rows]
+        items_by_id = {
+            i.id: i for i in self.db.execute(select(CatalogItem).where(CatalogItem.id.in_(item_ids))).scalars().all()
+        }
+        org_ids = [r.organization_id for r in rows if r.organization_id is not None]
+        org_names: dict[int, str] = {}
+        if org_ids:
+            org_names = {
+                o.id: o.name
+                for o in self.db.execute(select(Organization).where(Organization.id.in_(org_ids))).scalars().all()
+            }
+
+        favorite_slugs = self.favorite_slugs(user_id)
+        purchased_slugs = self.purchased_slugs(user_id)
+        permanently_owned = self.permanently_owned_slugs(user_id)
+        summaries = self.ratings.summaries_for_items(catalog_item_ids=item_ids)
+        my_ratings = self.ratings.my_ratings_for_items(user_id=user_id, catalog_item_ids=item_ids)
+        review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
+
+        results: list[MyPurchaseRead] = []
+        for row in rows:
+            item = items_by_id.get(row.catalog_item_id)
+            if item is None:
+                continue  # soft-deleted/orphaned row — nothing sane to show
+            read = self._to_read(
+                item,
+                favorite_slugs=favorite_slugs,
+                purchased_slugs=purchased_slugs,
+                permanently_owned_slugs=permanently_owned,
+                rating_summaries=summaries,
+                my_ratings=my_ratings,
+                review_summaries=review_summaries,
+            )
+            results.append(
+                MyPurchaseRead(
+                    item=read,
+                    purchased_at=row.created_at,
+                    source=row.source,
+                    organization_name=org_names.get(row.organization_id) if row.organization_id else None,
+                    has_payment_detail=bool(row.source == "stripe_checkout" and row.stripe_checkout_session_id),
+                )
+            )
+        return MyPurchaseListResponse(items=results)
+
+    def get_purchase_detail(self, *, user_id: int, slug: str) -> MyPurchaseDetailRead:
+        """Lazily-fetched "más información" for one purchase — only hits
+        Stripe's API for a stripe_checkout row (see MyPurchaseDetailRead),
+        so listing purchases (list_my_purchases) never waits on it. A
+        stale/deleted Stripe session degrades to the same "no payment
+        detail available" response rather than a 500 — this is informational,
+        never something that should block the page."""
+        item = self._require_item(slug)
+        row = self.db.execute(
+            select(CatalogPurchase).where(
+                CatalogPurchase.user_id == user_id, CatalogPurchase.catalog_item_id == item.id
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No purchase found for this item")
+
+        acquired_version = "standard"
+        approved_ref = self.db.execute(
+            select(TestApprovedRef)
+            .where(TestApprovedRef.user_id == user_id, TestApprovedRef.catalog_item_id == item.id)
+            .order_by(TestApprovedRef.approved_at.desc())
+        ).scalars().first()
+        if approved_ref is not None:
+            acquired_version = approved_ref.ref
+
+        detail = MyPurchaseDetailRead(acquired_version=acquired_version)
+
+        if row.source != "stripe_checkout" or not row.stripe_checkout_session_id:
+            # No live payment data to fetch — free claim, admin grant, or
+            # plan entitlement never went through Stripe checkout at all.
+            detail.payment_status = "not_applicable"
+            return detail
+
+        try:
+            from app.modules.billing.service import _require_stripe_configured
+
+            _require_stripe_configured()
+            import stripe
+
+            session = stripe.checkout.Session.retrieve(
+                row.stripe_checkout_session_id, expand=["payment_intent.latest_charge"]
+            )
+        except Exception:
+            logger.exception("Failed to fetch Stripe checkout session %s for purchase detail", row.stripe_checkout_session_id)
+            detail.payment_status = "unknown"
+            return detail
+
+        amount_total = session.get("amount_total")
+        currency = session.get("currency")
+        detail.amount_paid = Decimal(amount_total) / 100 if amount_total is not None else None
+        detail.currency = currency.upper() if currency else None
+        detail.payment_status = session.get("payment_status")
+
+        total_details = session.get("total_details") or {}
+        amount_discount = total_details.get("amount_discount")
+        if amount_discount:
+            detail.discount_amount = Decimal(amount_discount) / 100
+
+        payment_intent = session.get("payment_intent")
+        if isinstance(payment_intent, dict):
+            latest_charge = payment_intent.get("latest_charge")
+            if isinstance(latest_charge, dict):
+                detail.receipt_url = latest_charge.get("receipt_url")
+
+        return detail
 
     def _to_read(
         self,
@@ -199,6 +402,8 @@ class ConsumerCatalogService:
             requirements=item.requirements_json or [],
             includedItems=item.included_items_json or [],
             tags=item.tags_json or [],
+            seriesName=item.series_name,
+            seriesOrder=item.series_order,
             isFavorite=item.slug in favorite_slugs,
             isPurchased=item.slug in purchased_slugs,
             isPlanIncluded=(
@@ -305,6 +510,50 @@ class ConsumerCatalogService:
     def list_tags(self) -> list[str]:
         return self.repo.distinct_tags(statuses=CONSUMER_LIST_STATUSES)
 
+    def get_recommendations(self, *, user_id: int, limit: int = 8) -> CatalogItemListResponse:
+        """Server-side "recommended for you": ranks unpurchased catalog items
+        by (a) sharing a type with something the user already owns — the
+        original client-only heuristic (see RecommendedForYouStrip.tsx) —
+        plus (b), when the user has answered the optional preferences survey
+        (see app/modules/user_preferences/), keyword-matching their level,
+        technologies, improvement goals and role against each item's
+        level/tags_json/category/title (see _score_item_for_profile above).
+        No fabricated score beyond that — items tie-break by recency, same
+        as before."""
+        fav = self.favorite_slugs(user_id)
+        pur = self.purchased_slugs(user_id)
+
+        all_items, _ = self.repo.list_for_consumer(
+            limit=500,
+            offset=0,
+            type_filter=None,
+            category=None,
+            search=None,
+            statuses=CONSUMER_LIST_STATUSES,
+            sort=None,
+            tags=None,
+        )
+        unpurchased = [i for i in all_items if i.slug not in pur]
+        preferred_types = {i.type for i in all_items if i.slug in pur}
+
+        profile = self.db.execute(
+            select(UserPreferencesProfile).where(UserPreferencesProfile.user_id == user_id)
+        ).scalar_one_or_none()
+        if profile is not None and not profile.is_resolved:
+            # Skipped-but-never-answered / brand-new row — nothing to score with.
+            profile = None
+
+        ranked = sorted(
+            unpurchased,
+            key=lambda i: (
+                -_score_item_for_profile(i, preferred_types=preferred_types, profile=profile),
+                -i.created_at.timestamp(),
+            ),
+        )
+        top = ranked[:limit]
+        reads = self._to_reads_with_ratings(top, user_id=user_id, favorite_slugs=fav, purchased_slugs=pur)
+        return CatalogItemListResponse(items=reads, limit=limit, offset=0, total=len(reads))
+
     def get_by_slug(self, slug: str, *, user_id: int) -> CatalogItemRead:
         item = self.repo.get_by_slug(slug)
         if item is None or item.status not in CONSUMER_DETAIL_STATUSES:
@@ -325,6 +574,39 @@ class ConsumerCatalogService:
             if not self._resource_content_exists(item, owns=owns):
                 read = read.model_copy(update={"hasResourceContent": False})
         return read
+
+    def get_series_progress(self, slug: str, *, user_id: int) -> SeriesProgressRead:
+        """"You're N/M through this series" + "recommended next" — see
+        SeriesProgressRead. 404s for an item that isn't part of a series at
+        all, same as browsing a slug that doesn't exist; the frontend only
+        calls this when CatalogItemRead.seriesName is already set, so that
+        case is a caller bug, not a normal empty state."""
+        item = self._require_item(slug)
+        if not item.series_name:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This item is not part of a series")
+        siblings = self.repo.series_siblings(item.series_name, statuses=CONSUMER_DETAIL_STATUSES)
+        purchased = self.purchased_slugs(user_id)
+        series_items = [
+            SeriesItemRead(
+                slug=sib.slug,
+                type=sib.type,
+                title=sib.title,
+                titleEn=sib.title_en,
+                imageUrl=resolve_catalog_cover_url(sib),
+                seriesOrder=sib.series_order,
+                isPurchased=sib.slug in purchased,
+            )
+            for sib in siblings
+        ]
+        owned_count = sum(1 for si in series_items if si.isPurchased)
+        next_item = next((si for si in series_items if not si.isPurchased), None)
+        return SeriesProgressRead(
+            seriesName=item.series_name,
+            items=series_items,
+            ownedCount=owned_count,
+            totalCount=len(series_items),
+            nextItem=next_item,
+        )
 
     def toggle_favorite(self, slug: str, *, user_id: int) -> CatalogItemRead:
         item = self._require_item(slug)
@@ -468,6 +750,49 @@ class ConsumerCatalogService:
             )
         return item
 
+    def _record_resource_view(self, item: CatalogItem, *, user_id: int) -> None:
+        """Upserts this user's resource_views row for `item` — bumps
+        last_opened_at to now and increments open_count, or inserts a new
+        row on the first open. Powers the "continue where you left off"
+        strip on the independent dashboard (see recent_items_for_user).
+
+        Only ever called from a path that already confirmed ownership (a
+        non-owner's preview never counts as "opening" the item for this
+        purpose) — and deliberately best-effort: a logging failure here
+        must never break the actual viewer/download/audio response it's
+        piggybacking on.
+        """
+        try:
+            now = datetime.now(timezone.utc)
+            stmt = pg_insert(ResourceView).values(
+                user_id=user_id,
+                catalog_item_id=item.id,
+                last_opened_at=now,
+                open_count=1,
+            )
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[ResourceView.user_id, ResourceView.catalog_item_id],
+                set_={"last_opened_at": now, "open_count": ResourceView.open_count + 1},
+            )
+            self.db.execute(stmt)
+            self.db.commit()
+        except Exception:
+            logger.exception("Failed to record resource view for user_id=%s catalog_item_id=%s", user_id, item.id)
+            self.db.rollback()
+
+    def list_recently_opened(self, *, user_id: int, limit: int = 6) -> CatalogItemListResponse:
+        """Items this user has actually opened, most-recent-first — see
+        _record_resource_view. Used by the independent dashboard's
+        "continue where you left off" section."""
+        items = self.repo.recent_items_for_user(user_id, limit=limit)
+        reads = self._to_reads_with_ratings(
+            items,
+            user_id=user_id,
+            favorite_slugs=self.favorite_slugs(user_id),
+            purchased_slugs=self.purchased_slugs(user_id),
+        )
+        return CatalogItemListResponse(items=reads, limit=limit, offset=0, total=len(reads))
+
     def _resource_content_exists(self, item: CatalogItem, *, owns: bool) -> bool:
         """Live check used only on the single-item detail page (never on the
         list — one GitHub call per browsed item is fine, one per catalog row
@@ -607,6 +932,8 @@ class ConsumerCatalogService:
         item = self._require_resource_item(slug)
         is_book = item.type == CatalogItemType.book
         owns = self._owns_resource(item, user_id=user_id)
+        if owns:
+            self._record_resource_view(item, user_id=user_id)
 
         if is_book:
             if not owns:
@@ -785,6 +1112,7 @@ class ConsumerCatalogService:
 
         Served exactly as stored, no decoding/truncation."""
         item = self._require_resource_access(slug, user_id=user_id)
+        self._record_resource_view(item, user_id=user_id)
         is_book = item.type == CatalogItemType.book
 
         if format is not None:
@@ -868,6 +1196,7 @@ class ConsumerCatalogService:
         directly — so a client can't use it to reach any file outside that
         one folder."""
         item = self._require_resource_access(slug, user_id=user_id)
+        self._record_resource_view(item, user_id=user_id)
         if item.type != CatalogItemType.book:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This item has no audiobook")
         entries = self._list_resource_subfolder(item, "audiolibro")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -53,3 +54,13 @@ class CatalogCheckoutSessionResponse(BaseModel):
 
 class BillingPortalResponse(BaseModel):
     portal_url: str
+
+
+class SubscriptionActionResponse(BaseModel):
+    """Returned by cancel/resume so the frontend can update the profile
+    page's dates immediately without waiting for a /me refetch."""
+
+    status: str
+    starts_at: datetime
+    ends_at: datetime | None
+    current_period_end: datetime | None

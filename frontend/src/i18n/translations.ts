@@ -60,6 +60,8 @@ import { orgMembershipEn, orgMembershipEs } from './orgMembership.locale'
 import { redeemCodeEn, redeemCodeEs } from './redeemCode.locale'
 /** Private `/test-execution` copy (EN + ES). Merged as root key `testExecution`. */
 import { testExecutionEn, testExecutionEs } from './testExecution.locale'
+/** Skippable post-registration preferences survey (EN + ES). Merged as root key `preferencesSurvey`. */
+import { preferencesSurveyEn, preferencesSurveyEs } from './preferencesSurvey.locale'
 
 export type Language = 'en' | 'es'
 
@@ -84,7 +86,7 @@ export const translations = {
       story: 'Story',
       contact: 'Contact',
       cta: 'Get started free',
-      clients: 'Client access',
+      clients: 'Log in',
     },
     notFound: {
       badge: 'Page not found',
@@ -138,6 +140,7 @@ export const translations = {
     orgMembership: orgMembershipEn,
     redeemCode: redeemCodeEn,
     testExecution: testExecutionEn,
+    preferencesSurvey: preferencesSurveyEn,
     bookingPage: bookingPageEn,
     adminBookingPage: adminBookingPageEn,
     usersPage: usersPageEn,
@@ -383,6 +386,8 @@ export const translations = {
       checkoutError: 'We could not start checkout. Please try again in a moment.',
       comingSoonBadge: 'Coming soon',
       comingSoonCta: 'Coming soon',
+      currentPlanBadge: 'Your current plan',
+      currentPlanCta: 'Manage your plan',
       plans: {
         free: {
           name: 'Free',
@@ -942,6 +947,7 @@ export const translations = {
         catalogResources: 'Resource catalog',
         favorites: 'Favorites',
         myPurchases: 'My purchases',
+        myLibrary: 'My library',
         myBooks: 'My books',
         myResources: 'My resources',
         testExecution: 'Test my products',
@@ -1013,7 +1019,7 @@ export const translations = {
       story: 'Historia',
       contact: 'Contacto',
       cta: 'Empezar gratis',
-      clients: 'Acceso clientes',
+      clients: 'Iniciar sesión',
     },
     notFound: {
       badge: 'Página no encontrada',
@@ -1037,7 +1043,7 @@ export const translations = {
       body: 'Te queda(n) {{days}} día(s) para activar 2FA en tu cuenta, o se desactivará automáticamente por seguridad.',
       bodyToday: 'Hoy es tu último día para activar 2FA en tu cuenta, o se desactivará automáticamente por seguridad.',
       cta: 'Activar ahora',
-      later: 'Recordarmelo después',
+      later: 'Recuérdamelo después',
     },
     sessionExpiry: {
       title: 'Tu sesión está a punto de cerrarse',
@@ -1067,6 +1073,7 @@ export const translations = {
     orgMembership: orgMembershipEs,
     redeemCode: redeemCodeEs,
     testExecution: testExecutionEs,
+    preferencesSurvey: preferencesSurveyEs,
     bookingPage: bookingPageEs,
     adminBookingPage: adminBookingPageEs,
     usersPage: usersPageEs,
@@ -1309,6 +1316,8 @@ export const translations = {
       customPrice: 'Personalizado',
       comingSoonBadge: 'Próximamente',
       comingSoonCta: 'Próximamente',
+      currentPlanBadge: 'Tu plan actual',
+      currentPlanCta: 'Gestionar tu plan',
       checkoutLoading: 'Redirigiendo al pago…',
       checkoutError: 'No se pudo iniciar el pago. Inténtalo de nuevo en un momento.',
       plans: {
@@ -1870,6 +1879,7 @@ export const translations = {
         catalogResources: 'Catálogo de recursos',
         favorites: 'Favoritos',
         myPurchases: 'Mis compras',
+        myLibrary: 'Mi biblioteca',
         myBooks: 'Mis libros',
         myResources: 'Mis recursos',
         testExecution: 'Probar mis productos',

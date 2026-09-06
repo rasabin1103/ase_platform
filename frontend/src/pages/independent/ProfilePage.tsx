@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
-import { createBillingPortalSession } from '../../api/billing.api'
+import { cancelSubscription, createBillingPortalSession, resumeSubscription } from '../../api/billing.api'
 import { clearProfileLinksDraft, getProfileLinksDraft, setProfileLinksDraft } from '../../auth/auth.store'
 import type { UserLink } from '../../types/auth.types'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
@@ -12,6 +12,7 @@ import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Switch'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
 import { InvoiceHistoryCard } from '../../components/billing/InvoiceHistoryCard'
@@ -27,6 +28,43 @@ type ProfileForm = {
   last_name: string
   display_name: string
   phone_e164: string
+}
+
+function fmtDate(iso: string | null | undefined, language: string): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d)
+}
+
+/** "1 año 3 meses" / "8 meses" style tenure label from an account creation
+ * date — kept as a small local helper (language-branched, not a full i18n
+ * key set) since it's a single presentational string, not reusable copy. */
+function tenureLabel(createdAt: string | null | undefined, language: string): string | null {
+  if (!createdAt) return null
+  const start = new Date(createdAt)
+  if (Number.isNaN(start.getTime())) return null
+  const now = new Date()
+  let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+  if (now.getDate() < start.getDate()) months -= 1
+  if (months < 0) months = 0
+
+  const years = Math.floor(months / 12)
+  const remMonths = months % 12
+  const isEn = language === 'en'
+
+  if (years === 0) {
+    const n = months < 1 ? 0 : months
+    return isEn ? `${n} month${n === 1 ? '' : 's'}` : `${n} mes${n === 1 ? '' : 'es'}`
+  }
+  const yearPart = isEn ? `${years} year${years === 1 ? '' : 's'}` : `${years} año${years === 1 ? '' : 's'}`
+  if (remMonths === 0) return yearPart
+  const monthPart = isEn ? `${remMonths} month${remMonths === 1 ? '' : 's'}` : `${remMonths} mes${remMonths === 1 ? '' : 'es'}`
+  return `${yearPart} ${monthPart}`
 }
 
 export function ProfilePage() {
@@ -163,6 +201,8 @@ export function ProfilePage() {
     ? localizedPlanText(language, currentUser.plan_name, currentUser.plan_name_en)
     : null
   const subscriptionStatus = currentUser?.subscription_status ?? null
+  const isSubscriptionLive = subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
+  const isCancelScheduled = isSubscriptionLive && Boolean(currentUser?.plan_ends_at)
   const [billingError, setBillingError] = useState<string | null>(null)
   const billingPortalMut = useMutation({
     mutationFn: createBillingPortalSession,
@@ -177,6 +217,28 @@ export function ProfilePage() {
           : t('profilePage.billing.error')
       setBillingError(msg as string)
     },
+  })
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const cancelMut = useMutation({
+    mutationFn: cancelSubscription,
+    onSuccess: async () => {
+      setCancelModalOpen(false)
+      setCancelError(null)
+      await loadCurrentUser()
+    },
+    onError: () => setCancelError(t('profilePage.billing.cancelError') as string),
+  })
+
+  const [resumeError, setResumeError] = useState<string | null>(null)
+  const resumeMut = useMutation({
+    mutationFn: resumeSubscription,
+    onSuccess: async () => {
+      setResumeError(null)
+      await loadCurrentUser()
+    },
+    onError: () => setResumeError(t('profilePage.billing.resumeError') as string),
   })
 
   const onSave = form.handleSubmit((values) =>
@@ -243,20 +305,97 @@ export function ProfilePage() {
                     {t(`profilePage.billing.status.${subscriptionStatus}`)}
                   </Badge>
                 ) : null}
+                {isCancelScheduled ? (
+                  <Badge variant="warning">{t('profilePage.billing.cancelScheduledBadge')}</Badge>
+                ) : null}
+                {tenureLabel(currentUser?.created_at, language) ? (
+                  <Badge variant="default">
+                    {t('profilePage.tenureLabel')}: {tenureLabel(currentUser?.created_at, language)}
+                  </Badge>
+                ) : null}
               </div>
+
+              {isSubscriptionLive ? (
+                <div className="mt-3 space-y-1 text-sm text-ase-text2">
+                  {fmtDate(currentUser?.plan_started_at, language) ? (
+                    <p>
+                      {t('profilePage.billing.startedOn')}: {fmtDate(currentUser?.plan_started_at, language)}
+                    </p>
+                  ) : null}
+                  {isCancelScheduled ? (
+                    <p className="text-amber-200">
+                      {t('profilePage.billing.endsOnPrefix')} {fmtDate(currentUser?.plan_ends_at, language)}.{' '}
+                      {t('profilePage.billing.endsOnSuffix')}
+                    </p>
+                  ) : fmtDate(currentUser?.plan_current_period_end, language) ? (
+                    <p>
+                      {t('profilePage.billing.nextCharge')}: {fmtDate(currentUser?.plan_current_period_end, language)}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-            {currentUser?.plan_code ? (
-              <Button type="button" onClick={() => billingPortalMut.mutate()} disabled={billingPortalMut.isPending}>
-                {billingPortalMut.isPending ? t('profilePage.billing.opening') : t('profilePage.billing.manageButton')}
-              </Button>
-            ) : (
-              <Link to="/pricing">
-                <Button type="button">{t('profilePage.billing.viewPlans')}</Button>
-              </Link>
-            )}
+            <div className="flex flex-col items-stretch gap-2 sm:items-end">
+              {currentUser?.plan_code ? (
+                <Button type="button" onClick={() => billingPortalMut.mutate()} disabled={billingPortalMut.isPending}>
+                  {billingPortalMut.isPending ? t('profilePage.billing.opening') : t('profilePage.billing.manageButton')}
+                </Button>
+              ) : (
+                <Link to="/pricing">
+                  <Button type="button">{t('profilePage.billing.viewPlans')}</Button>
+                </Link>
+              )}
+              {isSubscriptionLive ? (
+                isCancelScheduled ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => resumeMut.mutate()}
+                    disabled={resumeMut.isPending}
+                  >
+                    {resumeMut.isPending ? t('profilePage.billing.resuming') : t('profilePage.billing.resumeButton')}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-ase-error/30 text-ase-text2 hover:text-ase-text"
+                    onClick={() => setCancelModalOpen(true)}
+                  >
+                    {t('profilePage.billing.cancelButton')}
+                  </Button>
+                )
+              ) : null}
+            </div>
           </div>
           {billingError ? <p className="mt-3 text-sm text-ase-error">{billingError}</p> : null}
+          {resumeError ? <p className="mt-3 text-sm text-ase-error">{resumeError}</p> : null}
         </Card>
+
+        <Modal
+          open={cancelModalOpen}
+          title={t('profilePage.billing.cancelModalTitle') as string}
+          onClose={() => setCancelModalOpen(false)}
+          footer={
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="ghost" onClick={() => setCancelModalOpen(false)}>
+                {t('profilePage.billing.cancelModalKeep')}
+              </Button>
+              <Button variant="danger" disabled={cancelMut.isPending} onClick={() => cancelMut.mutate()}>
+                {cancelMut.isPending ? t('profilePage.billing.cancelling') : t('profilePage.billing.cancelModalConfirm')}
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-2">
+            <p className="text-sm text-ase-text">
+              {t('profilePage.billing.cancelModalBodyPrefix')}{' '}
+              {fmtDate(currentUser?.plan_current_period_end, language)}.{' '}
+              {t('profilePage.billing.cancelModalBodySuffix')}
+            </p>
+            {cancelError ? <p className="text-sm text-ase-error">{cancelError}</p> : null}
+          </div>
+        </Modal>
 
         {currentUser?.plan_code ? <InvoiceHistoryCard /> : null}
 
