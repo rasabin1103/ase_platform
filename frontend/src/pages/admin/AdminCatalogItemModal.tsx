@@ -69,7 +69,18 @@ const defaults = (type: CatalogItemType): FormValues => ({
   test_repo_url: null,
   test_workflow_file: null,
   test_included_runs: null,
+  current_version: null,
+  changelog: [],
+  compatibility: [],
+  license_scope: [],
+  license_redistribution: null,
+  license_updates_included: false,
+  license_support_included: false,
+  license_refund_policy: null,
 })
+
+const LICENSE_SCOPES = ['individual', 'company'] as const
+const LICENSE_REDISTRIBUTION_OPTIONS = ['prohibited', 'allowed', 'allowed_with_attribution'] as const
 
 type Props = {
   open: boolean
@@ -137,6 +148,8 @@ export function AdminCatalogItemModal({
   const [pendingCoverKey, setPendingCoverKey] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [tagsInput, setTagsInput] = useState('')
+  const [changelogInput, setChangelogInput] = useState('')
+  const [compatibilityInput, setCompatibilityInput] = useState('')
   const [customFields, setCustomFields] = useState<Record<string, unknown>>({})
   const [testInputSchema, setTestInputSchema] = useState<TestInputVariableDef[]>([])
   const form = useForm<FormValues>({ defaultValues: defaults(defaultType) })
@@ -204,13 +217,25 @@ export function AdminCatalogItemModal({
           test_repo_url: initial.test_repo_url ?? null,
           test_workflow_file: initial.test_workflow_file ?? null,
           test_included_runs: initial.test_included_runs ?? null,
+          current_version: initial.current_version ?? null,
+          changelog: initial.changelog ?? [],
+          compatibility: initial.compatibility ?? [],
+          license_scope: initial.license_scope ?? [],
+          license_redistribution: initial.license_redistribution ?? null,
+          license_updates_included: initial.license_updates_included ?? false,
+          license_support_included: initial.license_support_included ?? false,
+          license_refund_policy: initial.license_refund_policy ?? null,
         })
         setTagsInput((initial.tags ?? []).join(', '))
+        setChangelogInput((initial.changelog ?? []).join('\n'))
+        setCompatibilityInput((initial.compatibility ?? []).join(', '))
         setCustomFields(initial.custom_fields ?? {})
         setTestInputSchema(initial.test_input_schema ?? [])
       } else {
         form.reset(defaults(defaultType))
         setTagsInput('')
+        setChangelogInput('')
+        setCompatibilityInput('')
         setCustomFields({})
         setTestInputSchema([])
       }
@@ -230,6 +255,9 @@ export function AdminCatalogItemModal({
   const categoryWatch = useWatch({ control: form.control, name: 'category' })
   const dimensionSelectionsWatch = useWatch({ control: form.control, name: 'dimension_selections' })
   const pageCountWatch = useWatch({ control: form.control, name: 'page_count' })
+  const licenseScopeWatch = useWatch({ control: form.control, name: 'license_scope' })
+  const licenseUpdatesIncludedWatch = useWatch({ control: form.control, name: 'license_updates_included' })
+  const licenseSupportIncludedWatch = useWatch({ control: form.control, name: 'license_support_included' })
   const categoryOptions = categoriesQuery.data ?? []
   const selectedCategory = categoryOptions.find((c) => c.name === categoryWatch)
   // Item might carry a category value that isn't (or no longer is) a
@@ -288,12 +316,26 @@ export function AdminCatalogItemModal({
             long_description_en:
               dirty.long_description_en && values.long_description_en ? values.long_description_en.trim() : null,
           }
+          const changelog = changelogInput
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+          const compatibility = Array.from(
+            new Set(
+              compatibilityInput
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            ),
+          )
           try {
             await onSubmit(
               {
                 ...values,
                 ...englishOverrides,
                 tags,
+                changelog,
+                compatibility,
                 custom_fields: customFields,
                 test_input_schema: testInputSchema.filter((v) => v.key && v.label),
               },
@@ -671,12 +713,112 @@ export function AdminCatalogItemModal({
             </>
           ) : null}
           {typeWatch === 'resource' ? (
-            <label className="block sm:col-span-2">
-              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoPath')}</span>
-              <Input placeholder="resources/deploy-checklist" {...form.register('repo_path')} />
-              <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHint')}</p>
-            </label>
+            <>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.repoPath')}</span>
+                <Input placeholder="resources/deploy-checklist" {...form.register('repo_path')} />
+                <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.repoPathHint')}</p>
+              </label>
+              <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+                <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+                  {t('adminCatalog.versionSection.title')}
+                </span>
+                <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.versionSection.hint')}</p>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.currentVersion')}</span>
+                  <Input
+                    placeholder="1.0.0"
+                    {...form.register('current_version', { setValueAs: (v) => (v === '' ? null : v) })}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.changelog')}</span>
+                  <textarea
+                    className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+                    rows={4}
+                    placeholder={t('adminCatalog.placeholders.changelog') as string}
+                    value={changelogInput}
+                    onChange={(e) => setChangelogInput(e.target.value)}
+                  />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.changelogHint')}</p>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.compatibility')}</span>
+                  <Input
+                    placeholder={t('adminCatalog.placeholders.compatibility') as string}
+                    value={compatibilityInput}
+                    onChange={(e) => setCompatibilityInput(e.target.value)}
+                  />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.compatibilityHint')}</p>
+                </label>
+              </div>
+            </>
           ) : null}
+          <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">
+              {t('adminCatalog.licenseSection.title')}
+            </span>
+            <p className="text-[11px] leading-snug text-ase-muted">{t('adminCatalog.licenseSection.hint')}</p>
+            <div className="block">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.licenseScope')}</span>
+              <div className="flex flex-wrap gap-4">
+                {LICENSE_SCOPES.map((scope) => (
+                  <label key={scope} className="flex items-center gap-2 text-xs text-ase-text">
+                    <input
+                      type="checkbox"
+                      checked={(licenseScopeWatch ?? []).includes(scope)}
+                      onChange={(e) => {
+                        const current = form.getValues('license_scope') ?? []
+                        form.setValue(
+                          'license_scope',
+                          e.target.checked ? [...current, scope] : current.filter((s) => s !== scope),
+                        )
+                      }}
+                    />
+                    {t(`adminCatalog.licenseScopeOptions.${scope}`)}
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.licenseScopeHint')}</p>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.licenseRedistribution')}</span>
+              <Select {...form.register('license_redistribution', { setValueAs: (v) => (v === '' ? null : v) })}>
+                <option value="">—</option>
+                {LICENSE_REDISTRIBUTION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {t(`adminCatalog.licenseRedistributionOptions.${opt}`)}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 text-xs text-ase-muted">
+                <Switch
+                  checked={Boolean(licenseUpdatesIncludedWatch)}
+                  onCheckedChange={(v) => form.setValue('license_updates_included', v)}
+                />
+                {t('adminCatalog.fields.licenseUpdatesIncluded')}
+              </label>
+              <label className="flex items-center gap-2 text-xs text-ase-muted">
+                <Switch
+                  checked={Boolean(licenseSupportIncludedWatch)}
+                  onCheckedChange={(v) => form.setValue('license_support_included', v)}
+                />
+                {t('adminCatalog.fields.licenseSupportIncluded')}
+              </label>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.licenseRefundPolicy')}</span>
+              <textarea
+                className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+                rows={3}
+                placeholder={t('adminCatalog.placeholders.licenseRefundPolicy') as string}
+                {...form.register('license_refund_policy', { setValueAs: (v) => (v === '' ? null : v) })}
+              />
+              <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.licenseRefundPolicyHint')}</p>
+            </label>
+          </div>
           {typeWatch === 'product' ? (
             <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">
               <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">

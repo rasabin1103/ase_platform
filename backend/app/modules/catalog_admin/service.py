@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -133,7 +134,16 @@ class CatalogAdminService:
             test_workflow_file=item.test_workflow_file,
             test_included_runs=item.test_included_runs,
             test_input_schema=[TestInputVariableDef(**v) for v in (item.test_input_schema_json or [])],
+            current_version=item.current_version,
+            changelog=item.changelog_json or [],
+            compatibility=item.compatibility_json or [],
+            license_scope=item.license_scope_json or [],
+            license_redistribution=item.license_redistribution,
+            license_updates_included=item.license_updates_included,
+            license_support_included=item.license_support_included,
+            license_refund_policy=item.license_refund_policy,
             recommended_price=item.recommended_price,
+            version_updated_at=item.version_updated_at,
             created_at=item.created_at,
             updated_at=item.updated_at,
         )
@@ -365,7 +375,17 @@ class CatalogAdminService:
             test_workflow_file=payload.test_workflow_file,
             test_included_runs=payload.test_included_runs,
             test_input_schema_json=[v.model_dump() for v in payload.test_input_schema],
+            current_version=(payload.current_version or "").strip() or None,
+            changelog_json=payload.changelog,
+            compatibility_json=payload.compatibility,
+            license_scope_json=payload.license_scope,
+            license_redistribution=payload.license_redistribution,
+            license_updates_included=payload.license_updates_included,
+            license_support_included=payload.license_support_included,
+            license_refund_policy=payload.license_refund_policy,
         )
+        if item.current_version:
+            item.version_updated_at = datetime.now(timezone.utc)
         self._ensure_english_fields(
             item,
             payload,
@@ -445,6 +465,20 @@ class CatalogAdminService:
             self._check_redeem_code_available(data["repo_redeem_code"], exclude_item_id=item.id)
         if "slug" in data:
             self._check_slug_available(data["slug"], exclude_item_id=item.id)
+        if "changelog" in data:
+            item.changelog_json = data.pop("changelog")
+        if "compatibility" in data:
+            item.compatibility_json = data.pop("compatibility")
+        if "license_scope" in data:
+            item.license_scope_json = data.pop("license_scope")
+        if "current_version" in data:
+            data["current_version"] = (data["current_version"] or "").strip() or None
+            # Only bump version_updated_at when the version label actually
+            # changed — an edit that resends the same value (or every other
+            # field on the form) shouldn't move "fecha de última
+            # actualización" and make a stale version look freshly released.
+            if data["current_version"] != item.current_version:
+                item.version_updated_at = datetime.now(timezone.utc) if data["current_version"] else None
         for key, value in data.items():
             setattr(item, key, value)
         self._ensure_english_fields(

@@ -141,6 +141,19 @@ class CatalogItemAdminBase(BaseModel):
     # Schema of workflow_dispatch inputs buyers must fill in per-framework
     # (see CatalogItem.test_input_schema_json / TestExecutionConfig).
     test_input_schema: list[TestInputVariableDef] = []
+    # --- Version & changelog — meaningfully editable only for type="resource"
+    # in the admin UI, but stored/validated generically here like every
+    # other pillar-only field above.
+    current_version: str | None = Field(default=None, max_length=40)
+    changelog: list[str] = []
+    compatibility: list[str] = []
+    # --- License disclosure — shown on every catalog item's detail page
+    # before purchase, regardless of type.
+    license_scope: list[str] = []
+    license_redistribution: str | None = Field(default=None, max_length=30)
+    license_updates_included: bool = False
+    license_support_included: bool = False
+    license_refund_policy: str | None = None
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -189,6 +202,14 @@ class CatalogItemAdminUpdate(BaseModel):
     test_workflow_file: str | None = None
     test_included_runs: int | None = Field(default=None, ge=0)
     test_input_schema: list[TestInputVariableDef] | None = None
+    current_version: str | None = Field(default=None, max_length=40)
+    changelog: list[str] | None = None
+    compatibility: list[str] | None = None
+    license_scope: list[str] | None = None
+    license_redistribution: str | None = Field(default=None, max_length=30)
+    license_updates_included: bool | None = None
+    license_support_included: bool | None = None
+    license_refund_policy: str | None = None
 
     @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod
@@ -220,6 +241,9 @@ class CatalogItemAdminRead(CatalogItemAdminBase):
     # Snapshot of the last calculated recommendation — informational only,
     # `price` above stays the real price.
     recommended_price: Decimal | None = None
+    # Set automatically when current_version changes — see
+    # CatalogItem.version_updated_at's docstring.
+    version_updated_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

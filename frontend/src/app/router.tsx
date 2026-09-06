@@ -3,6 +3,7 @@ import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { WorkspaceContextGate } from '../auth/WorkspaceContextGate'
 import { PostLoginGate } from '../auth/PostLoginGate'
 import { ConsumerRouteGuard } from '../auth/ConsumerRouteGuard'
+import { RequirePermission } from '../rbac/RequirePermission'
 import { AppLayout } from '../components/layout/AppLayout'
 import { PublicLayout } from '../components/public/PublicLayout'
 import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
@@ -140,26 +141,79 @@ export const router = createBrowserRouter([
               { path: '/booking', element: <BookingPage /> },
             ],
           },
+          // Self-service — every authenticated role manages its own
+          // profile, so this stays ungated beyond being logged in.
           { path: '/profile', element: <ProfilePage /> },
-          { path: '/admin/booking', element: <AdminBookingPage /> },
-          { path: '/admin/catalog', element: <AdminCatalogPage /> },
-          { path: '/admin/blog', element: <AdminBlogPage /> },
-          { path: '/admin/blog/new', element: <AdminBlogEditorPage /> },
-          { path: '/admin/blog/:id/edit', element: <AdminBlogEditorPage /> },
-          { path: '/admin/purchases', element: <AdminPurchasesPage /> },
-          { path: '/admin/organizations', element: <OrganizationsPage /> },
-          { path: '/admin/services', element: <ServicesAdminPage /> },
-          { path: '/admin/plans', element: <PlansPage /> },
-          { path: '/admin/suggestions', element: <AdminSuggestionsPage /> },
-          { path: '/admin/audit-log', element: <AdminAuditLogPage /> },
-          { path: '/admin/book-redemptions', element: <AdminBookRedemptionsPage /> },
-          { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
-          { path: '/admin/system', element: <AdminSystemPage /> },
-          { path: '/organization/catalog', element: <OrganizationCatalogPage /> },
-          { path: '/organization/grant', element: <OrganizationGrantPage /> },
-          { path: '/organization/members', element: <OrganizationMembersPage /> },
-          { path: '/users', element: <UsersPage /> },
-          { path: '/requests', element: <RequestsPage /> },
+
+          // Every group below mirrors the `anyPermission` already declared
+          // for this route's nav entry in rbac/config.ts (SUPER_ADMIN_NAV_GROUPS /
+          // ORGANIZATION_NAV_GROUPS), each verified against the real
+          // `require_permission(...)` dependency on that page's backend
+          // endpoint. A role that would never see the link in its own
+          // sidebar is now also blocked from reaching the page by typing
+          // the URL directly — see RequirePermission's docstring for the
+          // /users incident this closes.
+          {
+            element: <RequirePermission anyOf={['catalog.manage']} />,
+            children: [
+              { path: '/admin/catalog', element: <AdminCatalogPage /> },
+              { path: '/admin/blog', element: <AdminBlogPage /> },
+              { path: '/admin/blog/new', element: <AdminBlogEditorPage /> },
+              { path: '/admin/blog/:id/edit', element: <AdminBlogEditorPage /> },
+              { path: '/admin/book-redemptions', element: <AdminBookRedemptionsPage /> },
+              { path: '/admin/booking', element: <AdminBookingPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission anyOf={['users.read']} />,
+            children: [
+              { path: '/users', element: <UsersPage /> },
+              { path: '/organization/members', element: <OrganizationMembersPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission anyOf={['purchases.read_all']} />,
+            children: [{ path: '/admin/purchases', element: <AdminPurchasesPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['organizations.read']} />,
+            children: [{ path: '/admin/organizations', element: <OrganizationsPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['products.manage']} />,
+            children: [{ path: '/admin/services', element: <ServicesAdminPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['billing.manage']} />,
+            children: [{ path: '/admin/plans', element: <PlansPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['suggestions.manage']} />,
+            children: [{ path: '/admin/suggestions', element: <AdminSuggestionsPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['audit.read']} />,
+            children: [{ path: '/admin/audit-log', element: <AdminAuditLogPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['platform.read']} />,
+            children: [
+              { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
+              { path: '/admin/system', element: <AdminSystemPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission anyOf={['products.assign', 'catalog.read']} />,
+            children: [{ path: '/organization/catalog', element: <OrganizationCatalogPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['products.assign']} />,
+            children: [{ path: '/organization/grant', element: <OrganizationGrantPage /> }],
+          },
+          {
+            element: <RequirePermission anyOf={['requests.read', 'requests.create', 'requests.read_own']} />,
+            children: [{ path: '/requests', element: <RequestsPage /> }],
+          },
         ],
       },
     ],

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 
 from typing import Any
 
-from sqlalchemy import Enum, Integer, LargeBinary, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -142,6 +143,49 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # own GitHub repo variables — that's what makes this usable by more
     # than one customer against their own target environment.
     test_input_schema_json: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+
+    # --- Version & changelog (resource pillar only, but stored generically
+    # like every other per-pillar-only field on this table) ---------------
+    # Free-text version label the admin sets (e.g. "1.2", "v3") — null means
+    # versioning isn't tracked for this item. Deliberately not auto-bumped
+    # on every save: it only changes when the admin actually edits it (see
+    # CatalogAdminService.update), so version_updated_at below stays a
+    # meaningful "last real update" date rather than moving every time a
+    # typo gets fixed in the description.
+    current_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Set automatically whenever current_version changes value — this is
+    # "fecha de última actualización" on the resource detail page, and what
+    # ConsumerCatalogService compares against a buyer's own acquisition date
+    # to flag "hay una nueva versión disponible".
+    version_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Free-form entries, one per line in the admin form (e.g. "v1.2 (2026-08-01):
+    # Añadido soporte para Playwright") — deliberately unstructured like
+    # tags_json rather than a {version, date, notes} object per entry, to
+    # keep the admin form a single textarea instead of a repeatable
+    # sub-form for what's fundamentally just release notes.
+    changelog_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # Free-form tags (e.g. "ChatGPT", "Claude", "Cursor") — same
+    # comma-separated-input/JSON-array pattern as tags_json.
+    compatibility_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+
+    # --- License disclosure, shown before purchase (see CatalogDetailPage's
+    # license panel) ---------------------------------------------------------
+    # Which usage contexts the license covers — e.g. ["individual"],
+    # ["individual", "company"], or [] (not specified yet). Free-form list
+    # rather than two booleans so a future third scope doesn't need a schema
+    # change.
+    license_scope_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # "prohibited" | "allowed" | "allowed_with_attribution" | null (not
+    # specified). Plain string, not a native enum — this is disclosure copy
+    # an admin picks from a short list, not a value other code branches on.
+    license_redistribution: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    license_updates_included: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    license_support_included: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Free text override — null means the buyer-facing UI falls back to
+    # this platform's standard digital-content refund clause (see
+    # legal.terms in the frontend i18n) instead of claiming a per-item
+    # policy that was never actually set.
+    license_refund_policy: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",

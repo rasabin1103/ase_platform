@@ -104,6 +104,31 @@ class CatalogItemRead(BaseModel):
     # handed to the browser directly (this is a private, shared repo, not
     # per-item).
     hasResourceContent: bool = False
+    # --- Version & changelog — populated only for type="resource" items
+    # that have a current_version set (see CatalogItem docstring); null/[]
+    # for every other item.
+    currentVersion: str | None = None
+    versionUpdatedAt: datetime | None = None
+    changelog: list[str] = []
+    compatibility: list[str] = []
+    # When the current user has acquired this item, the timestamp of their
+    # earliest purchase row (see CatalogPurchasesRepository.purchased_at_by_slug) —
+    # "fecha de adquisición" on the resource detail page. Null if not
+    # purchased (or free/never explicitly acquired).
+    purchasedAt: datetime | None = None
+    # True when versionUpdatedAt is newer than the user's own purchasedAt —
+    # "hay una nueva versión disponible desde que la adquiriste". Always
+    # false when either date is missing.
+    hasNewVersion: bool = False
+    # --- License disclosure, shown before purchase ------------------------
+    licenseScope: list[str] = []
+    licenseRedistribution: str | None = None
+    licenseUpdatesIncluded: bool = False
+    licenseSupportIncluded: bool = False
+    # Null means "use the platform's standard digital-content refund
+    # clause" — the frontend falls back to that copy rather than claiming a
+    # per-item policy that was never actually set.
+    licenseRefundPolicy: str | None = None
     createdAt: datetime
     updatedAt: datetime
 
