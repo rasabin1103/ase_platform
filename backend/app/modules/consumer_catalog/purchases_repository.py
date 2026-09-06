@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import and_, delete, exists, or_, select
+from sqlalchemy import and_, delete, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.catalog_item import CatalogItem
@@ -83,6 +83,21 @@ class CatalogPurchasesRepository:
             )
         )
         return set(self.db.execute(stmt).scalars().all())
+
+    def purchased_at_by_slug(self, user_id: int) -> dict[str, datetime]:
+        """Earliest CatalogPurchase.created_at per item slug for this user —
+        "fecha de adquisición" on the resource detail page, and what
+        ConsumerCatalogService compares against version_updated_at to flag
+        a new version. Deliberately the MIN row per item (not the latest)
+        so a plan-only grant later upgraded to a permanent purchase doesn't
+        reset how long the user has actually had access."""
+        stmt = (
+            select(CatalogItem.slug, func.min(CatalogPurchase.created_at))
+            .join(CatalogPurchase, CatalogPurchase.catalog_item_id == CatalogItem.id)
+            .where(CatalogPurchase.user_id == user_id)
+            .group_by(CatalogItem.slug)
+        )
+        return {slug: created_at for slug, created_at in self.db.execute(stmt).all()}
 
     def list_for_user(self, user_id: int) -> list[CatalogPurchase]:
         """Every purchase transaction row for this user, newest first —

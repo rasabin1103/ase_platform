@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import {
   ArrowLeft,
+  Ban,
   Check,
+  ChevronDown,
+  ChevronUp,
   Code,
   Download,
   ExternalLink,
@@ -13,12 +16,17 @@ import {
   FileX,
   Headphones,
   Heart,
+  History,
+  LifeBuoy,
   ListChecks,
   Maximize2,
   Minimize2,
   Package,
+  RefreshCw,
+  ScrollText,
   ShieldCheck,
   ShoppingCart,
+  Sparkles,
   Truck,
 } from 'lucide-react'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
@@ -134,6 +142,190 @@ function BulletList({
           </li>
         ))}
       </ul>
+    </Card>
+  )
+}
+
+// Readable by default — a long Markdown description no longer dumps
+// everything on-screen at once. Collapsed to a fixed height with a fade-out
+// cue, expanded on click. Short descriptions (shorter than the collapsed
+// height) never show the toggle at all — nothing to hide, so nothing to
+// expand.
+// Whether the collapsed height (max-h-64, ~256px) would plausibly need to
+// clip this content — a plain length heuristic instead of a DOM
+// measurement, so no ref/effect/ResizeObserver dance is needed just to
+// decide whether the "show more" toggle should exist at all.
+const DESCRIPTION_COLLAPSE_THRESHOLD = 480
+
+function CollapsibleDescription({ content, t }: { content: string; t: (key: string) => string }) {
+  const [expanded, setExpanded] = useState(false)
+  const overflowing = content.length > DESCRIPTION_COLLAPSE_THRESHOLD
+
+  return (
+    <div>
+      <div className={cn('relative overflow-hidden', !expanded && overflowing && 'max-h-64')}>
+        <MarkdownContent content={content} />
+        {!expanded && overflowing ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ase-bg to-transparent" />
+        ) : null}
+      </div>
+      {overflowing ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-cyan-300 hover:underline"
+        >
+          {expanded ? t('catalog.description.showLess') : t('catalog.description.showMore')}
+          {expanded ? <ChevronUp className="h-4 w-4" strokeWidth={1.75} /> : <ChevronDown className="h-4 w-4" strokeWidth={1.75} />}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function formatCatalogDate(iso: string, language: string) {
+  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'es-ES', { dateStyle: 'medium' }).format(new Date(iso))
+}
+
+// Resource-only: current version, when it last changed, the buyer's own
+// acquisition date, whether a newer version has shipped since, and which
+// AI tools/frameworks this resource is known to work with. See
+// ConsumerCatalogService._to_read for how hasNewVersion/purchasedAt are
+// computed server-side.
+function VersionPanel({
+  item,
+  t,
+  language,
+}: {
+  item: {
+    currentVersion?: string | null
+    versionUpdatedAt?: string | null
+    purchasedAt?: string | null
+    hasNewVersion?: boolean
+    compatibility?: string[]
+    changelog?: string[]
+  }
+  t: (key: string) => string
+  language: string
+}) {
+  if (!item.currentVersion) return null
+  const compatibility = item.compatibility ?? []
+  const changelog = item.changelog ?? []
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+          <History className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">{t('catalog.version.title')}</h2>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Badge variant="info">
+          {t('catalog.version.current')}: {item.currentVersion}
+        </Badge>
+        {item.hasNewVersion ? (
+          <Badge className="items-center gap-1 border-amber-400/30 bg-amber-400/15 text-amber-200">
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} />
+            {t('catalog.version.newVersionAvailable')}
+          </Badge>
+        ) : null}
+      </div>
+      <div className="mt-3 space-y-1 text-sm text-ase-text2">
+        {item.versionUpdatedAt ? (
+          <p>
+            {t('catalog.version.updatedAt')}: {formatCatalogDate(item.versionUpdatedAt, language)}
+          </p>
+        ) : null}
+        {item.purchasedAt ? (
+          <p>
+            {t('catalog.version.acquiredAt')}: {formatCatalogDate(item.purchasedAt, language)}
+          </p>
+        ) : null}
+      </div>
+      {compatibility.length > 0 ? (
+        <div className="mt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('catalog.version.compatibility')}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {compatibility.map((tag) => (
+              <Badge key={tag} variant="info" className="items-center gap-1">
+                <Sparkles className="h-3 w-3" strokeWidth={1.75} />
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {changelog.length > 0 ? (
+        <div className="mt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('catalog.version.changelog')}</p>
+          <ul className="mt-1.5 space-y-1.5 text-sm text-ase-text2">
+            {changelog.map((line, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ase-brand/70" />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </Card>
+  )
+}
+
+// Shown before purchase for every catalog type, per the platform's
+// "clarity before buying" requirement — scope of use, redistribution,
+// whether updates/support come with the purchase, and the refund policy
+// (falls back to the platform's standard digital-content clause when the
+// admin hasn't set a per-item one).
+function LicensePanel({
+  item,
+  t,
+}: {
+  item: {
+    licenseScope?: string[]
+    licenseRedistribution?: string | null
+    licenseUpdatesIncluded?: boolean
+    licenseSupportIncluded?: boolean
+    licenseRefundPolicy?: string | null
+  }
+  t: (key: string) => string
+}) {
+  const scope = item.licenseScope ?? []
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+          <ScrollText className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">{t('catalog.license.title')}</h2>
+      </div>
+      <div className="mt-3 space-y-2 text-sm text-ase-text2">
+        <p>
+          <span className="font-medium text-ase-text">{t('catalog.license.scope')}: </span>
+          {scope.length > 0
+            ? scope.map((s) => t(`catalog.license.scopeOptions.${s}`)).join(' · ')
+            : t('catalog.license.scopeUnspecified')}
+        </p>
+        <p className="flex items-center gap-1.5">
+          <Ban className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+          <span className="font-medium text-ase-text">{t('catalog.license.redistribution')}: </span>
+          {item.licenseRedistribution
+            ? t(`catalog.license.redistributionOptions.${item.licenseRedistribution}`)
+            : t('catalog.license.redistributionUnspecified')}
+        </p>
+        <p className="flex items-center gap-1.5">
+          <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+          {item.licenseUpdatesIncluded ? t('catalog.license.updatesIncluded') : t('catalog.license.updatesNotIncluded')}
+        </p>
+        <p className="flex items-center gap-1.5">
+          <LifeBuoy className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+          {item.licenseSupportIncluded ? t('catalog.license.supportIncluded') : t('catalog.license.supportNotIncluded')}
+        </p>
+        <p>
+          <span className="font-medium text-ase-text">{t('catalog.license.refundPolicy')}: </span>
+          {item.licenseRefundPolicy ?? t('catalog.license.refundPolicyDefault')}
+        </p>
+      </div>
     </Card>
   )
 }
@@ -436,7 +628,11 @@ export function CatalogDetailPage() {
 
           {item.seriesName ? <SeriesPanel slug={item.slug} currentSlug={item.slug} /> : null}
 
-          <MarkdownContent content={longDescription} />
+          <CollapsibleDescription content={longDescription} t={t} />
+
+          {catalogType === 'resource' ? <VersionPanel item={item} t={t} language={language} /> : null}
+
+          <LicensePanel item={item} t={t} />
 
           <Card className="p-5">
             <RatingWidget item={item} />

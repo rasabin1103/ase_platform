@@ -59,6 +59,25 @@ export type CatalogItem = {
   // preview*.pdf; the resource-content/resource-download calls enforce
   // real ownership themselves. See ConsumerCatalogService._to_read.
   hasResourceContent: boolean
+  // --- Version & changelog — populated only for type="resource" items
+  // with a current_version set; empty/null for everything else.
+  currentVersion?: string | null
+  versionUpdatedAt?: string | null
+  changelog?: string[]
+  compatibility?: string[]
+  // The current user's own acquisition date for this item (earliest
+  // purchase row) — null if not purchased. hasNewVersion compares this
+  // against versionUpdatedAt server-side.
+  purchasedAt?: string | null
+  hasNewVersion?: boolean
+  // --- License disclosure, shown before purchase -------------------------
+  licenseScope?: string[]
+  licenseRedistribution?: string | null
+  licenseUpdatesIncluded?: boolean
+  licenseSupportIncluded?: boolean
+  // Null means "use the platform's standard digital-content refund
+  // clause" — see CatalogDetailPage's license panel.
+  licenseRefundPolicy?: string | null
   createdAt: string
   updatedAt: string
 }

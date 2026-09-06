@@ -270,6 +270,7 @@ class ConsumerCatalogService:
         summaries = self.ratings.summaries_for_items(catalog_item_ids=item_ids)
         my_ratings = self.ratings.my_ratings_for_items(user_id=user_id, catalog_item_ids=item_ids)
         review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
+        purchased_at_by_slug = self.purchases.purchased_at_by_slug(user_id)
 
         results: list[MyPurchaseRead] = []
         for row in rows:
@@ -284,6 +285,7 @@ class ConsumerCatalogService:
                 rating_summaries=summaries,
                 my_ratings=my_ratings,
                 review_summaries=review_summaries,
+                purchased_at_by_slug=purchased_at_by_slug,
             )
             results.append(
                 MyPurchaseRead(
@@ -372,10 +374,15 @@ class ConsumerCatalogService:
         rating_summaries: dict[int, RatingSummary] | None = None,
         my_ratings: dict[int, object] | None = None,
         review_summaries: dict[int, tuple[float, int]] | None = None,
+        purchased_at_by_slug: dict[str, datetime] | None = None,
     ) -> CatalogItemRead:
         summary = (rating_summaries or {}).get(item.id)
         my_rating = (my_ratings or {}).get(item.id)
         review_summary = (review_summaries or {}).get(item.id)
+        purchased_at = (purchased_at_by_slug or {}).get(item.slug)
+        has_new_version = bool(
+            item.version_updated_at is not None and purchased_at is not None and item.version_updated_at > purchased_at
+        )
         return CatalogItemRead(
             id=str(item.uuid),
             uuid=item.uuid,
@@ -438,6 +445,17 @@ class ConsumerCatalogService:
             # still fully enforced there and in resource-download — this
             # flag only ever gates whether the button renders.
             hasResourceContent=bool(item.repo_path and self._resolve_repo_url(item)),
+            currentVersion=item.current_version,
+            versionUpdatedAt=item.version_updated_at,
+            changelog=item.changelog_json or [],
+            compatibility=item.compatibility_json or [],
+            purchasedAt=purchased_at,
+            hasNewVersion=has_new_version,
+            licenseScope=item.license_scope_json or [],
+            licenseRedistribution=item.license_redistribution,
+            licenseUpdatesIncluded=item.license_updates_included,
+            licenseSupportIncluded=item.license_support_included,
+            licenseRefundPolicy=item.license_refund_policy,
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )
@@ -455,6 +473,7 @@ class ConsumerCatalogService:
         my_ratings = self.ratings.my_ratings_for_items(user_id=user_id, catalog_item_ids=item_ids)
         review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
         permanently_owned = self.permanently_owned_slugs(user_id)
+        purchased_at_by_slug = self.purchases.purchased_at_by_slug(user_id)
         return [
             self._to_read(
                 i,
@@ -464,6 +483,7 @@ class ConsumerCatalogService:
                 rating_summaries=summaries,
                 my_ratings=my_ratings,
                 review_summaries=review_summaries,
+                purchased_at_by_slug=purchased_at_by_slug,
             )
             for i in items
         ]

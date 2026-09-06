@@ -79,6 +79,18 @@ export type CatalogItemAdmin = {
   test_included_runs?: number | null
   test_input_schema?: TestInputVariableDef[]
   recommended_price?: string | number | null
+  // Version & changelog — meaningfully editable only for type="resource"
+  // in the admin form, but present on every item.
+  current_version?: string | null
+  version_updated_at?: string | null
+  changelog?: string[]
+  compatibility?: string[]
+  // License disclosure — shown before purchase, every catalog type.
+  license_scope?: string[]
+  license_redistribution?: string | null
+  license_updates_included?: boolean
+  license_support_included?: boolean
+  license_refund_policy?: string | null
   created_at: string
   updated_at: string
 }
@@ -125,6 +137,14 @@ export type CatalogItemAdminPayload = {
   test_workflow_file?: string | null
   test_included_runs?: number | null
   test_input_schema?: TestInputVariableDef[]
+  current_version?: string | null
+  changelog?: string[]
+  compatibility?: string[]
+  license_scope?: string[]
+  license_redistribution?: string | null
+  license_updates_included?: boolean
+  license_support_included?: boolean
+  license_refund_policy?: string | null
 }
 
 // `type` stays fixed once created (changing the underlying kind of a

@@ -27,6 +27,7 @@ import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { useAuth } from '../hooks/useAuth'
 import { Can } from '../rbac/Can'
+import { useRbac } from '../rbac/useRbac'
 
 type CreateValues = {
   email: string
@@ -66,6 +67,7 @@ export function UsersPage() {
   const navigate = useNavigate()
   const auth = useAuth()
   const { currentUser } = auth
+  const { hasPermission } = useRbac()
   const [editing, setEditing] = useState<User | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
@@ -140,7 +142,12 @@ export function UsersPage() {
   const catalogStatsQuery = useQuery({
     queryKey: ['org-member-catalog-stats'],
     queryFn: getMemberCatalogStats,
-    enabled: !isSuperAdmin,
+    // Backend requires purchases.read_all for this endpoint — checking it
+    // here too (not just hiding the "Ver estadísticas" button via <Can>
+    // below) means a role that reaches /users via users.read but doesn't
+    // also hold purchases.read_all never fires the request in the first
+    // place, instead of getting a 403 back for a widget it can't see anyway.
+    enabled: !isSuperAdmin && hasPermission('purchases.read_all'),
   })
   const catalogStatsByUuid = useMemo(() => {
     const map = new Map<string, MemberCatalogStat>()
