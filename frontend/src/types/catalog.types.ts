@@ -37,6 +37,12 @@ export type CatalogItem = {
   requirements?: string[]
   includedItems?: string[]
   tags?: string[]
+  // Loose series grouping — items sharing the same seriesName belong to
+  // one series (any type). Null/undefined means "not part of a series".
+  // When set, GET /consumer-catalog/{slug}/series has the full
+  // progress/recommendation view (see api/consumerCatalog.api.ts).
+  seriesName?: string | null
+  seriesOrder?: number | null
   isFavorite: boolean
   isPurchased: boolean
   isPlanIncluded: boolean

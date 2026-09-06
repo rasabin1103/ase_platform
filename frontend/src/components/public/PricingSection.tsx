@@ -232,10 +232,20 @@ export function PricingSection({ compact }: { compact?: boolean }) {
               const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
               const planTier = tierFromPlanCode(plan.code)
               const isComingSoon = plan.status === 'coming_soon'
+              const isCurrentPlan =
+                auth.isAuthenticated &&
+                Boolean(plan.code) &&
+                auth.currentUser?.plan_code === plan.code &&
+                (auth.currentUser?.subscription_status === 'active' ||
+                  auth.currentUser?.subscription_status === 'trialing')
               const isSelfServeTier = planTier === 'free' || planTier === 'pro' || planTier === 'business'
               const isPaidCheckoutTier = planTier === 'pro' || planTier === 'business'
               const canCheckout =
-                isPaidCheckoutTier && auth.isAuthenticated && Boolean(plan.stripe_price_id) && !isComingSoon
+                isPaidCheckoutTier &&
+                auth.isAuthenticated &&
+                Boolean(plan.stripe_price_id) &&
+                !isComingSoon &&
+                !isCurrentPlan
               const ctaHref = isSelfServeTier ? (auth.isAuthenticated ? '/dashboard' : '/register') : '/contact'
               const isCheckingOutThisPlan = checkoutMutation.isPending && checkoutMutation.variables === plan.id
 
@@ -259,7 +269,11 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
                       <div className="text-2xl font-extrabold tracking-tight text-ase-text">{planName}</div>
-                      {isComingSoon ? (
+                      {isCurrentPlan ? (
+                        <div className="mt-2 inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">
+                          {t('pricing.currentPlanBadge')}
+                        </div>
+                      ) : isComingSoon ? (
                         <div className="mt-2 inline-flex rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-0.5 text-xs font-semibold text-cyan-200">
                           {t('pricing.comingSoonBadge')}
                         </div>
@@ -284,7 +298,16 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   </div>
 
                   <div className="mt-6">
-                    {isComingSoon ? (
+                    {isCurrentPlan ? (
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate('/profile')}
+                      >
+                        {t('pricing.currentPlanCta')}
+                      </Button>
+                    ) : isComingSoon ? (
                       <Button size="lg" variant="secondary" className="w-full cursor-not-allowed opacity-60" disabled>
                         {t('pricing.comingSoonCta')}
                       </Button>

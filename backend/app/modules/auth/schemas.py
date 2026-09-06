@@ -222,11 +222,27 @@ class MeResponse(BaseModel):
     plan_name: str | None = None
     plan_name_en: str | None = None
     subscription_status: str | None = None
+    # Stable "subscribed since" date for the current plan (see
+    # Subscription.starts_at's docstring — not touched by renewals).
+    plan_started_at: datetime | None = None
+    # When the next charge happens, for an auto-renewing subscription.
+    # Null once a cancellation is scheduled (plan_ends_at is set instead).
+    plan_current_period_end: datetime | None = None
+    # Only set when the user has scheduled cancellation — the date access
+    # actually stops. Null means the plan renews normally.
+    plan_ends_at: datetime | None = None
     # Loyalty reward tier from subscriber tenure — see app/core/loyalty.py.
     # Null means no tier yet (never subscribed, or under 6 months).
     loyalty_tier: LoyaltyTier | None = None
     # Weekly newsletter opt-in — see app/core/newsletter.py.
     newsletter_subscribed: bool = False
+    # True while an independent/consumer user hasn't yet answered or
+    # explicitly skipped the post-registration preferences survey (see
+    # app/modules/user_preferences/) — always False for organization
+    # members, who never see that survey. The frontend gate reads this to
+    # decide whether to redirect to the survey instead of straight to the
+    # dashboard.
+    needs_preferences_survey: bool = False
 
     model_config = {"from_attributes": True}
 

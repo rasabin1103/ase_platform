@@ -112,4 +112,16 @@ body,
     @apply text-ase-text2 transition-colors duration-200 hover:text-ase-brand;
     @apply outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-sm;
   }
+
+  /* In-document search highlights (MarkdownViewer/DocxViewer) — a plain
+     <mark> defaults to a bright yellow/black pair that clashes hard with
+     this app's dark theme, so both states are restyled here instead. */
+  .ase-doc-search-mark {
+    background-color: rgba(56, 189, 248, 0.28);
+    color: inherit;
+    border-radius: 2px;
+  }
+  .ase-doc-search-mark-active {
+    background-color: rgba(56, 189, 248, 0.65);
+  }
 }

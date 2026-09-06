@@ -118,6 +118,8 @@ class CatalogAdminService:
             requirements=item.requirements_json or [],
             included_items=item.included_items_json or [],
             tags=item.tags_json or [],
+            series_name=item.series_name,
+            series_order=item.series_order,
             repo_url=item.repo_url,
             repo_redeem_code=item.repo_redeem_code,
             repo_path=item.repo_path,
@@ -352,6 +354,8 @@ class CatalogAdminService:
             requirements_json=payload.requirements,
             included_items_json=payload.included_items,
             tags_json=payload.tags,
+            series_name=(payload.series_name or "").strip() or None,
+            series_order=payload.series_order,
             repo_url=payload.repo_url,
             repo_redeem_code=payload.repo_redeem_code,
             repo_path=payload.repo_path,
@@ -427,6 +431,8 @@ class CatalogAdminService:
             item.included_items_json = data.pop("included_items")
         if "tags" in data:
             item.tags_json = data.pop("tags")
+        if "series_name" in data:
+            data["series_name"] = (data["series_name"] or "").strip() or None
         if "custom_fields" in data:
             item.custom_fields_json = data.pop("custom_fields")
         if "test_input_schema" in data:

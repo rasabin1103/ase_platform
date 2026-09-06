@@ -6,6 +6,70 @@ import type {
   CatalogItemType,
 } from '../types/catalog.types'
 
+/** One row of "Mis compras" — the transaction record (when, how, what it
+ * cost), deliberately separate from CatalogItem.isPurchased (which just
+ * answers "can I open this"). See backend MyPurchaseRead. */
+export type MyPurchase = {
+  item: CatalogItem
+  purchased_at: string
+  source: 'free' | 'stripe_checkout' | 'plan_entitlement' | 'admin_grant' | string
+  organization_name: string | null
+  has_payment_detail: boolean
+}
+
+export type MyPurchaseListResponse = {
+  items: MyPurchase[]
+}
+
+/** Lazily-fetched "más información" for one purchase — only populated with
+ * live Stripe figures when has_payment_detail is true; otherwise the
+ * defaults below describe a free/plan/admin-granted acquisition. */
+export type MyPurchaseDetail = {
+  amount_paid: number | null
+  currency: string | null
+  discount_amount: number | null
+  payment_status: string | null
+  receipt_url: string | null
+  acquired_version: string
+}
+
+export async function listMyPurchases() {
+  const { data } = await apiClient.get<MyPurchaseListResponse>('/consumer-catalog/me/purchases')
+  return data
+}
+
+export async function getMyPurchaseDetail(slug: string) {
+  const { data } = await apiClient.get<MyPurchaseDetail>(`/consumer-catalog/me/purchases/${slug}/detail`)
+  return data
+}
+
+/** One entry in a series' ordered item list — a compact rail, not a full
+ * catalog card (see backend SeriesItemRead). */
+export type SeriesItem = {
+  slug: string
+  type: CatalogItemType
+  title: string
+  titleEn: string | null
+  imageUrl: string
+  seriesOrder: number | null
+  isPurchased: boolean
+}
+
+/** "You're N/M through this series" + "up next" — only fetch this when
+ * CatalogItem.seriesName is set; the endpoint 404s otherwise. */
+export type SeriesProgress = {
+  seriesName: string
+  items: SeriesItem[]
+  ownedCount: number
+  totalCount: number
+  nextItem: SeriesItem | null
+}
+
+export async function getCatalogItemSeries(slug: string) {
+  const { data } = await apiClient.get<SeriesProgress>(`/consumer-catalog/${slug}/series`)
+  return data
+}
+
 export type ListCatalogParams = {
   limit?: number
   offset?: number
@@ -25,6 +89,25 @@ export async function listConsumerCatalog(params?: ListCatalogParams) {
 
 export async function listConsumerCatalogTags() {
   const { data } = await apiClient.get<string[]>('/consumer-catalog/tags')
+  return data
+}
+
+/** Items this user has actually opened (in-platform viewer, download, or an
+ * audiobook chapter), most-recent-first — powers the "continue where you
+ * left off" strip on the independent dashboard. */
+export async function listMyRecentlyOpened(limit = 6) {
+  const { data } = await apiClient.get<CatalogItemListResponse>('/consumer-catalog/me/recent', { params: { limit } })
+  return data
+}
+
+/** Server-side "recommended for you" — ranks unpurchased items by shared
+ * type with something already owned, plus (when answered) the user's
+ * preferences survey answers (level/technologies/goals/role). See backend
+ * ConsumerCatalogService.get_recommendations. */
+export async function listMyRecommendations(limit = 8) {
+  const { data } = await apiClient.get<CatalogItemListResponse>('/consumer-catalog/me/recommended', {
+    params: { limit },
+  })
   return data
 }
 

@@ -68,10 +68,20 @@ export type MeResponse = {
   plan_name?: string | null
   plan_name_en?: string | null
   subscription_status?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired' | string | null
+  // "Subscribed since" date — stable across renewals, see backend docstring.
+  plan_started_at?: string | null
+  // Next charge date for an auto-renewing subscription — null once cancellation is scheduled.
+  plan_current_period_end?: string | null
+  // Set only when cancellation is scheduled — the date access actually stops.
+  plan_ends_at?: string | null
   // Loyalty reward tier from subscriber tenure — null means no tier yet.
   loyalty_tier?: 'silver' | 'gold' | 'platinum' | 'infinite' | string | null
   // Opt-in weekly digest — off by default (GDPR-safe), user activates it.
   newsletter_subscribed?: boolean
+  // True while an independent/consumer user hasn't answered or explicitly
+  // skipped the post-registration preferences survey yet — always false
+  // for organization members.
+  needs_preferences_survey?: boolean
 }
 
 export type RegisterRequest = {

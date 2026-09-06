@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingBag, GraduationCap, Clock, CircleUser, Sparkles } from 'lucide-react'
+import { Heart, ShoppingBag, Library, Clock, CircleUser, Sparkles } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { CatalogPremiumStrip } from '../../components/catalog/CatalogPremiumStrip'
 import { RecommendedForYouStrip } from '../../components/catalog/RecommendedForYouStrip'
+import { ContinueLearningStrip } from '../../components/catalog/ContinueLearningStrip'
 import { IndependentProgressPanel } from '../../components/private/dashboard/IndependentProgressPanel'
 import { CategoryBarCharts } from '../../components/private/dashboard/CategoryBarCharts'
+import { NewsUpdatesCard } from '../../components/dashboard/NewsUpdatesCard'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { useI18n } from '../../i18n'
@@ -14,7 +15,7 @@ import { useAuth } from '../../hooks/useAuth'
 const QUICK_LINKS = [
   { to: '/favorites', labelKey: 'independentDashboard.cards.favorites', Icon: Heart },
   { to: '/my-purchases', labelKey: 'independentDashboard.cards.purchases', Icon: ShoppingBag },
-  { to: '/my-courses', labelKey: 'independentDashboard.cards.myCourses', Icon: GraduationCap },
+  { to: '/my-library', labelKey: 'independentDashboard.cards.myLibrary', Icon: Library },
   { to: '/requests', labelKey: 'independentDashboard.cards.requests', Icon: Clock },
   { to: '/profile', labelKey: 'independentDashboard.cards.profile', Icon: CircleUser },
 ] as const
@@ -68,25 +69,13 @@ export function IndependentDashboardPage() {
 
       <IndependentProgressPanel />
 
+      <ContinueLearningStrip />
+
+      <NewsUpdatesCard />
+
       <CategoryBarCharts />
 
       <RecommendedForYouStrip />
-
-      <CatalogPremiumStrip
-        type="product"
-        titleKey="catalog.pages.products.title"
-        subtitleKey="catalog.premium.productsTeaser"
-        catalogPath="/catalog/products"
-        limit={2}
-      />
-
-      <CatalogPremiumStrip
-        type="course"
-        titleKey="catalog.pages.courses.title"
-        subtitleKey="catalog.premium.coursesTeaser"
-        catalogPath="/catalog/courses"
-        limit={2}
-      />
 
       <section>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ase-muted">

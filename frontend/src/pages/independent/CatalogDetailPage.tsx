@@ -51,6 +51,7 @@ import { ReviewWidget } from '../../components/catalog/ReviewWidget'
 import { MarkdownContent, MarkdownViewer } from '../../components/catalog/MarkdownViewer'
 import { CodeViewer } from '../../components/catalog/CodeViewer'
 import { ShareButton } from '../../components/catalog/ShareButton'
+import { SeriesPanel } from '../../components/catalog/SeriesPanel'
 import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItemType } from '../../types/catalog.types'
@@ -432,6 +433,8 @@ export function CatalogDetailPage() {
               </div>
             ) : null}
           </Card>
+
+          {item.seriesName ? <SeriesPanel slug={item.slug} currentSlug={item.slug} /> : null}
 
           <MarkdownContent content={longDescription} />
 

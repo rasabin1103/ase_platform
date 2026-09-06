@@ -51,6 +51,12 @@ export const CatalogDetailPage = lazy(() =>
 export const IndependentDashboardPage = lazy(() =>
   import('../pages/independent/IndependentDashboardPage').then((m) => ({ default: m.IndependentDashboardPage })),
 )
+export const MyPurchasesPage = lazy(() =>
+  import('../pages/independent/MyPurchasesPage').then((m) => ({ default: m.MyPurchasesPage })),
+)
+export const PreferencesSurveyPage = lazy(() =>
+  import('../pages/independent/PreferencesSurveyPage').then((m) => ({ default: m.PreferencesSurveyPage })),
+)
 export const ProfilePage = lazy(() => import('../pages/independent/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 export const RedeemCodePage = lazy(() =>
   import('../pages/independent/RedeemCodePage').then((m) => ({ default: m.RedeemCodePage })),

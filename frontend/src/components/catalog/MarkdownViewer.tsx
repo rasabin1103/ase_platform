@@ -1,9 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Check, Copy } from 'lucide-react'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useI18n } from '../../i18n'
 import { cn } from '../ui/cn'
+import { DocumentViewerToolbar, TableOfContentsRail } from './DocumentViewerChrome'
+import {
+  getSectionText,
+  useDocumentViewerChrome,
+  useHeadingToc,
+  useReadingProgress,
+  useSavedScrollPosition,
+  useTextSearch,
+} from './documentViewerTools'
 
 // Matches any of the checkmark glyphs admins actually paste (✓ U+2713, ✔
 // U+2714, ✅ U+2705, ☑ U+2611), each optionally followed by the emoji
@@ -149,6 +158,13 @@ export function MarkdownViewer({
 }) {
   const { t } = useI18n()
   const [copied, setCopied] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const chrome = useDocumentViewerChrome()
+
+  const { toc, activeId, jumpTo } = useHeadingToc(contentRef, content)
+  const progress = useReadingProgress(contentRef)
+  useSavedScrollPosition(path || null, contentRef, true)
+  const { matchCount, activeIndex, goNext, goPrev } = useTextSearch(contentRef, chrome.query, content)
 
   const handleCopy = async () => {
     try {
@@ -158,6 +174,17 @@ export function MarkdownViewer({
     } catch {
       // Clipboard API unavailable/blocked (e.g. insecure context) — the
       // button just won't flip to "copied", nothing else to do about it.
+    }
+  }
+
+  const handleCopySection = async (id: string) => {
+    const text = getSectionText(contentRef, id)
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      chrome.flashCopied(id)
+    } catch {
+      // Same clipboard caveat as handleCopy above.
     }
   }
 
@@ -174,8 +201,34 @@ export function MarkdownViewer({
           {copied ? t('catalog.resource.copied') : t('catalog.resource.copy')}
         </button>
       </div>
-      <div className={cn('overflow-y-auto bg-black/20 px-6 py-5', maximized ? 'max-h-[80vh]' : 'max-h-[68vh]')}>
-        <MarkdownContent content={content} />
+      <DocumentViewerToolbar
+        progress={progress}
+        query={chrome.query}
+        onQueryChange={chrome.setQuery}
+        matchCount={matchCount}
+        activeIndex={activeIndex}
+        onPrevMatch={goPrev}
+        onNextMatch={goNext}
+        tocCount={toc.length}
+        tocOpen={chrome.tocOpen}
+        onToggleToc={() => chrome.setTocOpen((v) => !v)}
+      />
+      <div className="flex">
+        {chrome.tocOpen && toc.length > 1 ? (
+          <TableOfContentsRail
+            toc={toc}
+            activeId={activeId}
+            onJump={jumpTo}
+            onCopySection={handleCopySection}
+            copiedId={chrome.copiedId}
+          />
+        ) : null}
+        <div
+          ref={contentRef}
+          className={cn('flex-1 overflow-y-auto bg-black/20 px-6 py-5', maximized ? 'max-h-[80vh]' : 'max-h-[68vh]')}
+        >
+          <MarkdownContent content={content} />
+        </div>
       </div>
     </div>
   )

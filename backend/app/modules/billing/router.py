@@ -13,6 +13,7 @@ from app.modules.billing.schemas import (
     CheckoutSessionCreate,
     CheckoutSessionResponse,
     InvoiceListResponse,
+    SubscriptionActionResponse,
 )
 from app.modules.billing.service import BillingError, BillingService
 
@@ -77,6 +78,40 @@ def create_portal_session(
     except BillingError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return BillingPortalResponse(portal_url=portal_url)
+
+
+@router.post("/cancel-subscription", response_model=SubscriptionActionResponse)
+def cancel_subscription(
+    current_user: User = Depends(get_current_active_user),
+    svc: BillingService = Depends(get_service),
+):
+    try:
+        sub = svc.cancel_subscription(current_user=current_user)
+    except BillingError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return SubscriptionActionResponse(
+        status=sub.status.value,
+        starts_at=sub.starts_at,
+        ends_at=sub.ends_at,
+        current_period_end=sub.current_period_end,
+    )
+
+
+@router.post("/resume-subscription", response_model=SubscriptionActionResponse)
+def resume_subscription(
+    current_user: User = Depends(get_current_active_user),
+    svc: BillingService = Depends(get_service),
+):
+    try:
+        sub = svc.resume_subscription(current_user=current_user)
+    except BillingError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return SubscriptionActionResponse(
+        status=sub.status.value,
+        starts_at=sub.starts_at,
+        ends_at=sub.ends_at,
+        current_period_end=sub.current_period_end,
+    )
 
 
 @router.post("/webhook", include_in_schema=False)

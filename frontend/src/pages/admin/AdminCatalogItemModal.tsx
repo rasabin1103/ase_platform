@@ -59,6 +59,8 @@ const defaults = (type: CatalogItemType): FormValues => ({
   requirements: [],
   included_items: [],
   tags: [],
+  series_name: null,
+  series_order: null,
   repo_url: null,
   repo_redeem_code: null,
   repo_path: null,
@@ -192,6 +194,8 @@ export function AdminCatalogItemModal({
           requirements: initial.requirements ?? [],
           included_items: initial.included_items ?? [],
           tags: initial.tags ?? [],
+          series_name: initial.series_name ?? null,
+          series_order: initial.series_order ?? null,
           repo_url: initial.repo_url,
           repo_redeem_code: initial.repo_redeem_code,
           repo_path: initial.repo_path,
@@ -554,6 +558,26 @@ export function AdminCatalogItemModal({
               onChange={(e) => setTagsInput(e.target.value)}
             />
             <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.tagsHint')}</p>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.seriesName')}</span>
+            <Input
+              placeholder={t('adminCatalog.placeholders.seriesName') as string}
+              {...form.register('series_name', { setValueAs: (v) => (v === '' ? null : v) })}
+            />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.seriesNameHint')}</p>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.seriesOrder')}</span>
+            <Input
+              type="number"
+              min={1}
+              placeholder="1"
+              {...form.register('series_order', {
+                setValueAs: (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+              })}
+            />
+            <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.seriesOrderHint')}</p>
           </label>
           {selectedCategory && selectedCategory.fields.length > 0 ? (
             <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:col-span-2">

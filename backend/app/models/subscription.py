@@ -44,9 +44,23 @@ class Subscription(Base, IdPkMixin, TimestampMixin):
         index=True,
     )
 
+    # Current billing period start — set once at subscription creation and
+    # never touched again by the webhook handler (see
+    # BillingService._upsert_subscription_from_stripe), so despite the name
+    # this stays a stable "subscribed since" date rather than drifting
+    # forward on every renewal.
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Only set once Stripe reports a scheduled cancellation (`cancel_at`) —
+    # null the whole time a subscription is auto-renewing normally. When
+    # set, this is the date access actually stops.
     ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Stripe's `current_period_end` — refreshed on every webhook update, so
+    # this is always "when the next charge happens" for an auto-renewing
+    # subscription, or "when access ends" once cancel_at_period_end is set
+    # (Stripe sets current_period_end == cancel_at in that case, so ends_at
+    # and this converge).
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     organization: Mapped["Organization"] = relationship(back_populates="subscriptions")
     plan: Mapped["Plan"] = relationship(back_populates="subscriptions")

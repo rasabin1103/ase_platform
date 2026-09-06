@@ -84,6 +84,20 @@ class CatalogPurchasesRepository:
         )
         return set(self.db.execute(stmt).scalars().all())
 
+    def list_for_user(self, user_id: int) -> list[CatalogPurchase]:
+        """Every purchase transaction row for this user, newest first —
+        powers "Mis compras" (see MyPurchaseRead), which is about the
+        transaction record rather than "do I currently have access"
+        (slugs_for_user handles that, and can differ — e.g. a cancelled
+        plan-entitlement row still shows up here as purchase history even
+        after access itself has lapsed)."""
+        stmt = (
+            select(CatalogPurchase)
+            .where(CatalogPurchase.user_id == user_id)
+            .order_by(CatalogPurchase.created_at.desc())
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
     def add(
         self,
         user_id: int,

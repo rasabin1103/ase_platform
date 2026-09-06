@@ -69,6 +69,18 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # same pattern as benefits/requirements/included_items above. Used by
     # both the admin catalog list and the consumer catalog browser to filter.
     tags_json: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # Loose grouping, not a separate table: items sharing the same
+    # series_name belong to the same series (any catalog type — a course
+    # trilogy, a book saga, a bundle of resources...). Null means "not part
+    # of a series", the common case. series_order is this item's position
+    # within the series (1, 2, 3...) — used both to render the series in
+    # the right order and to pick the "next" unpurchased item to recommend
+    # (see ConsumerCatalogService.get_series_progress). Two items in the
+    # same series with the same order, or a gap in the sequence, are both
+    # tolerated (admin-entered free text, not DB-enforced) — the progress
+    # view just sorts by order then id and recommends the first unowned one.
+    series_name: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
+    series_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Answers to the selected category's custom-field "questionnaire" (see
     # CatalogCategory.fields_json), keyed by field key. Free-form — no FK to
     # a category row, so this stays valid even if the category is later
