@@ -189,6 +189,22 @@ export async function getBookDownloadFormats(slug: string) {
   return data
 }
 
+/** File count / total size / format list of the actual downloadable
+ * package — shown before purchase so "what am I buying" isn't a mystery
+ * until after checkout. Metadata only (GitHub folder listing), no
+ * ownership required — same pattern as getBookDownloadFormats. */
+export type ResourceDownloadInfo = {
+  available: boolean
+  fileCount: number
+  totalSizeBytes: number
+  formats: string[]
+}
+
+export async function getResourceDownloadInfo(slug: string) {
+  const { data } = await apiClient.get<ResourceDownloadInfo>(`/consumer-catalog/${slug}/download-info`)
+  return data
+}
+
 /** Downloads the resource's file straight from the browser — fetches it as
  * a blob (auth header is attached by the request interceptor same as any
  * other call) and triggers a save, same object-URL pattern as

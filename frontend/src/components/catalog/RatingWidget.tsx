@@ -68,11 +68,19 @@ export function RatingWidget({ item, compact = false }: { item: CatalogItem; com
 
   if (isSuperAdmin) {
     return (
-      <div className="flex items-center gap-2 text-xs text-ase-muted">
-        <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span>{item.upvotes ?? 0}</span>
-        <ThumbsDown className="h-3.5 w-3.5" strokeWidth={1.75} />
-        <span>{item.downvotes ?? 0}</span>
+      <div className="flex items-center gap-1.5 text-xs text-ase-muted">
+        <span className="flex items-center gap-1" title={t('catalog.rating.upvote') as string}>
+          <ThumbsUp className="h-3.5 w-3.5 text-emerald-400/80" strokeWidth={1.75} />
+          {item.upvotes ?? 0}
+        </span>
+        {/* Explicit divider — two bare icon+number pairs sitting side by
+            side with no separator read at a glance as a single "0 / 0"
+            fraction rather than two distinct counts. */}
+        <span className="h-3.5 w-px bg-white/10" aria-hidden="true" />
+        <span className="flex items-center gap-1" title={t('catalog.rating.downvote') as string}>
+          <ThumbsDown className="h-3.5 w-3.5 text-rose-400/80" strokeWidth={1.75} />
+          {item.downvotes ?? 0}
+        </span>
         <span className={cn('font-semibold', netScoreClass)}>({netScore >= 0 ? '+' : ''}{netScore})</span>
         <span title={t('catalog.rating.infoTooltip') as string} className="inline-flex shrink-0 cursor-help">
           <Info className="h-3.5 w-3.5 text-ase-muted/70" strokeWidth={1.75} />
@@ -83,33 +91,45 @@ export function RatingWidget({ item, compact = false }: { item: CatalogItem; com
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <button
           type="button"
           disabled={rateMutation.isPending}
           onClick={() => handleVote(true)}
+          aria-label={`${t('catalog.rating.upvote')} (${item.upvotes ?? 0})`}
+          title={t('catalog.rating.upvote') as string}
           className={cn(
             'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition',
             item.myRating?.isPositive
               ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
-              : 'border-white/10 bg-white/[0.03] text-ase-text2 hover:border-white/20 hover:bg-white/[0.06]',
+              : 'border-white/10 bg-white/[0.03] text-ase-text2 hover:border-emerald-400/30 hover:bg-emerald-500/10',
           )}
         >
-          <ThumbsUp className="h-3.5 w-3.5" strokeWidth={1.75} fill={item.myRating?.isPositive ? 'currentColor' : 'none'} />
+          <ThumbsUp
+            className={cn('h-3.5 w-3.5', !item.myRating?.isPositive && 'text-emerald-400/70')}
+            strokeWidth={1.75}
+            fill={item.myRating?.isPositive ? 'currentColor' : 'none'}
+          />
           {item.upvotes ?? 0}
         </button>
         <button
           type="button"
           disabled={rateMutation.isPending}
           onClick={() => handleVote(false)}
+          aria-label={`${t('catalog.rating.downvote')} (${item.downvotes ?? 0})`}
+          title={t('catalog.rating.downvote') as string}
           className={cn(
             'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition',
             item.myRating && !item.myRating.isPositive
               ? 'border-rose-400/40 bg-rose-500/15 text-rose-200'
-              : 'border-white/10 bg-white/[0.03] text-ase-text2 hover:border-white/20 hover:bg-white/[0.06]',
+              : 'border-white/10 bg-white/[0.03] text-ase-text2 hover:border-rose-400/30 hover:bg-rose-500/10',
           )}
         >
-          <ThumbsDown className="h-3.5 w-3.5" strokeWidth={1.75} fill={item.myRating && !item.myRating.isPositive ? 'currentColor' : 'none'} />
+          <ThumbsDown
+            className={cn('h-3.5 w-3.5', !(item.myRating && !item.myRating.isPositive) && 'text-rose-400/70')}
+            strokeWidth={1.75}
+            fill={item.myRating && !item.myRating.isPositive ? 'currentColor' : 'none'}
+          />
           {item.downvotes ?? 0}
         </button>
         <span title={t('catalog.rating.infoTooltip') as string} className="inline-flex shrink-0 cursor-help">

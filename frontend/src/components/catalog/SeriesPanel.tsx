@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Check, Layers } from 'lucide-react'
+import { ArrowRight, Check, Layers, Sparkles } from 'lucide-react'
 import { getCatalogItemSeries } from '../../api/consumerCatalog.api'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -97,10 +97,19 @@ export function SeriesPanel({ slug, currentSlug }: Props) {
       </ul>
 
       {nextItem && nextItem.slug !== currentSlug ? (
-        <div className="mt-4 border-t border-white/[0.06] pt-3">
-          <p className="text-xs text-ase-muted">{t('catalog.series.recommendedNext')}</p>
+        // Made deliberately louder than the plain list above it — a
+        // bordered, tinted callout with an icon and a primary (not
+        // secondary) button — since this is the one actionable thing this
+        // panel wants the buyer to notice: which single item completes
+        // their series. The muted-text + secondary-button treatment this
+        // replaced was easy to miss below the series list.
+        <div className="mt-4 rounded-xl border border-ase-brand/25 bg-ase-brand/[0.06] p-3">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-ase-brand">
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
+            {t('catalog.series.recommendedNext')}
+          </p>
           <Link to={`/catalog/${nextItem.type}/${nextItem.slug}`} className="mt-2 block">
-            <Button size="sm" variant="secondary">
+            <Button size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />}>
               {localizedCatalogText(language, nextItem.title, nextItem.titleEn)}
             </Button>
           </Link>

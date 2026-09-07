@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import { cn } from '../ui/cn'
 import { base64ToArrayBuffer } from '../../utils/base64'
 import { FileHeaderBar } from './resourceViewerShared'
+import { ResumedIndicator } from './DocumentViewerChrome'
 import { useReadingProgress, useSavedScrollPosition } from './documentViewerTools'
 
 // .xlsx/.xls -> per-sheet tables via SheetJS, for the "xlsx" kind of the
@@ -87,7 +88,7 @@ export function XlsxViewer({
   }, [contentBase64])
 
   const progress = useReadingProgress(scrollRef)
-  useSavedScrollPosition(path ? `${path}#${activeIndex}` : null, scrollRef, sheets !== null)
+  const wasResumed = useSavedScrollPosition(path ? `${path}#${activeIndex}` : null, scrollRef, sheets !== null)
 
   useEffect(() => {
     if (path) window.localStorage.setItem(SHEET_INDEX_PREFIX + path, String(activeIndex))
@@ -123,6 +124,7 @@ export function XlsxViewer({
   return (
     <div className="overflow-hidden rounded-lg border border-white/10">
       <FileHeaderBar path={path} />
+      {wasResumed ? <ResumedIndicator sectionText={active?.name} /> : null}
       {sheets.length > 1 ? (
         <div className="flex flex-wrap gap-1 border-b border-white/10 bg-black/20 px-3 py-2">
           {sheets.map((sheet, index) => (

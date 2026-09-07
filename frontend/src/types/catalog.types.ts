@@ -78,6 +78,9 @@ export type CatalogItem = {
   // Null means "use the platform's standard digital-content refund
   // clause" — see CatalogDetailPage's license panel.
   licenseRefundPolicy?: string | null
+  // Admin-written setup/usage instructions — resource type only, null for
+  // everything else.
+  gettingStarted?: string | null
   createdAt: string
   updatedAt: string
 }

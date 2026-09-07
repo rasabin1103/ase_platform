@@ -42,6 +42,7 @@ from app.modules.consumer_catalog.schemas import (
     MyRatingRead,
     MyReviewRead,
     ResourceContentRead,
+    ResourceDownloadInfoRead,
     ReviewListResponse,
     ReviewRead,
     SeriesItemRead,
@@ -456,6 +457,7 @@ class ConsumerCatalogService:
             licenseUpdatesIncluded=item.license_updates_included,
             licenseSupportIncluded=item.license_support_included,
             licenseRefundPolicy=item.license_refund_policy,
+            gettingStarted=item.getting_started,
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )
@@ -1098,6 +1100,59 @@ class ConsumerCatalogService:
         available = {fmt: self._find_book_format_entry(item, fmt) is not None for fmt in ("pdf", "epub", "kindle")}
         has_zip = self._find_book_format_entry(item, "zip") is not None or any(available.values())
         return BookDownloadFormatsRead(**available, zip=has_zip)
+
+    @staticmethod
+    def _is_download_worthy(entry: dict) -> bool:
+        """Filters out README.md and any preview*.* file from a folder
+        listing — those are for on-page reading/sampling, not part of what
+        `get_resource_download` actually hands the buyer, so they shouldn't
+        count toward "how many files / how large is the package" either."""
+        if entry.get("type") != "file":
+            return False
+        name = str(entry.get("name", "")).lower()
+        return name != "readme.md" and not name.startswith("preview")
+
+    def get_download_info(self, slug: str) -> ResourceDownloadInfoRead:
+        """File count / total size / format list for the package the buyer
+        would actually receive — shown on the item page before purchase so
+        "what am I buying" doesn't stay a mystery until after checkout.
+        Metadata only, straight off the GitHub Contents API's own file
+        listing (which already includes each entry's size) — never fetches
+        file bytes, so, like `get_book_download_formats`, this never
+        requires ownership.
+
+        Best-effort: a GitHub/config error here degrades to
+        `available=False` (the frontend just hides the panel) rather than
+        breaking the whole item page over what's a nice-to-have, not the
+        purchase-critical path."""
+        item = self._require_item(slug)
+        if not item.repo_path or not self._resolve_repo_url(item):
+            return ResourceDownloadInfoRead(available=False)
+
+        try:
+            if item.type == CatalogItemType.book:
+                seen_paths: set[str] = set()
+                entries: list[dict] = []
+                for fmt in ("pdf", "epub", "kindle", "zip"):
+                    target = self._find_book_format_entry(item, fmt)
+                    if target is not None and target["path"] not in seen_paths:
+                        seen_paths.add(target["path"])
+                        entries.append(target)
+                if not entries:
+                    # Legacy flat layout, same fallback get_resource_download uses.
+                    entries = [e for e in self._list_resource_folder(item) if self._is_download_worthy(e)]
+            else:
+                entries = [e for e in self._list_resource_folder(item) if self._is_download_worthy(e)]
+        except HTTPException:
+            return ResourceDownloadInfoRead(available=False)
+
+        total_size = sum(int(e.get("size") or 0) for e in entries)
+        formats = sorted(
+            {name.rsplit(".", 1)[-1].lower() for e in entries if "." in (name := str(e.get("name", "")))}
+        )
+        return ResourceDownloadInfoRead(
+            available=True, fileCount=len(entries), totalSizeBytes=total_size, formats=formats
+        )
 
     def get_resource_download(self, slug: str, *, user_id: int, format: str | None = None) -> tuple[bytes, str]:
         """Returns (raw file bytes, filename) for a Content-Disposition

@@ -153,6 +153,13 @@ export const catalogEn = {
     showMore: 'Show more',
     showLess: 'Show less',
   },
+  downloadInfo: {
+    title: 'What you get',
+    files: 'files',
+  },
+  gettingStarted: {
+    title: 'Getting started',
+  },
   version: {
     title: 'Version & compatibility',
     current: 'Current version',
@@ -539,6 +546,7 @@ export const adminCatalogEn = {
   colStatus: 'Status',
   colPrice: 'Price',
   colActions: 'Actions',
+  publishedCount: 'published',
   create: 'New item',
   edit: 'Edit',
   delete: 'Delete',
@@ -622,6 +630,7 @@ export const adminCatalogEn = {
   compatibilityHint: 'Comma-separated, e.g. "ChatGPT, Claude" — shown to buyers as compatibility badges.',
   licenseScopeHint: 'Which uses are covered — shown to buyers before purchase. Leave both unchecked if this isn\'t specified.',
   licenseRefundPolicyHint: 'Leave blank to show the platform\'s standard digital-content refund clause instead of a per-item one.',
+  gettingStartedHint: 'Shown on the item detail page so a buyer isn\'t left to figure out the package on their own — e.g. which file to open first, setup steps, prerequisites.',
   seriesNameHint: 'Optional. Items sharing the exact same series name are grouped together — buyers see their progress through the series and a "next recommended item" on the detail page. Leave blank for a standalone item.',
   seriesOrderHint: 'Position within the series (1, 2, 3...) — decides both display order and which unpurchased item gets recommended next.',
   translationHint: 'Leave blank to auto-translate from the Spanish text on save (via DeepL). Type here only to override the automatic translation.',
@@ -654,6 +663,7 @@ export const adminCatalogEn = {
     changelog: 'One line per version, e.g.\nv1.1.0 — Added Claude compatibility\nv1.0.0 — Initial release',
     compatibility: 'ChatGPT, Claude',
     licenseRefundPolicy: 'Leave blank to use the platform\'s standard refund clause',
+    gettingStarted: 'e.g. "1. Extract the zip. 2. Open README.md. 3. Import checklist.xlsx into your test suite."',
   },
   manageCategories: 'Manage categories →',
   customFields: { title: 'Category fields' },
@@ -698,6 +708,7 @@ export const adminCatalogEn = {
     licenseUpdatesIncluded: 'Updates included',
     licenseSupportIncluded: 'Support included',
     licenseRefundPolicy: 'Refund policy',
+    gettingStarted: 'Getting started',
   },
   licenseScopeOptions: {
     individual: 'Individual use',
@@ -755,6 +766,7 @@ export const adminCatalogEs = {
   colStatus: 'Estado',
   colPrice: 'Precio',
   colActions: 'Acciones',
+  publishedCount: 'publicados',
   create: 'Nuevo ítem',
   edit: 'Editar',
   delete: 'Eliminar',
@@ -838,6 +850,7 @@ export const adminCatalogEs = {
   compatibilityHint: 'Separado por comas, ej. "ChatGPT, Claude" — se muestra a los compradores como etiquetas de compatibilidad.',
   licenseScopeHint: 'Qué usos están cubiertos — se muestra a los compradores antes de comprar. Deja ambos sin marcar si no está especificado.',
   licenseRefundPolicyHint: 'Déjalo en blanco para mostrar la cláusula estándar de reembolso de contenido digital de la plataforma en lugar de una propia del ítem.',
+  gettingStartedHint: 'Se muestra en la ficha del ítem para que el comprador no tenga que averiguar por su cuenta cómo usar el paquete — por ejemplo, qué archivo abrir primero, pasos de configuración, requisitos previos.',
   seriesNameHint: 'Opcional. Los ítems con el mismo nombre de serie (exacto) se agrupan: los compradores ven su progreso a través de la serie y un "siguiente recomendado" en la ficha del ítem. Déjalo en blanco para un ítem independiente.',
   seriesOrderHint: 'Posición dentro de la serie (1, 2, 3...) — decide tanto el orden de visualización como qué ítem sin comprar se recomienda a continuación.',
   translationHint: 'Déjalo en blanco para traducir automáticamente el texto en español al guardar (vía DeepL). Escribe aquí solo para anular la traducción automática.',
@@ -870,6 +883,7 @@ export const adminCatalogEs = {
     changelog: 'Una línea por versión, ej.\nv1.1.0 — Añadida compatibilidad con Claude\nv1.0.0 — Versión inicial',
     compatibility: 'ChatGPT, Claude',
     licenseRefundPolicy: 'Déjalo en blanco para usar la cláusula de reembolso estándar de la plataforma',
+    gettingStarted: 'ej. "1. Descomprime el zip. 2. Abre README.md. 3. Importa checklist.xlsx en tu suite de pruebas."',
   },
   manageCategories: 'Gestionar categorías →',
   customFields: { title: 'Campos de la categoría' },
@@ -914,6 +928,7 @@ export const adminCatalogEs = {
     licenseUpdatesIncluded: 'Actualizaciones incluidas',
     licenseSupportIncluded: 'Soporte incluido',
     licenseRefundPolicy: 'Política de reembolso',
+    gettingStarted: 'Cómo empezar',
   },
   licenseScopeOptions: {
     individual: 'Uso individual',
@@ -1722,6 +1737,13 @@ export const catalogEs = {
   description: {
     showMore: 'Ver más',
     showLess: 'Ver menos',
+  },
+  downloadInfo: {
+    title: 'Qué incluye',
+    files: 'archivos',
+  },
+  gettingStarted: {
+    title: 'Cómo empezar',
   },
   version: {
     title: 'Versión y compatibilidad',

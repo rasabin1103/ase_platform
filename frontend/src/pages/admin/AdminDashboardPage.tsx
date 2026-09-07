@@ -326,7 +326,16 @@ export function AdminDashboardPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="grid gap-4 lg:grid-cols-2">
+        {/* min-w-0 on each grid item (via the child selector) — Tailwind's
+            grid-cols-2 already sizes the tracks as minmax(0,1fr), but a grid
+            item's own default min-width is "auto", not 0, so it still
+            refuses to shrink below its content's intrinsic width. Recharts'
+            ResponsiveContainer measures that (never-shrinking) box on mount;
+            when the intrinsic content is wider than the available column,
+            the measurement can come back negative and the chart never
+            recovers — the "width(-1)/height(-1)" console warning that
+            persists instead of self-correcting. */}
+        <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           {analyticsQuery.isLoading ? (
             <Skeleton className="h-64 rounded-[2rem] lg:col-span-2" />
           ) : analyticsQuery.isError ? (

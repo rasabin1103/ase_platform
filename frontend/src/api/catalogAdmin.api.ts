@@ -91,6 +91,9 @@ export type CatalogItemAdmin = {
   license_updates_included?: boolean
   license_support_included?: boolean
   license_refund_policy?: string | null
+  // Admin-written setup/usage instructions — resource pillar only in the
+  // admin form, present generically on every item.
+  getting_started?: string | null
   created_at: string
   updated_at: string
 }
@@ -145,6 +148,7 @@ export type CatalogItemAdminPayload = {
   license_updates_included?: boolean
   license_support_included?: boolean
   license_refund_policy?: string | null
+  getting_started?: string | null
 }
 
 // `type` stays fixed once created (changing the underlying kind of a

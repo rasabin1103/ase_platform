@@ -129,6 +129,9 @@ class CatalogItemRead(BaseModel):
     # clause" — the frontend falls back to that copy rather than claiming a
     # per-item policy that was never actually set.
     licenseRefundPolicy: str | None = None
+    # Admin-written setup/usage instructions — resource type only (see
+    # CatalogItem.getting_started), null for every other item.
+    gettingStarted: str | None = None
     createdAt: datetime
     updatedAt: datetime
 
@@ -191,6 +194,22 @@ class BookDownloadFormatsRead(BaseModel):
     epub: bool = False
     kindle: bool = False
     zip: bool = False
+
+
+class ResourceDownloadInfoRead(BaseModel):
+    """What's actually inside the downloadable package — shown before
+    purchase so "what am I buying" doesn't stay a mystery until after
+    checkout. Metadata only (file names/sizes via the GitHub Contents API),
+    never file bytes, so — like BookDownloadFormatsRead — this never
+    requires ownership. `available` is False only when the item has no
+    linked repo_path/repo_url at all; a configured-but-empty folder still
+    returns available=True with fileCount=0 rather than 404ing, since that's
+    an admin-visible data problem, not something to hide from a shopper."""
+
+    available: bool = True
+    fileCount: int = 0
+    totalSizeBytes: int = 0
+    formats: list[str] = []
 
 
 class AudiobookChapterRead(BaseModel):

@@ -119,7 +119,7 @@ export function IndependentProgressPanel() {
         </div>
       ) : (
         <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:items-center">
-          <div className="lg:col-span-5">
+          <div className="min-w-0 lg:col-span-5">
             <div className="relative h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>

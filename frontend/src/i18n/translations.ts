@@ -872,6 +872,7 @@ export const translations = {
       publicSite: 'Public site',
       collapseSidebar: 'Hide menu',
       expandSidebar: 'Show menu',
+      enterpriseDashboard: 'Enterprise dashboard',
     },
     notifications: {
       bellLabel: 'Notifications',
@@ -1804,6 +1805,7 @@ export const translations = {
       publicSite: 'Sitio público',
       collapseSidebar: 'Ocultar menú',
       expandSidebar: 'Mostrar menú',
+      enterpriseDashboard: 'Panel empresarial',
     },
     notifications: {
       bellLabel: 'Notificaciones',
