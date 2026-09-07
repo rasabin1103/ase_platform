@@ -45,6 +45,18 @@ const TABS: { key: TabKey; labelKey: string }[] = [
   { key: 'resource', labelKey: 'adminCatalog.tabResource' },
 ]
 
+// Singular type label for a single item's badge/row — distinct from TABS'
+// plural tab labels above. Reuses the same keys the consumer-facing catalog
+// already localizes (catalog.typeProduct etc.), so an admin viewing the
+// table in Spanish doesn't see the raw English enum value ("resource",
+// "product"...) leak through untranslated.
+const TYPE_LABEL_KEY: Record<CatalogItemType, string> = {
+  product: 'catalog.typeProduct',
+  course: 'catalog.typeCourse',
+  book: 'catalog.typeBook',
+  resource: 'catalog.typeResource',
+}
+
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
   try {
@@ -197,7 +209,7 @@ function AdminCatalogItemsPanel() {
             {t('adminCatalog.tabAll')}: <span className="font-semibold text-ase-text">{query.data?.total ?? items.length}</span>
           </span>
           <span>
-            {t('adminCatalog.colStatus')}: <span className="font-semibold text-ase-text">{publishedCount}</span>
+            <span className="font-semibold text-ase-text">{publishedCount}</span> {t('adminCatalog.publishedCount')}
           </span>
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)} leftIcon={<span>+</span>}>
@@ -304,8 +316,8 @@ function AdminCatalogItemsPanel() {
             >
               <AuthenticatedImage src={item.image_url} className="h-14 w-14 rounded-xl" />
               <span className="font-medium text-ase-text">{item.title}</span>
-              <span>{item.type}</span>
-              <span>{item.status}</span>
+              <span>{t(TYPE_LABEL_KEY[item.type])}</span>
+              <span>{t(`adminCatalog.status.${item.status}`)}</span>
               <span>
                 {item.price} {item.currency}
               </span>
@@ -455,13 +467,13 @@ function CatalogPremiumCard({
       <div className="relative h-40 overflow-hidden border-b border-white/[0.06]">
         <AuthenticatedImage src={item.image_url} className="h-full w-full" />
         <div className="absolute right-3 top-3">
-          <Badge variant={item.status === 'published' ? 'success' : 'default'}>{item.status}</Badge>
+          <Badge variant={item.status === 'published' ? 'success' : 'default'}>{t(`adminCatalog.status.${item.status}`)}</Badge>
         </div>
       </div>
       <div className="space-y-4 p-5">
         <div>
           <h3 className="text-lg font-semibold text-ase-text">{item.title}</h3>
-          <p className="text-xs text-ase-muted">{item.type} · {item.category}</p>
+          <p className="text-xs text-ase-muted">{t(TYPE_LABEL_KEY[item.type])} · {item.category}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <MiniMetric label={t('adminCatalog.colPrice')} value={`${item.price} ${item.currency}`} />

@@ -135,9 +135,19 @@ const POSITION_PREFIX = 'ase.doc_viewer_pos.'
  * saving it as they scroll — so reopening a long README/book chapter picks
  * up where they left off instead of always starting at the top. `ready`
  * gates restoration until the content has actually painted (there's
- * nothing to scroll to before then). */
-export function useSavedScrollPosition(storageKey: string | null, containerRef: RefObject<HTMLElement | null>, ready: boolean) {
+ * nothing to scroll to before then).
+ *
+ * Returns whether a saved position was actually applied on this mount, so
+ * the caller can flash a one-time "resumed where you left off" indicator —
+ * without it, the restore happens silently and a reader has no way to tell
+ * it worked versus the file simply opening scrolled for no reason. */
+export function useSavedScrollPosition(
+  storageKey: string | null,
+  containerRef: RefObject<HTMLElement | null>,
+  ready: boolean,
+): boolean {
   const restoredForKey = useRef<string | null>(null);
+  const [wasRestored, setWasRestored] = useState(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -148,6 +158,10 @@ export function useSavedScrollPosition(storageKey: string | null, containerRef: 
       const parsed = saved ? Number(saved) : NaN
       if (Number.isFinite(parsed) && parsed > 0) {
         el.scrollTop = parsed
+        // Deferred out of this synchronous effect body (same reasoning as
+        // useTextSearch's queueMicrotask above) to avoid a same-commit
+        // cascading render from the set-state-in-effect lint rule.
+        queueMicrotask(() => setWasRestored(true))
       }
     }
     let timeout = 0
@@ -163,6 +177,8 @@ export function useSavedScrollPosition(storageKey: string | null, containerRef: 
       window.clearTimeout(timeout)
     }
   }, [containerRef, ready, storageKey])
+
+  return wasRestored
 }
 
 const MARK_ATTR = 'data-doc-search'

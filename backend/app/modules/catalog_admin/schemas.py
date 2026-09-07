@@ -154,6 +154,9 @@ class CatalogItemAdminBase(BaseModel):
     license_updates_included: bool = False
     license_support_included: bool = False
     license_refund_policy: str | None = None
+    # --- "How to actually use this" — resource-only in the admin UI, stored
+    # generically like current_version/changelog above.
+    getting_started: str | None = None
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -210,6 +213,7 @@ class CatalogItemAdminUpdate(BaseModel):
     license_updates_included: bool | None = None
     license_support_included: bool | None = None
     license_refund_policy: str | None = None
+    getting_started: str | None = None
 
     @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod

@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n'
 import { cn } from '../ui/cn'
 import { base64ToArrayBuffer } from '../../utils/base64'
 import { FileHeaderBar } from './resourceViewerShared'
-import { DocumentViewerToolbar, TableOfContentsRail } from './DocumentViewerChrome'
+import { DocumentViewerToolbar, ResumedIndicator, TableOfContentsRail } from './DocumentViewerChrome'
 import {
   getSectionText,
   useDocumentViewerChrome,
@@ -65,7 +65,8 @@ export function DocxViewer({
   // the mammoth conversion resolves.
   const { toc, activeId, jumpTo } = useHeadingToc(contentRef, html)
   const progress = useReadingProgress(contentRef)
-  useSavedScrollPosition(path || null, contentRef, html !== null)
+  const wasResumed = useSavedScrollPosition(path || null, contentRef, html !== null)
+  const resumedSection = toc.find((entry) => entry.id === activeId)?.text ?? null
   const { matchCount, activeIndex, goNext, goPrev } = useTextSearch(contentRef, chrome.query, html)
 
   const handleCopySection = async (id: string) => {
@@ -90,6 +91,7 @@ export function DocxViewer({
   return (
     <div className="overflow-hidden rounded-lg border border-white/10">
       <FileHeaderBar path={path} />
+      {wasResumed ? <ResumedIndicator sectionText={resumedSection} /> : null}
       <DocumentViewerToolbar
         progress={progress}
         query={chrome.query}

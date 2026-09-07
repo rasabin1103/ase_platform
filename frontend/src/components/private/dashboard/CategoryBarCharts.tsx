@@ -87,12 +87,12 @@ export function CategoryBarCharts() {
       </p>
 
       {isLoading ? (
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
           <div className="h-[220px] animate-pulse rounded-2xl bg-white/[0.03]" />
           <div className="h-[220px] animate-pulse rounded-2xl bg-white/[0.03]" />
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
           <BarPanel
             title={t('independentDashboard.categoryCharts.spendTitle')}
             data={spendData}

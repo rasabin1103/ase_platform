@@ -77,6 +77,7 @@ const defaults = (type: CatalogItemType): FormValues => ({
   license_updates_included: false,
   license_support_included: false,
   license_refund_policy: null,
+  getting_started: null,
 })
 
 const LICENSE_SCOPES = ['individual', 'company'] as const
@@ -225,6 +226,7 @@ export function AdminCatalogItemModal({
           license_updates_included: initial.license_updates_included ?? false,
           license_support_included: initial.license_support_included ?? false,
           license_refund_policy: initial.license_refund_policy ?? null,
+          getting_started: initial.getting_started ?? null,
         })
         setTagsInput((initial.tags ?? []).join(', '))
         setChangelogInput((initial.changelog ?? []).join('\n'))
@@ -750,6 +752,16 @@ export function AdminCatalogItemModal({
                     onChange={(e) => setCompatibilityInput(e.target.value)}
                   />
                   <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.compatibilityHint')}</p>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-ase-muted">{t('adminCatalog.fields.gettingStarted')}</span>
+                  <textarea
+                    className="w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text"
+                    rows={4}
+                    placeholder={t('adminCatalog.placeholders.gettingStarted') as string}
+                    {...form.register('getting_started', { setValueAs: (v) => (v === '' ? null : v) })}
+                  />
+                  <p className="mt-1 text-[11px] leading-snug text-ase-muted">{t('adminCatalog.gettingStartedHint')}</p>
                 </label>
               </div>
             </>

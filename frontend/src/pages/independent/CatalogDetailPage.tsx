@@ -14,6 +14,8 @@ import {
   FileText,
   FileWarning,
   FileX,
+  Files,
+  HardDrive,
   Headphones,
   Heart,
   History,
@@ -41,6 +43,7 @@ import {
   getBookDownloadFormats,
   getConsumerCatalogItem,
   getResourceContent,
+  getResourceDownloadInfo,
   toggleCatalogFavorite,
   type ResourceDownloadFormat,
 } from '../../api/consumerCatalog.api'
@@ -180,6 +183,89 @@ function CollapsibleDescription({ content, t }: { content: string; t: (key: stri
         </button>
       ) : null}
     </div>
+  )
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes <= 0) return '0 KB'
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+  return `${unitIndex === 0 ? value : value.toFixed(1)} ${units[unitIndex]}`
+}
+
+// What's actually inside the package before the buyer commits — formats,
+// file count, total size. Reuses getResourceDownloadInfo (metadata off the
+// GitHub folder listing, no ownership required) so it can show up before
+// purchase, not just after. Renders nothing while loading/unavailable
+// rather than an error or skeleton: this is supplementary detail, not
+// something that should ever compete for attention with the buy button.
+function DownloadPackagePanel({
+  info,
+  t,
+}: {
+  info: { fileCount: number; totalSizeBytes: number; formats: string[] } | undefined
+  t: (key: string) => string
+}) {
+  if (!info || info.fileCount === 0) return null
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+          <Files className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">
+          {t('catalog.downloadInfo.title')}
+        </h2>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ase-text2">
+        <span className="flex items-center gap-1.5">
+          <Files className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
+          {info.fileCount} {t('catalog.downloadInfo.files')}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <HardDrive className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
+          {formatBytes(info.totalSizeBytes)}
+        </span>
+      </div>
+      {info.formats.length > 0 ? (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {info.formats.map((fmt) => (
+            <Badge key={fmt} variant="info" className="uppercase">
+              {fmt}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+    </Card>
+  )
+}
+
+// Admin-written setup/usage instructions (resource type only) — shown right
+// after the description so a buyer who already owns the item doesn't have
+// to reverse-engineer the package themselves (which file to open first,
+// prerequisites, setup steps). Plain text with preserved line breaks, same
+// convention as the license/refund-policy free-text fields — not Markdown,
+// to keep the admin form a single textarea like every other free-text field
+// on this item.
+function GettingStartedPanel({ text, t }: { text: string | null | undefined; t: (key: string) => string }) {
+  if (!text) return null
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
+          <ListChecks className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">
+          {t('catalog.gettingStarted.title')}
+        </h2>
+      </div>
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ase-text2">{text}</p>
+    </Card>
   )
 }
 
@@ -412,6 +498,16 @@ export function CatalogDetailPage() {
   // they don't own yet.
   const hasFullAccess = isFree || Boolean(item?.isPurchased)
 
+  // File count / size / formats of the package — no ownership needed (see
+  // getResourceDownloadInfo), so this can show up before purchase alongside
+  // the license panel rather than only after buying.
+  const downloadInfoQuery = useQuery({
+    queryKey: ['consumer-catalog', slug, 'download-info'],
+    queryFn: () => getResourceDownloadInfo(slug!),
+    enabled: Boolean(slug) && Boolean(item?.hasResourceContent),
+    staleTime: 5 * 60_000,
+  })
+
   const contentQuery = useQuery({
     queryKey: ['consumer-catalog', slug, 'resource-content'],
     queryFn: () => getResourceContent(slug!),
@@ -631,6 +727,10 @@ export function CatalogDetailPage() {
           <CollapsibleDescription content={longDescription} t={t} />
 
           {catalogType === 'resource' ? <VersionPanel item={item} t={t} language={language} /> : null}
+
+          {catalogType === 'resource' ? <GettingStartedPanel text={item.gettingStarted} t={t} /> : null}
+
+          <DownloadPackagePanel info={downloadInfoQuery.data} t={t} />
 
           <LicensePanel item={item} t={t} />
 

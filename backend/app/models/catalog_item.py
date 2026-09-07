@@ -187,6 +187,14 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # policy that was never actually set.
     license_refund_policy: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Admin-written "how to actually use this once you've downloaded it" —
+    # free text (setup steps, which file to open first, prerequisites),
+    # shown on the resource detail page so a buyer isn't left to reverse-
+    # engineer the package themselves. Resource-only in the admin form (like
+    # current_version/changelog above), but stored generically like every
+    # other pillar-specific field on this model.
+    getting_started: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",
         back_populates="catalog_item",

@@ -1,7 +1,25 @@
-import { ChevronDown, ChevronUp, Copy, ListTree, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Copy, History, ListTree, Search, X } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { cn } from '../ui/cn'
 import type { TocEntry } from './documentViewerTools'
+
+/** One-time confirmation that useSavedScrollPosition actually jumped the
+ * reader back to where they left off — the restore itself is silent (just a
+ * scrollTop assignment), so without this a reader has no way to tell the
+ * file opened at a remembered spot rather than a random one. `sectionText`
+ * names the heading nearest the restored position when the viewer tracks a
+ * table of contents (MarkdownViewer/DocxViewer); omitted for viewers that
+ * don't (XlsxViewer resumes per-sheet instead). */
+export function ResumedIndicator({ sectionText }: { sectionText?: string | null }) {
+  const { t } = useI18n()
+  return (
+    <div className="flex items-center gap-1.5 border-b border-ase-brand/20 bg-ase-brand/[0.06] px-3 py-1.5 text-[11px] font-medium text-ase-brand">
+      <History className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+      <span>{t('catalog.resource.viewer.resumedTitle')}</span>
+      {sectionText ? <span className="truncate text-ase-text2">· {sectionText}</span> : null}
+    </div>
+  )
+}
 
 /** Thin progress bar + search box, sat above a viewer's scrollable content
  * area — shared by MarkdownViewer and DocxViewer so both "Ver contenido"

@@ -142,6 +142,7 @@ class CatalogAdminService:
             license_updates_included=item.license_updates_included,
             license_support_included=item.license_support_included,
             license_refund_policy=item.license_refund_policy,
+            getting_started=item.getting_started,
             recommended_price=item.recommended_price,
             version_updated_at=item.version_updated_at,
             created_at=item.created_at,
@@ -383,6 +384,7 @@ class CatalogAdminService:
             license_updates_included=payload.license_updates_included,
             license_support_included=payload.license_support_included,
             license_refund_policy=payload.license_refund_policy,
+            getting_started=(payload.getting_started or "").strip() or None,
         )
         if item.current_version:
             item.version_updated_at = datetime.now(timezone.utc)

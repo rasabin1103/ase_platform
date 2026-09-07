@@ -41,7 +41,7 @@ export function Header({
             )}
           </button>
         ) : null}
-        <BrandLogo variant="horizontal" size="sm" showText subtitle="Enterprise dashboard" className="min-w-0" />
+        <BrandLogo variant="horizontal" size="sm" showText subtitle={t('session.enterpriseDashboard') as string} className="min-w-0" />
       </div>
       {isSuperAdmin ? <GlobalAdminSearch /> : null}
       <div className="flex items-center gap-2">

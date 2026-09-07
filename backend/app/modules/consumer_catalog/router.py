@@ -21,6 +21,7 @@ from app.modules.consumer_catalog.schemas import (
     MyPurchaseListResponse,
     RateItemRequest,
     ResourceContentRead,
+    ResourceDownloadInfoRead,
     ReviewListResponse,
     ReviewRequest,
     SeriesProgressRead,
@@ -205,6 +206,19 @@ def get_book_download_formats(slug: str, svc: ConsumerCatalogService = Depends(g
     folder metadata, never file contents, so the buttons can render as
     disabled for the right reason before the user ever clicks one."""
     return svc.get_book_download_formats(slug)
+
+
+@router.get(
+    "/{slug}/download-info",
+    response_model=ResourceDownloadInfoRead,
+    dependencies=[Depends(require_permission("catalog.read"))],
+)
+def get_download_info(slug: str, svc: ConsumerCatalogService = Depends(get_service)):
+    """File count / total size / formats of the downloadable package —
+    shown on the item page before purchase. No ownership required, same as
+    download-formats: metadata off the GitHub Contents API listing, never
+    file contents."""
+    return svc.get_download_info(slug)
 
 
 @router.get("/{slug}/resource-download", dependencies=[Depends(require_personal_permission("purchases.manage_own"))])

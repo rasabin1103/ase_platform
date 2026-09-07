@@ -1,6 +1,7 @@
 import { BrandLogo } from '../brand/BrandLogo'
 import { useRbac } from '../../rbac/useRbac'
 import { cn } from '../ui/cn'
+import { useI18n } from '../../i18n'
 import { SidebarNavGroups } from './SidebarNavGroups'
 
 export function Sidebar({
@@ -14,6 +15,7 @@ export function Sidebar({
   onClose?: () => void
 }) {
   const { navGroups } = useRbac()
+  const { t } = useI18n()
   return (
     <>
       {/* Backdrop — mobile/tablet only. The sidebar becomes a fixed overlay
@@ -56,7 +58,7 @@ export function Sidebar({
               <div className="min-w-0 leading-tight">
                 <div className="truncate text-[14px] font-bold tracking-tight text-ase-text">Arce Sabin Engineering</div>
                 <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/80">
-                  Enterprise dashboard
+                  {t('session.enterpriseDashboard')}
                 </div>
               </div>
             </div>

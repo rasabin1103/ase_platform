@@ -4,7 +4,7 @@ import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useI18n } from '../../i18n'
 import { cn } from '../ui/cn'
-import { DocumentViewerToolbar, TableOfContentsRail } from './DocumentViewerChrome'
+import { DocumentViewerToolbar, ResumedIndicator, TableOfContentsRail } from './DocumentViewerChrome'
 import {
   getSectionText,
   useDocumentViewerChrome,
@@ -163,7 +163,8 @@ export function MarkdownViewer({
 
   const { toc, activeId, jumpTo } = useHeadingToc(contentRef, content)
   const progress = useReadingProgress(contentRef)
-  useSavedScrollPosition(path || null, contentRef, true)
+  const wasResumed = useSavedScrollPosition(path || null, contentRef, true)
+  const resumedSection = toc.find((entry) => entry.id === activeId)?.text ?? null
   const { matchCount, activeIndex, goNext, goPrev } = useTextSearch(contentRef, chrome.query, content)
 
   const handleCopy = async () => {
@@ -201,6 +202,7 @@ export function MarkdownViewer({
           {copied ? t('catalog.resource.copied') : t('catalog.resource.copy')}
         </button>
       </div>
+      {wasResumed ? <ResumedIndicator sectionText={resumedSection} /> : null}
       <DocumentViewerToolbar
         progress={progress}
         query={chrome.query}
