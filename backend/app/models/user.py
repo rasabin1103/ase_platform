@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, String
+from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -23,6 +23,15 @@ if TYPE_CHECKING:
 
 class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     __tablename__ = "users"
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: the
+    # admin dashboard's growth charts and month-over-month comparisons (see
+    # app/modules/admin_dashboard/analytics.py) filter/group every active
+    # user by created_at on every dashboard load, which would otherwise be a
+    # full-table scan as the users table grows.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)

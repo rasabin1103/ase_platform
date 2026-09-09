@@ -30,10 +30,9 @@ export function Button({
   const variants: Record<NonNullable<Props['variant']>, string> = {
     primary:
       cn(
-        'border border-white/10 text-ase-text',
-        'bg-ase-brand text-ase-ink',
-        'shadow-brand hover:brightness-110 hover:shadow-[0_0_24px_rgba(56,189,248,0.32)]',
-        'active:translate-y-px active:brightness-105',
+        'ase-gradient-brand border border-white/20 text-white',
+        'shadow-brand hover:brightness-110 hover:shadow-[0_0_28px_rgba(76,125,255,0.45)]',
+        'active:translate-y-px active:brightness-95',
       ),
     secondary:
       cn(

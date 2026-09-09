@@ -4,7 +4,7 @@ import uuid as _uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -19,6 +19,13 @@ if TYPE_CHECKING:
 
 class AccessRequest(Base, IdPkMixin, TimestampMixin):
     __tablename__ = "access_requests"
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: the
+    # admin requests queue lists these newest-first and the dashboard's
+    # requests-by-status breakdown scans the whole table on every load.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     uuid: Mapped[_uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

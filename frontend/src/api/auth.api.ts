@@ -47,6 +47,13 @@ export async function disableTwoFactor(password: string) {
   return data
 }
 
+// POST rather than DELETE /me: the password confirmation is mandatory, and
+// some HTTP clients/proxies silently drop a DELETE request's body.
+export async function deleteMyAccount(password: string) {
+  const { data } = await apiClient.post<{ ok: boolean }>('/auth/me/delete', { password })
+  return data
+}
+
 export async function register(payload: RegisterRequest) {
   const { data } = await apiClient.post<RegisterResponse>('/auth/register', payload)
   return data

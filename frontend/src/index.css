@@ -21,7 +21,7 @@ body,
   body {
     @apply m-0 bg-ase-bg text-ase-text font-sans text-body-md antialiased;
     font-feature-settings: 'kern' 1, 'liga' 1;
-    -webkit-tap-highlight-color: rgba(56, 189, 248, 0.18);
+    -webkit-tap-highlight-color: rgba(76, 125, 255, 0.18);
   }
 
   h1 {
@@ -60,7 +60,11 @@ body,
     backdrop-filter: none !important;
   }
 
-  /* Disallow aurora/gradient backgrounds from utility classes */
+  /* Disallow aurora/gradient backgrounds from utility classes — this is
+     about banning decorative "glow wash" backgrounds sprinkled around the
+     UI, not gradients in general. The one deliberate exception is
+     .ase-gradient-brand below (a named, single-purpose class, not a
+     Tailwind utility), used only for the primary CTA. */
   .bg-gradient-to-t,
   .bg-gradient-to-tr,
   .bg-gradient-to-r,
@@ -78,6 +82,12 @@ body,
     background-image: none !important;
   }
 
+  /* The single deliberate gradient in the app — electric blue to violet,
+     used on the primary CTA (Button.tsx) for a "premium tech" accent. */
+  .ase-gradient-brand {
+    background-image: linear-gradient(135deg, #4c7dff, #7c5cff);
+  }
+
   /* Replace default Tailwind shadow presets with our custom soft shadow */
   .shadow-sm,
   .shadow,
@@ -90,7 +100,7 @@ body,
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.22);
+  background: rgba(76, 125, 255, 0.28);
 }
 
 /* Brand focus — replaces browser default blue outline (DESIGN.md) */
@@ -99,7 +109,7 @@ body,
 }
 
 :focus-visible {
-  outline: 2px solid rgba(56, 189, 248, 0.75);
+  outline: 2px solid rgba(76, 125, 255, 0.85);
   outline-offset: 2px;
 }
 
@@ -117,11 +127,11 @@ body,
      <mark> defaults to a bright yellow/black pair that clashes hard with
      this app's dark theme, so both states are restyled here instead. */
   .ase-doc-search-mark {
-    background-color: rgba(56, 189, 248, 0.28);
+    background-color: rgba(76, 125, 255, 0.3);
     color: inherit;
     border-radius: 2px;
   }
   .ase-doc-search-mark-active {
-    background-color: rgba(56, 189, 248, 0.65);
+    background-color: rgba(76, 125, 255, 0.65);
   }
 }

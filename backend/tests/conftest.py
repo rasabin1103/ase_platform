@@ -156,9 +156,15 @@ def make_user_with_role(
 
 @pytest.fixture()
 def super_admin_user(db: Session) -> User:
+    # example.com, not example.test/.invalid/.localhost — those are IANA
+    # special-use TLDs that email-validator (a real dependency here, since
+    # Pydantic's EmailStr uses it) rejects as "reserved" as of its 2.x
+    # releases. Any endpoint that round-trips this email back through an
+    # EmailStr response field (e.g. GET /auth/me) would 500 on a fixture
+    # using .test, even though nothing about registration itself is broken.
     return make_user_with_role(
         db,
-        email="admin@example.test",
+        email="admin@example.com",
         role_code="super_admin",
         org_type=OrganizationType.enterprise,
         role_scope=RoleScope.platform,
@@ -169,7 +175,7 @@ def super_admin_user(db: Session) -> User:
 def independent_user(db: Session) -> User:
     return make_user_with_role(
         db,
-        email="user@example.test",
+        email="user@example.com",
         role_code="independent_user",
         org_type=OrganizationType.individual,
         role_scope=RoleScope.personal_workspace,

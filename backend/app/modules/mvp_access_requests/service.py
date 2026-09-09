@@ -24,6 +24,8 @@ from app.modules.mvp_access_requests.schemas import (
     RequesterSummary,
 )
 
+# The three AccessRequestType values this MVP-era endpoint actually
+# accepts (the enum itself may carry others used elsewhere in the app).
 MVP_REQUEST_TYPES = frozenset(
     {
         AccessRequestType.product_access,
@@ -32,10 +34,15 @@ MVP_REQUEST_TYPES = frozenset(
     }
 )
 
+# Every target_type this endpoint recognizes at all — a catalog entity, or
+# the one non-catalog target used for creator_access requests.
 MVP_TARGET_TYPES = frozenset(
     {"product", "course", "book", "resource", "platform_creator_permission"}
 )
 
+# The subset of MVP_TARGET_TYPES that are real catalog entities — used to
+# validate product_access/demo_access requests, which must point at
+# something in the catalog rather than at "platform_creator_permission".
 CATALOG_TARGET_TYPES = frozenset({"product", "course", "book", "resource"})
 
 
@@ -93,16 +100,23 @@ class MvpAccessRequestsService:
         self.repo = MvpAccessRequestsRepository(db)
 
     def create_for_user(self, *, user: User, payload: MeAccessRequestCreate) -> MeAccessRequestRead:
+        """Each request_type has its own target_type/target_id rules:
+        creator_access always targets "platform_creator_permission" (and
+        defaults target_id to "platform" — there's only one such
+        permission per platform, not per catalog item), while
+        product_access/demo_access must target a real catalog entity, with
+        demo_access further restricted to product/course (a "book" or
+        "resource" has no separate demo experience to request)."""
         request_type = AccessRequestType(payload.request_type)
         target_type = payload.target_type.strip().lower()
         if target_type not in MVP_TARGET_TYPES:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid target_type")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid target_type")
 
         target_id = (payload.target_id or "").strip()
         if request_type == AccessRequestType.creator_access:
             if target_type != "platform_creator_permission":
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="creator_access requires target_type platform_creator_permission",
                 )
             if not target_id:
@@ -110,21 +124,21 @@ class MvpAccessRequestsService:
         elif request_type in (AccessRequestType.product_access, AccessRequestType.demo_access):
             if target_type not in CATALOG_TARGET_TYPES:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="Catalog target_type required for this request",
                 )
             if not target_id:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="target_id is required",
                 )
             if request_type == AccessRequestType.demo_access and target_type not in ("product", "course"):
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="demo_access applies to product or course only",
                 )
         else:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid request_type")
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid request_type")
 
         item = AccessRequest(
             organization_id=None,
@@ -138,6 +152,11 @@ class MvpAccessRequestsService:
         )
         self.repo.add(item)
 
+        # A creator_access request is also the thing that moves the user's
+        # own creator_status forward — only from "none" though, so
+        # re-submitting a request (or submitting one after already being
+        # approved/rejected) never clobbers a status this request didn't
+        # itself cause.
         if request_type == AccessRequestType.creator_access and user.creator_status == CreatorStatus.none:
             user.creator_status = CreatorStatus.pending
 
@@ -210,6 +229,9 @@ class MvpAccessRequestsService:
                 requester.can_create_content = True
                 requester.creator_status = CreatorStatus.approved
             elif new_status == AccessRequestStatus.rejected:
+                # Only downgrade a still-"pending" status — if the user was
+                # already "approved" from an earlier request, rejecting a
+                # newer, unrelated one must not revoke that earlier grant.
                 if requester.creator_status == CreatorStatus.pending:
                     requester.creator_status = CreatorStatus.rejected
 

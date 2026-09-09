@@ -67,7 +67,11 @@ export function OrganizationDashboardPage() {
             </div>
             <div className="mt-auto flex items-center justify-between gap-3">
               <span className="text-xs font-semibold uppercase tracking-wide text-ase-muted">
-                {associatedCount} {associatedCount === 1 ? 'item' : 'items'}
+                {/* Without this guard the count briefly shows "0 items" while
+                    catalogQuery is still in flight, which reads as "this
+                    organization has nothing assigned" rather than "still
+                    loading" — misleading on first paint. */}
+                {catalogQuery.isLoading ? '…' : `${associatedCount} ${associatedCount === 1 ? 'item' : 'items'}`}
               </span>
               <Button size="sm" variant="outline">
                 {t('organizationWorkspace.dashboard.catalogCard.cta')}

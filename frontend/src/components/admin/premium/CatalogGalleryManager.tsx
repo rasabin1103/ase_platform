@@ -79,7 +79,7 @@ export function CatalogGalleryManager({ itemId }: Props) {
             >
               <AuthenticatedImage src={img.url} alt="" fit="contain" className="h-full w-full" />
               {img.is_cover ? (
-                <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ase-primary text-ase-bg">
+                <span className="absolute left-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ase-primary text-white">
                   <Star className="h-3 w-3" strokeWidth={2.5} fill="currentColor" />
                 </span>
               ) : (

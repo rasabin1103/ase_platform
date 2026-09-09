@@ -282,7 +282,7 @@ class PricingAdminService:
         next_max = data.get("max_value", row.max_value)
         if next_min is not None and next_max is not None and next_max < next_min:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="max_value must be greater than or equal to min_value",
             )
         for key, value in data.items():

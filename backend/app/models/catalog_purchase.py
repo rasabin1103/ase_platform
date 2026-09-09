@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -12,6 +12,16 @@ from app.models.mixins import IdPkMixin, TimestampMixin
 class CatalogPurchase(Base, IdPkMixin, TimestampMixin):
     __tablename__ = "catalog_purchases"
     __table_args__ = (UniqueConstraint("user_id", "catalog_item_id", name="uq_catalog_purchases_user_item"),)
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: this
+    # is the single most-queried timestamp column in the app — every
+    # revenue/purchases trend chart on the admin dashboard, plus "list my
+    # purchases newest-first", filters or sorts on it (see
+    # app/modules/admin_dashboard/analytics.py and
+    # consumer_catalog/purchases_repository.py).
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     catalog_item_id: Mapped[int] = mapped_column(

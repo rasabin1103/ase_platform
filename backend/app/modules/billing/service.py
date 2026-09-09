@@ -11,9 +11,18 @@ from sqlalchemy.orm import Session
 from app.core.audit import record_audit_log
 from app.core.config import settings
 from app.core.creator import ensure_personal_workspace
+from app.core.email import send_email
+from app.core.email_templates import payment_failed_email
 from app.core.media_urls import resolve_catalog_stripe_image_url
 from app.models.catalog_item import CatalogItem
-from app.models.enums import CatalogItemStatus, MembershipStatus, PlanStatus, SubscriptionProvider, SubscriptionStatus
+from app.models.enums import (
+    CatalogItemStatus,
+    MembershipStatus,
+    PlanStatus,
+    SubscriptionProvider,
+    SubscriptionStatus,
+    UserStatus,
+)
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.plan import Plan
@@ -546,6 +555,44 @@ class BillingService:
         sub.ends_at = datetime.now(timezone.utc)
         self.db.commit()
 
+    def _notify_payment_failed(self, sub: Subscription) -> None:
+        """Emails the organization's owner right after a renewal charge is
+        declined — previously the webhook only flipped the DB status to
+        past_due silently, so the first the owner heard about it was
+        whatever generic notice Stripe's own dashboard settings happen to
+        send (or nothing, if that's off). Best-effort: a failure here must
+        never roll back the status update above, since the subscription
+        state Stripe just reported is true regardless of whether we
+        successfully told anyone about it."""
+        try:
+            org = self.db.get(Organization, sub.organization_id)
+            if org is None:
+                return
+            owner = self.db.get(User, org.owner_user_id)
+            if owner is None or owner.status != UserStatus.active:
+                return
+            plan = self.db.get(Plan, sub.plan_id)
+            plan_name = (plan.name_en if owner.preferred_language == "en" and plan.name_en else plan.name) if plan else "—"
+            html, text = payment_failed_email(
+                f"{settings.FRONTEND_URL}/profile", plan_name=plan_name, language=owner.preferred_language,
+            )
+            subject = (
+                "We couldn't renew your subscription — Arce Sabin Engineering"
+                if owner.preferred_language == "en"
+                else "No pudimos renovar tu suscripción — Arce Sabin Engineering"
+            )
+            send_email(to_email=owner.email, subject=subject, html_body=html, text_body=text)
+            record_audit_log(
+                self.db,
+                actor_user_id=None,
+                action="billing.payment_failed_notified",
+                entity_type="subscription",
+                entity_id=str(sub.id),
+                metadata={"organization_id": sub.organization_id, "owner_user_id": owner.id},
+            )
+        except Exception:
+            logger.exception("Failed to send payment-failed notification for subscription %s", sub.id)
+
     async def handle_webhook(self, request: Request) -> None:
         _require_stripe_configured()
         if not settings.STRIPE_WEBHOOK_SECRET:
@@ -587,5 +634,6 @@ class BillingService:
                 if sub is not None:
                     sub.status = SubscriptionStatus.past_due
                     self.db.commit()
+                    self._notify_payment_failed(sub)
         else:
             logger.info("Unhandled Stripe webhook event type: %s", event_type)

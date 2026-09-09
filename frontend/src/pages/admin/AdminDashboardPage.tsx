@@ -335,7 +335,7 @@ export function AdminDashboardPage() {
             the measurement can come back negative and the chart never
             recovers — the "width(-1)/height(-1)" console warning that
             persists instead of self-correcting. */}
-        <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+        <div className="min-w-0 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           {analyticsQuery.isLoading ? (
             <Skeleton className="h-64 rounded-[2rem] lg:col-span-2" />
           ) : analyticsQuery.isError ? (

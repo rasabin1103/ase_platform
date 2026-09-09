@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String
+from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -17,6 +17,13 @@ if TYPE_CHECKING:
 
 class Subscription(Base, IdPkMixin, TimestampMixin):
     __tablename__ = "subscriptions"
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: the
+    # admin dashboard's "plan signups" trend chart and month-over-month
+    # comparison both filter/group on this column on every dashboard load.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     organization_id: Mapped[int] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE"),

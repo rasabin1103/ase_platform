@@ -161,6 +161,10 @@ export function OrganizationsPage() {
     return typeof detail === 'string' ? detail : null
   }
 
+  // Matches on a substring of the backend's raw English error detail (the
+  // own-organization guard in organizations/router.py) to swap in a
+  // translated, friendlier message — brittle if that backend string ever
+  // changes wording, but there's no error code to match on instead.
   const friendlyOrgError = (err: unknown): string => {
     const detail = extractDetail(err)
     if (detail && detail.toLowerCase().includes('cannot deactivate or delete your own organization')) {
@@ -1133,6 +1137,18 @@ function organizationTypeLabel(t: (k: string) => string, type: string | null | u
   return t('organizationsPage.types.unknown') as string
 }
 
+// These four helpers describe the viewer's relationship to one
+// organization, from broadest to narrowest:
+//  - isMyOrganization: the viewer owns it OR has ANY membership at all
+//    (including a plain, non-admin member, or a pending invite).
+//  - isManagedOrganization: the narrower subset of that — owner, or holds
+//    org_owner/org_admin — i.e. can actually administer it, not just
+//    belong to it.
+// relationshipLabel/relationshipKey both derive from these two checks, but
+// aren't identical: the label further splits "mine" into
+// managed/invited/member for display, while the key only distinguishes
+// managed/mine/platform/none (used for the super-admin filter dropdown,
+// which doesn't need the member-vs-invited distinction).
 function isManagedOrganization(org: Organization, currentUserUuid: string | null) {
   if (!currentUserUuid) return false
   return org.owner_user_uuid === currentUserUuid || Boolean(org.current_user_role_codes?.some((role) => role === 'org_owner' || role === 'org_admin'))
@@ -1149,6 +1165,11 @@ function relationshipLabel(t: (k: string) => string, org: Organization, currentU
     if (org.current_user_membership_status === 'invited') return t('organizationsPage.relationship.invited') as string
     return t('organizationsPage.relationship.member') as string
   }
+  // Not "mine" at all — a super admin sees every organization on the
+  // platform regardless of membership, so that's labeled distinctly from
+  // "none" (which is what a non-superuser would see here, though in
+  // practice a non-superuser's list is already scoped to orgs they belong
+  // to, so this branch is mostly a super-admin-only code path).
   return isSuperAdmin
     ? (t('organizationsPage.relationship.platformManaged') as string)
     : (t('organizationsPage.relationship.none') as string)

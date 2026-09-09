@@ -316,7 +316,7 @@ def trigger_run_from_dashboard(
         )
     except MissingVariablesError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Missing required variables: {', '.join(exc.missing_keys)}",
         )
     except ScenarioNotFoundError:
@@ -459,7 +459,7 @@ def trigger_run(
         )
     except MissingVariablesError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Missing required variables: {', '.join(exc.missing_keys)}",
         )
     except ScenarioNotFoundError:

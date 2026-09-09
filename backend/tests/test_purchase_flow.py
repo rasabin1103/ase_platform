@@ -106,7 +106,12 @@ def _make_independent_user(db: Session, *, email_verified: bool) -> User:
     return user
 
 
-def _make_catalog_item(db: Session, *, status: CatalogItemStatus = CatalogItemStatus.published) -> CatalogItem:
+def _make_catalog_item(
+    db: Session,
+    *,
+    status: CatalogItemStatus = CatalogItemStatus.published,
+    price: Decimal | None = Decimal("29.00"),
+) -> CatalogItem:
     item = CatalogItem(
         title="Test Product",
         slug=f"test-product-{secrets.token_hex(6)}",
@@ -115,7 +120,7 @@ def _make_catalog_item(db: Session, *, status: CatalogItemStatus = CatalogItemSt
         short_description="Short description",
         long_description="Long description",
         image_url="https://example.com/image.png",
-        price=Decimal("29.00"),
+        price=price,
         currency="EUR",
         status=status,
         level=CatalogItemLevel.beginner,
@@ -156,7 +161,14 @@ def test_purchase_succeeds_when_email_verified():
     db = SessionLocal()
     try:
         user = _make_independent_user(db, email_verified=True)
-        item = _make_catalog_item(db)
+        # Free item on purpose: the direct POST .../purchase endpoint only
+        # ever grants free items — anything with a price now has to go
+        # through Stripe Checkout instead (see BillingService and
+        # ConsumerCatalogService.purchase's own guard). This test is about
+        # the email-verification gate specifically, so pricing must stay
+        # out of the way rather than tripping the (correct, unrelated)
+        # "must pay via Stripe" 400.
+        item = _make_catalog_item(db, price=None)
         token = create_access_token(user_uuid=user.uuid)
 
         client = TestClient(app)

@@ -19,6 +19,7 @@ import {
   Headphones,
   Heart,
   History,
+  Info,
   LifeBuoy,
   ListChecks,
   Maximize2,
@@ -225,7 +226,7 @@ function DownloadPackagePanel({
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ase-text2">
         <span className="flex items-center gap-1.5">
           <Files className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
-          {info.fileCount} {t('catalog.downloadInfo.files')}
+          {info.fileCount} {t(info.fileCount === 1 ? 'catalog.downloadInfo.file' : 'catalog.downloadInfo.files')}
         </span>
         <span className="flex items-center gap-1.5">
           <HardDrive className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
@@ -406,6 +407,11 @@ function LicensePanel({
         <p className="flex items-center gap-1.5">
           <LifeBuoy className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
           {item.licenseSupportIncluded ? t('catalog.license.supportIncluded') : t('catalog.license.supportNotIncluded')}
+          {item.licenseSupportIncluded ? (
+            <span title={t('catalog.license.supportIncludedInfo') as string} className="inline-flex shrink-0 cursor-help">
+              <Info className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
+            </span>
+          ) : null}
         </p>
         <p>
           <span className="font-medium text-ase-text">{t('catalog.license.refundPolicy')}: </span>

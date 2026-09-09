@@ -3,27 +3,45 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.main import app
-from app.models.enums import UserStatus, UserTokenPurpose
+from app.models.enums import RoleScope, UserStatus, UserTokenPurpose
+from app.models.role import Role
 from app.models.user import User
 from app.models.user_verification_token import UserVerificationToken
 from app.modules.auth.security import generate_raw_token, hash_action_token, hash_password, verify_password
 from app.modules.auth.tokens_repository import UserTokensRepository
 
 
-def test_register_creates_user_and_email_verification_token():
+def test_register_creates_user_and_email_verification_token(monkeypatch: pytest.MonkeyPatch):
+    # TURNSTILE_SECRET_KEY is set in this project's real .env (loaded
+    # automatically by pydantic-settings), so /auth/register would otherwise
+    # 400 with "captcha_failed" here — this test never sends a real
+    # Turnstile token. See the matching fixture in test_auth.py.
+    monkeypatch.setattr(settings, "TURNSTILE_SECRET_KEY", None)
     db = SessionLocal()
     try:
+        # AuthService.register() -> ensure_personal_workspace() requires an
+        # 'independent_user' Role row (see app/core/creator.py). This test
+        # doesn't go through the db/client fixtures' TRUNCATE-then-seed
+        # dance (see test_auth.py's _seed_independent_role), so it can't
+        # assume some other test already left the row behind — seed it
+        # directly, idempotently.
+        if db.query(Role).filter(Role.code == "independent_user").one_or_none() is None:
+            db.add(Role(code="independent_user", name="Independent User", scope=RoleScope.personal_workspace))
+            db.commit()
         client = TestClient(app)
         email = f"reg_{secrets.token_hex(6)}@example.com"
 
         res = client.post(
             "/api/v1/auth/register",
-            json={"email": email, "plain_password": "Password123!", "first_name": "New"},
+            # country is required on every signup — see RegisterRequest.country.
+            json={"email": email, "plain_password": "Password123!", "first_name": "New", "country": "ES"},
         )
         assert res.status_code == 201, res.text
         body = res.json()

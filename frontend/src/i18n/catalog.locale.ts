@@ -155,6 +155,7 @@ export const catalogEn = {
   },
   downloadInfo: {
     title: 'What you get',
+    file: 'file',
     files: 'files',
   },
   gettingStarted: {
@@ -188,6 +189,8 @@ export const catalogEn = {
     updatesNotIncluded: 'Future updates are not included',
     supportIncluded: 'Support is included',
     supportNotIncluded: 'Support is not included',
+    supportIncludedInfo:
+      'Email support from the ASE team for setup questions and issues with this specific item — not a service-level agreement or scheduled calls. Contact us at contact@arcesabinengineering.com.',
     refundPolicy: 'Refund policy',
     refundPolicyDefault: 'Covered by our standard digital-content refund policy — see the Terms of Service.',
   },
@@ -1384,6 +1387,25 @@ export const adminDataResetEn = {
   successPrefix: 'Done —',
   errorPrefix: 'Could not complete the action:',
   preservedNotePrefix: 'Only this account will remain:',
+  rowsToggleShow: 'View rows',
+  rowsToggleHide: 'Hide rows',
+  rowsTableLabel: 'Table',
+  rowsPageSizeLabel: 'Rows per page',
+  rowsSelectAll: 'Select all on this page',
+  rowsSelectedCount: '{{count}} selected',
+  rowsDeleteSelected: 'Delete selected',
+  rowsEmpty: 'No rows in this table.',
+  rowsLoadError: 'Could not load rows.',
+  rowsProtectedHint: 'This is your own account — it cannot be deleted here.',
+  rowDeleteModalTitle: 'Delete selected rows',
+  rowDeleteModalBody:
+    'This permanently deletes {{count}} row(s) from {{table}}. It does not wipe the whole domain — only the rows you selected.',
+  rowDeleteConfirmButton: 'Delete rows',
+  downloadBackupButton: 'Download backup (.xlsx)',
+  downloadingBackup: 'Downloading…',
+  backupError: 'Could not download the backup.',
+  backupTruncatedNote: 'Table too large — backup capped at the first rows only.',
+  backupEmptyNote: 'Nothing to back up — table is already empty.',
 }
 
 export const adminDataResetEs = {
@@ -1413,6 +1435,25 @@ export const adminDataResetEs = {
   successPrefix: 'Listo —',
   errorPrefix: 'No se pudo completar la acción:',
   preservedNotePrefix: 'Solo permanecerá esta cuenta:',
+  rowsToggleShow: 'Ver filas',
+  rowsToggleHide: 'Ocultar filas',
+  rowsTableLabel: 'Tabla',
+  rowsPageSizeLabel: 'Filas por página',
+  rowsSelectAll: 'Seleccionar todo en esta página',
+  rowsSelectedCount: '{{count}} seleccionada(s)',
+  rowsDeleteSelected: 'Eliminar seleccionadas',
+  rowsEmpty: 'No hay filas en esta tabla.',
+  rowsLoadError: 'No se pudieron cargar las filas.',
+  rowsProtectedHint: 'Esta es tu propia cuenta — no se puede eliminar aquí.',
+  rowDeleteModalTitle: 'Eliminar filas seleccionadas',
+  rowDeleteModalBody:
+    'Esto elimina permanentemente {{count}} fila(s) de {{table}}. No vacía todo el dominio — solo las filas que seleccionaste.',
+  rowDeleteConfirmButton: 'Eliminar filas',
+  downloadBackupButton: 'Descargar respaldo (.xlsx)',
+  downloadingBackup: 'Descargando…',
+  backupError: 'No se pudo descargar el respaldo.',
+  backupTruncatedNote: 'Tabla muy grande — el respaldo se limitó a las primeras filas.',
+  backupEmptyNote: 'Nada que respaldar — la tabla ya está vacía.',
 }
 
 export const adminDemoDataEn = {
@@ -1740,6 +1781,7 @@ export const catalogEs = {
   },
   downloadInfo: {
     title: 'Qué incluye',
+    file: 'archivo',
     files: 'archivos',
   },
   gettingStarted: {
@@ -1773,6 +1815,8 @@ export const catalogEs = {
     updatesNotIncluded: 'Las futuras actualizaciones no están incluidas',
     supportIncluded: 'El soporte está incluido',
     supportNotIncluded: 'El soporte no está incluido',
+    supportIncludedInfo:
+      'Soporte por email del equipo de ASE para dudas de configuración e incidencias con este recurso — no incluye acuerdo de nivel de servicio ni llamadas programadas. Contáctanos en contact@arcesabinengineering.com.',
     refundPolicy: 'Política de reembolso',
     refundPolicyDefault: 'Cubierto por nuestra política estándar de reembolso de contenido digital — consulta los Términos de Servicio.',
   },
@@ -1889,7 +1933,7 @@ export const catalogEs = {
 export const independentDashboardEn = {
   title: 'Your workspace',
   heroBadge: 'Independent account',
-  subtitle: 'Discover premium products and courses — no organization management required.',
+  subtitle: 'Discover premium products, courses, books and resources — no organization management required.',
   explore: 'Explore',
   cards: {
     products: 'Discover SaaS products',
@@ -1945,7 +1989,7 @@ export const independentDashboardEn = {
 export const independentDashboardEs = {
   title: 'Tu espacio',
   heroBadge: 'Cuenta independiente',
-  subtitle: 'Descubre productos y cursos premium — sin gestión organizacional.',
+  subtitle: 'Descubre productos, cursos, libros y recursos premium — sin gestión organizacional.',
   explore: 'Explorar',
   cards: {
     products: 'Descubre productos SaaS',
@@ -2106,6 +2150,21 @@ export const profilePageEn = {
     saved: 'Preference saved.',
     error: 'Could not update your preference. Try again.',
   },
+  dangerZone: {
+    title: 'Delete account',
+    subtitle:
+      'Permanently deletes your account. Your personal data is scrubbed and your access ends immediately — this cannot be undone.',
+    deleteButton: 'Delete my account',
+    modalTitle: 'Delete your account?',
+    modalBody:
+      'This permanently deletes your account and removes your personal data. It does not affect other members of any organization you belong to. This cannot be undone.',
+    passwordLabel: 'Confirm your password',
+    passwordPlaceholder: 'Your password',
+    cancel: 'Keep my account',
+    confirmButton: 'Yes, delete my account',
+    deleting: 'Deleting…',
+    error: 'Could not delete your account. Check your password and try again.',
+  },
 }
 
 export const profilePageEs = {
@@ -2215,6 +2274,21 @@ export const profilePageEs = {
     toggleLabel: 'Recibir la newsletter semanal',
     saved: 'Preferencia guardada.',
     error: 'No se pudo actualizar tu preferencia. Inténtalo de nuevo.',
+  },
+  dangerZone: {
+    title: 'Eliminar cuenta',
+    subtitle:
+      'Elimina tu cuenta permanentemente. Tus datos personales se anonimizan y tu acceso termina de inmediato — esto no se puede deshacer.',
+    deleteButton: 'Eliminar mi cuenta',
+    modalTitle: '¿Eliminar tu cuenta?',
+    modalBody:
+      'Esto elimina permanentemente tu cuenta y borra tus datos personales. No afecta a otros miembros de las organizaciones a las que pertenezcas. No se puede deshacer.',
+    passwordLabel: 'Confirma tu contraseña',
+    passwordPlaceholder: 'Tu contraseña',
+    cancel: 'Mantener mi cuenta',
+    confirmButton: 'Sí, eliminar mi cuenta',
+    deleting: 'Eliminando…',
+    error: 'No se pudo eliminar tu cuenta. Revisa tu contraseña e inténtalo de nuevo.',
   },
 }
 

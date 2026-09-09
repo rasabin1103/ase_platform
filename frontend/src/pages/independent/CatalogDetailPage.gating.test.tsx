@@ -73,20 +73,20 @@ describe('CatalogDetailPage access gating', () => {
     })
   })
 
-  it('shows "View content" (full access) with no Buy button for a free item', async () => {
+  it('shows "Open resource" (full access) with no Buy button for a free item', async () => {
     vi.mocked(consumerCatalogApi.getConsumerCatalogItem).mockResolvedValue(
       baseItem({ slug: 'free-resource', price: 0, isPurchased: false, hasResourceContent: true }),
     )
     renderDetailPage('free-resource')
 
     await waitFor(() => {
-      expect(screen.getByText('Ver contenido')).toBeInTheDocument()
+      expect(screen.getByText('Abrir recurso')).toBeInTheDocument()
     })
     expect(screen.queryByText('Comprar')).not.toBeInTheDocument()
     expect(screen.queryByText('Comprado')).not.toBeInTheDocument()
   })
 
-  it('shows Buy and only a preview (no full "View content") for a priced item not yet purchased', async () => {
+  it('shows Buy and only a preview (no full "Open resource") for a priced item not yet purchased', async () => {
     vi.mocked(consumerCatalogApi.getConsumerCatalogItem).mockResolvedValue(
       baseItem({ slug: 'priced-resource', price: 29.99, isPurchased: false, hasResourceContent: true }),
     )
@@ -97,11 +97,11 @@ describe('CatalogDetailPage access gating', () => {
     })
     // Not purchased yet -> only the sample viewer, not the full "view content" one.
     expect(screen.getByText('Ver muestra')).toBeInTheDocument()
-    expect(screen.queryByText('Ver contenido')).not.toBeInTheDocument()
+    expect(screen.queryByText('Abrir recurso')).not.toBeInTheDocument()
     expect(screen.queryByText('Comprado')).not.toBeInTheDocument()
   })
 
-  it('shows "Purchased" badge, disabled buy state, and full "View content" for an already-purchased item', async () => {
+  it('shows "Purchased" badge, disabled buy state, and full "Open resource" for an already-purchased item', async () => {
     vi.mocked(consumerCatalogApi.getConsumerCatalogItem).mockResolvedValue(
       baseItem({ slug: 'owned-resource', price: 29.99, isPurchased: true, hasResourceContent: true }),
     )
@@ -111,7 +111,7 @@ describe('CatalogDetailPage access gating', () => {
       // "Purchased" appears twice: once as the price-card badge, once as the disabled buy button label.
       expect(screen.getAllByText('Comprado').length).toBeGreaterThan(0)
     })
-    expect(screen.getByText('Ver contenido')).toBeInTheDocument()
+    expect(screen.getByText('Abrir recurso')).toBeInTheDocument()
     expect(screen.queryByText('Ver muestra')).not.toBeInTheDocument()
   })
 })

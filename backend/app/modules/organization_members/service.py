@@ -40,6 +40,10 @@ class OrganizationMembersService:
             membership_status=payload.membership_status,
         )
 
+        # The `existing` check above already covers the common case, but two
+        # concurrent requests for the same (org, user) pair can both pass it
+        # before either commits — the unique constraint is the real guard;
+        # this just turns that race into the same 400 instead of a 500.
         try:
             self.repo.add(member)
             self.db.commit()

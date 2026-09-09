@@ -42,6 +42,11 @@ export function OrganizationAnalyticsCharts() {
   const currency = analytics?.currency ?? 'EUR'
   const totalSpend = Number(analytics?.totalSpend ?? 0)
 
+  // Both spendData and catalogData map over CATALOG_TYPE_ORDER (not just
+  // whatever types the API happened to return) so every chart always shows
+  // the full, consistently-ordered set of catalog types — a type with zero
+  // activity still renders as a zero bar/slice instead of silently
+  // disappearing from the chart.
   const spendData = useMemo(() => {
     const byType = new Map<string, number>()
     for (const row of analytics?.spendByType ?? []) byType.set(row.type, Number(row.totalSpend))

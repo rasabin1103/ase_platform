@@ -1,29 +1,34 @@
 import type { Config } from 'tailwindcss'
 
+// Premium/pro/tech palette — electric blue with a violet partner for
+// gradient CTAs (see .ase-gradient-brand in index.css). `strong` is the
+// gradient's second stop, not just a hover-darken.
 const brand = {
-  DEFAULT: '#38BDF8',
-  strong: '#0EA5E9',
+  DEFAULT: '#4C7DFF',
+  strong: '#7C5CFF',
 } as const
 
 // Secondary accent — reserved for the single "premium/featured" moment
-// (recommended plan, standout CTA). Everything else stays on brand cyan
-// on purpose: one deliberate second color, not a rainbow of accents.
+// (recommended plan, standout CTA, "complete the series"). Everything
+// else stays on brand blue on purpose: one deliberate second color, not a
+// rainbow of accents.
 const gold = {
-  DEFAULT: '#E8B368',
-  strong: '#D89A3E',
+  DEFAULT: '#F0B429',
+  strong: '#C98F1F',
 } as const
 
 const neutrals = {
-  ink: '#020617',
-  slate: '#0F172A',
-  graphite: '#111827',
-  ash: '#1E293B',
+  // Richer, bluer navy than a flat near-black — the "premium tech" base.
+  ink: '#0B1220',
+  slate: '#141E33',
+  graphite: '#131B2E',
+  ash: '#1C2740',
   // WCAG AA requires >=4.5:1 for normal text; the previous #64748B only
   // cleared ~3.1-4.2:1 against our dark surfaces. #94A3B8 (slate-400) keeps
   // the same muted-gray intent while clearing >=5.7:1 on every ase-bg*/ase-surface* tone.
   fog: '#94A3B8',
   mist: '#CBD5E1',
-  chalk: '#F8FAFC',
+  chalk: '#F3F6FC',
   line: '#334155',
 } as const
 
@@ -106,15 +111,15 @@ export default {
       },
       boxShadow: {
         soft: '0 1px 0 rgba(255,255,255,0.04), 0 12px 32px rgba(0,0,0,0.45)',
-        brand: '0 0 18px rgba(56, 189, 248, 0.28)',
-        'brand-sm': '0 0 12px rgba(56, 189, 248, 0.18)',
+        brand: '0 0 18px rgba(76, 125, 255, 0.35)',
+        'brand-sm': '0 0 12px rgba(76, 125, 255, 0.22)',
         // Shared "premium" glow shadows — same visual language as the
         // admin dashboard's application map (ApplicationMapTree.tsx),
         // reused on public-facing pages (Home, Plans, Blog) so the first
         // customer touchpoints share that finish instead of it being an
         // admin-only flourish.
-        'glow-cyan': '0 0 40px rgba(56, 189, 248, 0.22)',
-        'glow-gold': '0 0 40px rgba(232, 179, 104, 0.22)',
+        'glow-cyan': '0 0 40px rgba(76, 125, 255, 0.24)',
+        'glow-gold': '0 0 40px rgba(240, 180, 41, 0.24)',
       },
       keyframes: {
         shimmer: {
