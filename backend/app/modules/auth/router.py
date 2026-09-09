@@ -36,6 +36,7 @@ from app.modules.auth.dependencies import (
 from app.models.user_link import UserLink
 from app.models.user_preferences_profile import UserPreferencesProfile
 from app.modules.auth.schemas import (
+    AccountDeleteRequest,
     EmailVerificationConfirmSchema,
     LoginRequest,
     MeResponse,
@@ -361,6 +362,23 @@ def update_me(
         raise
     db.refresh(user)
     return me(request, user, db)
+
+
+@router.post("/me/delete", response_model=SimpleMessageResponse)
+@limiter.limit("5/hour")
+def delete_own_account(
+    request: Request,
+    payload: AccountDeleteRequest,
+    user: User = Depends(get_current_user),
+    svc: AuthService = Depends(get_service),
+):
+    """Self-service "delete my account" (RGPD art. 17). A POST with a
+    password body rather than a bare DELETE /me — some HTTP clients/proxies
+    silently drop a DELETE request's body, and the password confirmation
+    here is not optional, so this follows the same POST-with-body shape
+    already used for /2fa/disable."""
+    svc.delete_own_account(user, password=payload.password)
+    return SimpleMessageResponse()
 
 
 @router.put(

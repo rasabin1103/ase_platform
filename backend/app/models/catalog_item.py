@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +18,14 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     """Marketplace catalog entry for independent consumers (products, courses, books, resources)."""
 
     __tablename__ = "catalog_items"
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: every
+    # consumer catalog listing sorts newest-first on this column (see
+    # ConsumerCatalogRepository.list), and it's the default sort on the
+    # admin catalog list too.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(160), unique=True, index=True, nullable=False)

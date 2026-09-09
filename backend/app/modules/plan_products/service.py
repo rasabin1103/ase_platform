@@ -24,6 +24,10 @@ class PlanProductsService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Plan product already exists")
 
         pp = PlanProduct(plan_id=payload.plan_id, product_id=payload.product_id, access_level=payload.access_level)
+        # get_by_pair above already covers the common case, but two
+        # concurrent requests for the same pair can both pass it before
+        # either commits — the unique constraint is the real guard; this
+        # just turns that race into the same 400 instead of a 500.
         try:
             self.repo.add(pp)
             self.db.commit()

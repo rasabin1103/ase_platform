@@ -46,6 +46,10 @@ class CourseEnrollmentsService:
             status=payload.status,
             completed_at=completed_at,
         )
+        # get_by_pair above already covers the common case, but two
+        # concurrent requests for the same pair can both pass it before
+        # either commits — the unique constraint is the real guard; this
+        # just turns that race into the same 400 instead of a 500.
         try:
             self.repo.add(ce)
             self.db.commit()

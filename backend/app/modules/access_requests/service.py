@@ -71,6 +71,11 @@ class AccessRequestsService:
         self.repo.add(item)
         self.db.commit()
         self.db.refresh(item)
+        # The request itself is already committed above — this notification
+        # is best-effort on top of it, so a failure here (rollback only
+        # undoes whatever partial notification rows this call itself wrote)
+        # must never surface as an error on what is otherwise a successful
+        # request creation.
         try:
             NotificationsService(self.db).notify_superadmins(
                 type="access_request_created",
@@ -161,6 +166,9 @@ class AccessRequestsService:
         if item.status != AccessRequestStatus.pending:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Request is not pending")
 
+        # Approving a creator-application request is what actually grants
+        # the role — the request row alone doesn't do anything; this call
+        # is the one place that turns "approved" into real permissions.
         if is_creator_request_type(item.request_type):
             try:
                 assign_content_creator_role(

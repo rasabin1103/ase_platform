@@ -60,6 +60,12 @@ export function TwoFactorGraceModal() {
     Boolean(currentUser) &&
     currentUser?.status === 'active' &&
     !currentUser?.two_factor_enabled &&
+    // super_admin accounts are permanently exempt from the backend's 2FA
+    // grace-period suspension sweep (see _super_admin_user_ids in
+    // app/core/account_lifecycle.py) — showing a countdown-to-suspension
+    // warning that will never actually happen would just be a false alarm,
+    // so this modal mirrors that same exemption.
+    !currentUser?.is_superuser &&
     !dismissed &&
     !alreadyShownToday &&
     daysLeft !== null

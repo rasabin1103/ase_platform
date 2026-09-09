@@ -269,7 +269,9 @@ export function OnboardingPage() {
             <div className="text-sm font-semibold text-ase-text">{t('orgMembership.onboarding.invitesTitle')}</div>
             <div className="mt-1 text-sm text-ase-text2">{t('orgMembership.onboarding.invitesSubtitle')}</div>
             <div className="mt-4 space-y-3">
-              {pendingInvites.length === 0 ? (
+              {invitesQuery.isLoading ? (
+                <p className="text-sm text-ase-muted">…</p>
+              ) : pendingInvites.length === 0 ? (
                 <p className="text-sm text-ase-muted">{t('orgMembership.onboarding.invitesEmpty')}</p>
               ) : (
                 pendingInvites.map((invite) => (

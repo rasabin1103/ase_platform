@@ -58,7 +58,7 @@ class BookRedemptionService:
             )
             if exc.status_code == 404:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="GitHub username not found. Check the spelling.",
                 ) from exc
             raise HTTPException(

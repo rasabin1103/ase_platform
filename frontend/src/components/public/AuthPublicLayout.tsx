@@ -8,7 +8,7 @@ import { PublicFooter } from './PublicFooter'
 
 export function AuthPublicLayout() {
   return (
-    <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+    <div className="relative flex min-h-full flex-col overflow-x-hidden bg-ase-bg text-ase-text">
       <SkipLink />
       <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
@@ -20,7 +20,19 @@ export function AuthPublicLayout() {
       </div>
 
       <PublicHeader />
-      <main id="main-content" tabIndex={-1} className="relative outline-none">
+      {/* flex-1 makes this the one element that grows to fill leftover
+          viewport height, so PublicFooter always sits right after the
+          page's real content instead of leaving a dead gap below it on
+          short pages (login, register, ...) — see AuthPublicLayout's
+          min-h-full on the outer flex column. `flex flex-col justify-center`
+          then takes that same leftover space and splits it evenly above and
+          below the form instead of dumping it all beneath a top-anchored
+          card — these auth pages (login, register, forgot/reset password)
+          are always shorter than a typical viewport, so without this the
+          card sits pinned under the header with one big empty band before
+          the footer. On the rare taller viewport where content would
+          overflow, justify-center is a no-op and the page just scrolls. */}
+      <main id="main-content" tabIndex={-1} className="relative flex flex-1 flex-col justify-center outline-none">
         <Suspense fallback={<RouteLoadingFallback />}>
           <Outlet />
         </Suspense>

@@ -12,9 +12,9 @@ export function ImpersonationBanner() {
   if (!isImpersonating) return null
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-amber-300/30 bg-amber-300/10 px-6 py-2 text-sm text-amber-100">
+    <div className="flex items-center justify-between gap-3 border-b border-l-4 border-ase-gold/25 border-l-ase-gold bg-ase-gold/[0.08] px-6 py-2 text-sm text-ase-text2">
       <div className="flex items-center gap-2">
-        <UserRound className="h-4 w-4" strokeWidth={1.75} />
+        <UserRound className="h-4 w-4 shrink-0 text-ase-gold" strokeWidth={1.75} />
         <span>
           {String(t('impersonation.bannerText')).replace('{{email}}', currentUser?.email ?? '')}
         </span>

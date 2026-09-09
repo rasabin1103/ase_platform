@@ -52,6 +52,10 @@ class InvitationsService:
             invited_by_user_id=invited_by_id,
         )
 
+        # get_by_token above already covers the common case, but two
+        # concurrent requests landing on the same token can both pass it
+        # before either commits — the unique constraint is the real guard;
+        # this just turns that race into the same 400 instead of a 500.
         try:
             self.repo.add(inv)
             self.db.commit()

@@ -97,7 +97,7 @@ export function AdminBookingPage() {
             type="button"
             onClick={() => createMutation.mutate()}
             disabled={createMutation.isPending || times.every((v) => !v)}
-            className="rounded-xl bg-ase-brand px-4 py-2 text-sm font-semibold text-ase-bg transition hover:brightness-110 disabled:opacity-50"
+            className="rounded-xl bg-ase-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
           >
             {createMutation.isPending ? (t('adminBookingPage.create.submitting') as string) : (t('adminBookingPage.create.submit') as string)}
           </button>

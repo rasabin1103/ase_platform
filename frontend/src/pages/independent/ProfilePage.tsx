@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
-import { updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
+import { Link, useNavigate } from 'react-router-dom'
+import { deleteMyAccount, updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
 import { cancelSubscription, createBillingPortalSession, resumeSubscription } from '../../api/billing.api'
 import { clearProfileLinksDraft, getProfileLinksDraft, setProfileLinksDraft } from '../../auth/auth.store'
 import type { UserLink } from '../../types/auth.types'
@@ -69,7 +69,8 @@ function tenureLabel(createdAt: string | null | undefined, language: string): st
 
 export function ProfilePage() {
   const { t, language } = useI18n()
-  const { currentUser, applyCurrentUser, loadCurrentUser } = useAuth()
+  const { currentUser, applyCurrentUser, loadCurrentUser, logout } = useAuth()
+  const navigate = useNavigate()
   const { primaryRole, isSuperuser } = useRbac()
   const [creatorModalOpen, setCreatorModalOpen] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -239,6 +240,24 @@ export function ProfilePage() {
       await loadCurrentUser()
     },
     onError: () => setResumeError(t('profilePage.billing.resumeError') as string),
+  })
+
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false)
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null)
+  const deleteAccountMut = useMutation({
+    mutationFn: deleteMyAccount,
+    onSuccess: () => {
+      // Stateless JWT auth: the account is already status=deleted server-side
+      // the moment this resolves, so there's nothing left to revoke — just
+      // drop the local session and send the (now former) user home.
+      logout()
+      navigate('/', { replace: true })
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setDeleteAccountError(typeof detail === 'string' ? detail : (t('profilePage.dangerZone.error') as string))
+    },
   })
 
   const onSave = form.handleSubmit((values) =>
@@ -563,7 +582,71 @@ export function ProfilePage() {
           </div>
           {linksError ? <p className="mt-2 text-sm text-ase-error">{linksError}</p> : null}
         </Card>
+
+        <Card className="w-full rounded-[2rem] border-ase-error/30 bg-ase-error/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.dangerZone.title')}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-ase-text2">{t('profilePage.dangerZone.subtitle')}</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 border-ase-error/30 text-ase-text2 hover:text-ase-text"
+            onClick={() => setDeleteAccountModalOpen(true)}
+          >
+            {t('profilePage.dangerZone.deleteButton')}
+          </Button>
+        </Card>
       </div>
+
+      <Modal
+        open={deleteAccountModalOpen}
+        title={t('profilePage.dangerZone.modalTitle') as string}
+        onClose={() => {
+          setDeleteAccountModalOpen(false)
+          setDeleteAccountPassword('')
+          setDeleteAccountError(null)
+        }}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeleteAccountModalOpen(false)
+                setDeleteAccountPassword('')
+                setDeleteAccountError(null)
+              }}
+            >
+              {t('profilePage.dangerZone.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deleteAccountPassword.length === 0 || deleteAccountMut.isPending}
+              onClick={() => deleteAccountMut.mutate(deleteAccountPassword)}
+            >
+              {deleteAccountMut.isPending
+                ? t('profilePage.dangerZone.deleting')
+                : t('profilePage.dangerZone.confirmButton')}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ase-text">{t('profilePage.dangerZone.modalBody')}</p>
+          <div>
+            <label htmlFor="profile-delete-account-password" className="mb-1 block text-xs text-ase-muted">
+              {t('profilePage.dangerZone.passwordLabel')}
+            </label>
+            <Input
+              id="profile-delete-account-password"
+              type="password"
+              value={deleteAccountPassword}
+              onChange={(e) => setDeleteAccountPassword(e.target.value)}
+              placeholder={t('profilePage.dangerZone.passwordPlaceholder') as string}
+              autoComplete="current-password"
+            />
+          </div>
+          {deleteAccountError ? <p className="text-sm text-ase-error">{deleteAccountError}</p> : null}
+        </div>
+      </Modal>
 
       <AccessRequestModal
         open={creatorModalOpen}

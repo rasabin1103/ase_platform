@@ -290,6 +290,39 @@ def account_deleted_inactivity_email(support_email: str, *, suspended_days: int,
     return html, text
 
 
+def payment_failed_email(manage_url: str, *, plan_name: str, language: str = "es") -> tuple[str, str]:
+    """Returns (html, text) sent to an organization's owner every time
+    Stripe reports a failed renewal charge (webhook: invoice.payment_failed
+    — see BillingService.handle_webhook). Sent once per failed attempt, so
+    an owner on Stripe's default Smart Retries schedule gets one of these
+    per retry, not just a single notice — mirrors what the retry schedule
+    itself is doing (another attempt is coming) rather than implying the
+    subscription is already lost. Access itself isn't cut immediately: it
+    keeps working until Stripe gives up retrying and the subscription
+    actually transitions away from active/trialing (see
+    _grant_plan_entitlements / CatalogPurchasesRepository.slugs_for_user)."""
+    lang = _lang(language)
+    if lang == "en":
+        title = "We couldn't renew your subscription"
+        body = (
+            f"The card on file for your {plan_name} subscription was declined. We'll automatically retry the "
+            "charge over the next few days — to avoid losing access, update your payment method now."
+        )
+        action_label = "Update payment method"
+        footnote = "If this keeps failing, your subscription will eventually be marked past due and access may be paused."
+    else:
+        title = "No pudimos renovar tu suscripción"
+        body = (
+            f"La tarjeta registrada para tu suscripción {plan_name} fue rechazada. Reintentaremos el cobro "
+            "automáticamente en los próximos días — para no perder el acceso, actualiza tu método de pago ahora."
+        )
+        action_label = "Actualizar método de pago"
+        footnote = "Si el problema persiste, la suscripción quedará marcada como pendiente de pago y el acceso podría pausarse."
+    html = _render(title=title, body=body, action_url=manage_url, action_label=action_label, footnote=footnote, language=lang)
+    text = f"{title}\n\n{body}\n\n{manage_url}\n\n{footnote}"
+    return html, text
+
+
 def booking_confirmed_email(
     manage_url: str, *, starts_at_label: str, duration_minutes: int, is_admin_copy: bool = False,
     counterpart_label: str | None = None, notes: str | None = None, language: str = "es",

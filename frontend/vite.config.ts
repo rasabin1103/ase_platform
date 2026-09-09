@@ -31,24 +31,34 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          // These libraries are already behind React.lazy() at the
-          // component level (DocxViewer, XlsxViewer, MarkdownViewer/blog
-          // editor, chart components), so Vite already emits them as
-          // separate chunks. What manualChunks adds on top: (1) a stable
-          // vendor chunk for React/router/query so app-code changes don't
-          // bust the browser cache for framework code, and (2) named,
-          // predictable chunks per heavy library instead of leaving Rollup
-          // to decide — helpful if two different lazy pages ever pull in
-          // the same heavy dependency (e.g. two places import `xlsx`),
-          // which would otherwise duplicate it across chunks.
+          // Only React/router/query get a named manual chunk: they're
+          // needed on literally every page, so hoisting them into one
+          // stable "vendor-react" file is a pure win (app-code changes
+          // don't bust the browser cache for framework code).
+          //
+          // The heavy one-off libraries (xlsx, mammoth, exceljs, recharts,
+          // jspdf/html2canvas, tiptap/prosemirror) used to get the same
+          // manualChunks treatment, on the theory that naming them
+          // explicitly was strictly better than leaving Rolldown to decide.
+          // It wasn't: naming a chunk here makes Rolldown treat it as a
+          // real, addressable output chunk, and if *any* module reachable
+          // from the eager (non-lazy) app shell shares so much as one small
+          // dependency edge into that chunk, Rolldown has to preload the
+          // *whole* named chunk via <link rel="modulepreload"> in
+          // index.html — verified by inspecting the built index.html and
+          // the .vite/manifest.json, which showed vendor-charts/vendor-pdf/
+          // vendor-editor (~415KB gzip combined) being modulepreloaded on
+          // every single page load, including the public login/home pages
+          // that never touch a chart, a PDF export, or the blog editor.
+          // Removing the manual grouping for just these libraries let
+          // Rolldown's own automatic chunking take over — confirmed via the
+          // same manifest inspection that each library then lands in its
+          // own chunk scoped to its actual lazy-loaded consumer(s) (e.g. a
+          // dedicated recharts chunk shared only by the pages that render
+          // charts), with nothing preloaded outside of what a given route
+          // actually needs.
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined
-            if (id.includes('mammoth')) return 'vendor-docx'
-            if (id.includes('/xlsx/')) return 'vendor-xlsx'
-            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
-            if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf'
-            if (id.includes('exceljs')) return 'vendor-exceljs'
-            if (id.includes('@tiptap') || id.includes('prosemirror')) return 'vendor-editor'
             if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router') || id.includes('@tanstack')) {
               return 'vendor-react'
             }

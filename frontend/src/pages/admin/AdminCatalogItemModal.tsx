@@ -72,10 +72,12 @@ const defaults = (type: CatalogItemType): FormValues => ({
   current_version: null,
   changelog: [],
   compatibility: [],
-  license_scope: [],
-  license_redistribution: null,
-  license_updates_included: false,
-  license_support_included: false,
+  // Sensible defaults matching the platform's standard terms — the admin
+  // can still change any of these per item before saving.
+  license_scope: ['individual'],
+  license_redistribution: 'prohibited',
+  license_updates_included: true,
+  license_support_included: true,
   license_refund_policy: null,
   getting_started: null,
 })
@@ -296,14 +298,18 @@ export function AdminCatalogItemModal({
         className="space-y-4"
         onSubmit={form.handleSubmit(async (values) => {
           setServerError(null)
-          const tags = Array.from(
-            new Set(
-              tagsInput
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-            ),
-          )
+          // Case-insensitive dedup that preserves first-seen casing — same
+          // convention as ConsumerCatalogRepository.distinct_tags() on the
+          // backend, so "QA" and "qa" collapse to one tag without mangling
+          // acronyms like QA/CI/CD/API.
+          const seenTags = new Map<string, string>()
+          for (const rawTag of tagsInput.split(',')) {
+            const tag = rawTag.trim()
+            if (!tag) continue
+            const key = tag.toLowerCase()
+            if (!seenTags.has(key)) seenTags.set(key, tag)
+          }
+          const tags = Array.from(seenTags.values())
           // Only send an "_en" field as an explicit override when the admin
           // actually typed into it this session (dirtyFields) — otherwise
           // send null so the backend auto-translates from the (possibly

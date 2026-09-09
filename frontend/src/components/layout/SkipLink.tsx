@@ -12,7 +12,7 @@ export function SkipLink() {
   return (
     <a
       href="#main-content"
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-ase-md focus:bg-ase-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ase-ink focus:shadow-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-ase-md focus:bg-ase-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg"
     >
       {t('a11y.skipToContent')}
     </a>

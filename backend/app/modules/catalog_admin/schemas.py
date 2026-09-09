@@ -148,11 +148,15 @@ class CatalogItemAdminBase(BaseModel):
     changelog: list[str] = []
     compatibility: list[str] = []
     # --- License disclosure — shown on every catalog item's detail page
-    # before purchase, regardless of type.
-    license_scope: list[str] = []
-    license_redistribution: str | None = Field(default=None, max_length=30)
-    license_updates_included: bool = False
-    license_support_included: bool = False
+    # before purchase, regardless of type. Defaults reflect the platform's
+    # actual standard terms (individual use, no redistribution, updates and
+    # support included) so a freshly created item already discloses
+    # something accurate instead of "unspecified" — the admin can still
+    # override any of these per item.
+    license_scope: list[str] = ["individual"]
+    license_redistribution: str | None = Field(default="prohibited", max_length=30)
+    license_updates_included: bool = True
+    license_support_included: bool = True
     license_refund_policy: str | None = None
     # --- "How to actually use this" — resource-only in the admin UI, stored
     # generically like current_version/changelog above.

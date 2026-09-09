@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.audit import record_audit_log
@@ -12,8 +13,13 @@ from app.core.email import send_email
 from app.core.email_templates import account_reactivated_email, password_reset_email
 from app.core.email_verification import issue_and_send_verification_email
 from app.core.totp import build_otpauth_uri, generate_qr_code_data_uri, generate_totp_secret, verify_totp_code
-from app.models.enums import SuspensionReason, UserStatus, UserTokenPurpose
+from app.core.user_anonymize import anonymize_user_pii
+from app.models.enums import MembershipStatus, SuspensionReason, UserStatus, UserTokenPurpose
+from app.models.member_role import MemberRole
+from app.models.organization_member import OrganizationMember
+from app.models.role import Role
 from app.models.user import User
+from app.modules.auth.dependencies import is_super_admin
 from app.modules.auth.schemas import (
     LoginRequest,
     RegisterRequest,
@@ -282,6 +288,56 @@ class AuthService:
         self.db.commit()
         record_audit_log(
             self.db, actor_user_id=user.id, action="user.2fa_disabled", entity_type="user", entity_id=str(user.id),
+        )
+
+    # --- Self-service account deletion (RGPD art. 17 / right to be forgotten) -
+
+    def _is_last_active_super_admin(self, user: User) -> bool:
+        """True if `user` is currently one of the platform's active
+        super_admins and no *other* active super_admin exists — mirrors the
+        org-scoped `_would_orphan_a_super_admin` lockout guard in
+        organizations/service.py, just checked platform-wide instead of per
+        organization, since deleting your own account has no "other org" to
+        fall back to."""
+        active_super_admin_count = self.db.execute(
+            select(func.count(func.distinct(OrganizationMember.user_id)))
+            .select_from(OrganizationMember)
+            .join(MemberRole, MemberRole.organization_member_id == OrganizationMember.id)
+            .join(Role, Role.id == MemberRole.role_id)
+            .join(User, User.id == OrganizationMember.user_id)
+            .where(
+                Role.code == "super_admin",
+                OrganizationMember.membership_status == MembershipStatus.active,
+                User.status == UserStatus.active,
+            )
+        ).scalar_one()
+        return int(active_super_admin_count) <= 1
+
+    def delete_own_account(self, user: User, *, password: str) -> None:
+        """Self-service "delete my account" — same soft-delete + PII scrub as
+        the admin-initiated path (UsersService.soft_delete_user), just
+        triggered by the account holder themselves with their own password
+        as confirmation instead of an admin's `users.delete` permission.
+        Stateless JWT auth means no separate token revocation is needed:
+        every authenticated dependency already rejects UserStatus.deleted on
+        the very next request (see get_current_active_user and friends)."""
+        if not verify_password(password, user.password_hash):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+
+        if is_super_admin(self.db, user) and self._is_last_active_super_admin(user):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "No puedes eliminar tu cuenta: eres el único super_admin activo de la plataforma. "
+                    "Asigna el rol de super_admin a otra persona antes de continuar."
+                ),
+            )
+
+        user.status = UserStatus.deleted
+        anonymize_user_pii(self.db, user)
+        self.db.commit()
+        record_audit_log(
+            self.db, actor_user_id=user.id, action="user.self_delete", entity_type="user", entity_id=str(user.id),
         )
 
     def refresh(self, refresh_token: str) -> TokenPair:

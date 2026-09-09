@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -27,6 +27,12 @@ class TestRun(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     test-suite runs that take minutes, not seconds."""
 
     __tablename__ = "test_runs"
+
+    # Overrides TimestampMixin's plain created_at with an indexed one: run
+    # history is always listed newest-first per catalog item/credential.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     catalog_item_id: Mapped[int] = mapped_column(
         ForeignKey("catalog_items.id", ondelete="CASCADE"), index=True, nullable=False,

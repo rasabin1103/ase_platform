@@ -24,6 +24,10 @@ class RolePermissionsService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role permission already exists")
 
         rp = RolePermission(role_id=payload.role_id, permission_id=payload.permission_id)
+        # get_by_pair above already covers the common case, but two
+        # concurrent requests for the same pair can both pass it before
+        # either commits — the unique constraint is the real guard; this
+        # just turns that race into the same 400 instead of a 500.
         try:
             self.repo.add(rp)
             self.db.commit()

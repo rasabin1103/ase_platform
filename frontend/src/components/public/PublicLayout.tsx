@@ -8,7 +8,7 @@ import { PublicFooter } from './PublicFooter'
 
 export function PublicLayout() {
   return (
-    <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">
+    <div className="relative flex min-h-full flex-col overflow-x-hidden bg-ase-bg text-ase-text">
       <SkipLink />
       <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
@@ -25,7 +25,12 @@ export function PublicLayout() {
       </div>
 
       <PublicHeader />
-      <main id="main-content" tabIndex={-1} className="relative outline-none">
+      {/* flex-1 makes this the one element that grows to fill leftover
+          viewport height, so PublicFooter always sits right after the
+          page's real content instead of leaving a dead gap below it on
+          short pages — see PublicLayout's min-h-full on the outer flex
+          column. */}
+      <main id="main-content" tabIndex={-1} className="relative flex-1 outline-none">
         <Suspense fallback={<RouteLoadingFallback />}>
           <Outlet />
         </Suspense>

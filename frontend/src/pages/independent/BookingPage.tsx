@@ -105,7 +105,7 @@ export function BookingPage() {
                   type="button"
                   onClick={() => bookMutation.mutate({ uuid: slot.uuid, notes: notesBySlot[slot.uuid] })}
                   disabled={bookMutation.isPending}
-                  className="mt-3 w-full rounded-xl bg-ase-brand px-4 py-2 text-sm font-semibold text-ase-bg transition hover:brightness-110 disabled:opacity-50"
+                  className="mt-3 w-full rounded-xl bg-ase-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
                 >
                   {bookMutation.isPending ? (t('bookingPage.available.booking') as string) : (t('bookingPage.available.book') as string)}
                 </button>

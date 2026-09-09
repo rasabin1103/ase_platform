@@ -26,6 +26,11 @@ import {
 
 
 
+// Composes useAuth()'s raw user/permissions with config.ts's pure
+// role/permission logic into the actual UI-facing surface: which nav
+// groups to render, and whether the current user can do a given action.
+// isSuperuser always short-circuits both `can` and `hasPermission` — a
+// super_admin is never blocked by a missing permission code.
 export function useRbac() {
 
   const { currentUser } = useAuth()
@@ -50,6 +55,10 @@ export function useRbac() {
 
 
 
+  // Which nav-group set to filter is picked by workspace kind, not by
+  // primaryRole alone — isConsumerMode can be true even when primaryRole
+  // hasn't resolved to 'independent_user' yet (see isConsumerExperience),
+  // so it's checked as its own branch ahead of the plain role check.
   const navGroups = useMemo(() => {
 
     if (isSuperuser || primaryRole === 'super_admin') {

@@ -74,6 +74,9 @@ class OrgCatalogService:
         )
         self.db.commit()
         item_read = self.consumer_service.get_by_slug(catalog_item_slug, user_id=target_user.id)
+        # purchases.add() is idempotent — `created` is False when the target
+        # already owned this item (nothing new was written), which is what
+        # `alreadyOwned` reports back to the admin instead of erroring.
         return GrantProductResponse(
             granted=created,
             alreadyOwned=not created,
@@ -94,6 +97,10 @@ class OrgCatalogService:
             if bucket is None:
                 continue
             entry = MemberCatalogStatItem(slug=item.slug, title=item.title, type=item.type.value, imageUrl=item.image_url)
+            # "consumed" = everything this member owns, any source (a
+            # personal purchase, another org's grant, ...). "sent" is the
+            # narrower subset this organization itself paid for/granted —
+            # only true when the purchase row's own organization_id matches.
             bucket["consumed"].append(entry)
             if purchase.organization_id == organization_id:
                 bucket["sent"].append(entry)

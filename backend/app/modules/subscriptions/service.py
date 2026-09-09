@@ -97,6 +97,10 @@ class SubscriptionsService:
         return sub
 
     def cancel(self, subscription_id: int) -> Subscription:
+        """Backs the router's DELETE endpoint — but only ever soft-cancels
+        the row (flips status), never actually deletes it. Keeping the
+        history matters for billing/analytics; a canceled row still counts
+        toward "was this org ever subscribed to X" queries."""
         sub = self.get(subscription_id)
         sub.status = SubscriptionStatus.canceled
         self.db.commit()
