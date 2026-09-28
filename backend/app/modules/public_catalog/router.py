@@ -42,11 +42,7 @@ def list_catalog_pricing_plans(
     )
 
 
-@router.get(
-    "/catalog-stats",
-    response_model=CatalogStatsResponse,
-    tags=["public-catalog-stats"],
-)
+@router.get("/catalog-stats", response_model=CatalogStatsResponse, tags=["public-catalog-stats"])
 def read_catalog_stats(db: Session = Depends(get_db)) -> CatalogStatsResponse:
     """Aggregate public catalog counts and platform health (no auth)."""
     return get_catalog_stats(db)
@@ -57,10 +53,6 @@ def read_plan_savings(
     item_slug: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> PlanSavingsListResponse:
-    """"Buy separately vs. subscribe" comparison for every sellable plan —
-    no auth, since this is shown alongside a catalog item's price to any
-    visitor deciding whether to buy it standalone. Pass item_slug to narrow
-    this to plans that actually include that item. See get_plan_savings."""
     return PlanSavingsListResponse(items=get_plan_savings(db, item_slug=item_slug))
 
 
@@ -72,13 +64,11 @@ def read_public_team(db: Session = Depends(get_db)) -> list[TeamMemberPublic]:
 
 @router.get("/testimonials", response_model=list[TestimonialPublic], tags=["public"])
 def read_public_testimonials(db: Session = Depends(get_db)) -> list[TestimonialPublic]:
-    """Active (confirmed real) testimonials only — no auth."""
     return [TestimonialPublic.model_validate(t) for t in list_active_testimonials(db)]
 
 
 @router.get("/case-studies", response_model=list[CaseStudyPublic], tags=["public"])
 def read_public_case_studies(db: Session = Depends(get_db)) -> list[CaseStudyPublic]:
-    """Active (confirmed real) case studies only — no auth."""
     return [CaseStudyPublic.model_validate(c) for c in list_active_case_studies(db)]
 
 
@@ -87,13 +77,11 @@ def read_public_catalog_cover_image(item_id: int, db: Session = Depends(get_db))
     """Binary cover image for a published catalog item — no auth. Exists
     solely so a third party with no session of its own (Stripe, fetching a
     Checkout line item's product image) can load it; the app's own <img>
-    tags keep using the authenticated /media/catalog/{id}/image instead. See
-    media_urls.resolve_catalog_stripe_image_url."""
+    tags keep using the authenticated /media/catalog/{id}/image instead.
+    See media_urls.resolve_catalog_stripe_image_url."""
     item = get_published_catalog_item_or_404(db, item_id)
     if not catalog_has_stored_image(item):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    # See the matching comment in media/router.py: caching this cuts repeat
-    # Supabase DB egress from re-fetching the same unchanged image bytes.
     return Response(
         content=bytes(item.image_data),
         media_type=item.image_mime or "image/jpeg",

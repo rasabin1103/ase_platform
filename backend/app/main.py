@@ -214,6 +214,7 @@ from app.modules.admin_dashboard.router import router as admin_dashboard_router
 from app.modules.admin_error_logs.router import router as admin_error_logs_router
 from app.modules.media.router import router as media_router
 from app.modules.public_catalog.router import router as public_catalog_router
+from app.modules.catalog_showcase.router import router as catalog_showcase_router
 from app.modules.notifications.router import router as notifications_router
 from app.modules.suggestions.router import router as suggestions_router
 from app.modules.book_redemption.router import router as book_redemption_router
@@ -255,6 +256,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_account_lifecycle_router)
     app.include_router(media_router)
     app.include_router(public_catalog_router)
+    app.include_router(catalog_showcase_router)
     app.include_router(blog_admin_router)
     app.include_router(public_blog_router)
     app.include_router(blog_engagement_router)

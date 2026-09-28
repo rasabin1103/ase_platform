@@ -71,6 +71,10 @@ class ConsumerCatalogRepository:
                 .limit(limit)
                 .offset(offset)
             )
+        elif sort == "price_asc":
+            stmt = base.order_by(CatalogItem.price.asc(), CatalogItem.created_at.desc()).limit(limit).offset(offset)
+        elif sort == "price_desc":
+            stmt = base.order_by(CatalogItem.price.desc(), CatalogItem.created_at.desc()).limit(limit).offset(offset)
         else:
             stmt = base.order_by(CatalogItem.created_at.desc(), CatalogItem.id.desc()).limit(limit).offset(offset)
         return list(self.db.execute(stmt).scalars().all()), total
@@ -162,3 +166,15 @@ class ConsumerCatalogRepository:
 
         ranked = sorted(counts.keys(), key=lambda k: (-counts[k], k))[:limit]
         return sorted((display_form[k] for k in ranked), key=str.casefold)
+
+    def distinct_categories(self, *, statuses: tuple[CatalogItemStatus, ...] | None = None) -> list[str]:
+        """Every distinct `category` string actually used by an item in
+        `statuses` — powers the public catalog's category filter with only
+        categories that currently have something to show, rather than every
+        category an admin has ever created in catalog_categories (some of
+        which may be empty or reserved for draft/unpublished items)."""
+        stmt = select(CatalogItem.category).distinct()
+        if statuses is not None:
+            stmt = stmt.where(CatalogItem.status.in_(statuses))
+        rows = self.db.execute(stmt).scalars().all()
+        return sorted({r for r in rows if r}, key=str.casefold)

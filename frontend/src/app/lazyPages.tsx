@@ -26,6 +26,9 @@ export const PrivacyPolicyPage = lazy(() =>
   import('../pages/public/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })),
 )
 export const TermsPage = lazy(() => import('../pages/public/TermsPage').then((m) => ({ default: m.TermsPage })))
+export const CatalogShowcasePage = lazy(() =>
+  import('../pages/public/CatalogShowcasePage').then((m) => ({ default: m.CatalogShowcasePage })),
+)
 
 // --- Auth (login/register/password) ---
 export const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })))
