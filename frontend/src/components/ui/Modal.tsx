@@ -1,5 +1,5 @@
 import { Maximize2, Minimize2 } from 'lucide-react'
-import { useState, type PropsWithChildren, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type PropsWithChildren, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from './cn'
 import { Button } from './Button'
@@ -20,6 +20,9 @@ type Props = PropsWithChildren & {
   allowFullscreen?: boolean
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 export function Modal({
   open,
   title,
@@ -34,6 +37,50 @@ export function Modal({
   // a maximized state carrying over to the next unrelated item feels like a
   // bug, not a preference worth remembering.
   const [fullscreen, setFullscreen] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+
+  // Keyboard access: Escape closes (same as clicking the backdrop), Tab is
+  // trapped inside the dialog so it never silently moves focus onto the
+  // page content sitting behind the backdrop, and focus both moves into
+  // the dialog on open and returns to whatever triggered it on close —
+  // without this a keyboard/screen-reader user loses their place entirely
+  // once the modal unmounts.
+  useEffect(() => {
+    if (!open) return
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const node = dialogRef.current
+    const focusable = node?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+    ;(focusable?.[0] ?? node)?.focus()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !node) return
+      const items = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => el.offsetParent !== null,
+      )
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true)
+      previouslyFocused?.focus?.()
+    }
+  }, [open, onClose])
+
   if (!open) return null
 
   return createPortal(
@@ -46,8 +93,11 @@ export function Modal({
 
       <div className={cn('absolute inset-0 flex items-center justify-center', fullscreen ? 'p-0' : 'p-4')}>
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
+          aria-labelledby={title ? titleId : undefined}
+          tabIndex={-1}
           className={cn(
             // flex-col + max-h caps the whole dialog to the viewport (minus
             // the surrounding p-4) at any zoom level or screen size; header
@@ -75,7 +125,7 @@ export function Modal({
             // without min-w-0 here nothing below it, however it
             // truncates/wraps internally, ever gets the chance to.
             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-ase-border px-6 py-4">
-              <div className="min-w-0 flex-1 text-sm font-semibold text-ase-text">{title}</div>
+              <div id={titleId} className="min-w-0 flex-1 text-sm font-semibold text-ase-text">{title}</div>
               <div className="flex shrink-0 items-center gap-2">
                 {allowFullscreen ? (
                   <Button

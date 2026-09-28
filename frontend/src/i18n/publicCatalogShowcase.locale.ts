@@ -1,7 +1,7 @@
 export const publicCatalogShowcaseEn = {
   nav: 'Catalog',
   title: 'Explore the catalog',
-  subtitle: 'Products, courses, books and resources — browse everything before you sign up.',
+  subtitle: 'Products, courses, books and resources — browse everything, prices included, before you sign up.',
   searchPlaceholder: 'Search by title or category…',
   view: {
     grid: 'Grid',
@@ -29,19 +29,35 @@ export const publicCatalogShowcaseEn = {
   free: 'Free',
   rating: '{{rating}} ({{count}})',
   noRating: 'No reviews yet',
-  cta: 'Sign up to unlock',
-  priceHidden: 'Sign up to see the price',
-  descriptionMore: 'Show more',
-  descriptionLess: 'Show less',
+  viewDetails: 'View details',
+  preview: 'Preview',
   loadError: 'Could not load the catalog. Try again later.',
   empty: 'No items match these filters.',
   emptyHint: 'Try a different search term, or clear the selected category and tags.',
+  detail: {
+    back: 'Back to catalog',
+    loadError: 'Could not load this item.',
+    notFound: {
+      title: 'Item not found',
+      description: 'This item may have been unpublished or the link is incorrect.',
+    },
+    preview: 'View free preview',
+    aboutTitle: 'About this item',
+    ctaBuy: 'Buy now',
+    ctaSignup: 'Sign up to buy',
+    shareHint: 'Share this page — anyone can view it, no account needed.',
+  },
+  previewModal: {
+    title: 'Free preview',
+    notAvailable: 'No preview available',
+    notAvailableHint: 'The author hasn’t uploaded a free sample for this item yet.',
+  },
 }
 
 export const publicCatalogShowcaseEs = {
   nav: 'Catálogo',
   title: 'Explora el catálogo',
-  subtitle: 'Productos, cursos, libros y recursos — mira todo antes de registrarte.',
+  subtitle: 'Productos, cursos, libros y recursos — mira todo, con precio incluido, antes de registrarte.',
   searchPlaceholder: 'Buscar por título o categoría…',
   view: {
     grid: 'Cuadrícula',
@@ -69,11 +85,27 @@ export const publicCatalogShowcaseEs = {
   free: 'Gratis',
   rating: '{{rating}} ({{count}})',
   noRating: 'Sin valoraciones todavía',
-  cta: 'Regístrate para desbloquear',
-  priceHidden: 'Regístrate para ver el precio',
-  descriptionMore: 'Ver más',
-  descriptionLess: 'Ver menos',
+  viewDetails: 'Ver ficha',
+  preview: 'Vista previa',
   loadError: 'No se pudo cargar el catálogo. Inténtalo de nuevo más tarde.',
   empty: 'Ningún ítem coincide con estos filtros.',
   emptyHint: 'Prueba otro término de búsqueda, o borra la categoría y las etiquetas seleccionadas.',
+  detail: {
+    back: 'Volver al catálogo',
+    loadError: 'No se pudo cargar este ítem.',
+    notFound: {
+      title: 'Ítem no encontrado',
+      description: 'Puede que se haya despublicado o que el enlace sea incorrecto.',
+    },
+    preview: 'Ver vista previa gratuita',
+    aboutTitle: 'Sobre este ítem',
+    ctaBuy: 'Comprar ahora',
+    ctaSignup: 'Regístrate para comprar',
+    shareHint: 'Comparte esta página — cualquiera puede verla, sin necesidad de cuenta.',
+  },
+  previewModal: {
+    title: 'Vista previa gratuita',
+    notAvailable: 'No hay vista previa disponible',
+    notAvailableHint: 'El autor todavía no ha subido una muestra gratuita para este ítem.',
+  },
 }

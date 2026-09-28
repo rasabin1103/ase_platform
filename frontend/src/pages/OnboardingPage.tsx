@@ -93,7 +93,7 @@ export function OnboardingPage() {
     },
   })
 
-  const display = meQuery.data?.display_name ?? meQuery.data?.email ?? 'your account'
+  const display = meQuery.data?.display_name ?? meQuery.data?.email ?? (t('onboardingPage.yourAccount') as string)
 
   // ---- incoming member invites ----
 
@@ -167,26 +167,26 @@ export function OnboardingPage() {
     <div className="space-y-6">
       <div>
         <Badge variant="info" className="w-fit">
-          Onboarding
+          {t('onboardingPage.badge')}
         </Badge>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ase-text">Welcome, {display}</h1>
-        <p className="mt-1 text-sm text-ase-text2">
-          You don’t have an organization yet. Create one to start, create an individual workspace, join an existing
-          organization, or accept an invite.
+        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ase-text">
+          {String(t('onboardingPage.welcomeTitle')).replace('{{name}}', display)}
+        </h1>
+        <p className="mt-1 text-sm text-ase-text2">{t('onboardingPage.welcomeBody')}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2" interactive>
-          <div className="text-sm font-semibold text-ase-text">Create organization</div>
-          <div className="mt-1 text-sm text-ase-text2">Primary path for teams and businesses.</div>
+          <div className="text-sm font-semibold text-ase-text">{t('onboardingPage.create.title')}</div>
+          <div className="mt-1 text-sm text-ase-text2">{t('onboardingPage.create.subtitle')}</div>
 
           <form
             className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2"
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
           >
             <div className="sm:col-span-2">
-              <label htmlFor="onboarding-org-name" className="mb-1 block text-xs font-medium text-ase-muted">organization_name</label>
+              <label htmlFor="onboarding-org-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name') as string}</label>
               <Input
                 id="onboarding-org-name"
                 placeholder="Acme Corporation"
@@ -201,29 +201,31 @@ export function OnboardingPage() {
             </div>
 
             <div>
-              <label htmlFor="onboarding-org-slug" className="mb-1 block text-xs font-medium text-ase-muted">organization_slug</label>
+              <label htmlFor="onboarding-org-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug') as string}</label>
               <Input id="onboarding-org-slug" placeholder="acme-corp" {...form.register('organization_slug')} />
             </div>
 
             <div>
-              <label htmlFor="onboarding-org-type" className="mb-1 block text-xs font-medium text-ase-muted">organization_type</label>
+              <label htmlFor="onboarding-org-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type') as string}</label>
               <Select id="onboarding-org-type" {...form.register('organization_type')}>
-                <option value="individual">individual</option>
-                <option value="business">business</option>
-                <option value="enterprise">enterprise</option>
-                <option value="academy">academy</option>
+                <option value="individual">{t('organizationsPage.types.individual') as string}</option>
+                <option value="business">{t('organizationsPage.types.business') as string}</option>
+                <option value="enterprise">{t('organizationsPage.types.enterprise') as string}</option>
+                <option value="academy">{t('organizationsPage.types.academy') as string}</option>
               </Select>
             </div>
 
             {mutation.isError && (
-              <div className="sm:col-span-2 rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
-                Could not create organization. Check slug duplicates/permissions.
+              <div role="alert" className="sm:col-span-2 rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                {t('onboardingPage.create.error')}
               </div>
             )}
 
             <div className="sm:col-span-2">
               <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creating…' : 'Create organization'}
+                {mutation.isPending
+                  ? (t('onboardingPage.create.submitting') as string)
+                  : (t('onboardingPage.create.submit') as string)}
               </Button>
             </div>
           </form>
@@ -231,8 +233,8 @@ export function OnboardingPage() {
 
         <div className="space-y-4">
           <Card className="p-6" interactive>
-            <div className="text-sm font-semibold text-ase-text">Individual workspace</div>
-            <div className="mt-1 text-sm text-ase-text2">Quick setup for solo work.</div>
+            <div className="text-sm font-semibold text-ase-text">{t('onboardingPage.individual.title')}</div>
+            <div className="mt-1 text-sm text-ase-text2">{t('onboardingPage.individual.subtitle')}</div>
             <div className="mt-4">
               <Button
                 variant="secondary"
@@ -257,10 +259,12 @@ export function OnboardingPage() {
                   })
                 }}
               >
-                {individualMutation.isPending ? 'Creating…' : 'Create individual workspace'}
+                {individualMutation.isPending
+                  ? (t('onboardingPage.individual.submitting') as string)
+                  : (t('onboardingPage.individual.submit') as string)}
               </Button>
               {individualMutation.isError ? (
-                <p className="mt-2 text-xs text-ase-error">Could not create the workspace. Please try again.</p>
+                <p className="mt-2 text-xs text-ase-error">{t('onboardingPage.individual.error')}</p>
               ) : null}
             </div>
           </Card>

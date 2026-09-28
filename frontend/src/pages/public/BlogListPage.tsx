@@ -108,7 +108,7 @@ export function BlogListPage() {
                     <p className="line-clamp-3 text-sm text-ase-text2">{post.excerpt}</p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-ase-muted">
                       {post.published_at && <span>{new Date(post.published_at).toLocaleDateString()}</span>}
-                      {post.author_name && <span>· {post.author_name}</span>}
+                      {post.author_name && <span>· {post.author_name} · ASE</span>}
                     </div>
                   </div>
                 </Card>

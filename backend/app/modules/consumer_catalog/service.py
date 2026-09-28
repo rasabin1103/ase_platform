@@ -1023,6 +1023,89 @@ class ConsumerCatalogService:
             detail="No viewable file was found in this item's configured folder",
         )
 
+    def get_public_preview_content(self, item: CatalogItem) -> ResourceContentRead:
+        """The "muestra" a completely anonymous visitor can see — no
+        account, no ownership check at all, unlike `get_resource_content`
+        above (which still needs a `user_id` to decide owner-vs-not). Used
+        by the public catalog showcase's "View sample" button (see
+        catalog_showcase/service.py), so it deliberately never serves more
+        than a genuine non-owner already gets there:
+
+        - Books: only the "preview" subfolder (a short free sample the
+          admin uploaded), same as a non-owner sees in get_resource_content.
+          No "preview" folder means no public sample for that book.
+        - Everything else (product/course/resource): a preview*.pdf if the
+          admin uploaded one, matching the non-owner branch above. Failing
+          that, the plain README.md if the folder has one — READMEs
+          describe the deliverable and are meant to be public-facing
+          documentation, not the paid content itself (which is the
+          packaged .zip, gated separately by download/purchase). No
+          preview*.pdf and no README means no public sample.
+
+        The caller is responsible for confirming this item is actually
+        public (published) before calling this — this method itself has no
+        idea who's asking or what status the item is in, same as every
+        other private `_...resource...` helper it reuses."""
+        item = self._require_resource_item(item.slug)
+        is_book = item.type == CatalogItemType.book
+
+        if is_book:
+            preview_entries = self._list_resource_subfolder(item, "preview")
+            preview_entry = self._find_folder_entry_optional(preview_entries, matcher=lambda _name: True)
+            if preview_entry is not None:
+                return self._binary_resource_content(item, entry=preview_entry, kind="pdf", is_preview=True)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No preview available for this item")
+
+        entries = self._list_resource_folder(item)
+        preview_entry = self._find_folder_entry_optional(entries, matcher=_looks_like_preview_pdf)
+        if preview_entry is not None:
+            return self._binary_resource_content(item, entry=preview_entry, kind="pdf", is_preview=True)
+
+        readme = self._find_folder_entry_optional(entries, matcher=lambda name: name.lower() == "readme.md")
+        if readme is not None:
+            return self._text_resource_content(item, entry=readme, kind="markdown")
+
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No preview available for this item")
+
+    def has_public_preview(self, item: CatalogItem) -> bool:
+        """Cheap existence check for the public showcase's "Preview" button
+        (see catalog_showcase/service.py's get_item) — mirrors
+        get_public_preview_content's branching (book: non-empty "preview"
+        subfolder; else: a preview*.pdf, or failing that a README.md) but
+        only lists the folder, never fetches or base64-encodes file bytes,
+        so it's cheap enough to run on the single-item detail page. Not
+        called from the list endpoint, same rule as `_resource_content_exists`
+        above — one GitHub call per browsed item is fine, one per catalog
+        row is not.
+
+        Fails open on anything other than a clean 404 (missing token,
+        GitHub outage) so a transient issue never wrongly hides a button
+        that's actually fine — clicking through would surface a clear error
+        instead."""
+        if not item.repo_path or not self._resolve_repo_url(item):
+            return False
+        if not settings.GITHUB_ACCESS_TOKEN:
+            return True
+        repo_url = self._resolve_repo_url(item)
+        is_book = item.type == CatalogItemType.book
+        path = f"{item.repo_path.rstrip('/')}/preview" if is_book else item.repo_path
+        try:
+            entries = list_directory(repo_url=repo_url, path=path, token=settings.GITHUB_ACCESS_TOKEN)
+        except GithubContentError as exc:
+            if exc.status_code == 404:
+                return False
+            return True
+        if is_book:
+            return bool(entries)
+        return any(
+            entry.get("type") == "file"
+            and (
+                _looks_like_preview_pdf(str(entry.get("name", "")))
+                or str(entry.get("name", "")).lower() == "readme.md"
+            )
+            for entry in entries
+        )
+
     def _text_resource_content(self, item: CatalogItem, *, entry: dict, kind: str) -> ResourceContentRead:
         raw = self._fetch_resource_bytes(item, path=entry["path"])
         text = raw.decode("utf-8", errors="replace")

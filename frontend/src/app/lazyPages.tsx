@@ -29,6 +29,9 @@ export const TermsPage = lazy(() => import('../pages/public/TermsPage').then((m)
 export const CatalogShowcasePage = lazy(() =>
   import('../pages/public/CatalogShowcasePage').then((m) => ({ default: m.CatalogShowcasePage })),
 )
+export const CatalogShowcaseDetailPage = lazy(() =>
+  import('../pages/public/CatalogShowcaseDetailPage').then((m) => ({ default: m.CatalogShowcaseDetailPage })),
+)
 
 // --- Auth (login/register/password) ---
 export const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })))

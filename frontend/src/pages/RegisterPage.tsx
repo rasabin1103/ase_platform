@@ -28,7 +28,7 @@ function buildSchema(t: (key: string) => unknown) {
     first_name: z.string().max(100).optional().or(z.literal('')),
     last_name: z.string().max(100).optional().or(z.literal('')),
     display_name: z.string().max(150).optional().or(z.literal('')),
-    country: z.string().length(2, 'Please select your country'),
+    country: z.string().length(2, t('auth.register.countryRequired') as string),
   })
 }
 
@@ -96,23 +96,23 @@ export function RegisterPage() {
               )}
             >
               <div>
-                <label htmlFor="register-display-name" className="mb-1 block text-xs font-medium text-ase-muted">Display name</label>
+                <label htmlFor="register-display-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.displayName') as string}</label>
                 <Input id="register-display-name" autoComplete="nickname" placeholder="Roberto Arce" {...form.register('display_name')} />
               </div>
 
               <div>
-                <label htmlFor="register-email" className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
+                <label htmlFor="register-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.email') as string}</label>
                 <Input id="register-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
                 {form.formState.errors.email && (
-                  <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="register-password" className="mb-1 block text-xs font-medium text-ase-muted">Password</label>
+                <label htmlFor="register-password" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.password') as string}</label>
                 <Input id="register-password" type="password" autoComplete="new-password" {...form.register('plain_password')} />
                 {form.formState.errors.plain_password ? (
-                  <p className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>
                 ) : (
                   <p className="mt-1 text-xs text-ase-muted">{t('password.hint') as string}</p>
                 )}
@@ -120,11 +120,11 @@ export function RegisterPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="register-first-name" className="mb-1 block text-xs font-medium text-ase-muted">First name</label>
+                  <label htmlFor="register-first-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.firstName') as string}</label>
                   <Input id="register-first-name" autoComplete="given-name" {...form.register('first_name')} />
                 </div>
                 <div>
-                  <label htmlFor="register-last-name" className="mb-1 block text-xs font-medium text-ase-muted">Last name</label>
+                  <label htmlFor="register-last-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.lastName') as string}</label>
                   <Input id="register-last-name" autoComplete="family-name" {...form.register('last_name')} />
                 </div>
               </div>
@@ -140,13 +140,13 @@ export function RegisterPage() {
                   ))}
                 </Select>
                 {form.formState.errors.country && (
-                  <p className="mt-1 text-sm text-ase-error">{t('auth.register.countryRequired')}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">{t('auth.register.countryRequired')}</p>
                 )}
               </div>
 
               {mutation.isError && (
-                <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
-                  Error al registrarse. Revisa el backend.
+                <div role="alert" className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                  {t('auth.register.genericError')}
                 </div>
               )}
 
