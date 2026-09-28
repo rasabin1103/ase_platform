@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.enums import BillingCycle
 from app.models.plan import Plan
 from app.models.plan_catalog_item import PlanCatalogItem
+from app.models.plan_catalog_item_discount import PlanCatalogItemDiscount
 
 
 class PlansRepository:
@@ -16,6 +17,7 @@ class PlansRepository:
         return (
             selectinload(Plan.features),
             selectinload(Plan.included_catalog_items).selectinload(PlanCatalogItem.catalog_item),
+            selectinload(Plan.discounted_catalog_items).selectinload(PlanCatalogItemDiscount.catalog_item),
         )
 
     def get(self, plan_id: int) -> Plan | None:

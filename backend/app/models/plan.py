@@ -12,6 +12,7 @@ from app.models.mixins import IdPkMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.plan_catalog_item import PlanCatalogItem
+    from app.models.plan_catalog_item_discount import PlanCatalogItemDiscount
     from app.models.plan_feature import PlanFeature
     from app.models.plan_product import PlanProduct
     from app.models.subscription import Subscription
@@ -68,6 +69,23 @@ class Plan(Base, IdPkMixin, TimestampMixin):
     # billing module falls back to a clear error rather than guessing.
     stripe_price_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
+    # --- Download quota / loyalty / discounts ---------------------------
+    # Total downloads/month a subscriber may make across any *included*
+    # catalog item — never gates in-platform viewing, only the actual file
+    # download (see ConsumerCatalogService.download_resource and
+    # app.modules.plans.quota). NULL means no quota is tracked at all
+    # (unlimited downloads), which is also what every plan defaults to, so
+    # existing plans behave exactly as before until an admin opts in.
+    monthly_download_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Extra downloads granted on top of monthly_download_limit for whichever
+    # calendar month a loyalty milestone falls in — see
+    # loyalty_bonus_interval_months and app.modules.plans.quota's
+    # _loyalty_bonus_for_month. NULL/0 means no loyalty bonus configured.
+    loyalty_bonus_downloads: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Every how many full months of subscription tenure the loyalty bonus
+    # above is granted (e.g. 3 = every 3rd month of being subscribed).
+    loyalty_bonus_interval_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="plan")
     products: Mapped[list["PlanProduct"]] = relationship(
         back_populates="plan",
@@ -89,6 +107,15 @@ class Plan(Base, IdPkMixin, TimestampMixin):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="PlanCatalogItem.display_order",
+    )
+    # Per-item discounts on catalog items this plan does NOT include — a
+    # subscriber benefit for buying other things separately (see
+    # BillingService.checkout_catalog_item). Distinct from
+    # included_catalog_items, which are already free to the subscriber.
+    discounted_catalog_items: Mapped[list["PlanCatalogItemDiscount"]] = relationship(
+        back_populates="plan",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

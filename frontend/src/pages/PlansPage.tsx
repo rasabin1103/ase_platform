@@ -16,7 +16,8 @@ import { Badge } from '../components/ui/Badge'
 import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
 import { CatalogItemPicker } from '../components/admin/premium/CatalogItemPicker'
-import type { BillingCycle, Plan, PlanStatus } from '../types/plan.types'
+import { CatalogItemDiscountPicker } from '../components/admin/premium/CatalogItemDiscountPicker'
+import type { BillingCycle, Plan, PlanCatalogItemDiscountInput, PlanStatus } from '../types/plan.types'
 import { useI18n } from '../i18n'
 import { cn } from '../components/ui/cn'
 import { Switch } from '../components/ui/Switch'
@@ -39,6 +40,9 @@ type CreateValues = {
   short_description_en?: string | ''
   description_en?: string | ''
   cta_label_en?: string | ''
+  monthly_download_limit?: string | ''
+  loyalty_bonus_downloads?: string | ''
+  loyalty_bonus_interval_months?: string | ''
 }
 
 type EditValues = {
@@ -58,6 +62,11 @@ type EditValues = {
   short_description_en?: string | ''
   description_en?: string | ''
   cta_label_en?: string | ''
+  monthly_download_limit?: string | ''
+  loyalty_bonus_downloads?: string | ''
+  loyalty_bonus_interval_months?: string | ''
+  clear_monthly_download_limit?: boolean
+  clear_loyalty_bonus?: boolean
 }
 
 function fmtMoney(price: string | null, currency: string) {
@@ -76,6 +85,8 @@ export function PlansPage() {
   const [createFocus, setCreateFocus] = useState<boolean>(false)
   const [createCatalogItemIds, setCreateCatalogItemIds] = useState<number[]>([])
   const [editCatalogItemIds, setEditCatalogItemIds] = useState<number[]>([])
+  const [createDiscountItems, setCreateDiscountItems] = useState<PlanCatalogItemDiscountInput[]>([])
+  const [editDiscountItems, setEditDiscountItems] = useState<PlanCatalogItemDiscountInput[]>([])
 
   const catalogQuery = useQuery({
     queryKey: ['admin-catalog', 'for-plan-picker'],
@@ -121,6 +132,21 @@ export function PlansPage() {
         short_description_en: z.string().max(240).optional().or(z.literal('')),
         description_en: z.string().max(4000).optional().or(z.literal('')),
         cta_label_en: z.string().max(80).optional().or(z.literal('')),
+        monthly_download_limit: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        loyalty_bonus_downloads: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        loyalty_bonus_interval_months: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 1), t('plansPage.errors.intervalInvalid') as string),
       }),
     [t],
   )
@@ -152,6 +178,21 @@ export function PlansPage() {
         short_description_en: z.string().max(240).optional().or(z.literal('')),
         description_en: z.string().max(4000).optional().or(z.literal('')),
         cta_label_en: z.string().max(80).optional().or(z.literal('')),
+        monthly_download_limit: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        loyalty_bonus_downloads: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        loyalty_bonus_interval_months: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 1), t('plansPage.errors.intervalInvalid') as string),
       }),
     [t],
   )
@@ -194,6 +235,9 @@ export function PlansPage() {
       short_description_en: '',
       description_en: '',
       cta_label_en: '',
+      monthly_download_limit: '',
+      loyalty_bonus_downloads: '',
+      loyalty_bonus_interval_months: '',
     },
   })
 
@@ -219,6 +263,9 @@ export function PlansPage() {
       short_description_en: '',
       description_en: '',
       cta_label_en: '',
+      monthly_download_limit: '',
+      loyalty_bonus_downloads: '',
+      loyalty_bonus_interval_months: '',
     },
   })
 
@@ -245,8 +292,12 @@ export function PlansPage() {
         short_description_en: '',
         description_en: '',
         cta_label_en: '',
+        monthly_download_limit: '',
+        loyalty_bonus_downloads: '',
+        loyalty_bonus_interval_months: '',
       })
       setCreateCatalogItemIds([])
+      setCreateDiscountItems([])
       await queryClient.invalidateQueries({ queryKey: ['plans'] })
     },
   })
@@ -456,8 +507,22 @@ export function PlansPage() {
                                 short_description_en: p.short_description_en ?? '',
                                 description_en: p.description_en ?? '',
                                 cta_label_en: p.cta_label_en ?? '',
+                                monthly_download_limit:
+                                  typeof p.monthly_download_limit === 'number' ? String(p.monthly_download_limit) : '',
+                                loyalty_bonus_downloads:
+                                  typeof p.loyalty_bonus_downloads === 'number' ? String(p.loyalty_bonus_downloads) : '',
+                                loyalty_bonus_interval_months:
+                                  typeof p.loyalty_bonus_interval_months === 'number'
+                                    ? String(p.loyalty_bonus_interval_months)
+                                    : '',
                               })
                               setEditCatalogItemIds((p.included_catalog_items ?? []).map((ci) => ci.catalog_item_id))
+                              setEditDiscountItems(
+                                (p.discount_items ?? []).map((d) => ({
+                                  catalog_item_id: d.catalog_item_id,
+                                  discount_percent: Number(d.discount_percent),
+                                })),
+                              )
                             }}
                           >
                             {t('plansPage.actions.edit')}
@@ -502,6 +567,12 @@ export function PlansPage() {
                   short_description_en: values.short_description_en ? values.short_description_en.trim() : null,
                   description_en: values.description_en ? values.description_en.trim() : null,
                   cta_label_en: values.cta_label_en ? values.cta_label_en.trim() : null,
+                  monthly_download_limit: values.monthly_download_limit ? Number(values.monthly_download_limit) : null,
+                  loyalty_bonus_downloads: values.loyalty_bonus_downloads ? Number(values.loyalty_bonus_downloads) : null,
+                  loyalty_bonus_interval_months: values.loyalty_bonus_interval_months
+                    ? Number(values.loyalty_bonus_interval_months)
+                    : null,
+                  discount_items: createDiscountItems,
                 }),
               )}
             >
@@ -631,6 +702,64 @@ export function PlansPage() {
                 />
               </div>
 
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+                <div className="text-xs font-medium text-ase-muted">{t('plansPage.create.fields.downloadQuota')}</div>
+                <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.downloadQuotaHint')}</p>
+                <div>
+                  <label htmlFor="plan-create-monthly-download-limit" className="mb-1 block text-xs font-medium text-ase-muted">
+                    {t('plansPage.create.fields.monthlyDownloadLimit')}
+                  </label>
+                  <Input
+                    id="plan-create-monthly-download-limit"
+                    inputMode="numeric"
+                    placeholder={t('plansPage.create.placeholders.unlimited') as string}
+                    {...createForm.register('monthly_download_limit')}
+                  />
+                  {createForm.formState.errors.monthly_download_limit && (
+                    <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.monthly_download_limit.message}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="plan-create-loyalty-bonus-downloads" className="mb-1 block text-xs font-medium text-ase-muted">
+                      {t('plansPage.create.fields.loyaltyBonusDownloads')}
+                    </label>
+                    <Input
+                      id="plan-create-loyalty-bonus-downloads"
+                      inputMode="numeric"
+                      placeholder="0"
+                      {...createForm.register('loyalty_bonus_downloads')}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="plan-create-loyalty-bonus-interval" className="mb-1 block text-xs font-medium text-ase-muted">
+                      {t('plansPage.create.fields.loyaltyBonusIntervalMonths')}
+                    </label>
+                    <Input
+                      id="plan-create-loyalty-bonus-interval"
+                      inputMode="numeric"
+                      placeholder={t('plansPage.create.placeholders.everyMonths') as string}
+                      {...createForm.register('loyalty_bonus_interval_months')}
+                    />
+                    {createForm.formState.errors.loyalty_bonus_interval_months && (
+                      <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.loyalty_bonus_interval_months.message}</p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.loyaltyBonusHint')}</p>
+              </div>
+
+              <div>
+                <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.discountItems')}</div>
+                <p className="mb-2 text-[11px] text-ase-muted">{t('plansPage.create.helpers.discountItemsHint')}</p>
+                <CatalogItemDiscountPicker
+                  items={catalogItems}
+                  excludedIds={createCatalogItemIds}
+                  value={createDiscountItems}
+                  onChange={setCreateDiscountItems}
+                />
+              </div>
+
               {createMutation.isError && (
                 <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
                   {t('plansPage.create.error')}
@@ -695,6 +824,20 @@ export function PlansPage() {
                     description_en:
                       dirty.description_en && values.description_en ? values.description_en.trim() : null,
                     cta_label_en: dirty.cta_label_en && values.cta_label_en ? values.cta_label_en.trim() : null,
+                    monthly_download_limit: values.monthly_download_limit ? Number(values.monthly_download_limit) : null,
+                    loyalty_bonus_downloads: values.loyalty_bonus_downloads ? Number(values.loyalty_bonus_downloads) : null,
+                    loyalty_bonus_interval_months: values.loyalty_bonus_interval_months
+                      ? Number(values.loyalty_bonus_interval_months)
+                      : null,
+                    // Emptied a previously-set field: the numeric value above
+                    // sends null, which PlanUpdate treats as "leave
+                    // unchanged" — these explicit flags are the only way to
+                    // actually blank it out (see PlanUpdate docstring).
+                    clear_monthly_download_limit: dirty.monthly_download_limit && !values.monthly_download_limit,
+                    clear_loyalty_bonus:
+                      (dirty.loyalty_bonus_downloads && !values.loyalty_bonus_downloads) ||
+                      (dirty.loyalty_bonus_interval_months && !values.loyalty_bonus_interval_months),
+                    discount_items: editDiscountItems,
                   },
                 })
               })}
@@ -821,6 +964,64 @@ export function PlansPage() {
             <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.catalogItems')}</div>
             <p className="mb-2 text-[11px] text-ase-muted">{t('plansPage.create.helpers.catalogItemsHint')}</p>
             <CatalogItemPicker items={catalogItems} selectedIds={editCatalogItemIds} onChange={setEditCatalogItemIds} />
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+            <div className="text-xs font-medium text-ase-muted">{t('plansPage.create.fields.downloadQuota')}</div>
+            <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.downloadQuotaHint')}</p>
+            <div>
+              <label htmlFor="plan-edit-monthly-download-limit" className="mb-1 block text-xs font-medium text-ase-muted">
+                {t('plansPage.create.fields.monthlyDownloadLimit')}
+              </label>
+              <Input
+                id="plan-edit-monthly-download-limit"
+                inputMode="numeric"
+                placeholder={t('plansPage.create.placeholders.unlimited') as string}
+                {...editForm.register('monthly_download_limit')}
+              />
+              {editForm.formState.errors.monthly_download_limit && (
+                <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.monthly_download_limit.message}</p>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="plan-edit-loyalty-bonus-downloads" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('plansPage.create.fields.loyaltyBonusDownloads')}
+                </label>
+                <Input
+                  id="plan-edit-loyalty-bonus-downloads"
+                  inputMode="numeric"
+                  placeholder="0"
+                  {...editForm.register('loyalty_bonus_downloads')}
+                />
+              </div>
+              <div>
+                <label htmlFor="plan-edit-loyalty-bonus-interval" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('plansPage.create.fields.loyaltyBonusIntervalMonths')}
+                </label>
+                <Input
+                  id="plan-edit-loyalty-bonus-interval"
+                  inputMode="numeric"
+                  placeholder={t('plansPage.create.placeholders.everyMonths') as string}
+                  {...editForm.register('loyalty_bonus_interval_months')}
+                />
+                {editForm.formState.errors.loyalty_bonus_interval_months && (
+                  <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.loyalty_bonus_interval_months.message}</p>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-ase-muted">{t('plansPage.create.helpers.loyaltyBonusHint')}</p>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs font-medium text-ase-muted">{t('plansPage.create.fields.discountItems')}</div>
+            <p className="mb-2 text-[11px] text-ase-muted">{t('plansPage.create.helpers.discountItemsHint')}</p>
+            <CatalogItemDiscountPicker
+              items={catalogItems}
+              excludedIds={editCatalogItemIds}
+              value={editDiscountItems}
+              onChange={setEditDiscountItems}
+            />
           </div>
 
           {updateMutation.isError && (

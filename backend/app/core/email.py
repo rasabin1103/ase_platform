@@ -48,7 +48,14 @@ class _IPv4OnlySMTP(smtplib.SMTP):
         raise last_exc or OSError(f"getaddrinfo returned no IPv4 address for {host!r}")
 
 
-def send_email(*, to_email: str, subject: str, html_body: str, text_body: str | None = None) -> bool:
+def send_email(
+    *,
+    to_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str | None = None,
+    reply_to: str | None = None,
+) -> bool:
     """Best-effort transactional email via the SMTP server configured in
     .env (bring-your-own SMTP — no third-party email API). Returns True if
     the message was handed off to the SMTP server, False if SMTP isn't
@@ -67,6 +74,11 @@ def send_email(*, to_email: str, subject: str, html_body: str, text_body: str | 
     message["Subject"] = subject
     message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
     message["To"] = to_email
+    if reply_to:
+        # Lets the admin mailbox just hit "reply" and have it go straight
+        # to whoever filled in the contact form, instead of back to our own
+        # transactional From address — see public_catalog/service.py.
+        message["Reply-To"] = reply_to
     message.attach(MIMEText(text_body or html_body, "plain", "utf-8"))
     message.attach(MIMEText(html_body, "html", "utf-8"))
 

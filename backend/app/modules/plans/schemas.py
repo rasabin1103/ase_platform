@@ -49,6 +49,27 @@ class PlanCatalogItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PlanCatalogItemDiscountCreate(BaseModel):
+    """One (catalog_item_id, discount_percent) pair for the admin's
+    "discount on items not included" picker — a plain 1-100 percentage off
+    that item's own price, applied at checkout for a subscriber of this
+    plan (see BillingService.checkout_catalog_item)."""
+
+    catalog_item_id: int
+    discount_percent: Decimal = Field(gt=0, le=100)
+
+
+class PlanCatalogItemDiscountRead(BaseModel):
+    id: int
+    catalog_item_id: int
+    discount_percent: Decimal
+    title: str
+    slug: str
+    type: CatalogItemType
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PlanCreate(BaseModel):
     code: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=200)
@@ -77,6 +98,15 @@ class PlanCreate(BaseModel):
     short_description_en: str | None = Field(default=None, max_length=500)
     description_en: str | None = None
     cta_label_en: str | None = Field(default=None, max_length=200)
+    # Download quota / loyalty — None means "not configured", same as every
+    # plan today (unlimited downloads, no bonus). See Plan model docstrings.
+    monthly_download_limit: int | None = Field(default=None, ge=0)
+    loyalty_bonus_downloads: int | None = Field(default=None, ge=0)
+    loyalty_bonus_interval_months: int | None = Field(default=None, ge=1)
+    # Discounts on items this plan does NOT include — see
+    # PlanCatalogItemDiscountCreate. Replaces the whole set on save, same
+    # "replace all" semantics as catalog_item_ids above.
+    discount_items: list[PlanCatalogItemDiscountCreate] | None = None
 
 
 class PlanUpdate(BaseModel):
@@ -98,6 +128,17 @@ class PlanUpdate(BaseModel):
     short_description_en: str | None = Field(default=None, max_length=500)
     description_en: str | None = None
     cta_label_en: str | None = Field(default=None, max_length=200)
+    monthly_download_limit: int | None = Field(default=None, ge=0)
+    loyalty_bonus_downloads: int | None = Field(default=None, ge=0)
+    loyalty_bonus_interval_months: int | None = Field(default=None, ge=1)
+    discount_items: list[PlanCatalogItemDiscountCreate] | None = None
+    # Explicit clear flags: PlanUpdate's normal fields treat None as "leave
+    # unchanged" (see PlansService.update), which is exactly right for
+    # editing but leaves no way to actually blank out a quota/loyalty field
+    # once set. Sending true clears it regardless of what the numeric field
+    # above carries.
+    clear_monthly_download_limit: bool = False
+    clear_loyalty_bonus: bool = False
 
 
 class PlanRead(BaseModel):
@@ -131,8 +172,14 @@ class PlanRead(BaseModel):
     # included_catalog_items instead.
     features: list[PlanFeatureRead] = Field(default_factory=list)
     included_catalog_items: list[PlanCatalogItemRead] = Field(default_factory=list)
+    monthly_download_limit: int | None = None
+    loyalty_bonus_downloads: int | None = None
+    loyalty_bonus_interval_months: int | None = None
+    discount_items: list[PlanCatalogItemDiscountRead] = Field(
+        default_factory=list, validation_alias="discounted_catalog_items",
+    )
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class PlanListResponse(BaseModel):

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { createCheckoutSession } from '../../api/billing.api'
+import { changePlan, createCheckoutSession, type ChangePlanResult } from '../../api/billing.api'
 import { listPlansCatalog } from '../../api/plansCatalog.api'
 import { Eyebrow } from '../ui/Eyebrow'
 import { Button } from '../ui/Button'
@@ -61,6 +61,8 @@ export function PricingSection({ compact }: { compact?: boolean }) {
   const navigate = useNavigate()
   const [billing, setBilling] = useState<Billing>('monthly')
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [changePlanError, setChangePlanError] = useState<string | null>(null)
+  const [changePlanResult, setChangePlanResult] = useState<ChangePlanResult | null>(null)
 
   const checkoutMutation = useMutation({
     mutationFn: (planId: number) => createCheckoutSession(planId),
@@ -69,6 +71,23 @@ export function PricingSection({ compact }: { compact?: boolean }) {
     },
     onError: () => {
       setCheckoutError(t('pricing.checkoutError') as string)
+    },
+  })
+
+  // Switches an EXISTING active subscription to a different plan in place
+  // (see BillingService.change_plan) — never opens a new Checkout session.
+  // Direction (upgrade/downgrade) and timing (immediate/next cycle) are
+  // decided server-side; we just relay the result back to the visitor.
+  const changePlanMutation = useMutation({
+    mutationFn: (planId: number) => changePlan(planId),
+    onSuccess: async (result) => {
+      setChangePlanError(null)
+      setChangePlanResult(result)
+      await auth.loadCurrentUser()
+    },
+    onError: () => {
+      setChangePlanResult(null)
+      setChangePlanError(t('pricing.changePlanError') as string)
     },
   })
 
@@ -195,6 +214,29 @@ export function PricingSection({ compact }: { compact?: boolean }) {
           </div>
         ) : null}
 
+        {changePlanError ? (
+          <div className="mt-8 rounded-2xl border border-ase-error/25 bg-ase-error/5 px-5 py-4 text-center text-sm text-ase-error">
+            {changePlanError}
+          </div>
+        ) : null}
+
+        {changePlanResult ? (
+          <div className="mt-8 rounded-2xl border border-emerald-300/25 bg-emerald-300/5 px-5 py-4 text-center text-sm text-emerald-200">
+            {changePlanResult.direction === 'upgrade'
+              ? (t('pricing.changePlanSuccessUpgrade') as string)
+              : String(t('pricing.changePlanSuccessDowngrade')).replace(
+                  '{{date}}',
+                  changePlanResult.effective_at
+                    ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'es-ES', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      }).format(new Date(changePlanResult.effective_at))
+                    : '',
+                )}
+          </div>
+        ) : null}
+
         {plansQuery.isLoading ? (
           <div className={cn('mt-12 grid grid-cols-1 gap-6', 'lg:grid-cols-3')} aria-busy="true" aria-live="polite">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -248,8 +290,18 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 Boolean(plan.stripe_price_id) &&
                 !isComingSoon &&
                 !isCurrentPlan
+              // Already has a different active/trialing paid subscription —
+              // clicking another plan's button should change that
+              // subscription in place (see changePlanMutation) rather than
+              // start a brand new Checkout session for a second one.
+              const isSubscriber =
+                auth.isAuthenticated &&
+                Boolean(auth.currentUser?.plan_code) &&
+                (auth.currentUser?.subscription_status === 'active' ||
+                  auth.currentUser?.subscription_status === 'trialing')
               const ctaHref = isSelfServeTier ? (auth.isAuthenticated ? '/dashboard' : '/register') : '/contact'
               const isCheckingOutThisPlan = checkoutMutation.isPending && checkoutMutation.variables === plan.id
+              const isChangingToThisPlan = changePlanMutation.isPending && changePlanMutation.variables === plan.id
 
               return (
                 <Card
@@ -312,6 +364,20 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                     ) : isComingSoon ? (
                       <Button size="lg" variant="secondary" className="w-full cursor-not-allowed opacity-60" disabled>
                         {t('pricing.comingSoonCta')}
+                      </Button>
+                    ) : canCheckout && isSubscriber ? (
+                      <Button
+                        size="lg"
+                        variant={tone === 'pro' ? 'primary' : tone === 'robust' ? 'outline' : 'secondary'}
+                        className="w-full"
+                        disabled={changePlanMutation.isPending}
+                        onClick={() => {
+                          setChangePlanError(null)
+                          setChangePlanResult(null)
+                          changePlanMutation.mutate(plan.id)
+                        }}
+                      >
+                        {isChangingToThisPlan ? (t('pricing.changePlanLoading') as string) : (t('pricing.changePlanCta') as string)}
                       </Button>
                     ) : canCheckout ? (
                       <Button

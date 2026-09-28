@@ -64,3 +64,22 @@ class SubscriptionActionResponse(BaseModel):
     starts_at: datetime
     ends_at: datetime | None
     current_period_end: datetime | None
+
+
+class ChangePlanCreate(BaseModel):
+    plan_id: int
+
+
+class ChangePlanResponse(BaseModel):
+    """See BillingService.change_plan — direction is inferred by comparing
+    prices: moving to a pricier plan is an "upgrade" applied immediately
+    (with a prorated charge for the rest of this period); moving to a
+    cheaper one is a "downgrade" scheduled for the start of the next
+    billing cycle, per the "Política general de suscripciones" FAQ."""
+
+    direction: Literal["upgrade", "downgrade"]
+    effective: Literal["immediate", "next_cycle"]
+    new_plan_id: int
+    # Only set for a downgrade — the date the new (lower) price actually
+    # takes over. Null for an immediate upgrade.
+    effective_at: datetime | None = None

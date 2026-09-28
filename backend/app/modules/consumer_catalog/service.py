@@ -25,6 +25,7 @@ from app.models.test_approved_ref import TestApprovedRef
 from app.models.user_preferences_profile import UserPreferencesProfile
 from app.modules.auth.dependencies import is_super_admin
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
+from app.modules.plans.quota import enforce_download_quota, get_active_subscription_and_plan, record_download_event
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.ratings_repository import IMPACT_TAGS, CatalogItemRatingsRepository, RatingSummary
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
@@ -365,6 +366,20 @@ class ConsumerCatalogService:
 
         return detail
 
+    def _discount_percent_map(self, user_id: int) -> dict[int, Decimal]:
+        """catalog_item_id -> discount_percent for every item the caller's
+        active plan discounts (see PlanCatalogItemDiscount). Only items a
+        plan does NOT include ever appear here — an included item is
+        always free to the subscriber, never sold at a discount. Computed
+        once per request (list or detail) and reused across every item via
+        _to_read, never a per-item query. Empty when the caller has no
+        active plan subscription, or their plan defines no item discounts."""
+        found = get_active_subscription_and_plan(self.db, user_id)
+        if found is None:
+            return {}
+        _, plan = found
+        return {d.catalog_item_id: d.discount_percent for d in plan.discounted_catalog_items}
+
     def _to_read(
         self,
         item: CatalogItem,
@@ -376,6 +391,7 @@ class ConsumerCatalogService:
         my_ratings: dict[int, object] | None = None,
         review_summaries: dict[int, tuple[float, int]] | None = None,
         purchased_at_by_slug: dict[str, datetime] | None = None,
+        discount_percent_by_item_id: dict[int, Decimal] | None = None,
     ) -> CatalogItemRead:
         summary = (rating_summaries or {}).get(item.id)
         my_rating = (my_ratings or {}).get(item.id)
@@ -384,6 +400,12 @@ class ConsumerCatalogService:
         has_new_version = bool(
             item.version_updated_at is not None and purchased_at is not None and item.version_updated_at > purchased_at
         )
+        discount_percent = (discount_percent_by_item_id or {}).get(item.id)
+        discounted_price = None
+        if discount_percent is not None and item.price is not None:
+            discounted_price = (item.price * (Decimal("100") - discount_percent) / Decimal("100")).quantize(
+                Decimal("0.01")
+            )
         return CatalogItemRead(
             id=str(item.uuid),
             uuid=item.uuid,
@@ -399,6 +421,8 @@ class ConsumerCatalogService:
             imageUrl=resolve_catalog_cover_url(item),
             images=[CatalogItemImagePublicRead(url=g["url"], isCover=g["isCover"]) for g in resolve_catalog_gallery(item)],
             price=item.price,
+            discountPercent=discount_percent,
+            discountedPrice=discounted_price,
             currency=item.currency,
             status=item.status,
             level=item.level,
@@ -476,6 +500,7 @@ class ConsumerCatalogService:
         review_summaries = self.ratings.review_summaries_for_items(catalog_item_ids=item_ids)
         permanently_owned = self.permanently_owned_slugs(user_id)
         purchased_at_by_slug = self.purchases.purchased_at_by_slug(user_id)
+        discount_map = self._discount_percent_map(user_id)
         return [
             self._to_read(
                 i,
@@ -486,6 +511,7 @@ class ConsumerCatalogService:
                 my_ratings=my_ratings,
                 review_summaries=review_summaries,
                 purchased_at_by_slug=purchased_at_by_slug,
+                discount_percent_by_item_id=discount_map,
             )
             for i in items
         ]
@@ -1268,8 +1294,21 @@ class ConsumerCatalogService:
         format was never uploaded — this is a query, not a cascade, since
         the caller explicitly asked for one thing.
 
-        Served exactly as stored, no decoding/truncation."""
+        Served exactly as stored, no decoding/truncation. A thin wrapper
+        around `_fetch_resource_download_bytes` — this level owns the two
+        things that must happen exactly once per real download regardless
+        of which of that method's several return branches fires: the plan
+        download-quota check (before) and its usage log (after, only once
+        bytes were actually produced — never for a 404/format-not-found)."""
         item = self._require_resource_access(slug, user_id=user_id)
+        enforce_download_quota(self.db, user_id=user_id, catalog_item=item)
+        raw, filename = self._fetch_resource_download_bytes(item, user_id=user_id, format=format)
+        record_download_event(self.db, user_id=user_id, catalog_item_id=item.id)
+        return raw, filename
+
+    def _fetch_resource_download_bytes(
+        self, item: CatalogItem, *, user_id: int, format: str | None = None
+    ) -> tuple[bytes, str]:
         self._record_resource_view(item, user_id=user_id)
         is_book = item.type == CatalogItemType.book
 

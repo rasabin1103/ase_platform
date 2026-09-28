@@ -228,6 +228,51 @@ export async function downloadResource(slug: string, format?: ResourceDownloadFo
   URL.revokeObjectURL(url)
 }
 
+/** The current user's active plan download quota — see
+ * app.modules.plans.quota. `unlimited: true` covers every case where no
+ * quota applies (no active plan, or the plan simply has no
+ * monthly_download_limit configured) — most users only ever see this. This
+ * never affects in-platform viewing/preview, only the download action
+ * itself (see product decision: "siempre van a poder visualizarse dentro
+ * del plan, la limitación va a ser la descarga"). */
+export type DownloadQuota = {
+  unlimited: boolean
+  limit: number | null
+  used: number | null
+  remaining: number | null
+  loyaltyBonusActive: boolean
+}
+
+export async function getDownloadQuota() {
+  const { data } = await apiClient.get<DownloadQuota>('/consumer-catalog/me/download-quota')
+  return data
+}
+
+/** "Your plan" card on the profile page — see
+ * app.modules.plans.quota.get_plan_summary. `hasActivePlan: false` means
+ * there's no active plan subscription at all (the profile page simply
+ * skips the card in that case). */
+export type PlanSummary = {
+  hasActivePlan: boolean
+  planName: string | null
+  billingCycle: string | null
+  unlimitedDownloads: boolean
+  monthlyDownloadLimit: number | null
+  downloadsUsed: number | null
+  downloadsRemaining: number | null
+  loyaltyBonusDownloads: number | null
+  loyaltyBonusIntervalMonths: number | null
+  loyaltyBonusActive: boolean
+  nextRewardInDays: number | null
+  maxDiscountPercent: string | number | null
+  discountItemCount: number
+}
+
+export async function getMyPlanSummary() {
+  const { data } = await apiClient.get<PlanSummary>('/consumer-catalog/me/plan-summary')
+  return data
+}
+
 export type AudiobookChapter = {
   name: string
   index: number

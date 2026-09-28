@@ -37,6 +37,8 @@ from app.models.book_repo_redemption import BookRepoRedemption
 from app.models.user_verification_token import UserVerificationToken
 from app.models.error_log import ErrorLog
 from app.models.plan_catalog_item import PlanCatalogItem
+from app.models.plan_catalog_item_discount import PlanCatalogItemDiscount
+from app.models.catalog_download_event import CatalogDownloadEvent
 from app.models.pricing_pillar import PricingPillar
 from app.models.pricing_dimension_type import PricingDimensionType
 from app.models.pricing_dimension_level import PricingDimensionLevel
@@ -54,6 +56,7 @@ from app.models.test_approved_ref import TestApprovedRef
 from app.models.consulting_slot import ConsultingSlot
 from app.models.resource_view import ResourceView
 from app.models.user_preferences_profile import UserPreferencesProfile
+from app.models.loyalty_reward_grant import LoyaltyRewardGrant
 
 __all__ = [
     "User",
@@ -95,6 +98,9 @@ __all__ = [
     "UserVerificationToken",
     "ErrorLog",
     "PlanCatalogItem",
+    "PlanCatalogItemDiscount",
+    "CatalogDownloadEvent",
+    "LoyaltyRewardGrant",
     "PricingPillar",
     "PricingDimensionType",
     "PricingDimensionLevel",

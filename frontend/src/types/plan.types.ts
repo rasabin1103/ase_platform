@@ -25,6 +25,22 @@ export type PlanCatalogItem = {
   short_description: string
 }
 
+/** One (catalog_item_id, discount_percent) pair for an item this plan does
+ * NOT include — see PlanCatalogItemDiscountCreate/Read on the backend. */
+export type PlanCatalogItemDiscount = {
+  id: number
+  catalog_item_id: number
+  discount_percent: string | number
+  title: string
+  slug: string
+  type: string
+}
+
+export type PlanCatalogItemDiscountInput = {
+  catalog_item_id: number
+  discount_percent: number
+}
+
 export type Plan = {
   id: number
   code: string
@@ -53,6 +69,13 @@ export type Plan = {
   /** Deprecated free-text bullets — only populated for plans created before the catalog picker existed. */
   features?: PlanFeature[]
   included_catalog_items?: PlanCatalogItem[]
+  /** Shared monthly download quota across every included item — null means unlimited (every plan's default). */
+  monthly_download_limit?: number | null
+  /** Every loyalty_bonus_interval_months, this many extra downloads are added to that month's quota. */
+  loyalty_bonus_downloads?: number | null
+  loyalty_bonus_interval_months?: number | null
+  /** Discounts on items this plan does NOT include — see PlanCatalogItemDiscount above. */
+  discount_items?: PlanCatalogItemDiscount[]
 }
 
 export type PlanListResponse = {
@@ -87,6 +110,10 @@ export type PlanCreateRequest = {
   short_description_en?: string | null
   description_en?: string | null
   cta_label_en?: string | null
+  monthly_download_limit?: number | null
+  loyalty_bonus_downloads?: number | null
+  loyalty_bonus_interval_months?: number | null
+  discount_items?: PlanCatalogItemDiscountInput[] | null
 }
 
 
@@ -113,5 +140,11 @@ export type PlanUpdateRequest = {
   short_description_en?: string | null
   description_en?: string | null
   cta_label_en?: string | null
+  monthly_download_limit?: number | null
+  loyalty_bonus_downloads?: number | null
+  loyalty_bonus_interval_months?: number | null
+  discount_items?: PlanCatalogItemDiscountInput[] | null
+  clear_monthly_download_limit?: boolean
+  clear_loyalty_bonus?: boolean
 }
 

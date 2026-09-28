@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import time
 from datetime import datetime
 
@@ -8,6 +9,8 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.email import send_email
 from app.models.case_study import CaseStudy
 from app.models.catalog_item import CatalogItem
 from app.models.course import Course
@@ -22,6 +25,7 @@ from app.modules.public_catalog.schemas import (
     CatalogByType,
     CatalogPlans,
     CatalogStatsResponse,
+    ContactMessageCreate,
     PlanSavingsRead,
     PlatformStatus,
 )
@@ -65,6 +69,68 @@ def get_plan_savings(db: Session, item_slug: str | None = None) -> list[PlanSavi
         )
     results.sort(key=lambda r: r.savings, reverse=True)
     return results
+
+
+def send_contact_message(payload: ContactMessageCreate) -> bool:
+    """Sends the /contact form straight to the admin mailbox — replaces the
+    old flow where the primary button just opened the *visitor's* own email
+    client (mailto:) with the same effect as the secondary "email us
+    directly" link, so the two buttons did the same thing. This one
+    actually delivers the message without the visitor needing their own
+    mail client configured at all; Reply-To is set to their address so
+    replying from the mailbox goes straight back to them. Returns False
+    (without raising) if SMTP isn't configured, same best-effort contract
+    as every other send_email caller."""
+    is_en = payload.language == "en"
+    company_line = payload.company.strip() if payload.company else None
+
+    rows = [
+        ("Nombre" if not is_en else "Name", html.escape(payload.name)),
+        ("Email", html.escape(payload.email)),
+    ]
+    if company_line:
+        rows.append(("Empresa" if not is_en else "Company", html.escape(company_line)))
+
+    rows_html = "".join(
+        f'<tr><td style="padding:4px 12px 4px 0;color:#94A3B8;font-size:13px;">{label}</td>'
+        f'<td style="padding:4px 0;color:#F8FAFC;font-size:13px;">{value}</td></tr>'
+        for label, value in rows
+    )
+    message_html = html.escape(payload.message).replace("\n", "<br />")
+
+    html_body = f"""\
+<div style="background:#020617;padding:32px 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#0B1220;border:1px solid rgba(255,255,255,0.08);border-radius:16px;">
+    <tr><td style="padding:28px 28px 8px;">
+      <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:20px;color:#F8FAFC;">
+        {"New contact form submission" if is_en else "Nuevo mensaje del formulario de contacto"}
+      </h1>
+      <table role="presentation" cellpadding="0" cellspacing="0">{rows_html}</table>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);
+                  color:#CBD5E1;font-size:14px;line-height:1.6;">{message_html}</div>
+    </td></tr>
+  </table>
+</div>
+"""
+    text_lines = [f"{label}: {value}" for label, value in [
+        ("Nombre" if not is_en else "Name", payload.name),
+        ("Email", payload.email),
+        *([("Empresa" if not is_en else "Company", company_line)] if company_line else []),
+    ]]
+    text_body = "\n".join(text_lines) + "\n\n" + payload.message
+
+    subject = (
+        f"New contact form message from {payload.name}"
+        if is_en
+        else f"Nuevo mensaje de contacto de {payload.name}"
+    )
+    return send_email(
+        to_email=settings.SMTP_FROM_EMAIL,
+        subject=subject,
+        html_body=html_body,
+        text_body=text_body,
+        reply_to=payload.email,
+    )
 
 
 def _safe_count(db: Session, stmt) -> int:
