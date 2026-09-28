@@ -1,6 +1,22 @@
-import type { Plan } from '../../types/plan.types'
+import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 
 export type PricingTier = 'free' | 'pro' | 'business' | 'enterprise'
+
+export type CatalogGroupType = 'product' | 'course' | 'book' | 'resource'
+
+// Same ordering convention as CatalogListPage's TYPE_ORDER — products first,
+// then courses, books, resources, so a plan's "what's included" accordion
+// always lists its categories in the same order regardless of how the admin
+// added items to the plan.
+const CATALOG_TYPE_ORDER: CatalogGroupType[] = ['product', 'course', 'book', 'resource']
+
+function isCatalogGroupType(value: string): value is CatalogGroupType {
+  return (CATALOG_TYPE_ORDER as string[]).includes(value)
+}
+
+export type PlanFeatureGroup =
+  | { kind: 'byType'; type: CatalogGroupType; items: PlanCatalogItem[] }
+  | { kind: 'flat'; items: string[] }
 
 /** Picks the English mirror of a plan text field when the UI is in English
  * and a translation actually exists, falling back to the Spanish source
@@ -112,4 +128,33 @@ export function planFeatureLines(plan: Plan): string[] {
   }
   const rows = (plan.features ?? []).filter((f) => f.is_active !== false)
   return [...rows].sort((a, b) => a.display_order - b.display_order).map((f) => f.text)
+}
+
+/** Same "what's included" data as planFeatureLines, but grouped by catalog
+ * type (products, courses, books, resources) instead of one flat list — so
+ * the pricing card can show "Books ▾ / Resources ▾" collapsible sections
+ * instead of dumping every included item together. Falls back to a single
+ * flat group (the deprecated free-text features, with no type to group by)
+ * for plans that predate the catalog-item picker. */
+export function planFeatureGroups(plan: Plan): PlanFeatureGroup[] {
+  const items = plan.included_catalog_items ?? []
+  if (items.length === 0) {
+    const rows = (plan.features ?? []).filter((f) => f.is_active !== false)
+    const flat = [...rows].sort((a, b) => a.display_order - b.display_order).map((f) => f.text)
+    return flat.length > 0 ? [{ kind: 'flat', items: flat }] : []
+  }
+
+  const byType = new Map<CatalogGroupType, PlanCatalogItem[]>()
+  for (const item of items) {
+    if (!isCatalogGroupType(item.type)) continue
+    const bucket = byType.get(item.type) ?? []
+    bucket.push(item)
+    byType.set(item.type, bucket)
+  }
+
+  return CATALOG_TYPE_ORDER.filter((type) => byType.has(type)).map((type) => ({
+    kind: 'byType' as const,
+    type,
+    items: [...byType.get(type)!].sort((a, b) => a.display_order - b.display_order),
+  }))
 }

@@ -9,14 +9,16 @@ import { Card } from '../ui/Card'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
-import type { Plan } from '../../types/plan.types'
+import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 import { JsonLd, SITE_URL } from '../seo/JsonLd'
+import { ChevronDown } from 'lucide-react'
 import {
   catalogPlansForBilling,
   localizedPlanText,
-  planFeatureLines,
+  planFeatureGroups,
   planPriceView,
   tierFromPlanCode,
+  type CatalogGroupType,
 } from './pricingFromPlans'
 
 type Billing = 'monthly' | 'yearly'
@@ -226,7 +228,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 t('pricing.perYear') as string,
                 billing,
               )
-              const features = planFeatureLines(plan)
+              const featureGroups = planFeatureGroups(plan)
               const description = planMarketingDescription(t, plan, language)
               const planName = localizedPlanText(language, plan.name, plan.name_en)
               const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
@@ -336,15 +338,29 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                     )}
                   </div>
 
-                  {features.length > 0 ? (
-                    <ul className="mt-6 space-y-3">
-                      {features.map((f) => (
-                        <li key={f} className="flex gap-3 text-sm text-ase-text2">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {featureGroups.length > 0 ? (
+                    <div className="mt-6 space-y-2">
+                      {featureGroups.map((group, groupIndex) =>
+                        group.kind === 'flat' ? (
+                          <ul key="flat" className="space-y-3">
+                            {group.items.map((f) => (
+                              <li key={f} className="flex gap-3 text-sm text-ase-text2">
+                                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
+                                <span>{f}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <PlanIncludedGroup
+                            key={group.type}
+                            type={group.type}
+                            items={group.items}
+                            defaultOpen={groupIndex === 0}
+                            t={t}
+                          />
+                        ),
+                      )}
+                    </div>
                   ) : null}
                 </Card>
               )
@@ -377,5 +393,58 @@ export function PricingSection({ compact }: { compact?: boolean }) {
         ) : null}
       </div>
     </section>
+  )
+}
+
+/** One collapsible "Books ▾ / Resources ▾" section inside a plan card's
+ * "what's included" block — grouped by catalog type (see
+ * planFeatureGroups) instead of one flat bullet list, so a plan bundling
+ * many items across several categories stays scannable. Owns its own open
+ * state (rather than a controlled `open` prop) so a parent re-render (e.g.
+ * switching the monthly/yearly toggle) never snaps a section the visitor
+ * already opened back closed. */
+function PlanIncludedGroup({
+  type,
+  items,
+  defaultOpen,
+  t,
+}: {
+  type: CatalogGroupType
+  items: PlanCatalogItem[]
+  defaultOpen: boolean
+  t: (key: string) => unknown
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm font-semibold text-ase-text transition hover:bg-white/[0.03]"
+      >
+        <span className="flex items-center gap-2">
+          {t(`catalog.groupLabels.${type}`) as string}
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[11px] font-medium text-ase-text2">
+            {items.length}
+          </span>
+        </span>
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 text-ase-text2 transition-transform', open && 'rotate-180')}
+          strokeWidth={1.75}
+        />
+      </button>
+      {open ? (
+        <ul className="space-y-2.5 border-t border-white/10 px-3.5 py-3">
+          {items.map((item) => (
+            <li key={item.id} className="flex gap-2.5 text-sm text-ase-text2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
+              <span>{item.title}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   )
 }

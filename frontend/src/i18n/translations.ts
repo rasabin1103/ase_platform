@@ -62,6 +62,8 @@ import { redeemCodeEn, redeemCodeEs } from './redeemCode.locale'
 import { testExecutionEn, testExecutionEs } from './testExecution.locale'
 /** Skippable post-registration preferences survey (EN + ES). Merged as root key `preferencesSurvey`. */
 import { preferencesSurveyEn, preferencesSurveyEs } from './preferencesSurvey.locale'
+/** Public, unauthenticated catalog browsing page (EN + ES). Merged as root key `publicCatalogShowcase`. */
+import { publicCatalogShowcaseEn, publicCatalogShowcaseEs } from './publicCatalogShowcase.locale'
 
 export type Language = 'en' | 'es'
 
@@ -141,6 +143,7 @@ export const translations = {
     redeemCode: redeemCodeEn,
     testExecution: testExecutionEn,
     preferencesSurvey: preferencesSurveyEn,
+    publicCatalogShowcase: publicCatalogShowcaseEn,
     bookingPage: bookingPageEn,
     adminBookingPage: adminBookingPageEn,
     usersPage: usersPageEn,
@@ -1075,6 +1078,7 @@ export const translations = {
     redeemCode: redeemCodeEs,
     testExecution: testExecutionEs,
     preferencesSurvey: preferencesSurveyEs,
+    publicCatalogShowcase: publicCatalogShowcaseEs,
     bookingPage: bookingPageEs,
     adminBookingPage: adminBookingPageEs,
     usersPage: usersPageEs,

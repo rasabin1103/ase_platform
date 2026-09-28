@@ -22,6 +22,7 @@ export function PublicHeader() {
       { to: '/', label: t('nav.home') as string },
       { to: '/services', label: t('nav.whatsIncluded') as string },
       { to: '/platform', label: t('nav.platform') as string },
+      { to: '/catalog', label: t('publicCatalogShowcase.nav') as string },
       { to: '/pricing', label: t('nav.plans') as string },
       { to: '/blog', label: t('nav.blog') as string },
       { to: '/about', label: t('nav.about') as string },
