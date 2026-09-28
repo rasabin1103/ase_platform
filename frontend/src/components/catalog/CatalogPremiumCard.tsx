@@ -125,7 +125,16 @@ export function CatalogPremiumCard({
         </div>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <p className="text-xl font-extrabold text-ase-text">
-            {formatPrice(item.price, item.currency, t('catalog.free'))}
+            {item.discountedPrice != null ? (
+              <span className="flex items-baseline gap-1.5">
+                <span className="text-sm font-normal text-ase-text-muted line-through">
+                  {formatPrice(item.price, item.currency, t('catalog.free'))}
+                </span>
+                <span>{formatPrice(item.discountedPrice, item.currency, t('catalog.free'))}</span>
+              </span>
+            ) : (
+              formatPrice(item.price, item.currency, t('catalog.free'))
+            )}
           </p>
           {item.duration ? (
             <span className="text-xs font-medium text-ase-muted">{item.duration}</span>
@@ -137,12 +146,12 @@ export function CatalogPremiumCard({
               {t('catalog.viewDetail')}
             </Button>
           </Link>
-          {item.previewUrl ? (
-            <a href={item.previewUrl} target="_blank" rel="noreferrer">
+          {item.hasResourceContent ? (
+            <Link to={`${detailPath}?preview=1`}>
               <Button size="sm" variant="outline">
                 {t('catalog.preview')}
               </Button>
-            </a>
+            </Link>
           ) : null}
           {!isFree ? (
             <Button

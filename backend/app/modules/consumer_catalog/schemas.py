@@ -58,6 +58,16 @@ class CatalogItemRead(BaseModel):
     imageUrl: str
     images: list[CatalogItemImagePublicRead] = []
     price: Decimal
+    # Set only when the caller has an active plan subscription whose admin
+    # configured a discount for this specific item (see
+    # PlanCatalogItemDiscount) — always an item the plan does NOT include;
+    # an included item is never purchased at any price, so it never gets a
+    # discount here either. discountedPrice is the exact amount
+    # BillingService._apply_plan_discount will charge at checkout, so the
+    # frontend can show it instead of `price` without the two ever
+    # disagreeing.
+    discountPercent: Decimal | None = None
+    discountedPrice: Decimal | None = None
     currency: str
     status: CatalogItemStatus
     level: CatalogItemLevel
@@ -161,6 +171,41 @@ class UserCatalogStateUpdate(BaseModel):
 class UserCatalogStateRead(BaseModel):
     favorite_slugs: list[str]
     purchased_slugs: list[str]
+
+
+class DownloadQuotaRead(BaseModel):
+    """The current user's active plan download quota — see
+    app.modules.plans.quota. `unlimited=True` covers every case where no
+    quota applies at all (no active plan subscription, or the plan simply
+    has no monthly_download_limit configured), which is also every plan's
+    default, so most users see this and nothing else."""
+
+    unlimited: bool = True
+    limit: int | None = None
+    used: int | None = None
+    remaining: int | None = None
+    loyaltyBonusActive: bool = False
+
+
+class PlanSummaryRead(BaseModel):
+    """"Your plan" card on the profile page — see
+    app.modules.plans.quota.get_plan_summary. `hasActivePlan=False` means
+    there's no active plan subscription at all, in which case the frontend
+    simply doesn't render the card."""
+
+    hasActivePlan: bool = False
+    planName: str | None = None
+    billingCycle: str | None = None
+    unlimitedDownloads: bool = True
+    monthlyDownloadLimit: int | None = None
+    downloadsUsed: int | None = None
+    downloadsRemaining: int | None = None
+    loyaltyBonusDownloads: int | None = None
+    loyaltyBonusIntervalMonths: int | None = None
+    loyaltyBonusActive: bool = False
+    nextRewardInDays: int | None = None
+    maxDiscountPercent: Decimal | None = None
+    discountItemCount: int = 0
 
 
 class ResourceContentRead(BaseModel):

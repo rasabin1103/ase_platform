@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import {
@@ -43,6 +43,7 @@ import {
   downloadResource,
   getBookDownloadFormats,
   getConsumerCatalogItem,
+  getDownloadQuota,
   getResourceContent,
   getResourceDownloadInfo,
   toggleCatalogFavorite,
@@ -424,11 +425,18 @@ function LicensePanel({
 
 export function CatalogDetailPage() {
   const { type, slug } = useParams<{ type: CatalogItemType; slug: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t, language } = useI18n()
   const qc = useQueryClient()
   const [accessModalOpen, setAccessModalOpen] = useState(false)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
-  const [viewerOpen, setViewerOpen] = useState(false)
+  // The catalog list's "Vista previa" card button links here with
+  // ?preview=1 (see CatalogItemCard/CatalogPremiumCard) instead of
+  // duplicating the whole ownership-aware viewer in the card itself — the
+  // modal below is only ever rendered when canViewResource is true, so
+  // opening it up front for an item with nothing to show is harmless (the
+  // wrapper condition just no-ops).
+  const [viewerOpen, setViewerOpen] = useState(() => new URLSearchParams(window.location.search).get('preview') === '1')
   const [viewerMaximized, setViewerMaximized] = useState(false)
   const [audiobookOpen, setAudiobookOpen] = useState(false)
   const [audiobookMaximized, setAudiobookMaximized] = useState(false)
@@ -496,6 +504,17 @@ export function CatalogDetailPage() {
   // backend (and lets a free — price 0 — item through with no purchase
   // needed at all), so no extra isPurchased check is needed here.
   const canViewResource = Boolean(item?.hasResourceContent)
+
+  // Drop the ?preview=1 param once it's done its job (see viewerOpen's
+  // initializer above) so a refresh or re-share of this URL doesn't force
+  // the viewer open again.
+  useEffect(() => {
+    if (searchParams.get('preview') !== '1') return
+    const next = new URLSearchParams(searchParams)
+    next.delete('preview')
+    setSearchParams(next, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Mirrors ConsumerCatalogService._owns_resource: a free item needs no
   // purchase at all, a priced one needs isPurchased (which already covers
   // permanent purchases and live plan-based access). Someone who hasn't
@@ -534,6 +553,22 @@ export function CatalogDetailPage() {
     queryFn: () => getBookDownloadFormats(slug!),
     enabled: Boolean(slug) && (type ?? item?.type) === 'book' && canViewResource,
   })
+  // Only items whose access comes solely from a plan subscription
+  // (isPlanIncluded) ever draw from this shared quota — an outright
+  // purchase is never rationed. Viewing/previewing stays unaffected either
+  // way; this only ever gates the download buttons below.
+  const quotaQuery = useQuery({
+    queryKey: ['consumer-catalog', 'me', 'download-quota'],
+    queryFn: getDownloadQuota,
+    enabled: Boolean(item?.isPlanIncluded),
+    staleTime: 60_000,
+  })
+  const quotaExhausted = Boolean(
+    item?.isPlanIncluded &&
+      quotaQuery.data &&
+      !quotaQuery.data.unlimited &&
+      (quotaQuery.data.remaining ?? 0) <= 0,
+  )
   const backPath = type && TYPE_CATALOG_PATH[type] ? TYPE_CATALOG_PATH[type] : '/dashboard'
 
   if (query.isLoading) {
@@ -606,7 +641,16 @@ export function CatalogDetailPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-3xl font-extrabold text-ase-text">
-                  {formatPrice(item.price, item.currency, t('catalog.free'))}
+                  {item.discountedPrice != null ? (
+                    <span className="flex items-baseline gap-2">
+                      <span className="text-lg font-normal text-ase-text-muted line-through">
+                        {formatPrice(item.price, item.currency, t('catalog.free'))}
+                      </span>
+                      <span>{formatPrice(item.discountedPrice, item.currency, t('catalog.free'))}</span>
+                    </span>
+                  ) : (
+                    formatPrice(item.price, item.currency, t('catalog.free'))
+                  )}
                 </div>
                 {item.isPurchased ? (
                   <Badge className="mt-2 border-emerald-400/30 bg-emerald-400/15 text-emerald-200">
@@ -673,12 +717,15 @@ export function CatalogDetailPage() {
                             leftIcon={<Download className="h-4 w-4" strokeWidth={1.75} />}
                             disabled={
                               (downloadMutation.isPending && downloadMutation.variables === format) ||
-                              bookFormatsQuery.data?.[format] === false
+                              bookFormatsQuery.data?.[format] === false ||
+                              quotaExhausted
                             }
                             title={
-                              bookFormatsQuery.data?.[format] === false
-                                ? (t('catalog.resource.formatUnavailable') as string)
-                                : undefined
+                              quotaExhausted
+                                ? (t('catalog.resource.downloadQuotaExhausted') as string)
+                                : bookFormatsQuery.data?.[format] === false
+                                  ? (t('catalog.resource.formatUnavailable') as string)
+                                  : undefined
                             }
                             onClick={() => downloadMutation.mutate(format)}
                           >
@@ -699,12 +746,18 @@ export function CatalogDetailPage() {
                       <Button
                         variant="outline"
                         leftIcon={<Download className="h-4 w-4" strokeWidth={1.75} />}
-                        disabled={downloadMutation.isPending}
+                        disabled={downloadMutation.isPending || quotaExhausted}
+                        title={quotaExhausted ? (t('catalog.resource.downloadQuotaExhausted') as string) : undefined}
                         onClick={() => downloadMutation.mutate(undefined)}
                       >
                         {t('catalog.resource.download')}
                       </Button>
                     )
+                  ) : null}
+                  {quotaExhausted ? (
+                    <span className="basis-full text-xs text-amber-300">
+                      {t('catalog.resource.downloadQuotaExhausted')}
+                    </span>
                   ) : null}
                   {downloadMutation.isError ? (
                     <span className="basis-full text-xs text-rose-300">{t('catalog.resource.downloadError')}</span>

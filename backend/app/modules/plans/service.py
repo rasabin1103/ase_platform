@@ -12,8 +12,9 @@ from app.models.catalog_item import CatalogItem
 from app.models.enums import PlanStatus
 from app.models.plan import Plan
 from app.models.plan_catalog_item import PlanCatalogItem
+from app.models.plan_catalog_item_discount import PlanCatalogItemDiscount
 from app.modules.plans.repository import PlansRepository
-from app.modules.plans.schemas import PlanCreate, PlanUpdate
+from app.modules.plans.schemas import PlanCatalogItemDiscountCreate, PlanCreate, PlanUpdate
 
 _EN_FIELD_PAIRS = (
     ("name", "name_en"),
@@ -138,6 +139,23 @@ class PlansService:
                 PlanCatalogItem(catalog_item_id=item.id, display_order=order)
             )
 
+    def _set_discount_items(self, plan: Plan, discounts: list[PlanCatalogItemDiscountCreate]) -> None:
+        item_ids = [d.catalog_item_id for d in discounts]
+        by_id = {item.id: item for item in self._resolve_catalog_items(item_ids)}
+        plan.discounted_catalog_items.clear()
+        self.db.flush()
+        seen: set[int] = set()
+        for d in discounts:
+            if d.catalog_item_id in seen:
+                continue
+            seen.add(d.catalog_item_id)
+            plan.discounted_catalog_items.append(
+                PlanCatalogItemDiscount(
+                    catalog_item_id=by_id[d.catalog_item_id].id,
+                    discount_percent=d.discount_percent,
+                )
+            )
+
     def create(self, payload: PlanCreate) -> Plan:
         if self.repo.get_by_code(payload.code) is not None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Plan code already exists")
@@ -156,6 +174,9 @@ class PlansService:
             is_recommended=payload.is_recommended,
             cta_label=payload.cta_label,
             stripe_price_id=payload.stripe_price_id,
+            monthly_download_limit=payload.monthly_download_limit,
+            loyalty_bonus_downloads=payload.loyalty_bonus_downloads,
+            loyalty_bonus_interval_months=payload.loyalty_bonus_interval_months,
         )
 
         self.repo.add(plan)
@@ -163,6 +184,8 @@ class PlansService:
 
         if payload.catalog_item_ids:
             self._set_included_catalog_items(plan, payload.catalog_item_ids)
+        if payload.discount_items:
+            self._set_discount_items(plan, payload.discount_items)
 
         self._ensure_english_fields(
             plan,
@@ -224,9 +247,22 @@ class PlansService:
             plan.cta_label = payload.cta_label
         if payload.stripe_price_id is not None:
             plan.stripe_price_id = payload.stripe_price_id
+        if payload.monthly_download_limit is not None:
+            plan.monthly_download_limit = payload.monthly_download_limit
+        if payload.loyalty_bonus_downloads is not None:
+            plan.loyalty_bonus_downloads = payload.loyalty_bonus_downloads
+        if payload.loyalty_bonus_interval_months is not None:
+            plan.loyalty_bonus_interval_months = payload.loyalty_bonus_interval_months
+        if payload.clear_monthly_download_limit:
+            plan.monthly_download_limit = None
+        if payload.clear_loyalty_bonus:
+            plan.loyalty_bonus_downloads = None
+            plan.loyalty_bonus_interval_months = None
 
         if payload.catalog_item_ids is not None:
             self._set_included_catalog_items(plan, payload.catalog_item_ids)
+        if payload.discount_items is not None:
+            self._set_discount_items(plan, payload.discount_items)
 
         self._ensure_english_fields(
             plan,

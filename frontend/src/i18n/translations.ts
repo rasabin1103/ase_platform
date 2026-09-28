@@ -394,6 +394,11 @@ export const translations = {
       comingSoonCta: 'Coming soon',
       currentPlanBadge: 'Your current plan',
       currentPlanCta: 'Manage your plan',
+      changePlanCta: 'Switch to this plan',
+      changePlanLoading: 'Switching plan…',
+      changePlanError: 'We could not switch your plan. Please try again in a moment.',
+      changePlanSuccessUpgrade: 'Done — your new plan is active immediately, and you were charged the prorated difference for the rest of this period.',
+      changePlanSuccessDowngrade: 'Done — you keep your current plan and benefits until {{date}}. Your new (lower) plan takes over automatically on that date, with no charge now.',
       faq: {
         badge: 'Individual purchase vs. subscription',
         title: 'Which one should you choose?',
@@ -419,6 +424,46 @@ export const translations = {
             question: 'What happens if I cancel my subscription?',
             answer:
               'Cancelling stops future billing and removes access to whatever was included only through the plan, once the current billing period ends. It never removes anything you bought individually — those stay yours regardless of what you do with any subscription.',
+          },
+        },
+      },
+      policyFaq: {
+        badge: 'General subscription policy',
+        title: 'Rules that apply to every plan',
+        subtitle: 'The exact rules behind downloads, rewards, discounts and plan changes — answered plainly.',
+        items: {
+          accumulation: {
+            question: 'Do unused monthly downloads roll over to the next month?',
+            answer:
+              'No. Your monthly download allowance resets at the start of each billing month — downloads you did not use do not carry over or accumulate.',
+          },
+          repeatDownload: {
+            question: 'Does downloading the same item again use up my quota each time?',
+            answer:
+              'No. Once you have downloaded a given item within the month, you can download it again as many times as you like at no extra cost to your quota.',
+          },
+          individualPurchase: {
+            question: 'Does an individual purchase (outside my plan) use up my download quota?',
+            answer:
+              'No. Individual purchases are paid for separately and never affect your plan’s monthly download quota.',
+          },
+          rewardExpiry: {
+            question: 'Do loyalty rewards expire?',
+            answer: 'Yes. Each reward you earn expires 60 days after it is granted if it is not used before then.',
+          },
+          discountStacking: {
+            question: 'Can I combine more than one discount on the same purchase?',
+            answer: 'No. Discounts are not stackable — only the single best applicable discount is applied.',
+          },
+          downgradeTiming: {
+            question: 'When does a downgrade (switching to a cheaper plan) take effect?',
+            answer:
+              'At the start of your next billing cycle. You keep your current plan and its benefits until then, with no immediate change.',
+          },
+          upgradeTiming: {
+            question: 'When does an upgrade (switching to a higher plan) take effect?',
+            answer:
+              'Immediately. You get access to the new plan right away and are charged the prorated difference for the rest of the current period.',
           },
         },
       },
@@ -603,7 +648,11 @@ export const translations = {
           companyPh: 'Company / team',
           messagePh: 'What are you building? What constraints matter most?',
         },
-        openClient: 'Open email client',
+        submit: 'Send message',
+        submitting: 'Sending…',
+        submitSuccess: 'Message sent — we’ll get back to you soon.',
+        submitError: 'Could not send the message. Try again, or email us directly below.',
+        directEmail: 'Email us directly',
         details: 'Details',
         location: 'Location',
         focus: 'Focus',
@@ -1367,6 +1416,11 @@ export const translations = {
       comingSoonCta: 'Próximamente',
       currentPlanBadge: 'Tu plan actual',
       currentPlanCta: 'Gestionar tu plan',
+      changePlanCta: 'Cambiar a este plan',
+      changePlanLoading: 'Cambiando de plan…',
+      changePlanError: 'No se pudo cambiar tu plan. Inténtalo de nuevo en un momento.',
+      changePlanSuccessUpgrade: 'Listo — tu nuevo plan ya está activo, y se te cobró la diferencia prorrateada por el resto de este período.',
+      changePlanSuccessDowngrade: 'Listo — conservas tu plan y beneficios actuales hasta el {{date}}. Tu nuevo plan (más económico) entrará en vigor automáticamente ese día, sin cargo ahora.',
       checkoutLoading: 'Redirigiendo al pago…',
       checkoutError: 'No se pudo iniciar el pago. Inténtalo de nuevo en un momento.',
       faq: {
@@ -1394,6 +1448,46 @@ export const translations = {
             question: '¿Qué pasa si cancelo mi suscripción?',
             answer:
               'Cancelar detiene los próximos cobros y elimina el acceso a lo que estaba incluido solo por el plan, una vez termine el periodo de facturación en curso. Nunca elimina lo que hayas comprado de forma individual — eso sigue siendo tuyo, hagas lo que hagas con cualquier suscripción.',
+          },
+        },
+      },
+      policyFaq: {
+        badge: 'Política general de suscripciones',
+        title: 'Reglas que aplican a todos los planes',
+        subtitle: 'Las reglas exactas detrás de las descargas, recompensas, descuentos y cambios de plan — explicadas sin rodeos.',
+        items: {
+          accumulation: {
+            question: '¿Las descargas mensuales que no uso se acumulan para el mes siguiente?',
+            answer:
+              'No. Tu cuota de descargas mensual se restablece al inicio de cada periodo de facturación — las descargas que no uses no se acumulan ni se trasladan al mes siguiente.',
+          },
+          repeatDownload: {
+            question: '¿Descargar el mismo elemento varias veces consume mi cuota cada vez?',
+            answer:
+              'No. Una vez que descargas un elemento dentro del mes, puedes volver a descargarlo las veces que quieras sin coste adicional en tu cuota.',
+          },
+          individualPurchase: {
+            question: '¿Una compra individual (fuera de mi plan) consume mi cuota de descargas?',
+            answer:
+              'No. Las compras individuales se pagan por separado y nunca afectan la cuota mensual de descargas de tu plan.',
+          },
+          rewardExpiry: {
+            question: '¿Las recompensas de fidelidad caducan?',
+            answer: 'Sí. Cada recompensa que obtienes caduca 60 días después de haberse otorgado si no se usa antes.',
+          },
+          discountStacking: {
+            question: '¿Puedo combinar más de un descuento en la misma compra?',
+            answer: 'No. Los descuentos no son acumulables — se aplica únicamente el mejor descuento disponible.',
+          },
+          downgradeTiming: {
+            question: '¿Cuándo entra en vigor un downgrade (cambio a un plan más económico)?',
+            answer:
+              'Al inicio de tu siguiente ciclo de facturación. Conservas tu plan actual y sus beneficios hasta entonces, sin ningún cambio inmediato.',
+          },
+          upgradeTiming: {
+            question: '¿Cuándo entra en vigor un upgrade (cambio a un plan superior)?',
+            answer:
+              'De inmediato. Obtienes acceso al nuevo plan al momento y se te cobra la diferencia prorrateada por el resto del periodo actual.',
           },
         },
       },
@@ -1578,7 +1672,11 @@ export const translations = {
           companyPh: 'Empresa / equipo',
           messagePh: '¿Qué estás construyendo? ¿Qué restricciones importan más?',
         },
-        openClient: 'Abrir cliente de email',
+        submit: 'Enviar mensaje',
+        submitting: 'Enviando…',
+        submitSuccess: 'Mensaje enviado — te responderemos pronto.',
+        submitError: 'No se pudo enviar el mensaje. Inténtalo de nuevo, o escríbenos directamente abajo.',
+        directEmail: 'Escríbenos directamente',
         details: 'Detalles',
         location: 'Ubicación',
         focus: 'Enfoque',

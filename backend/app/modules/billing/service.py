@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import stripe
 from fastapi import HTTPException, Request, status
@@ -30,6 +31,7 @@ from app.models.subscription import Subscription
 from app.models.user import User
 from app.modules.auth.dependencies import get_default_organization_id
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
+from app.modules.plans.quota import get_active_subscription_and_plan, is_item_governed_by_plan_quota
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +197,30 @@ class BillingService:
             raise BillingError("Stripe did not return a checkout URL.")
         return session.url
 
+    def _apply_plan_discount(self, *, current_user: User, item: CatalogItem) -> Decimal:
+        """The buyer's active plan may define a discount on this exact item
+        — but only for an item the plan does NOT already include (see
+        Plan.discounted_catalog_items / is_item_governed_by_plan_quota):
+        an included item is already free to them and would never reach
+        checkout in the first place, so this only ever discounts a
+        separate, genuinely paid purchase. Returns the item's own price
+        unchanged whenever no active plan, no matching discount, or the
+        item actually is one the plan includes (defensive — should be
+        unreachable in practice)."""
+        found = get_active_subscription_and_plan(self.db, current_user.id)
+        if found is None:
+            return item.price
+        _, plan = found
+        if is_item_governed_by_plan_quota(plan, item.id):
+            return item.price
+        discount = next(
+            (d for d in plan.discounted_catalog_items if d.catalog_item_id == item.id), None,
+        )
+        if discount is None:
+            return item.price
+        multiplier = (Decimal("100") - discount.discount_percent) / Decimal("100")
+        return (item.price * multiplier).quantize(Decimal("0.01"))
+
     def create_catalog_checkout_session(
         self, *, current_user: User, item_slug: str, language: str | None = None
     ) -> str:
@@ -234,7 +260,8 @@ class BillingService:
             raise BillingError("Organization not found.")
 
         customer_id = self._get_or_create_stripe_customer(org, current_user)
-        unit_amount = int((item.price * 100).to_integral_value())
+        discounted_price = self._apply_plan_discount(current_user=current_user, item=item)
+        unit_amount = int((discounted_price * 100).to_integral_value())
 
         title = item.title_en if (language == "en" and item.title_en) else item.title
         short_description = (
@@ -426,6 +453,112 @@ class BillingService:
         sub.ends_at = None
         self.db.commit()
         return sub
+
+    def change_plan(self, *, current_user: User, new_plan_id: int) -> dict:
+        """Upgrades or downgrades the caller's existing Stripe subscription
+        in place — never a second, competing subscription (unlike simply
+        calling create_checkout_session again). Direction is inferred by
+        comparing the two plans' prices:
+
+        - Upgrade (moving to a pricier plan): applied immediately via
+          `Subscription.modify` with `proration_behavior="always_invoice"`
+          — Stripe charges the prorated difference for the rest of this
+          billing period right away, and the new plan's benefits (higher
+          download quota, etc.) are available the moment this call
+          returns.
+        - Downgrade (moving to a cheaper plan): the price change itself is
+          scheduled for the start of the next billing cycle using a Stripe
+          Subscription Schedule — the subscriber keeps their current
+          plan's price and benefits for the rest of the period they
+          already paid for, and the cheaper price only takes over at the
+          next renewal. Nothing is charged or refunded now.
+
+        See the "Política general de suscripciones" FAQ: upgrade
+        inmediato / downgrade próximo ciclo."""
+        _require_stripe_configured()
+        sub = self._get_active_subscription_for_user(current_user)
+        current_plan = self.db.get(Plan, sub.plan_id)
+        new_plan = self.db.get(Plan, new_plan_id)
+
+        if new_plan is None or not new_plan.is_active:
+            raise BillingError("Plan not found or inactive.")
+        if new_plan.status == PlanStatus.coming_soon:
+            raise BillingError("This plan is coming soon and not open for purchase yet.")
+        if not new_plan.stripe_price_id:
+            raise BillingError("This plan is not yet sellable online (missing Stripe price).")
+        if current_plan is not None and current_plan.id == new_plan.id:
+            raise BillingError("You are already on this plan.")
+
+        current_price = current_plan.price if current_plan is not None else None
+        is_downgrade = (
+            current_price is not None and new_plan.price is not None and new_plan.price < current_price
+        )
+
+        stripe_sub = stripe.Subscription.retrieve(sub.provider_subscription_id)
+        item_id = stripe_sub["items"]["data"][0]["id"]
+        metadata = {"organization_id": str(sub.organization_id), "plan_id": str(new_plan.id)}
+
+        if not is_downgrade:
+            stripe.Subscription.modify(
+                sub.provider_subscription_id,
+                items=[{"id": item_id, "price": new_plan.stripe_price_id}],
+                proration_behavior="always_invoice",
+                metadata=metadata,
+            )
+            # Reflected locally right away — the webhook will confirm the
+            # same thing shortly after, same pattern as cancel/resume above.
+            sub.plan_id = new_plan.id
+            self.db.commit()
+            record_audit_log(
+                self.db,
+                actor_user_id=current_user.id,
+                action="billing.plan_upgraded",
+                entity_type="subscription",
+                entity_id=str(sub.id),
+                organization_id=sub.organization_id,
+                metadata={"from_plan_id": current_plan.id if current_plan else None, "to_plan_id": new_plan.id},
+            )
+            return {"direction": "upgrade", "effective": "immediate", "new_plan_id": new_plan.id, "effective_at": None}
+
+        period_end_ts = _subscription_period_end(stripe_sub)
+        if period_end_ts is None:
+            raise BillingError("Could not determine the current billing period end for this subscription.")
+
+        schedule = stripe.SubscriptionSchedule.create(from_subscription=sub.provider_subscription_id)
+        current_phase = schedule["phases"][0]
+        stripe.SubscriptionSchedule.modify(
+            schedule["id"],
+            phases=[
+                {
+                    "items": [{"price": current_phase["items"][0]["price"], "quantity": 1}],
+                    "start_date": current_phase["start_date"],
+                    "end_date": period_end_ts,
+                },
+                {
+                    "items": [{"price": new_plan.stripe_price_id, "quantity": 1}],
+                    "metadata": metadata,
+                },
+            ],
+        )
+        record_audit_log(
+            self.db,
+            actor_user_id=current_user.id,
+            action="billing.plan_downgrade_scheduled",
+            entity_type="subscription",
+            entity_id=str(sub.id),
+            organization_id=sub.organization_id,
+            metadata={
+                "from_plan_id": current_plan.id if current_plan else None,
+                "to_plan_id": new_plan.id,
+                "effective_at": period_end_ts,
+            },
+        )
+        return {
+            "direction": "downgrade",
+            "effective": "next_cycle",
+            "new_plan_id": new_plan.id,
+            "effective_at": datetime.fromtimestamp(period_end_ts, tz=timezone.utc),
+        }
 
     # --- Webhook handling -------------------------------------------------
 

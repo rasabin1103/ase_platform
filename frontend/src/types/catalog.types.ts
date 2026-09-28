@@ -26,6 +26,13 @@ export type CatalogItem = {
   imageUrl: string
   images: CatalogItemGalleryImage[]
   price: string | number
+  // Set only when the current user has an active plan subscription whose
+  // admin configured a discount for this specific item (always an item
+  // the plan does NOT include). discountedPrice is exactly what checkout
+  // will charge — see BillingService._apply_plan_discount — so the UI can
+  // show it in place of `price` without the two ever disagreeing.
+  discountPercent?: string | number | null
+  discountedPrice?: string | number | null
   currency: string
   status: CatalogItemStatus
   level: CatalogItemLevel

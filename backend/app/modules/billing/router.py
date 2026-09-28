@@ -10,6 +10,8 @@ from app.modules.billing.schemas import (
     BillingPortalResponse,
     CatalogCheckoutSessionCreate,
     CatalogCheckoutSessionResponse,
+    ChangePlanCreate,
+    ChangePlanResponse,
     CheckoutSessionCreate,
     CheckoutSessionResponse,
     InvoiceListResponse,
@@ -112,6 +114,23 @@ def resume_subscription(
         ends_at=sub.ends_at,
         current_period_end=sub.current_period_end,
     )
+
+
+@router.post("/change-plan", response_model=ChangePlanResponse)
+def change_plan(
+    payload: ChangePlanCreate,
+    current_user: User = Depends(get_current_active_user),
+    svc: BillingService = Depends(get_service),
+):
+    """Upgrades (immediate) or downgrades (next billing cycle) the caller's
+    existing subscription — see BillingService.change_plan. Never opens a
+    new Checkout session, unlike POST /checkout-session, which is only for
+    subscribing to a plan for the first time."""
+    try:
+        result = svc.change_plan(current_user=current_user, new_plan_id=payload.plan_id)
+    except BillingError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return ChangePlanResponse(**result)
 
 
 @router.post("/webhook", include_in_schema=False)

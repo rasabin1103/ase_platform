@@ -84,3 +84,22 @@ export async function resumeSubscription(): Promise<SubscriptionAction> {
   const { data } = await apiClient.post<SubscriptionAction>('/billing/resume-subscription')
   return data
 }
+
+export type ChangePlanResult = {
+  direction: 'upgrade' | 'downgrade'
+  effective: 'immediate' | 'next_cycle'
+  new_plan_id: number
+  effective_at: string | null
+}
+
+/** Upgrades or downgrades the caller's EXISTING subscription in place —
+ * never opens a new Checkout session (see createCheckoutSession, which is
+ * only for subscribing for the first time). An upgrade (pricier plan)
+ * takes effect immediately with a prorated charge; a downgrade (cheaper
+ * plan) is scheduled for the start of the next billing cycle — see
+ * BillingService.change_plan. Requires an existing active subscription;
+ * the backend returns 400 if the caller has none. */
+export async function changePlan(planId: number): Promise<ChangePlanResult> {
+  const { data } = await apiClient.post<ChangePlanResult>('/billing/change-plan', { plan_id: planId })
+  return data
+}

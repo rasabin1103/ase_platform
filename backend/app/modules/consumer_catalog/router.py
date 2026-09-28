@@ -17,8 +17,10 @@ from app.modules.consumer_catalog.schemas import (
     BookDownloadFormatsRead,
     CatalogItemListResponse,
     CatalogItemRead,
+    DownloadQuotaRead,
     MyPurchaseDetailRead,
     MyPurchaseListResponse,
+    PlanSummaryRead,
     RateItemRequest,
     ResourceContentRead,
     ResourceDownloadInfoRead,
@@ -29,6 +31,7 @@ from app.modules.consumer_catalog.schemas import (
     UserCatalogStateUpdate,
 )
 from app.modules.consumer_catalog.service import ConsumerCatalogService
+from app.modules.plans.quota import get_download_quota_status, get_plan_summary
 
 router = APIRouter(prefix="/api/v1/consumer-catalog", tags=["consumer-catalog"])
 
@@ -42,6 +45,49 @@ def get_my_catalog_state(user: User = Depends(get_current_user), db: Session = D
     fav = CatalogFavoritesRepository(db).slugs_for_user(user.id)
     pur = CatalogPurchasesRepository(db).slugs_for_user(user.id)
     return UserCatalogStateRead(favorite_slugs=sorted(fav), purchased_slugs=sorted(pur))
+
+
+@router.get("/me/download-quota", response_model=DownloadQuotaRead)
+def get_my_download_quota(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Powers the "Download" button's disabled+tooltip state on the
+    catalog detail page — see app.modules.plans.quota. Viewing/preview is
+    never affected by this, only the download action."""
+    status_ = get_download_quota_status(db, user.id)
+    if status_ is None:
+        return DownloadQuotaRead(unlimited=True)
+    return DownloadQuotaRead(
+        unlimited=False,
+        limit=status_.limit,
+        used=status_.used,
+        remaining=status_.remaining,
+        loyaltyBonusActive=status_.loyalty_bonus_active,
+    )
+
+
+@router.get("/me/plan-summary", response_model=PlanSummaryRead)
+def get_my_plan_summary(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Powers the "your plan" card on the profile page — plan name, monthly
+    download quota, best available discount and loyalty-bonus countdown.
+    Returns hasActivePlan=False (rather than 404) when there's no active
+    plan subscription, so the frontend can just conditionally render."""
+    summary = get_plan_summary(db, user.id)
+    if summary is None:
+        return PlanSummaryRead(hasActivePlan=False)
+    return PlanSummaryRead(
+        hasActivePlan=True,
+        planName=summary.plan_name,
+        billingCycle=summary.billing_cycle,
+        unlimitedDownloads=summary.unlimited,
+        monthlyDownloadLimit=summary.monthly_download_limit,
+        downloadsUsed=summary.used,
+        downloadsRemaining=summary.remaining,
+        loyaltyBonusDownloads=summary.loyalty_bonus_downloads,
+        loyaltyBonusIntervalMonths=summary.loyalty_bonus_interval_months,
+        loyaltyBonusActive=summary.loyalty_bonus_active,
+        nextRewardInDays=summary.next_reward_in_days,
+        maxDiscountPercent=summary.max_discount_percent,
+        discountItemCount=summary.discount_item_count,
+    )
 
 
 @router.put("/me/state", response_model=UserCatalogStateRead)

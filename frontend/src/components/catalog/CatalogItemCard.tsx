@@ -100,7 +100,16 @@ export function CatalogItemCard({
           <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
         </div>
         <p className="text-lg font-bold text-ase-text">
-          {formatPrice(item.price, item.currency, t('catalog.free'))}
+          {item.discountedPrice != null ? (
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-sm font-normal text-ase-text-muted line-through">
+                {formatPrice(item.price, item.currency, t('catalog.free'))}
+              </span>
+              <span>{formatPrice(item.discountedPrice, item.currency, t('catalog.free'))}</span>
+            </span>
+          ) : (
+            formatPrice(item.price, item.currency, t('catalog.free'))
+          )}
         </p>
         <RatingWidget item={item} compact />
         <div className="mt-auto flex flex-wrap items-center gap-2">
@@ -109,12 +118,12 @@ export function CatalogItemCard({
               {t('catalog.viewDetail')}
             </Button>
           </Link>
-          {item.previewUrl ? (
-            <a href={item.previewUrl} target="_blank" rel="noreferrer">
+          {item.hasResourceContent ? (
+            <Link to={`${detailPath}?preview=1`}>
               <Button size="sm" variant="outline">
                 {t('catalog.preview')}
               </Button>
-            </a>
+            </Link>
           ) : null}
           {!isFree ? (
             <Button

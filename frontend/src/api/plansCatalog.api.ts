@@ -125,3 +125,19 @@ export async function getPlanSavings(itemSlug: string): Promise<PlanSavings[]> {
   })
   return data.items
 }
+
+export type ContactMessagePayload = {
+  name: string
+  email: string
+  company?: string
+  message: string
+  language: 'en' | 'es'
+  turnstile_token?: string | null
+}
+
+/** Sends the /contact form straight to the admin mailbox (no auth) — see
+ * backend public_catalog.send_contact_message. Replaces the old flow where
+ * the primary button just opened the visitor's own mail client. */
+export async function submitContactMessage(payload: ContactMessagePayload): Promise<void> {
+  await apiClient.post('/public/contact', payload)
+}

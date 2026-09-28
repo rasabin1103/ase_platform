@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.media_urls import catalog_has_stored_image
+from app.core.rate_limit import limiter
+from app.core.turnstile import verify_turnstile_token
 from app.modules.plans.schemas import PlanListResponse, PlanRead
 from app.modules.public_catalog.schemas import (
     CaseStudyPublic,
     CatalogStatsResponse,
+    ContactMessageCreate,
+    ContactMessageResponse,
     PlanSavingsListResponse,
     TeamMemberPublic,
     TestimonialPublic,
@@ -22,6 +26,7 @@ from app.modules.public_catalog.service import (
     list_active_case_studies,
     list_active_team_members,
     list_active_testimonials,
+    send_contact_message,
 )
 
 router = APIRouter(prefix="/api/v1/public", tags=["public"])
@@ -70,6 +75,24 @@ def read_public_testimonials(db: Session = Depends(get_db)) -> list[TestimonialP
 @router.get("/case-studies", response_model=list[CaseStudyPublic], tags=["public"])
 def read_public_case_studies(db: Session = Depends(get_db)) -> list[CaseStudyPublic]:
     return [CaseStudyPublic.model_validate(c) for c in list_active_case_studies(db)]
+
+
+@router.post("/contact", response_model=ContactMessageResponse, tags=["public"])
+@limiter.limit("5/hour")
+async def submit_contact_message(
+    request: Request, payload: ContactMessageCreate,
+) -> ContactMessageResponse:
+    """The public /contact form — sends straight to the admin mailbox (see
+    send_contact_message), same captcha + rate-limit pattern as /auth/register
+    since this is another unauthenticated, mutation-triggering public
+    endpoint. Always reports ok, even if SMTP isn't configured or the send
+    failed — a delivery hiccup on our side isn't the visitor's problem, and
+    the page still shows the direct mailto: link as a fallback."""
+    remote_ip = request.client.host if request.client else None
+    if not await verify_turnstile_token(payload.turnstile_token, remote_ip):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="captcha_failed")
+    send_contact_message(payload)
+    return ContactMessageResponse(ok=True)
 
 
 @router.get("/catalog-cover/{item_id}", tags=["public"])

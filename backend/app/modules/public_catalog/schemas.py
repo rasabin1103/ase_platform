@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class CatalogByType(BaseModel):
@@ -71,6 +71,24 @@ class PlanSavingsRead(BaseModel):
 
 class PlanSavingsListResponse(BaseModel):
     items: list[PlanSavingsRead]
+
+
+class ContactMessageCreate(BaseModel):
+    """The public /contact form — sent straight to the admin mailbox (see
+    public_catalog/service.py's send_contact_message), replacing the old
+    "just open the visitor's own email client" flow. `company` is optional
+    (not every visitor has one); everything else is required."""
+
+    name: str = Field(min_length=1, max_length=200)
+    email: EmailStr
+    company: str | None = Field(default=None, max_length=200)
+    message: str = Field(min_length=1, max_length=5000)
+    language: str = Field(default="es")
+    turnstile_token: str | None = Field(default=None)
+
+
+class ContactMessageResponse(BaseModel):
+    ok: bool = True
 
 
 class CaseStudyPublic(BaseModel):
