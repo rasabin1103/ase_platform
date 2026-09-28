@@ -94,7 +94,7 @@ export function BlogPostPage() {
       </h1>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ase-muted">
         {post.published_at && <span>{new Date(post.published_at).toLocaleDateString()}</span>}
-        {post.author_name && <span>· {post.author_name}</span>}
+        {post.author_name && <span>· {post.author_name} · ASE</span>}
       </div>
       {post.tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">

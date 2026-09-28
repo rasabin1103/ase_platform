@@ -103,7 +103,7 @@ export function LoginPage() {
                 </div>
 
                 {otpMutation.isError && (
-                  <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                  <div role="alert" className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
                     {t('auth.login.twoFactorError')}
                   </div>
                 )}
@@ -164,16 +164,16 @@ export function LoginPage() {
 
             <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
               <div>
-                <label htmlFor="login-email" className="mb-1 block text-xs font-medium text-ase-muted">Email</label>
+                <label htmlFor="login-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.email') as string}</label>
                 <Input id="login-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
                 {form.formState.errors.email && (
-                  <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label htmlFor="login-password" className="block text-xs font-medium text-ase-muted">Password</label>
+                  <label htmlFor="login-password" className="block text-xs font-medium text-ase-muted">{t('auth.fields.password') as string}</label>
                   <Link
                     to="/forgot-password"
                     className="text-xs font-medium text-ase-text2 underline decoration-white/10 hover:text-ase-text hover:decoration-white/30"
@@ -183,16 +183,16 @@ export function LoginPage() {
                 </div>
                 <Input id="login-password" type="password" autoComplete="current-password" {...form.register('password')} />
                 {form.formState.errors.password && (
-                  <p className="mt-1 text-sm text-ase-error">{form.formState.errors.password.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.password.message}</p>
                 )}
               </div>
 
               {mutation.isError && (
-                <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                <div role="alert" className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
                   {(() => {
                     if (axios.isAxiosError(mutation.error)) {
                       const status = mutation.error.response?.status
-                      if (status === 401) return 'Credenciales inválidas.'
+                      if (status === 401) return t('auth.login.invalidCredentials')
                       if (status === 423) {
                         const retryAfter = Number(mutation.error.response?.headers?.['retry-after'])
                         const minutes = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter / 60) : null
@@ -201,10 +201,10 @@ export function LoginPage() {
                           : t('auth.login.lockedErrorGeneric')
                       }
                       if (!mutation.error.response)
-                        return `No se pudo conectar con el backend (CORS / API caída). VITE_API_URL=${API_BASE_URL || '(vacío)'}`
-                      return `Error al iniciar sesión (HTTP ${status}).`
+                        return String(t('auth.login.connectionError')).replace('{{url}}', API_BASE_URL || '(empty)')
+                      return String(t('auth.login.httpError')).replace('{{status}}', String(status))
                     }
-                    return 'Error al iniciar sesión.'
+                    return t('auth.login.genericError')
                   })()}
                 </div>
               )}

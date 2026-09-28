@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { LayoutGrid, List as ListIcon, Lock } from 'lucide-react'
+import { Eye, LayoutGrid, List as ListIcon } from 'lucide-react'
 import {
+  catalogShowcaseItemPath,
   listCatalogShowcaseCategories,
   listCatalogShowcaseItems,
   listCatalogShowcaseTags,
 } from '../../api/catalogShowcase.api'
 import type { CatalogShowcaseItem, CatalogShowcaseSort } from '../../api/catalogShowcase.api'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
+import { CatalogShowcasePreviewModal } from '../../components/catalog/CatalogShowcasePreviewModal'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -17,25 +19,29 @@ import { TagFilterBar } from '../../components/ui/TagFilterBar'
 import { cn } from '../../components/ui/cn'
 import { RatingSummary } from '../../components/catalog/RatingSummary'
 import { catalogImageAspectClass } from '../../components/catalog/catalogCardShape'
-import { MarkdownContent } from '../../components/catalog/MarkdownViewer'
 import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 
 type ViewMode = 'grid' | 'list'
 
-// Price sorting still exists server-side (see catalog_showcase router), but
-// isn't offered here since the price itself is never shown to an anonymous
-// visitor — sorting by a number nobody can see would just be confusing.
-const SORT_OPTIONS: CatalogShowcaseSort[] = ['newest', 'top_rated']
+const SORT_OPTIONS: CatalogShowcaseSort[] = ['newest', 'top_rated', 'price_asc', 'price_desc']
+
+function formatPrice(price: string, currency: string, freeLabel: string) {
+  const n = Number(price)
+  if (!n) return freeLabel
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n)
+}
 
 export function CatalogShowcasePage() {
   const { t, language } = useI18n()
-  const navigate = useNavigate()
   const [view, setView] = useState<ViewMode>('grid')
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string | undefined>(undefined)
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sort, setSort] = useState<CatalogShowcaseSort>('newest')
+  // Single shared modal for the whole grid/list rather than one per card —
+  // cards just report which item to preview, the page owns the fetch.
+  const [previewItem, setPreviewItem] = useState<CatalogShowcaseItem | null>(null)
 
   const queryKey = useMemo(
     () => ['catalog-showcase', search, category, tagFilter, sort],
@@ -62,8 +68,6 @@ export function CatalogShowcasePage() {
 
   const items = query.data?.items ?? []
   const hasActiveFilters = Boolean(search.trim() || category || tagFilter.length)
-
-  const goToSignup = () => navigate('/register')
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-6 py-12 sm:px-8">
@@ -163,17 +167,33 @@ export function CatalogShowcasePage() {
         ) : view === 'grid' ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((item) => (
-              <ShowcaseCard key={item.slug} item={item} language={language} t={t} onSignup={goToSignup} />
+              <ShowcaseCard key={item.slug} item={item} language={language} t={t} onPreview={() => setPreviewItem(item)} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {items.map((item) => (
-              <ShowcaseListRow key={item.slug} item={item} language={language} t={t} onSignup={goToSignup} />
+              <ShowcaseListRow
+                key={item.slug}
+                item={item}
+                language={language}
+                t={t}
+                onPreview={() => setPreviewItem(item)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {previewItem ? (
+        <CatalogShowcasePreviewModal
+          open
+          onClose={() => setPreviewItem(null)}
+          itemType={previewItem.type}
+          slug={previewItem.slug}
+          title={localizedCatalogText(language, previewItem.title, previewItem.titleEn)}
+        />
+      ) : null}
     </div>
   )
 }
@@ -182,91 +202,73 @@ type CardProps = {
   item: CatalogShowcaseItem
   language: 'en' | 'es'
   t: <T = string>(key: string) => T
-  onSignup: () => void
+  onPreview: () => void
 }
 
-/** "Sign up to see the price" — replaces the actual price everywhere in
- * this page, since pricing is only revealed once a visitor has an account. */
-function PriceGate({ t }: { t: <T = string>(key: string) => T }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ase-muted">
-      <Lock className="h-3.5 w-3.5" strokeWidth={1.75} />
-      {t('publicCatalogShowcase.priceHidden')}
-    </span>
-  )
-}
-
-function useExpandableDescription(item: CatalogShowcaseItem, language: 'en' | 'es') {
-  const [expanded, setExpanded] = useState(false)
-  const short = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
-  const long = localizedCatalogText(language, item.longDescription, item.longDescriptionEn)
-  // Only worth offering "show more" when the long description actually adds
-  // something beyond the short one already shown.
-  const canExpand = Boolean(long && long.trim() && long.trim() !== short.trim())
-  return { expanded, setExpanded, short, long, canExpand }
-}
-
-function ShowcaseCard({ item, language, t, onSignup }: CardProps) {
+function ShowcaseCard({ item, language, t, onPreview }: CardProps) {
   const title = localizedCatalogText(language, item.title, item.titleEn)
-  const { expanded, setExpanded, short, long, canExpand } = useExpandableDescription(item, language)
+  const description = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
+  const detailPath = catalogShowcaseItemPath(item)
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden p-0" interactive>
-      <div className={cn('relative overflow-hidden bg-ase-bg2', catalogImageAspectClass(item.type))}>
-        <AuthenticatedImage
-          src={item.imageUrl}
-          alt=""
-          fit="contain"
-          className="h-full w-full transition duration-500 ease-out group-hover:scale-[1.08]"
-        />
-        <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text">
-          {t(`publicCatalogShowcase.type.${item.type}`)}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col gap-2.5 p-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
-          <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{title}</h3>
-          {expanded ? (
-            <div className="mt-1.5">
-              <MarkdownContent content={long} />
-            </div>
-          ) : (
-            <p className="mt-1.5 line-clamp-2 text-sm text-ase-muted">{short}</p>
-          )}
-          {canExpand ? (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="mt-1 text-xs font-semibold text-ase-brand hover:underline"
-            >
-              {expanded ? t('publicCatalogShowcase.descriptionLess') : t('publicCatalogShowcase.descriptionMore')}
-            </button>
-          ) : null}
-          <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
+      <Link to={detailPath} className="flex flex-col">
+        <div className={cn('relative overflow-hidden bg-ase-bg2', catalogImageAspectClass(item.type))}>
+          <AuthenticatedImage
+            src={item.imageUrl}
+            alt=""
+            fit="contain"
+            className="h-full w-full transition duration-500 ease-out group-hover:scale-[1.08]"
+          />
+          <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text">
+            {t(`publicCatalogShowcase.type.${item.type}`)}
+          </span>
         </div>
-        <PriceGate t={t} />
-        <div className="mt-auto">
-          <Button size="sm" variant="primary" className="w-full" onClick={onSignup}>
-            {t('publicCatalogShowcase.cta')}
+        <div className="flex flex-col gap-2.5 p-4 pb-0">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
+            <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{title}</h3>
+            <p className="mt-1.5 line-clamp-2 text-sm text-ase-muted">{description}</p>
+            <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
+          </div>
+          <p className="text-lg font-bold text-ase-text">
+            {formatPrice(item.price, item.currency, t('publicCatalogShowcase.free'))}
+          </p>
+        </div>
+      </Link>
+      <div className="mt-auto flex flex-wrap items-center gap-2 p-4 pt-3">
+        <Link to={detailPath} className="min-w-0 flex-1">
+          <Button size="sm" variant="primary" className="w-full">
+            {t('publicCatalogShowcase.viewDetails')}
           </Button>
-        </div>
+        </Link>
+        {item.hasPreview ? (
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Eye className="h-3.5 w-3.5" strokeWidth={1.75} />}
+            onClick={onPreview}
+          >
+            {t('publicCatalogShowcase.preview')}
+          </Button>
+        ) : null}
       </div>
     </Card>
   )
 }
 
-function ShowcaseListRow({ item, language, t, onSignup }: CardProps) {
+function ShowcaseListRow({ item, language, t, onPreview }: CardProps) {
   const title = localizedCatalogText(language, item.title, item.titleEn)
-  const { expanded, setExpanded, short, long, canExpand } = useExpandableDescription(item, language)
+  const description = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
+  const detailPath = catalogShowcaseItemPath(item)
 
   return (
     <Card className="overflow-hidden p-0" interactive>
-      <div className="flex w-full items-start gap-4">
-        <div className="h-24 w-24 shrink-0 overflow-hidden bg-ase-bg2 sm:h-28 sm:w-28">
+      <div className="flex w-full items-center gap-4">
+        <Link to={detailPath} className="h-24 w-24 shrink-0 overflow-hidden bg-ase-bg2 sm:h-28 sm:w-28">
           <AuthenticatedImage src={item.imageUrl} alt="" fit="contain" className="h-full w-full" />
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1 py-3">
+        </Link>
+        <Link to={detailPath} className="flex min-w-0 flex-1 flex-col gap-1 py-3">
           <div className="flex items-center gap-2">
             <span className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[11px] font-semibold text-ase-text2">
               {t(`publicCatalogShowcase.type.${item.type}`)}
@@ -274,27 +276,30 @@ function ShowcaseListRow({ item, language, t, onSignup }: CardProps) {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
           </div>
           <h3 className="truncate text-base font-bold text-ase-text">{title}</h3>
-          {expanded ? (
-            <MarkdownContent content={long} />
-          ) : (
-            <p className="line-clamp-1 text-sm text-ase-muted">{short}</p>
-          )}
-          {canExpand ? (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="self-start text-xs font-semibold text-ase-brand hover:underline"
-            >
-              {expanded ? t('publicCatalogShowcase.descriptionLess') : t('publicCatalogShowcase.descriptionMore')}
-            </button>
-          ) : null}
+          <p className="line-clamp-1 text-sm text-ase-muted">{description}</p>
           <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-0.5" />
-        </div>
+        </Link>
         <div className="flex shrink-0 flex-col items-end gap-2 py-3 pr-4">
-          <PriceGate t={t} />
-          <Button size="sm" variant="primary" onClick={onSignup}>
-            {t('publicCatalogShowcase.cta')}
-          </Button>
+          <p className="text-base font-bold text-ase-text">
+            {formatPrice(item.price, item.currency, t('publicCatalogShowcase.free'))}
+          </p>
+          <div className="flex items-center gap-2">
+            {item.hasPreview ? (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<Eye className="h-3.5 w-3.5" strokeWidth={1.75} />}
+                onClick={onPreview}
+              >
+                {t('publicCatalogShowcase.preview')}
+              </Button>
+            ) : null}
+            <Link to={detailPath}>
+              <Button size="sm" variant="primary">
+                {t('publicCatalogShowcase.viewDetails')}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </Card>

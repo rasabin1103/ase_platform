@@ -40,7 +40,7 @@ const emptyDefaults: FormValues = {
   slug: '',
   excerpt: '',
   cover_image_url: null,
-  author_name: 'Arce Sabin Engineering',
+  author_name: 'Roberto Arce',
   status: 'draft',
   meta_title: null,
   meta_description: null,

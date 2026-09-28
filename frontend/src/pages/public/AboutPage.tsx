@@ -62,7 +62,7 @@ export function AboutPage() {
                 <div>
                   <div className="text-label text-ase-muted">AÑOS</div>
                   <div className="mt-2 font-mono text-data-lg text-ase-text">
-                    <CountUpInView value={18} />+
+                    <CountUpInView value={10} />+
                   </div>
                 </div>
                 <div>

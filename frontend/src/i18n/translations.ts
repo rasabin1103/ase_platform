@@ -8,6 +8,8 @@ import { aboutPageEn, aboutPageEs } from './aboutPage.locale'
 import { organizationsPageEn, organizationsPageEs } from './organizationsPage.locale'
 /** Private `/users` copy (EN + ES). Merged as root key `usersPage`. */
 import { usersPageEn, usersPageEs } from './usersPage.locale'
+/** Private `/onboarding` copy (EN + ES). Merged as root key `onboardingPage`. */
+import { onboardingPageEn, onboardingPageEs } from './onboardingPage.locale'
 /** Private `/plans` copy (EN + ES). Merged as root key `plansPage`. */
 import { plansPageEn, plansPageEs } from './plansPage.locale'
 import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
@@ -147,6 +149,7 @@ export const translations = {
     bookingPage: bookingPageEn,
     adminBookingPage: adminBookingPageEn,
     usersPage: usersPageEn,
+    onboardingPage: onboardingPageEn,
     plansPage: plansPageEn,
     requestsPage: requestsPageEn,
     creatorApplication: creatorApplicationEn,
@@ -391,6 +394,34 @@ export const translations = {
       comingSoonCta: 'Coming soon',
       currentPlanBadge: 'Your current plan',
       currentPlanCta: 'Manage your plan',
+      faq: {
+        badge: 'Individual purchase vs. subscription',
+        title: 'Which one should you choose?',
+        subtitle:
+          'Both ways of paying give you real access — the difference is what happens to that access over time. Here is exactly how each one works.',
+        items: {
+          access: {
+            question: 'What do I actually get access to in each case?',
+            answer:
+              'Buying an item individually gives you access to that one product, course, book or resource — nothing else. Subscribing to a plan gives you access to every item currently included in that plan for as long as your subscription stays active, plus anything added to the plan later.',
+          },
+          ownership: {
+            question: 'If I buy something individually, is it mine forever?',
+            answer:
+              'Yes. An individual purchase is a one-time payment for lifetime access to that item — it never expires and does not depend on any subscription. If that same item later gets added to a plan you are not subscribed to, your access is unaffected either way.',
+          },
+          downloads: {
+            question: 'Can I download what I buy, or only view it on the platform?',
+            answer:
+              'Where a download is offered (books, resources and some products), you can download it the same way whether you bought it individually or you have access to it through an active plan — the download itself never expires once it is on your device. If your plan access to that item ends later, previously downloaded files remain yours; only future in-platform access is affected.',
+          },
+          cancellation: {
+            question: 'What happens if I cancel my subscription?',
+            answer:
+              'Cancelling stops future billing and removes access to whatever was included only through the plan, once the current billing period ends. It never removes anything you bought individually — those stay yours regardless of what you do with any subscription.',
+          },
+        },
+      },
       plans: {
         free: {
           name: 'Free',
@@ -562,7 +593,7 @@ export const translations = {
         footerText:
           'You can also reach us directly at contact@arcesabinengineering.com or connect on LinkedIn with Roberto Arce Sabín.',
         sendTitle: 'Send a message',
-        sendSubtitle: 'We’ll reply within 1–2 business days.',
+        sendSubtitle: 'We’ll reply within 24 hours on business days.',
         fields: {
           name: 'Name',
           email: 'Email',
@@ -578,7 +609,7 @@ export const translations = {
         focus: 'Focus',
         focusBody: 'RBAC, multi-tenant platforms, premium UX, operational tooling',
         response: 'Response time',
-        responseBody: '1–2 business days',
+        responseBody: 'Under 24 hours (business days)',
         subject: 'ASE — Contact request',
       },
       services: {
@@ -597,6 +628,13 @@ export const translations = {
       backHome: 'Back to Home',
       backToLogin: 'Back to login',
       bullets: ['Secure authentication', 'Organization context', 'RBAC permissions', 'SaaS operations'],
+      fields: {
+        email: 'Email',
+        password: 'Password',
+        displayName: 'Display name',
+        firstName: 'First name',
+        lastName: 'Last name',
+      },
       login: {
         badge: 'Client Workspace',
         title: 'Access your engineering workspace',
@@ -616,6 +654,10 @@ export const translations = {
         twoFactorBack: 'Back to login',
         lockedError: 'Too many failed attempts. Account temporarily locked — try again in {{minutes}} min.',
         lockedErrorGeneric: 'Too many failed attempts. Account temporarily locked — try again later.',
+        invalidCredentials: 'Invalid credentials.',
+        connectionError: 'Could not connect to the backend (CORS / API down). VITE_API_URL={{url}}',
+        httpError: 'Login error (HTTP {{status}}).',
+        genericError: 'Login error.',
         registeredBannerTitle: 'Account created',
         registeredBannerBody: 'We sent a confirmation email — please check your inbox and confirm your account before logging in.',
       },
@@ -632,6 +674,7 @@ export const translations = {
         country: 'Country',
         countryPlaceholder: 'Select your country',
         countryRequired: 'Please select your country',
+        genericError: 'Could not register. Check the backend.',
       },
       forgotPassword: {
         badge: 'Account recovery',
@@ -1082,6 +1125,7 @@ export const translations = {
     bookingPage: bookingPageEs,
     adminBookingPage: adminBookingPageEs,
     usersPage: usersPageEs,
+    onboardingPage: onboardingPageEs,
     plansPage: plansPageEs,
     requestsPage: requestsPageEs,
     creatorApplication: creatorApplicationEs,
@@ -1325,6 +1369,34 @@ export const translations = {
       currentPlanCta: 'Gestionar tu plan',
       checkoutLoading: 'Redirigiendo al pago…',
       checkoutError: 'No se pudo iniciar el pago. Inténtalo de nuevo en un momento.',
+      faq: {
+        badge: 'Compra individual vs. suscripción',
+        title: '¿Cuál te conviene?',
+        subtitle:
+          'Las dos formas de pagar te dan acceso real — la diferencia está en qué pasa con ese acceso con el tiempo. Así funciona exactamente cada una.',
+        items: {
+          access: {
+            question: '¿A qué tengo acceso exactamente en cada caso?',
+            answer:
+              'Comprar un ítem de forma individual te da acceso a ese producto, curso, libro o recurso concreto — nada más. Suscribirte a un plan te da acceso a todo lo que ese plan incluye actualmente mientras tu suscripción esté activa, más lo que se vaya añadiendo al plan después.',
+          },
+          ownership: {
+            question: 'Si compro algo de forma individual, ¿es mío para siempre?',
+            answer:
+              'Sí. Una compra individual es un pago único con acceso de por vida a ese ítem — no caduca ni depende de ninguna suscripción. Si ese mismo ítem se añade más adelante a un plan al que no estás suscrito, tu acceso no se ve afectado de ninguna manera.',
+          },
+          downloads: {
+            question: '¿Puedo descargar lo que compro, o solo verlo en la plataforma?',
+            answer:
+              'Donde se ofrece descarga (libros, recursos y algunos productos), puedes descargarla igual tanto si compraste el ítem de forma individual como si tienes acceso a través de un plan activo — la descarga en sí no caduca una vez está en tu dispositivo. Si tu acceso vía plan a ese ítem termina más adelante, los archivos ya descargados siguen siendo tuyos; solo se ve afectado el acceso futuro dentro de la plataforma.',
+          },
+          cancellation: {
+            question: '¿Qué pasa si cancelo mi suscripción?',
+            answer:
+              'Cancelar detiene los próximos cobros y elimina el acceso a lo que estaba incluido solo por el plan, una vez termine el periodo de facturación en curso. Nunca elimina lo que hayas comprado de forma individual — eso sigue siendo tuyo, hagas lo que hagas con cualquier suscripción.',
+          },
+        },
+      },
       plans: {
         free: {
           name: 'Gratis',
@@ -1496,7 +1568,7 @@ export const translations = {
         footerText:
           'También puedes escribirnos directamente a contact@arcesabinengineering.com o conectar en LinkedIn con Roberto Arce Sabín.',
         sendTitle: 'Enviar mensaje',
-        sendSubtitle: 'Respondemos en 1–2 días laborables.',
+        sendSubtitle: 'Respondemos en menos de 24 horas en días laborables.',
         fields: {
           name: 'Nombre',
           email: 'Email',
@@ -1512,7 +1584,7 @@ export const translations = {
         focus: 'Enfoque',
         focusBody: 'RBAC, plataformas multi-tenant, UX premium, tooling operativo',
         response: 'Tiempo de respuesta',
-        responseBody: '1–2 días laborables',
+        responseBody: 'Menos de 24 horas (días laborables)',
         subject: 'ASE — Solicitud de contacto',
       },
       services: {
@@ -1531,6 +1603,13 @@ export const translations = {
       backHome: 'Volver al inicio',
       backToLogin: 'Volver a acceder',
       bullets: ['Autenticación segura', 'Contexto de organización', 'Permisos RBAC', 'Operaciones SaaS'],
+      fields: {
+        email: 'Email',
+        password: 'Contraseña',
+        displayName: 'Nombre visible',
+        firstName: 'Nombre',
+        lastName: 'Apellidos',
+      },
       login: {
         badge: 'Workspace cliente',
         title: 'Accede a tu workspace de ingeniería',
@@ -1550,6 +1629,10 @@ export const translations = {
         twoFactorBack: 'Volver a acceder',
         lockedError: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo en {{minutes}} min.',
         lockedErrorGeneric: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo más tarde.',
+        invalidCredentials: 'Credenciales inválidas.',
+        connectionError: 'No se pudo conectar con el backend (CORS / API caída). VITE_API_URL={{url}}',
+        httpError: 'Error al iniciar sesión (HTTP {{status}}).',
+        genericError: 'Error al iniciar sesión.',
         registeredBannerTitle: 'Cuenta creada',
         registeredBannerBody: 'Te hemos enviado un correo de confirmación — revisa tu bandeja de entrada y confirma tu cuenta antes de iniciar sesión.',
       },
@@ -1566,6 +1649,7 @@ export const translations = {
         country: 'País',
         countryPlaceholder: 'Selecciona tu país',
         countryRequired: 'Selecciona tu país',
+        genericError: 'Error al registrarse. Revisa el backend.',
       },
       forgotPassword: {
         badge: 'Recuperar cuenta',
