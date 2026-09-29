@@ -134,6 +134,18 @@ export const catalogEn = {
     nextChapter: 'Next chapter',
     formatUnavailable: 'This edition has not been uploaded yet.',
     downloadQuotaExhausted: 'You have used all your plan\'s monthly downloads. You can still view this content — try again next month, or upgrade your plan.',
+    // Shown next to the Download button itself — previously this number
+    // only existed on the profile page's plan summary card, so a visitor
+    // had to leave the item to find out how many downloads they had left.
+    downloadsRemaining: '{{remaining}} of {{limit}} monthly downloads left',
+    // Context caption shown right under a discounted price — a bare "€8.99
+    // €8.54" with nothing else reads as a random/broken price, so this
+    // explains exactly where the discount comes from and how big it is.
+    discountContext: 'Price with {{planName}} — {{percent}}% off',
+    // Only used if, somehow, this renders with no plan name available
+    // (should be unreachable — a discount only ever exists because of an
+    // active plan subscription) — keeps the sentence grammatical either way.
+    discountContextFallbackPlan: 'your plan',
     viewer: {
       toc: 'Index',
       searchPlaceholder: 'Search in this document…',
@@ -1761,6 +1773,9 @@ export const catalogEs = {
     nextChapter: 'Capítulo siguiente',
     formatUnavailable: 'Esta edición todavía no se ha subido.',
     downloadQuotaExhausted: 'Has usado todas tus descargas del mes incluidas en tu plan. Puedes seguir viendo este contenido — inténtalo de nuevo el próximo mes, o mejora tu plan.',
+    downloadsRemaining: 'Te quedan {{remaining}} de {{limit}} descargas este mes',
+    discountContext: 'Precio con {{planName}} — {{percent}}% de descuento',
+    discountContextFallbackPlan: 'tu plan',
     viewer: {
       toc: 'Índice',
       searchPlaceholder: 'Buscar en este documento…',
@@ -2019,7 +2034,7 @@ export const independentDashboardEs = {
     planSavings: 'Ahorrado con tu plan',
   },
   recommended: {
-    badge: 'Seguí explorando',
+    badge: 'Sigue explorando',
   },
   continueLearning: {
     badge: 'Continúa donde lo dejaste',

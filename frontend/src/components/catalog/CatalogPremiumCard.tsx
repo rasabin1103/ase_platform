@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 import { cn } from '../ui/cn'
@@ -47,6 +48,7 @@ export function CatalogPremiumCard({
   imageAspectClass,
 }: Props) {
   const { t, language } = useI18n()
+  const auth = useAuth()
   const detailPath = `/catalog/${item.type}/${item.slug}`
   // Same rule as CatalogItemCard/CatalogDetailPage: a free item (price 0)
   // needs no purchase click at all — the "Comprar" button just doesn't apply.
@@ -140,6 +142,18 @@ export function CatalogPremiumCard({
             <span className="text-xs font-medium text-ase-muted">{item.duration}</span>
           ) : null}
         </div>
+        {item.discountedPrice != null && item.discountPercent != null ? (
+          <p className="-mt-2 text-[11px] font-medium text-ase-brand">
+            {String(t('catalog.resource.discountContext'))
+              .replace(
+                '{{planName}}',
+                (language === 'en' && auth.currentUser?.plan_name_en
+                  ? auth.currentUser.plan_name_en
+                  : auth.currentUser?.plan_name) || (t('catalog.resource.discountContextFallbackPlan') as string),
+              )
+              .replace('{{percent}}', String(item.discountPercent))}
+          </p>
+        ) : null}
         <div className="mt-auto flex flex-wrap items-center gap-2">
           <Link to={detailPath}>
             <Button size="sm" variant="primary">
