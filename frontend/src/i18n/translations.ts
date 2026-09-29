@@ -399,6 +399,12 @@ export const translations = {
       changePlanError: 'We could not switch your plan. Please try again in a moment.',
       changePlanSuccessUpgrade: 'Done — your new plan is active immediately, and you were charged the prorated difference for the rest of this period.',
       changePlanSuccessDowngrade: 'Done — you keep your current plan and benefits until {{date}}. Your new (lower) plan takes over automatically on that date, with no charge now.',
+      cardBenefits: {
+        downloadsLimit: '{{limit}} downloads/month included',
+        downloadsUnlimited: 'Unlimited downloads',
+        discount: 'Up to {{percent}}% off individual purchases',
+        loyalty: '+{{amount}} bonus download every {{interval}} months',
+      },
       faq: {
         badge: 'Individual purchase vs. subscription',
         title: 'Which one should you choose?',
@@ -1421,6 +1427,12 @@ export const translations = {
       changePlanError: 'No se pudo cambiar tu plan. Inténtalo de nuevo en un momento.',
       changePlanSuccessUpgrade: 'Listo — tu nuevo plan ya está activo, y se te cobró la diferencia prorrateada por el resto de este período.',
       changePlanSuccessDowngrade: 'Listo — conservas tu plan y beneficios actuales hasta el {{date}}. Tu nuevo plan (más económico) entrará en vigor automáticamente ese día, sin cargo ahora.',
+      cardBenefits: {
+        downloadsLimit: '{{limit}} descargas al mes incluidas',
+        downloadsUnlimited: 'Descargas ilimitadas',
+        discount: 'Hasta {{percent}}% de descuento en compras individuales',
+        loyalty: '+{{amount}} descarga de fidelidad cada {{interval}} meses',
+      },
       checkoutLoading: 'Redirigiendo al pago…',
       checkoutError: 'No se pudo iniciar el pago. Inténtalo de nuevo en un momento.',
       faq: {

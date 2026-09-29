@@ -11,7 +11,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 import { JsonLd, SITE_URL } from '../seo/JsonLd'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Download, Percent, Award } from 'lucide-react'
 import {
   catalogPlansForBilling,
   localizedPlanText,
@@ -45,6 +45,58 @@ function planMarketingDescription(
   if (tier === 'pro' || tier === 'business') return t('pricing.professionalPara') as string
   return ''
 }
+
+type PlanCardBenefit = { icon: 'downloads' | 'discount' | 'loyalty'; text: string }
+
+/** The three "does this plan actually give me anything beyond the items
+ * list" benefits — monthly download quota, discount on items the plan
+ * doesn't include, and the loyalty bonus — computed straight from the same
+ * Plan fields the profile page's PlanSummaryCard reads after subscribing
+ * (see ProfilePage.tsx), so a visitor sees the real numbers before they
+ * ever pay, not just a bullet list of included items with no quota
+ * context. Each line is included only when the plan actually has
+ * something to show for it — a plan with 0 included items never claims a
+ * download quota, and a plan with no discount_items/loyalty config simply
+ * omits those lines rather than showing a misleading zero. */
+function planCardBenefits(plan: Plan, t: (key: string) => unknown): PlanCardBenefit[] {
+  const benefits: PlanCardBenefit[] = []
+  const hasIncludedItems = (plan.included_catalog_items?.length ?? 0) > 0
+
+  if (hasIncludedItems) {
+    const text =
+      plan.monthly_download_limit != null
+        ? String(t('pricing.cardBenefits.downloadsLimit')).replace(
+            '{{limit}}',
+            String(plan.monthly_download_limit),
+          )
+        : (t('pricing.cardBenefits.downloadsUnlimited') as string)
+    benefits.push({ icon: 'downloads', text })
+  }
+
+  const discountItems = plan.discount_items ?? []
+  if (discountItems.length > 0) {
+    const maxDiscount = Math.max(...discountItems.map((d) => Number(d.discount_percent)))
+    if (Number.isFinite(maxDiscount) && maxDiscount > 0) {
+      benefits.push({
+        icon: 'discount',
+        text: String(t('pricing.cardBenefits.discount')).replace('{{percent}}', String(maxDiscount)),
+      })
+    }
+  }
+
+  if (plan.loyalty_bonus_downloads && plan.loyalty_bonus_interval_months) {
+    benefits.push({
+      icon: 'loyalty',
+      text: String(t('pricing.cardBenefits.loyalty'))
+        .replace('{{amount}}', String(plan.loyalty_bonus_downloads))
+        .replace('{{interval}}', String(plan.loyalty_bonus_interval_months)),
+    })
+  }
+
+  return benefits
+}
+
+const PLAN_CARD_BENEFIT_ICONS = { downloads: Download, discount: Percent, loyalty: Award } as const
 
 function cardTone(plan: Plan): TierTone {
   const tier = tierFromPlanCode(plan.code)
@@ -271,6 +323,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                 billing,
               )
               const featureGroups = planFeatureGroups(plan)
+              const cardBenefits = planCardBenefits(plan, t)
               const description = planMarketingDescription(t, plan, language)
               const planName = localizedPlanText(language, plan.name, plan.name_en)
               const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
@@ -350,6 +403,25 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                     <div className="text-4xl font-extrabold tracking-tight text-ase-text">{priceLabel}</div>
                     {suffix ? <div className="pb-1 text-sm text-ase-text2">{suffix}</div> : null}
                   </div>
+
+                  {cardBenefits.length > 0 ? (
+                    <ul className="mt-5 space-y-2 border-t border-white/10 pt-5">
+                      {cardBenefits.map((benefit) => {
+                        const Icon = PLAN_CARD_BENEFIT_ICONS[benefit.icon]
+                        return (
+                          <li key={benefit.icon} className="flex items-center gap-2.5 text-sm text-ase-text2">
+                            <span
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-ase-brand/30 bg-ase-brand/10 text-ase-brand"
+                              aria-hidden="true"
+                            >
+                              <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                            </span>
+                            <span>{benefit.text}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  ) : null}
 
                   <div className="mt-6">
                     {isCurrentPlan ? (

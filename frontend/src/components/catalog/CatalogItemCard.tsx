@@ -8,6 +8,7 @@ import { catalogImageAspectClass } from './catalogCardShape'
 import { RatingWidget } from './RatingWidget'
 import { RatingSummary } from './RatingSummary'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItem, CatalogItemType } from '../../types/catalog.types'
 
@@ -49,6 +50,7 @@ export function CatalogItemCard({
   imageAspectClass,
 }: Props) {
   const { t, language } = useI18n()
+  const auth = useAuth()
   const detailPath = `/catalog/${item.type}/${item.slug}`
   // Same rule as CatalogDetailPage: a free item (price 0) needs no purchase
   // click at all — the "Comprar" button just doesn't apply to it.
@@ -111,6 +113,18 @@ export function CatalogItemCard({
             formatPrice(item.price, item.currency, t('catalog.free'))
           )}
         </p>
+        {item.discountedPrice != null && item.discountPercent != null ? (
+          <p className="-mt-1 text-[11px] font-medium text-ase-brand">
+            {String(t('catalog.resource.discountContext'))
+              .replace(
+                '{{planName}}',
+                (language === 'en' && auth.currentUser?.plan_name_en
+                  ? auth.currentUser.plan_name_en
+                  : auth.currentUser?.plan_name) || (t('catalog.resource.discountContextFallbackPlan') as string),
+              )
+              .replace('{{percent}}', String(item.discountPercent))}
+          </p>
+        ) : null}
         <RatingWidget item={item} compact />
         <div className="mt-auto flex flex-wrap items-center gap-2">
           <Link to={detailPath}>

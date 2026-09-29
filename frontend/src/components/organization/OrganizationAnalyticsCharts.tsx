@@ -126,7 +126,7 @@ export function OrganizationAnalyticsCharts() {
             </div>
           </Card>
 
-          <div className="grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
+          <div className="min-w-0 grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
             <BarPanel
               title={t('organizationWorkspace.analytics.spendByTypeTitle') as string}
               data={spendData}
@@ -145,7 +145,7 @@ export function OrganizationAnalyticsCharts() {
             />
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
+          <div className="min-w-0 grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
             <Card className="p-5">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">
                 {t('organizationWorkspace.analytics.membersByRoleTitle')}

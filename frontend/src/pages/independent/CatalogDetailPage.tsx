@@ -66,6 +66,7 @@ import { CodeViewer } from '../../components/catalog/CodeViewer'
 import { ShareButton } from '../../components/catalog/ShareButton'
 import { SeriesPanel } from '../../components/catalog/SeriesPanel'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import type { CatalogItemType } from '../../types/catalog.types'
 
@@ -427,6 +428,7 @@ export function CatalogDetailPage() {
   const { type, slug } = useParams<{ type: CatalogItemType; slug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const { t, language } = useI18n()
+  const auth = useAuth()
   const qc = useQueryClient()
   const [accessModalOpen, setAccessModalOpen] = useState(false)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
@@ -658,6 +660,18 @@ export function CatalogDetailPage() {
                     formatPrice(item.price, item.currency, t('catalog.free'))
                   )}
                 </div>
+                {item.discountedPrice != null && item.discountPercent != null ? (
+                  <p className="mt-1 text-xs font-medium text-ase-brand">
+                    {String(t('catalog.resource.discountContext'))
+                      .replace(
+                        '{{planName}}',
+                        (language === 'en' && auth.currentUser?.plan_name_en
+                          ? auth.currentUser.plan_name_en
+                          : auth.currentUser?.plan_name) || (t('catalog.resource.discountContextFallbackPlan') as string),
+                      )
+                      .replace('{{percent}}', String(item.discountPercent))}
+                  </p>
+                ) : null}
                 {item.isPurchased ? (
                   <Badge className="mt-2 border-emerald-400/30 bg-emerald-400/15 text-emerald-200">
                     {t('catalog.purchased')}
@@ -759,6 +773,13 @@ export function CatalogDetailPage() {
                         {t('catalog.resource.download')}
                       </Button>
                     )
+                  ) : null}
+                  {item.isPlanIncluded && quotaQuery.data && !quotaQuery.data.unlimited && !quotaExhausted ? (
+                    <span className="basis-full text-xs text-ase-text2">
+                      {String(t('catalog.resource.downloadsRemaining'))
+                        .replace('{{remaining}}', String(quotaQuery.data.remaining ?? 0))
+                        .replace('{{limit}}', String(quotaQuery.data.limit ?? 0))}
+                    </span>
                   ) : null}
                   {quotaExhausted ? (
                     <span className="basis-full text-xs text-amber-300">
