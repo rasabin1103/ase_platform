@@ -45,30 +45,30 @@ function FaqItem({ question, answer, defaultOpen }: { question: string; answer: 
  * quota behavior, 60-day reward expiry, discount stacking, and
  * upgrade/downgrade timing), phrased as an FAQ so a visitor can resolve
  * doubts before subscribing rather than discovering them after. Lives only
- * on /pricing (see PricingPage), alongside — not replacing —
- * PurchaseVsSubscriptionFaq. */
+ * on /pricing (see PricingPage, which renders it side-by-side with
+ * PurchaseVsSubscriptionFaq inside a shared section). Renders just its own
+ * content — no outer <section>/border/max-width — so the parent page
+ * controls the shared section wrapper and column layout. */
 export function SubscriptionPolicyFaq() {
   const { t } = useI18n()
   return (
-    <section className="border-t border-white/5">
-      <div className="mx-auto w-full max-w-3xl px-6 py-20 sm:px-8">
-        <Eyebrow>{t('pricing.policyFaq.badge')}</Eyebrow>
-        <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">
-          {t('pricing.policyFaq.title')}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-ase-text2 sm:text-base">{t('pricing.policyFaq.subtitle')}</p>
+    <div>
+      <Eyebrow>{t('pricing.policyFaq.badge')}</Eyebrow>
+      <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">
+        {t('pricing.policyFaq.title')}
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-ase-text2 sm:text-base">{t('pricing.policyFaq.subtitle')}</p>
 
-        <div className="mt-8 space-y-3">
-          {QUESTION_KEYS.map((key, index) => (
-            <FaqItem
-              key={key}
-              question={t(`pricing.policyFaq.items.${key}.question`) as string}
-              answer={t(`pricing.policyFaq.items.${key}.answer`) as string}
-              defaultOpen={index === 0}
-            />
-          ))}
-        </div>
+      <div className="mt-8 space-y-3">
+        {QUESTION_KEYS.map((key, index) => (
+          <FaqItem
+            key={key}
+            question={t(`pricing.policyFaq.items.${key}.question`) as string}
+            answer={t(`pricing.policyFaq.items.${key}.answer`) as string}
+            defaultOpen={index === 0}
+          />
+        ))}
       </div>
-    </section>
+    </div>
   )
 }

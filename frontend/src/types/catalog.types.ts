@@ -66,6 +66,13 @@ export type CatalogItem = {
   // preview*.pdf; the resource-content/resource-download calls enforce
   // real ownership themselves. See ConsumerCatalogService._to_read.
   hasResourceContent: boolean
+  // True when the current user has EVER downloaded this exact item
+  // before (this month or any earlier one). Only populated on the
+  // single-item detail fetch — CatalogDetailPage uses it to keep an
+  // already-downloaded item's download button enabled even once the
+  // plan's monthly quota is exhausted (see backend
+  // app.modules.plans.quota.has_ever_downloaded_item).
+  alreadyDownloaded?: boolean
   // --- Version & changelog — populated only for type="resource" items
   // with a current_version set; empty/null for everything else.
   currentVersion?: string | null

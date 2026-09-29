@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,6 +25,21 @@ from app.modules.consumer_catalog.service import ConsumerCatalogService
 # with no account can't request or wait-list anything yet, so showing those
 # here would just be confusing teaser content with no next step attached.
 SHOWCASE_LIST_STATUSES = (CatalogItemStatus.published,)
+
+# In-process cache for "does a real public preview exist for this item"
+# (see CatalogShowcaseService._has_preview_cached) — keyed by
+# catalog_item_id. The showcase list renders many cards at once, so unlike
+# get_item (the single-item detail page, which always runs a fresh,
+# uncached ConsumerCatalogService.has_public_preview check), the list view
+# reuses this short-lived cache instead of firing one GitHub call per row.
+# Deliberately its own cache, separate from consumer_catalog's private
+# _PREVIEW_EXISTS_CACHE — that one answers "does a non-owner have
+# something to preview" (used only for a priced, unpurchased item) while
+# this one answers "does an anonymous visitor have something to preview"
+# (has_public_preview also has a README.md fallback a non-owner check
+# doesn't), so the two must never share a cache key.
+_SHOWCASE_PREVIEW_EXISTS_CACHE: dict[int, tuple[float, bool]] = {}
+_SHOWCASE_PREVIEW_EXISTS_CACHE_TTL_SECONDS = 300.0
 
 
 class CatalogShowcaseService:
@@ -48,6 +65,20 @@ class CatalogShowcaseService:
         self.db = db
         self.repo = ConsumerCatalogRepository(db)
         self.ratings = CatalogItemRatingsRepository(db)
+
+    def _has_preview_cached(self, item: CatalogItem) -> bool:
+        """Cached variant of ConsumerCatalogService.has_public_preview —
+        used by list_items so the showcase grid doesn't fire one GitHub
+        call per card on every page load. See
+        _SHOWCASE_PREVIEW_EXISTS_CACHE for why this is a separate cache
+        from consumer_catalog's own."""
+        now = time.monotonic()
+        cached = _SHOWCASE_PREVIEW_EXISTS_CACHE.get(item.id)
+        if cached is not None and now - cached[0] < _SHOWCASE_PREVIEW_EXISTS_CACHE_TTL_SECONDS:
+            return cached[1]
+        result = ConsumerCatalogService(self.db).has_public_preview(item)
+        _SHOWCASE_PREVIEW_EXISTS_CACHE[item.id] = (now, result)
+        return result
 
     def _resolve_public_image_url(self, item: CatalogItem) -> str:
         """Unlike the authenticated consumer catalog (resolve_catalog_cover_url
@@ -78,12 +109,15 @@ class CatalogShowcaseService:
             price=item.price,
             currency=item.currency,
             previewUrl=item.preview_url,
-            # Cheap flag only — proves repo_path + a resolvable repo are
-            # configured, not that the folder actually has a sample file in
-            # it. Good enough for a list of cards; the single-item page
-            # confirms for real (see get_item below), same two-tier
-            # approach as consumer_catalog's hasResourceContent.
-            hasPreview=bool(item.repo_path and ConsumerCatalogService._resolve_repo_url(item)),
+            # A real (cached) existence check, not just "repo_path is set"
+            # — that cheaper check used to let the showcase grid show
+            # "Vista previa" for every item with a repo configured, even
+            # one whose admin never actually uploaded a preview file. See
+            # _has_preview_cached / _SHOWCASE_PREVIEW_EXISTS_CACHE. The
+            # single-item page (get_item below) re-verifies this fully
+            # fresh (uncached) on top, same two-tier approach as
+            # consumer_catalog's hasResourceContent.
+            hasPreview=self._has_preview_cached(item),
             averageRating=review_summary[0] if review_summary else None,
             reviewCount=review_summary[1] if review_summary else 0,
         )

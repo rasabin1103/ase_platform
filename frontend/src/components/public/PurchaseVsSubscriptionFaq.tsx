@@ -35,31 +35,32 @@ function FaqItem({ question, answer, defaultOpen }: { question: string; answer: 
 /** "Compra individual vs suscripción" — resolves the doubts a visitor has
  * right before paying: whether they'll actually own what they buy, what
  * happens to it if they cancel a plan, whether they can download it, and
- * what cancelling actually stops. Lives only on /pricing (see PricingPage),
- * not inside PricingSection itself, so it doesn't also show up wherever
- * PricingSection is embedded compact (e.g. the home page). */
+ * what cancelling actually stops. Lives only on /pricing (see PricingPage,
+ * which renders it side-by-side with SubscriptionPolicyFaq inside a shared
+ * section), not inside PricingSection itself, so it doesn't also show up
+ * wherever PricingSection is embedded compact (e.g. the home page). Renders
+ * just its own content — no outer <section>/border/max-width — so the
+ * parent page controls the shared section wrapper and column layout. */
 export function PurchaseVsSubscriptionFaq() {
   const { t } = useI18n()
   return (
-    <section className="border-t border-white/5">
-      <div className="mx-auto w-full max-w-3xl px-6 py-20 sm:px-8">
-        <Eyebrow>{t('pricing.faq.badge')}</Eyebrow>
-        <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">
-          {t('pricing.faq.title')}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-ase-text2 sm:text-base">{t('pricing.faq.subtitle')}</p>
+    <div>
+      <Eyebrow>{t('pricing.faq.badge')}</Eyebrow>
+      <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">
+        {t('pricing.faq.title')}
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-ase-text2 sm:text-base">{t('pricing.faq.subtitle')}</p>
 
-        <div className="mt-8 space-y-3">
-          {QUESTION_KEYS.map((key, index) => (
-            <FaqItem
-              key={key}
-              question={t(`pricing.faq.items.${key}.question`) as string}
-              answer={t(`pricing.faq.items.${key}.answer`) as string}
-              defaultOpen={index === 0}
-            />
-          ))}
-        </div>
+      <div className="mt-8 space-y-3">
+        {QUESTION_KEYS.map((key, index) => (
+          <FaqItem
+            key={key}
+            question={t(`pricing.faq.items.${key}.question`) as string}
+            answer={t(`pricing.faq.items.${key}.answer`) as string}
+            defaultOpen={index === 0}
+          />
+        ))}
       </div>
-    </section>
+    </div>
   )
 }

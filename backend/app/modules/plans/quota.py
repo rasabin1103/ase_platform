@@ -28,8 +28,12 @@ General subscription policy this module implements (see the "Política
 general de suscripciones" FAQ on the public plans page):
 - monthly downloads never roll over — an unused base allowance is simply
   gone once the calendar month ends (see get_download_quota_status).
-- re-downloading a file you already downloaded this month never costs
-  quota again (see _item_already_downloaded_this_month).
+- re-downloading a file you have EVER downloaded before — this month or
+  any earlier month — never costs quota again, and the download button
+  for it must never be disabled by an exhausted quota (see
+  _item_already_downloaded_ever). Only a brand-new item's first-ever
+  download draws from the monthly allowance (see
+  _distinct_new_items_downloaded_this_month).
 - buying a catalog item outright never draws from any plan's quota (see
   is_item_governed_by_plan_quota).
 - a loyalty reward stays usable for exactly 60 days from the moment it's
@@ -236,9 +240,13 @@ def is_item_governed_by_plan_quota(plan: Plan, catalog_item_id: int) -> bool:
     return any(pci.catalog_item_id == catalog_item_id for pci in plan.included_catalog_items)
 
 
-def _item_already_downloaded_this_month(db: Session, user_id: int, catalog_item_id: int, now: datetime) -> bool:
-    """True if this exact item already has a download event logged this
-    calendar month — a repeat download of it never costs quota again."""
+def _item_already_downloaded_ever(db: Session, user_id: int, catalog_item_id: int) -> bool:
+    """True if this exact item has EVER had a download event logged for
+    this user — this month or any earlier one. Once true, it stays true
+    forever: a repeat download of it must never cost quota again, and the
+    frontend's download button for it must never be disabled by an
+    exhausted quota (see CatalogItemRead.alreadyDownloaded, which mirrors
+    this exact check for the UI)."""
     return (
         db.execute(
             select(func.count())
@@ -246,29 +254,46 @@ def _item_already_downloaded_this_month(db: Session, user_id: int, catalog_item_
             .where(
                 CatalogDownloadEvent.user_id == user_id,
                 CatalogDownloadEvent.catalog_item_id == catalog_item_id,
-                CatalogDownloadEvent.downloaded_at >= _month_start(now),
             )
         ).scalar_one()
         > 0
     )
 
 
-def _distinct_items_downloaded_this_month(db: Session, user_id: int, plan: Plan, now: datetime) -> int:
-    """Count of *distinct* plan-included items downloaded this calendar
-    month — the base monthly allowance is spent per distinct item, not per
-    download event, so downloading the same file five times still counts
-    as one."""
+def has_ever_downloaded_item(db: Session, user_id: int, catalog_item_id: int) -> bool:
+    """Public wrapper around _item_already_downloaded_ever — used outside
+    this module (see ConsumerCatalogService._to_read's alreadyDownloaded
+    field) to decide whether a download button must stay enabled
+    regardless of the plan's monthly quota state."""
+    return _item_already_downloaded_ever(db, user_id, catalog_item_id)
+
+
+def _distinct_new_items_downloaded_this_month(db: Session, user_id: int, plan: Plan, now: datetime) -> int:
+    """Count of *distinct* plan-included items whose very first-ever
+    download (across all time, not just this month) happened within the
+    current calendar month — the base monthly allowance is spent only by
+    genuinely new items, never by re-downloading something already
+    downloaded in a previous month (see _item_already_downloaded_ever)."""
     included_ids = [pci.catalog_item_id for pci in plan.included_catalog_items]
     if not included_ids:
         return 0
+    first_downloaded_at = (
+        select(
+            CatalogDownloadEvent.catalog_item_id,
+            func.min(CatalogDownloadEvent.downloaded_at).label("first_downloaded_at"),
+        )
+        .where(
+            CatalogDownloadEvent.user_id == user_id,
+            CatalogDownloadEvent.catalog_item_id.in_(included_ids),
+        )
+        .group_by(CatalogDownloadEvent.catalog_item_id)
+        .subquery()
+    )
     return int(
         db.execute(
-            select(func.count(func.distinct(CatalogDownloadEvent.catalog_item_id)))
-            .where(
-                CatalogDownloadEvent.user_id == user_id,
-                CatalogDownloadEvent.catalog_item_id.in_(included_ids),
-                CatalogDownloadEvent.downloaded_at >= _month_start(now),
-            )
+            select(func.count())
+            .select_from(first_downloaded_at)
+            .where(first_downloaded_at.c.first_downloaded_at >= _month_start(now))
         ).scalar_one()
     )
 
@@ -294,7 +319,7 @@ def get_download_quota_status(db: Session, user_id: int) -> DownloadQuotaStatus 
     now = datetime.now(timezone.utc)
     _ensure_current_milestone_grant(db, sub, plan, now)
 
-    monthly_used = _distinct_items_downloaded_this_month(db, user_id, plan, now)
+    monthly_used = _distinct_new_items_downloaded_this_month(db, user_id, plan, now)
     bonus_remaining = _bonus_remaining_live(db, organization_id=sub.organization_id, plan_id=plan.id, now=now)
     remaining = max(0, plan.monthly_download_limit - monthly_used) + bonus_remaining
     limit = monthly_used + remaining
@@ -310,7 +335,8 @@ def enforce_download_quota(db: Session, *, user_id: int, catalog_item: CatalogIt
     a quota at all — no active plan, the plan has no limit configured, or
     this specific item isn't one the plan includes (an outright purchase
     is never quota-limited, plan or no plan) — or if this exact item was
-    already downloaded this month (a repeat download never costs quota).
+    ever downloaded before, this month or any earlier one (a repeat
+    download never costs quota, no matter how long ago the first one was).
     Purely a read-only check: it never mutates loyalty-grant state itself
     (see record_download_event for that), so a download that's allowed
     here but then fails to actually serve never wastes a bonus unit.
@@ -325,7 +351,7 @@ def enforce_download_quota(db: Session, *, user_id: int, catalog_item: CatalogIt
         return
     now = datetime.now(timezone.utc)
     _ensure_current_milestone_grant(db, sub, plan, now)
-    if _item_already_downloaded_this_month(db, user_id, catalog_item.id, now):
+    if _item_already_downloaded_ever(db, user_id, catalog_item.id):
         return
     quota = get_download_quota_status(db, user_id)
     if quota is not None and quota.remaining <= 0:
@@ -342,7 +368,7 @@ def record_download_event(db: Session, *, user_id: int, catalog_item_id: int) ->
     download that's approved but then fails downstream never burns a
     reward for nothing."""
     now = datetime.now(timezone.utc)
-    already = _item_already_downloaded_this_month(db, user_id, catalog_item_id, now)
+    already = _item_already_downloaded_ever(db, user_id, catalog_item_id)
 
     db.add(CatalogDownloadEvent(user_id=user_id, catalog_item_id=catalog_item_id))
     db.commit()
@@ -358,7 +384,7 @@ def record_download_event(db: Session, *, user_id: int, catalog_item_id: int) ->
         return
 
     _ensure_current_milestone_grant(db, sub, plan, now)
-    distinct_used_after = _distinct_items_downloaded_this_month(db, user_id, plan, now)
-    used_before_this_download = distinct_used_after - 1
+    distinct_new_used_after = _distinct_new_items_downloaded_this_month(db, user_id, plan, now)
+    used_before_this_download = distinct_new_used_after - 1
     if used_before_this_download >= plan.monthly_download_limit:
         _consume_bonus_grant(db, organization_id=sub.organization_id, plan_id=plan.id, now=now)

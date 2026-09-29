@@ -49,6 +49,7 @@ from app.modules.plans.quota import (
     enforce_download_quota,
     get_download_quota_status,
     get_plan_summary,
+    has_ever_downloaded_item,
     record_download_event,
 )
 
@@ -201,6 +202,54 @@ def test_repeat_download_never_consumes_additional_quota(db: Session, independen
     with pytest.raises(HTTPException) as exc_info:
         enforce_download_quota(db, user_id=independent_user.id, catalog_item=item_b)
     assert exc_info.value.status_code == 403
+
+
+def test_repeat_download_from_a_previous_month_never_blocks(db: Session, independent_user: User):
+    """Regression test for the reported bug: an item downloaded in an
+    earlier calendar month must stay freely re-downloadable in a LATER
+    month even once that later month's base quota is fully exhausted by
+    other items — "repetición de descarga consume cuota: no" applies
+    forever, not just within the same month it was first downloaded."""
+    item_old = _make_catalog_item(db, slug="cross-month-old")
+    item_new_a = _make_catalog_item(db, slug="cross-month-new-a")
+    plan = _make_plan_with_quota(db, monthly_download_limit=1)
+    for i, item in enumerate((item_old, item_new_a)):
+        plan.included_catalog_items.append(PlanCatalogItem(catalog_item_id=item.id, display_order=i))
+    db.commit()
+
+    org_id = _default_org_id(db, independent_user)
+    _subscribe(db, org_id=org_id, plan_id=plan.id, starts_at=datetime.now(timezone.utc) - timedelta(days=400))
+
+    now = datetime.now(timezone.utc)
+    # item_old was downloaded a full 2 calendar months ago — well outside
+    # "this month" — and must be remembered as "ever downloaded" forever.
+    old_event = CatalogDownloadEvent(user_id=independent_user.id, catalog_item_id=item_old.id)
+    old_event.downloaded_at = _month_start(now) - timedelta(days=40)
+    db.add(old_event)
+    db.commit()
+    assert has_ever_downloaded_item(db, independent_user.id, item_old.id) is True
+    assert has_ever_downloaded_item(db, independent_user.id, item_new_a.id) is False
+
+    # That old download must not count against *this* month's base
+    # allowance — it happened in a previous month.
+    status_before = get_download_quota_status(db, independent_user.id)
+    assert status_before is not None
+    assert status_before.used == 0
+    assert status_before.remaining == 1
+
+    # Exhaust this month's base allowance with a brand-new item.
+    record_download_event(db, user_id=independent_user.id, catalog_item_id=item_new_a.id)
+    status_after = get_download_quota_status(db, independent_user.id)
+    assert status_after is not None
+    assert status_after.remaining == 0
+
+    # Re-downloading the OLD item — first downloaded two months ago — must
+    # still be allowed even though the base quota now reads 0 remaining.
+    enforce_download_quota(db, user_id=independent_user.id, catalog_item=item_old)  # must not raise
+    record_download_event(db, user_id=independent_user.id, catalog_item_id=item_old.id)
+    status_final = get_download_quota_status(db, independent_user.id)
+    assert status_final is not None
+    assert status_final.remaining == 0  # unchanged — the re-download cost nothing
 
 
 def test_quota_endpoint_reports_remaining_for_the_frontend(db: Session, independent_user: User):
