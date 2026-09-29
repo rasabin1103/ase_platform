@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import time
 import zipfile
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -25,7 +26,12 @@ from app.models.test_approved_ref import TestApprovedRef
 from app.models.user_preferences_profile import UserPreferencesProfile
 from app.modules.auth.dependencies import is_super_admin
 from app.modules.consumer_catalog.favorites_repository import CatalogFavoritesRepository
-from app.modules.plans.quota import enforce_download_quota, get_active_subscription_and_plan, record_download_event
+from app.modules.plans.quota import (
+    enforce_download_quota,
+    get_active_subscription_and_plan,
+    has_ever_downloaded_item,
+    record_download_event,
+)
 from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRepository
 from app.modules.consumer_catalog.ratings_repository import IMPACT_TAGS, CatalogItemRatingsRepository, RatingSummary
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
@@ -129,6 +135,20 @@ def _looks_like_code(name: str) -> bool:
 def _looks_like_preview_pdf(name: str) -> bool:
     lower = name.lower()
     return lower.endswith(".pdf") and lower.startswith("preview")
+
+
+# In-process cache for "does a non-owner actually have anything to preview
+# for this item" (see ConsumerCatalogService._non_owner_preview_exists) —
+# keyed by catalog_item_id. A catalog list page renders many rows at once,
+# so unlike the single-item detail page (which always runs a fresh,
+# uncached GitHub check via _resource_content_exists), the list/card views
+# reuse this short-lived cache instead of firing one GitHub call per row.
+# A resource folder's contents rarely change, so a few minutes of
+# staleness here is an acceptable trade for not hammering GitHub on every
+# catalog page load; the detail page's own live check is never affected by
+# this cache and always wins once the user actually opens the item.
+_PREVIEW_EXISTS_CACHE: dict[int, tuple[float, bool]] = {}
+_PREVIEW_EXISTS_CACHE_TTL_SECONDS = 300.0
 
 
 def _looks_like_full_pdf(name: str) -> bool:
@@ -392,6 +412,7 @@ class ConsumerCatalogService:
         review_summaries: dict[int, tuple[float, int]] | None = None,
         purchased_at_by_slug: dict[str, datetime] | None = None,
         discount_percent_by_item_id: dict[int, Decimal] | None = None,
+        already_downloaded_item_ids: set[int] | None = None,
     ) -> CatalogItemRead:
         summary = (rating_summaries or {}).get(item.id)
         my_rating = (my_ratings or {}).get(item.id)
@@ -459,17 +480,26 @@ class ConsumerCatalogService:
                 if my_rating and my_rating.rating is not None
                 else None
             ),
-            # Just "does this item have a linked resource folder at all" —
-            # NOT "can the current user see something in it". It used to
-            # also require ownership, which hid the "Ver contenido" button
-            # entirely for a priced item's non-owners; now that a resource
-            # folder can carry a free preview*.pdf (see
-            # get_resource_content), a non-owner should still see the
-            # button and let the content endpoint decide preview vs a 403
-            # with a clear "buy to unlock" message. Ownership itself is
-            # still fully enforced there and in resource-download — this
-            # flag only ever gates whether the button renders.
-            hasResourceContent=bool(item.repo_path and self._resolve_repo_url(item)),
+            # "Does this viewer have anything at all to open for this
+            # item" — repo_path + a resolvable repo configured, AND, for a
+            # priced item this viewer doesn't own, a real preview actually
+            # exists (see _non_owner_preview_exists_cached). An owner (or a
+            # free item, which needs no ownership) always has something to
+            # see once a repo is configured — get_resource_content decides
+            # preview vs full content either way, so this flag only ever
+            # gates whether the button renders, never the real access
+            # check. This is what keeps the catalog list/cards from
+            # showing "Vista previa" for an item whose admin configured a
+            # repo but never actually uploaded a preview file.
+            hasResourceContent=(
+                bool(item.repo_path and self._resolve_repo_url(item))
+                and (
+                    self._is_free(item)
+                    or item.slug in purchased_slugs
+                    or self._non_owner_preview_exists_cached(item)
+                )
+            ),
+            alreadyDownloaded=item.id in (already_downloaded_item_ids or set()),
             currentVersion=item.current_version,
             versionUpdatedAt=item.version_updated_at,
             changelog=item.changelog_json or [],
@@ -493,6 +523,7 @@ class ConsumerCatalogService:
         user_id: int,
         favorite_slugs: set[str],
         purchased_slugs: set[str],
+        already_downloaded_item_ids: set[int] | None = None,
     ) -> list[CatalogItemRead]:
         item_ids = [i.id for i in items]
         summaries = self.ratings.summaries_for_items(catalog_item_ids=item_ids)
@@ -512,6 +543,7 @@ class ConsumerCatalogService:
                 review_summaries=review_summaries,
                 purchased_at_by_slug=purchased_at_by_slug,
                 discount_percent_by_item_id=discount_map,
+                already_downloaded_item_ids=already_downloaded_item_ids,
             )
             for i in items
         ]
@@ -611,6 +643,9 @@ class ConsumerCatalogService:
             user_id=user_id,
             favorite_slugs=self.favorite_slugs(user_id),
             purchased_slugs=self.purchased_slugs(user_id),
+            already_downloaded_item_ids=(
+                {item.id} if has_ever_downloaded_item(self.db, user_id, item.id) else set()
+            ),
         )
         read = reads[0]
         # _to_read's hasResourceContent only proves repo_path + a resolvable
@@ -885,6 +920,25 @@ class ConsumerCatalogService:
             for entry in entries
         )
 
+    def _non_owner_preview_exists_cached(self, item: CatalogItem) -> bool:
+        """Cached, always-non-owner variant of `_resource_content_exists` —
+        used by the catalog LIST/card views (list_items, recommendations,
+        recently-opened) to decide whether the "Vista previa" button
+        should render at all for a priced item the viewer doesn't own.
+        Without this, a card showed "Vista previa" for every item with
+        *any* repo_path configured (see hasResourceContent), even one
+        whose admin never uploaded a preview*.pdf / preview subfolder —
+        clicking through led to a detail page with nothing to actually
+        preview. See _PREVIEW_EXISTS_CACHE for why this is cached instead
+        of calling GitHub once per catalog row."""
+        now = time.monotonic()
+        cached = _PREVIEW_EXISTS_CACHE.get(item.id)
+        if cached is not None and now - cached[0] < _PREVIEW_EXISTS_CACHE_TTL_SECONDS:
+            return cached[1]
+        result = self._resource_content_exists(item, owns=False)
+        _PREVIEW_EXISTS_CACHE[item.id] = (now, result)
+        return result
+
     @staticmethod
     def _require_github_token() -> str:
         if not settings.GITHUB_ACCESS_TOKEN:
@@ -1094,15 +1148,24 @@ class ConsumerCatalogService:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No preview available for this item")
 
     def has_public_preview(self, item: CatalogItem) -> bool:
-        """Cheap existence check for the public showcase's "Preview" button
-        (see catalog_showcase/service.py's get_item) — mirrors
-        get_public_preview_content's branching (book: non-empty "preview"
-        subfolder; else: a preview*.pdf, or failing that a README.md) but
-        only lists the folder, never fetches or base64-encodes file bytes,
-        so it's cheap enough to run on the single-item detail page. Not
-        called from the list endpoint, same rule as `_resource_content_exists`
-        above — one GitHub call per browsed item is fine, one per catalog
-        row is not.
+        """Existence check for the public showcase's "Vista previa" button
+        (see catalog_showcase/service.py's get_item / _has_preview_cached)
+        — only lists the folder, never fetches or base64-encodes file
+        bytes, so it's cheap enough to run per row behind a short cache
+        (see catalog_showcase's _SHOWCASE_PREVIEW_EXISTS_CACHE) or fresh on
+        the single-item detail page.
+
+        Deliberately requires a REAL, dedicated preview asset — a book's
+        non-empty "preview" subfolder, or a preview*.pdf sitting directly
+        in the folder — never just a README.md. A README is descriptive
+        text already shown elsewhere on the card/detail page, not an
+        actual sample of the deliverable, so it must never be enough on
+        its own to show a "Vista previa" button (product decision: the
+        button must only ever appear when a real file has actually been
+        assigned to preview). get_public_preview_content may still fall
+        back to serving a README as content on a direct API call — that's
+        a resilience fallback for the content endpoint itself, unrelated
+        to whether the button should render.
 
         Fails open on anything other than a clean 404 (missing token,
         GitHub outage) so a transient issue never wrongly hides a button
@@ -1124,11 +1187,7 @@ class ConsumerCatalogService:
         if is_book:
             return bool(entries)
         return any(
-            entry.get("type") == "file"
-            and (
-                _looks_like_preview_pdf(str(entry.get("name", "")))
-                or str(entry.get("name", "")).lower() == "readme.md"
-            )
+            entry.get("type") == "file" and _looks_like_preview_pdf(str(entry.get("name", "")))
             for entry in entries
         )
 

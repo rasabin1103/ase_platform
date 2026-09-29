@@ -114,6 +114,17 @@ class CatalogItemRead(BaseModel):
     # handed to the browser directly (this is a private, shared repo, not
     # per-item).
     hasResourceContent: bool = False
+    # True when the current user has EVER downloaded this exact item
+    # before — this month or any earlier one (see
+    # app.modules.plans.quota.has_ever_downloaded_item). Only ever
+    # computed on the single-item detail fetch (get_by_slug), never on
+    # list/recommendations views — those don't render download buttons.
+    # The frontend uses this to keep a plan-included item's download
+    # button enabled even once the plan's monthly quota is exhausted:
+    # "descargas mensuales acumulables: no" only ever gates a brand-new
+    # item's first download, never a repeat of something already
+    # downloaded.
+    alreadyDownloaded: bool = False
     # --- Version & changelog — populated only for type="resource" items
     # that have a current_version set (see CatalogItem docstring); null/[]
     # for every other item.

@@ -440,7 +440,7 @@ export const translations = {
           repeatDownload: {
             question: 'Does downloading the same item again use up my quota each time?',
             answer:
-              'No. Once you have downloaded a given item within the month, you can download it again as many times as you like at no extra cost to your quota.',
+              'No. Once you have downloaded a given item — this month or any earlier one — you can download it again as many times as you like, at no extra cost to your quota, for as long as your plan still includes it.',
           },
           individualPurchase: {
             question: 'Does an individual purchase (outside my plan) use up my download quota?',
@@ -1464,7 +1464,7 @@ export const translations = {
           repeatDownload: {
             question: '¿Descargar el mismo elemento varias veces consume mi cuota cada vez?',
             answer:
-              'No. Una vez que descargas un elemento dentro del mes, puedes volver a descargarlo las veces que quieras sin coste adicional en tu cuota.',
+              'No. Una vez que descargas un elemento — este mes o en cualquier mes anterior — puedes volver a descargarlo las veces que quieras, sin coste adicional en tu cuota, mientras tu plan siga incluyéndolo.',
           },
           individualPurchase: {
             question: '¿Una compra individual (fuera de mi plan) consume mi cuota de descargas?',

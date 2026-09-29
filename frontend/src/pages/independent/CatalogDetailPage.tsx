@@ -563,8 +563,14 @@ export function CatalogDetailPage() {
     enabled: Boolean(item?.isPlanIncluded),
     staleTime: 60_000,
   })
+  // Once this exact item has ever been downloaded before (this month or
+  // any earlier one), it must stay freely re-downloadable regardless of
+  // the plan's quota state — "repetición de descarga consume cuota: no"
+  // applies forever, not just within the same calendar month (see
+  // backend app.modules.plans.quota.has_ever_downloaded_item).
   const quotaExhausted = Boolean(
     item?.isPlanIncluded &&
+      !item?.alreadyDownloaded &&
       quotaQuery.data &&
       !quotaQuery.data.unlimited &&
       (quotaQuery.data.remaining ?? 0) <= 0,

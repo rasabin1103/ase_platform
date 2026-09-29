@@ -1,5 +1,16 @@
 {
   "rewrites": [
+    {
+      "source": "/blog/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(LinkedInBot|facebookexternalhit|Twitterbot|Slackbot|TelegramBot|WhatsApp|Discordbot|Pinterest|SkypeUriPreview|vkShare|redditbot).*"
+        }
+      ],
+      "destination": "https://aseplatform-production.up.railway.app/api/v1/public/blog/:slug/preview"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

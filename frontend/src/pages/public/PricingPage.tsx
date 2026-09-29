@@ -10,8 +10,12 @@ export function PricingPage() {
   return (
     <div>
       <PricingSection />
-      <PurchaseVsSubscriptionFaq />
-      <SubscriptionPolicyFaq />
+      <section className="border-t border-white/5">
+        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 py-20 sm:px-8 lg:grid-cols-2 lg:gap-16">
+          <PurchaseVsSubscriptionFaq />
+          <SubscriptionPolicyFaq />
+        </div>
+      </section>
     </div>
   )
 }
