@@ -7,6 +7,8 @@ export type User = {
   last_name: string | null
   display_name: string | null
   status: UserStatus
+  two_factor_enabled: boolean
+  two_factor_deadline_at: string | null
   email_verified_at: string | null
   last_login_at: string | null
   created_at: string

@@ -15,7 +15,11 @@ export function THead({ className, ...props }: HTMLAttributes<HTMLTableSectionEl
   return (
     <thead
       className={cn(
-        'sticky top-0 z-10 bg-ase-surface/90 backdrop-blur supports-[backdrop-filter]:bg-ase-surface/70',
+        // Same dead backdrop-blur/supports pairing as PublicHeader — blur is
+        // globally disabled, but `supports-[backdrop-filter]` still matched
+        // and was applying the thinner /70 fallback instead of the intended
+        // solid /90. See PublicHeader.tsx for the full explanation.
+        'sticky top-0 z-10 bg-ase-surface/90',
         className,
       )}
       {...props}

@@ -24,6 +24,42 @@ def translation_configured() -> bool:
     return bool(settings.DEEPL_API_KEY)
 
 
+def translate_batch_es_to_en(texts: list[str]) -> list[str] | None:
+    """Same as translate_es_to_en but for several short strings in one DeepL
+    call (e.g. a list of "strengths"/"gaps" phrases) — DeepL's `text` field
+    accepts an array and returns translations in the same order, so this
+    costs one request instead of N. Returns None (never a partial list) on
+    any failure, so the caller can fall back to the whole Spanish list
+    instead of ending up with a mix of translated/untranslated items."""
+    if not texts:
+        return []
+    if not settings.DEEPL_API_KEY:
+        return None
+
+    base_url = _DEEPL_FREE_BASE_URL if settings.DEEPL_API_KEY.endswith(":fx") else _DEEPL_PRO_BASE_URL
+
+    try:
+        response = httpx.post(
+            f"{base_url}/v2/translate",
+            headers={"Authorization": f"DeepL-Auth-Key {settings.DEEPL_API_KEY}"},
+            json={
+                "text": texts,
+                "source_lang": "ES",
+                "target_lang": "EN-US",
+            },
+            timeout=8.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        translations = data.get("translations") or []
+        if len(translations) != len(texts):
+            return None
+        return [str(t.get("text", "")).strip() for t in translations]
+    except Exception:
+        logger.exception("Batch translation failed (ES -> EN via DeepL); falling back to Spanish text")
+        return None
+
+
 def translate_es_to_en(text: str | None) -> str | None:
     """Best-effort Spanish -> English translation for a single short piece of
     plan marketing copy, via the DeepL API (free "Developer" tier: 1M

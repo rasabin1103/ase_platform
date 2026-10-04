@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Heart, ShoppingBag, Library, Clock, CircleUser, Sparkles } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
+import { ButtonLink } from '../../components/ui/Button'
 import { RecommendedForYouStrip } from '../../components/catalog/RecommendedForYouStrip'
 import { ContinueLearningStrip } from '../../components/catalog/ContinueLearningStrip'
 import { IndependentProgressPanel } from '../../components/private/dashboard/IndependentProgressPanel'
@@ -54,9 +54,9 @@ export function IndependentDashboardPage() {
               <p className="mt-2 max-w-2xl text-sm text-ase-text2">{t('independentDashboard.upsell.body')}</p>
             </div>
           </div>
-          <Link to="/pricing" className="shrink-0 self-start sm:self-center">
-            <Button>{t('independentDashboard.upsell.cta')}</Button>
-          </Link>
+          <ButtonLink to="/pricing" className="shrink-0 self-start sm:self-center">
+            {t('independentDashboard.upsell.cta')}
+          </ButtonLink>
         </Card>
       ) : null}
 

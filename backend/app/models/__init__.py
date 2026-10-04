@@ -57,6 +57,9 @@ from app.models.consulting_slot import ConsultingSlot
 from app.models.resource_view import ResourceView
 from app.models.user_preferences_profile import UserPreferencesProfile
 from app.models.loyalty_reward_grant import LoyaltyRewardGrant
+from app.models.job_posting import JobPosting
+from app.models.ai_analysis_usage_event import AiAnalysisUsageEvent
+from app.models.job_posting_semantic_analysis import JobPostingSemanticAnalysis
 
 __all__ = [
     "User",
@@ -101,6 +104,9 @@ __all__ = [
     "PlanCatalogItemDiscount",
     "CatalogDownloadEvent",
     "LoyaltyRewardGrant",
+    "JobPosting",
+    "JobPostingSemanticAnalysis",
+    "AiAnalysisUsageEvent",
     "PricingPillar",
     "PricingDimensionType",
     "PricingDimensionLevel",

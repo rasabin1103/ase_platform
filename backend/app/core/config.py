@@ -103,6 +103,9 @@ class Settings(BaseSettings):
     # without redeploying code.
     ACCOUNT_LIFECYCLE_SWEEP_ENABLED: bool = True
     TWO_FACTOR_GRACE_DAYS: int = 30
+    # AI job-fit analyses per calendar month for users with NO active plan
+    # subscription (plans configure their own via Plan.monthly_ai_analysis_limit).
+    AI_ANALYSIS_FREE_MONTHLY_LIMIT: int = 3
     INACTIVITY_SUSPEND_DAYS: int = 180
     SUSPENDED_DELETE_DAYS: int = 180
 
@@ -156,6 +159,14 @@ class Settings(BaseSettings):
     # verification is skipped entirely, so local dev/tests keep working
     # without an account configured.
     TURNSTILE_SECRET_KEY: str | None = None
+
+    # Groq API key (free tier, console.groq.com) — powers the optional AI
+    # semantic analysis on job-postings CV compatibility (see
+    # app/core/semantic_match.py). The keyword-based analyzer is always
+    # available regardless; this just unlocks the deeper "Análisis semántico
+    # (IA)" on-demand action when set. Left empty, that action returns a
+    # clear "not configured" error instead of crashing.
+    GROQ_API_KEY: str | None = None
 
     @property
     def sqlalchemy_database_url(self) -> str:

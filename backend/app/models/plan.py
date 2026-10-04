@@ -77,6 +77,10 @@ class Plan(Base, IdPkMixin, TimestampMixin):
     # (unlimited downloads), which is also what every plan defaults to, so
     # existing plans behave exactly as before until an admin opts in.
     monthly_download_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # AI job-fit analyses a subscriber may run per calendar month (see
+    # app.modules.plans.ai_quota). NULL = unlimited. Users with no active
+    # subscription fall back to settings.AI_ANALYSIS_FREE_MONTHLY_LIMIT.
+    monthly_ai_analysis_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Extra downloads granted on top of monthly_download_limit for whichever
     # calendar month a loyalty milestone falls in — see
     # loyalty_bonus_interval_months and app.modules.plans.quota's

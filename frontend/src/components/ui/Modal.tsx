@@ -18,6 +18,13 @@ type Props = PropsWithChildren & {
   // to `false` for the rare modal where maximizing genuinely makes no
   // sense (e.g. a single yes/no confirmation with no scrollable content).
   allowFullscreen?: boolean
+  // Hides the header's text "Close" button, leaving only whatever action(s)
+  // the caller puts in `footer`. Off by default — most modals have no
+  // footer dismiss button at all, so the header one is the only way to
+  // close them. Exists for the rare modal (e.g. CriticalErrorModal) whose
+  // footer already has its own "got it"/dismiss button, where showing both
+  // would just be the same action offered twice.
+  hideHeaderClose?: boolean
 }
 
 const FOCUSABLE_SELECTOR =
@@ -32,6 +39,7 @@ export function Modal({
   className,
   closeLabel = 'Close',
   allowFullscreen = true,
+  hideHeaderClose = false,
 }: Props) {
   // Resets every time the modal closes rather than persisting across opens —
   // a maximized state carrying over to the next unrelated item feels like a
@@ -39,6 +47,21 @@ export function Modal({
   const [fullscreen, setFullscreen] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
+
+  // Read the latest onClose through a ref instead of putting it in the
+  // effect's dependency array below. Callers routinely pass an inline
+  // `() => setX(null)` closure, which is a new function on every render —
+  // with onClose as a dependency, any parent re-render while the dialog is
+  // open (a keystroke in a field, a query refetching) reran this whole
+  // effect, which re-captured "previously focused" and jumped focus back to
+  // the dialog's first control, silently kicking the user out of whatever
+  // they were doing. Keeping the effect keyed only to `open` means it only
+  // (re)runs on actual open/close transitions, while still calling whatever
+  // onClose is current by the time Escape/backdrop-click fires.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   // Keyboard access: Escape closes (same as clicking the backdrop), Tab is
   // trapped inside the dialog so it never silently moves focus onto the
@@ -56,7 +79,7 @@ export function Modal({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        onClose()
+        onCloseRef.current()
         return
       }
       if (e.key !== 'Tab' || !node) return
@@ -79,7 +102,7 @@ export function Modal({
       document.removeEventListener('keydown', onKeyDown, true)
       previouslyFocused?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
@@ -142,9 +165,11 @@ export function Modal({
                     )}
                   </Button>
                 ) : null}
-                <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
-                  {closeLabel}
-                </Button>
+                {!hideHeaderClose ? (
+                  <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
+                    {closeLabel}
+                  </Button>
+                ) : null}
               </div>
             </div>
           )}

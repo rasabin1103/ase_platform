@@ -99,6 +99,20 @@ export const usersPageEn = {
     cancel: 'Cancel',
     error: 'Could not delete the user.',
   },
+  activateModal: {
+    title: 'Activate user',
+    body: 'You are about to activate {{email}}. They will get a personal deadline to turn on two-factor authentication (2FA) — if they haven\'t enabled it by then, their account is automatically suspended.',
+    daysLabel: 'Days to activate 2FA',
+    daysHint: 'Counted from now. Overrides the platform-wide 2FA grace period for this user.',
+    confirm: 'Activate',
+    activating: 'Activating…',
+    error: 'Could not activate the user.',
+  },
+  twoFactor: {
+    enabled: '2FA enabled',
+    disabled: '2FA disabled',
+    deadline: '2FA deadline: {{date}}',
+  },
   actions: {
     edit: 'Edit',
     delete: 'Delete',
@@ -245,6 +259,20 @@ export const usersPageEs = {
     delete: 'Eliminar',
     cancel: 'Cancelar',
     error: 'No se pudo eliminar el usuario.',
+  },
+  activateModal: {
+    title: 'Activar usuario',
+    body: 'Vas a activar a {{email}}. Se le dará un plazo personal para activar la verificación en dos pasos (2FA) — si no la activa a tiempo, su cuenta se suspenderá automáticamente.',
+    daysLabel: 'Días para activar el 2FA',
+    daysHint: 'Se cuenta desde ahora. Sustituye el plazo general de 2FA de la plataforma para este usuario.',
+    confirm: 'Activar',
+    activating: 'Activando…',
+    error: 'No se pudo activar el usuario.',
+  },
+  twoFactor: {
+    enabled: '2FA activado',
+    disabled: '2FA desactivado',
+    deadline: 'Plazo 2FA: {{date}}',
   },
   actions: {
     edit: 'Editar',

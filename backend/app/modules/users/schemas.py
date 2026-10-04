@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+
+
 from app.core.password_policy import validate_password_strength
 from app.models.enums import UserStatus
 from app.modules.catalog_admin.schemas import CatalogTestRunConclusionCounts, CatalogTestRunStatusCounts
@@ -43,6 +45,15 @@ class UserUpdate(BaseModel):
     two_factor_enabled: bool | None = None
 
 
+class UserActivateRequest(BaseModel):
+    """Admin action: activate this user (status -> active, clearing any
+    prior suspension) and give them a personal deadline to turn on 2FA,
+    overriding the global settings.TWO_FACTOR_GRACE_DAYS-from-creation rule
+    for this one account. See account_lifecycle.run_two_factor_grace_sweep."""
+
+    two_factor_grace_days: int = Field(ge=1, le=365)
+
+
 class UserRead(BaseModel):
     uuid: UUID
     email: EmailStr
@@ -51,6 +62,8 @@ class UserRead(BaseModel):
     display_name: str | None
     avatar_url: str | None = None
     status: UserStatus
+    two_factor_enabled: bool = False
+    two_factor_deadline_at: datetime | None = None
     email_verified_at: datetime | None
     last_login_at: datetime | None
     created_at: datetime

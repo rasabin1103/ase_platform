@@ -15,6 +15,7 @@ import { plansPageEn, plansPageEs } from './plansPage.locale'
 import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import { adminBlogEn, adminBlogEs, blogPageEn, blogPageEs } from './blog.locale'
+import { adminJobPostingsEn, adminJobPostingsEs, jobPostingsPageEn, jobPostingsPageEs } from './jobPostings.locale'
 import { pricingAdminEn, pricingAdminEs, pricingEngineEn, pricingEngineEs } from './pricingAdmin.locale'
 /** Private `/booking` + `/admin/booking` copy (EN + ES). Merged as root keys `bookingPage`/`adminBookingPage`. */
 import { bookingPageEn, bookingPageEs, adminBookingPageEn, adminBookingPageEs } from './booking.locale'
@@ -73,6 +74,8 @@ export const translations = {
   en: {
     a11y: {
       skipToContent: 'Skip to main content',
+      zoomImage: 'Open full-screen view',
+      imageViewer: 'Full-screen image view',
     },
     password: {
       hint: 'At least 8 characters, with an uppercase letter, a lowercase letter, a digit, and a symbol.',
@@ -163,6 +166,8 @@ export const translations = {
     pricingEngine: pricingEngineEn,
     adminBlog: adminBlogEn,
     blogPage: blogPageEn,
+    adminJobPostings: adminJobPostingsEn,
+    jobPostingsPage: jobPostingsPageEn,
     adminPurchases: adminPurchasesEn,
     adminAuditLog: adminAuditLogEn,
     adminBookRedemptions: adminBookRedemptionsEn,
@@ -402,6 +407,8 @@ export const translations = {
       cardBenefits: {
         downloadsLimit: '{{limit}} downloads/month included',
         downloadsUnlimited: 'Unlimited downloads',
+        aiLimit: '{{limit}} AI job-fit analyses/month',
+        aiUnlimited: 'Unlimited AI job-fit analyses',
         discount: 'Up to {{percent}}% off individual purchases',
         loyalty: '+{{amount}} bonus download every {{interval}} months',
       },
@@ -1057,6 +1064,8 @@ export const translations = {
         redeemCode: 'Redeem code',
         catalogManage: 'Catalog management',
         blogManage: 'Blog',
+        jobPostingsManage: 'Job postings',
+        jobPostings: 'Job postings',
         catalogCategories: 'Catalog categories',
         pricingEngine: 'Pricing engine',
         purchasesAdmin: 'Purchases',
@@ -1104,6 +1113,8 @@ export const translations = {
   es: {
     a11y: {
       skipToContent: 'Saltar al contenido principal',
+      zoomImage: 'Abrir vista a pantalla completa',
+      imageViewer: 'Vista de imagen a pantalla completa',
     },
     password: {
       hint: 'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.',
@@ -1194,6 +1205,8 @@ export const translations = {
     pricingEngine: pricingEngineEs,
     adminBlog: adminBlogEs,
     blogPage: blogPageEs,
+    adminJobPostings: adminJobPostingsEs,
+    jobPostingsPage: jobPostingsPageEs,
     adminPurchases: adminPurchasesEs,
     adminAuditLog: adminAuditLogEs,
     adminBookRedemptions: adminBookRedemptionsEs,
@@ -1430,6 +1443,8 @@ export const translations = {
       cardBenefits: {
         downloadsLimit: '{{limit}} descargas al mes incluidas',
         downloadsUnlimited: 'Descargas ilimitadas',
+        aiLimit: '{{limit}} análisis de IA de ofertas/mes',
+        aiUnlimited: 'Análisis de IA de ofertas ilimitados',
         discount: 'Hasta {{percent}}% de descuento en compras individuales',
         loyalty: '+{{amount}} descarga de fidelidad cada {{interval}} meses',
       },
@@ -2087,6 +2102,8 @@ export const translations = {
         redeemCode: 'Canjear código',
         catalogManage: 'Gestión catálogo',
         blogManage: 'Blog',
+        jobPostingsManage: 'Ofertas laborales',
+        jobPostings: 'Ofertas laborales',
         catalogCategories: 'Categorías del catálogo',
         pricingEngine: 'Motor de precios',
         purchasesAdmin: 'Compras',

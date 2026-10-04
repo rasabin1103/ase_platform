@@ -24,7 +24,12 @@ export function Header({
   const isSuperAdmin = Boolean(auth.currentUser?.is_superuser)
 
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b border-ase-border bg-ase-bg2/80 px-6 backdrop-blur supports-[backdrop-filter]:bg-ase-bg2/60">
+    // Same dead backdrop-blur/supports pairing already removed from
+    // PublicHeader/Table: index.css forces backdrop-filter: none project-wide,
+    // but `supports-[backdrop-filter]` still matched and applied the
+    // thinner /60 fallback with no blur to soften it. Using the solid /80
+    // directly matches intended surface legibility.
+    <header className="flex h-16 items-center justify-between gap-4 border-b border-ase-border bg-ase-bg2/80 px-6">
       <div className="flex min-w-0 items-center gap-3">
         {onToggleSidebar ? (
           <button

@@ -66,6 +66,31 @@ def test_two_factor_grace_sweep_leaves_recent_accounts_alone(db: Session):
     assert user.status == UserStatus.active
 
 
+def test_two_factor_grace_sweep_respects_a_future_admin_deadline(db: Session):
+    """An old account an admin re-activated with a fresh 30-day deadline must
+    NOT be suspended just because its created_at is past the global grace."""
+    user = _make_independent_user(db, "reactivated@example.test")
+    user.created_at = datetime.now(timezone.utc) - timedelta(days=settings.TWO_FACTOR_GRACE_DAYS + 60)
+    user.two_factor_deadline_at = datetime.now(timezone.utc) + timedelta(days=30)
+    db.commit()
+
+    assert run_two_factor_grace_sweep(db) == 0
+
+    db.refresh(user)
+    assert user.status == UserStatus.active
+
+
+def test_two_factor_grace_sweep_suspends_once_the_admin_deadline_passes(db: Session):
+    user = _make_independent_user(db, "deadline-passed@example.test")
+    user.two_factor_deadline_at = datetime.now(timezone.utc) - timedelta(days=1)
+    db.commit()
+
+    assert run_two_factor_grace_sweep(db) == 1
+
+    db.refresh(user)
+    assert user.status == UserStatus.suspended
+
+
 def test_two_factor_grace_sweep_exempts_super_admin(db: Session):
     admin = make_user_with_role(
         db,

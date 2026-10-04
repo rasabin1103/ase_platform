@@ -24,13 +24,3 @@ export function passwordSchema(message: { tooShort: string; tooLong: string; wea
     .refine((v) => SYMBOL_RE.test(v), message.weak)
 }
 
-export function isPasswordStrongEnough(value: string): boolean {
-  return (
-    value.length >= 8 &&
-    value.length <= 72 &&
-    UPPERCASE_RE.test(value) &&
-    LOWERCASE_RE.test(value) &&
-    DIGIT_RE.test(value) &&
-    SYMBOL_RE.test(value)
-  )
-}

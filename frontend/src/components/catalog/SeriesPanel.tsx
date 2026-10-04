@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Check, Layers, Sparkles } from 'lucide-react'
 import { getCatalogItemSeries } from '../../api/consumerCatalog.api'
-import { Button } from '../ui/Button'
+import { Link } from 'react-router-dom'
+import { ButtonLink } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Skeleton } from '../ui/Skeleton'
 import { cn } from '../ui/cn'
@@ -108,11 +108,14 @@ export function SeriesPanel({ slug, currentSlug }: Props) {
             <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
             {t('catalog.series.recommendedNext')}
           </p>
-          <Link to={`/catalog/${nextItem.type}/${nextItem.slug}`} className="mt-2 block">
-            <Button size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />}>
-              {localizedCatalogText(language, nextItem.title, nextItem.titleEn)}
-            </Button>
-          </Link>
+          <ButtonLink
+            to={`/catalog/${nextItem.type}/${nextItem.slug}`}
+            className="mt-2"
+            size="sm"
+            rightIcon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />}
+          >
+            {localizedCatalogText(language, nextItem.title, nextItem.titleEn)}
+          </ButtonLink>
         </div>
       ) : ownedCount === totalCount ? (
         <p className="mt-4 border-t border-white/[0.06] pt-3 text-xs text-emerald-300">

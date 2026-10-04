@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { deleteMyAccount, updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
 import { cancelSubscription, createBillingPortalSession, resumeSubscription } from '../../api/billing.api'
 import { getMyPlanSummary, type PlanSummary } from '../../api/consumerCatalog.api'
@@ -11,7 +11,7 @@ import { ImageUploadField } from '../../components/admin/premium/ImageUploadFiel
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Switch'
@@ -368,9 +368,7 @@ export function ProfilePage() {
                   {billingPortalMut.isPending ? t('profilePage.billing.opening') : t('profilePage.billing.manageButton')}
                 </Button>
               ) : (
-                <Link to="/pricing">
-                  <Button type="button">{t('profilePage.billing.viewPlans')}</Button>
-                </Link>
+                <ButtonLink to="/pricing">{t('profilePage.billing.viewPlans')}</ButtonLink>
               )}
               {isSubscriptionLive ? (
                 isCancelScheduled ? (

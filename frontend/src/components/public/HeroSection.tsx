@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { Badge } from '../ui/Badge'
-import { Button } from '../ui/Button'
+import { ButtonLink } from '../ui/Button'
 import { SystemArchitectureVisual } from './SystemArchitectureVisual'
 import { useI18n } from '../../i18n'
 
@@ -41,21 +40,15 @@ export function HeroSection() {
             </p>
 
             <div className="mt-10 flex animate-fade-in-up flex-col gap-3 sm:flex-row" style={{ animationDelay: '240ms' }}>
-              <Link to="/pricing">
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t('hero.primaryCta')}
-                </Button>
-              </Link>
-              <Link to="/pricing">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  {t('hero.secondaryCta')}
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button size="lg" variant="ghost" className="w-full sm:w-auto">
-                  {t('cta.clientLogin')}
-                </Button>
-              </Link>
+              <ButtonLink to="/pricing" size="lg" className="w-full sm:w-auto">
+                {t('hero.primaryCta')}
+              </ButtonLink>
+              <ButtonLink to="/pricing" size="lg" variant="secondary" className="w-full sm:w-auto">
+                {t('hero.secondaryCta')}
+              </ButtonLink>
+              <ButtonLink to="/login" size="lg" variant="ghost" className="w-full sm:w-auto">
+                {t('cta.clientLogin')}
+              </ButtonLink>
             </div>
 
             <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-3">

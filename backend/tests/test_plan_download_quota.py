@@ -379,7 +379,7 @@ def test_loyalty_grant_created_once_and_usable_across_month_rollover(db: Session
         month += 12
         year -= 1
     starts_at = now.replace(year=year, month=month, day=1)
-    sub = _subscribe(db, org_id=org_id, plan_id=plan.id, starts_at=starts_at)
+    _subscribe(db, org_id=org_id, plan_id=plan.id, starts_at=starts_at)
 
     # First check of the milestone month creates exactly one grant.
     get_download_quota_status(db, independent_user.id)

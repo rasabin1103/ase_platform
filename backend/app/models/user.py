@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, String, func
+from sqlalchemy import Boolean, DateTime, Enum, Integer, LargeBinary, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -42,6 +42,18 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     avatar_url: Mapped[str | None] = mapped_column(String(2048))
     avatar_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     avatar_mime: Mapped[str | None] = mapped_column(String(64))
+
+    # CV uploaded for the job-postings compatibility analyzer (see
+    # app/core/cv_matching.py) — same in-row binary storage as the avatar,
+    # one CV per user, replaced wholesale on re-upload. cv_text is the
+    # extracted plain text, cached at upload time so compatibility scoring
+    # against every job posting doesn't re-parse the PDF/DOCX on every list
+    # request.
+    cv_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    cv_mime: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    cv_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    cv_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cv_uploaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # ISO 3166-1 alpha-2 code (e.g. "ES", "MX") — collected at registration
     # for platform metrics (where signups come from). Nullable because
@@ -102,6 +114,14 @@ class User(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # suspension (pre-existing `status` field, unrelated to this policy).
     suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     suspension_reason: Mapped[str | None] = mapped_column(String(32))
+
+    # Per-user override of the global 2FA grace period: set when an admin
+    # activates this specific user (see UsersService.activate_user) with a
+    # custom "you have X days to turn on 2FA" deadline, instead of the
+    # one-size-fits-all settings.TWO_FACTOR_GRACE_DAYS counted from
+    # `created_at`. NULL means "no custom deadline" — run_two_factor_grace_
+    # sweep then falls back to the global created_at-based rule.
+    two_factor_deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Highest 6-month tenure milestone (6, 12, 18, ...) already thanked via
     # a notification — see app/core/anniversary.py. Null means never

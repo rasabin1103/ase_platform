@@ -11,7 +11,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 import { JsonLd, SITE_URL } from '../seo/JsonLd'
-import { ChevronDown, Download, Percent, Award } from 'lucide-react'
+import { ChevronDown, Download, Percent, Award, Sparkles } from 'lucide-react'
 import {
   catalogPlansForBilling,
   localizedPlanText,
@@ -46,7 +46,7 @@ function planMarketingDescription(
   return ''
 }
 
-type PlanCardBenefit = { icon: 'downloads' | 'discount' | 'loyalty'; text: string }
+type PlanCardBenefit = { icon: 'downloads' | 'discount' | 'loyalty' | 'ai'; text: string }
 
 /** The three "does this plan actually give me anything beyond the items
  * list" benefits — monthly download quota, discount on items the plan
@@ -73,6 +73,16 @@ function planCardBenefits(plan: Plan, t: (key: string) => unknown): PlanCardBene
     benefits.push({ icon: 'downloads', text })
   }
 
+  // Every plan has an AI-analysis allowance (null = unlimited), so this line
+  // is always shown — it's the admin-configured monthly cap per plan.
+  benefits.push({
+    icon: 'ai',
+    text:
+      plan.monthly_ai_analysis_limit != null
+        ? String(t('pricing.cardBenefits.aiLimit')).replace('{{limit}}', String(plan.monthly_ai_analysis_limit))
+        : (t('pricing.cardBenefits.aiUnlimited') as string),
+  })
+
   const discountItems = plan.discount_items ?? []
   if (discountItems.length > 0) {
     const maxDiscount = Math.max(...discountItems.map((d) => Number(d.discount_percent)))
@@ -96,7 +106,7 @@ function planCardBenefits(plan: Plan, t: (key: string) => unknown): PlanCardBene
   return benefits
 }
 
-const PLAN_CARD_BENEFIT_ICONS = { downloads: Download, discount: Percent, loyalty: Award } as const
+const PLAN_CARD_BENEFIT_ICONS = { downloads: Download, discount: Percent, loyalty: Award, ai: Sparkles } as const
 
 function cardTone(plan: Plan): TierTone {
   const tier = tierFromPlanCode(plan.code)

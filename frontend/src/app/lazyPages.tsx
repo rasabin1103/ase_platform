@@ -71,6 +71,12 @@ export const TestExecutionPage = lazy(() =>
   import('../pages/independent/TestExecutionPage').then((m) => ({ default: m.TestExecutionPage })),
 )
 export const BookingPage = lazy(() => import('../pages/independent/BookingPage').then((m) => ({ default: m.BookingPage })))
+export const JobPostingsPage = lazy(() =>
+  import('../pages/independent/JobPostingsPage').then((m) => ({ default: m.JobPostingsPage })),
+)
+export const JobPostingDetailPage = lazy(() =>
+  import('../pages/independent/JobPostingDetailPage').then((m) => ({ default: m.JobPostingDetailPage })),
+)
 
 // --- Organization ---
 export const OrganizationDashboardPage = lazy(() =>
@@ -93,6 +99,12 @@ export const AdminCatalogPage = lazy(() =>
 export const AdminBlogPage = lazy(() => import('../pages/admin/AdminBlogPage').then((m) => ({ default: m.AdminBlogPage })))
 export const AdminBlogEditorPage = lazy(() =>
   import('../pages/admin/AdminBlogEditorPage').then((m) => ({ default: m.AdminBlogEditorPage })),
+)
+export const AdminJobPostingsPage = lazy(() =>
+  import('../pages/admin/AdminJobPostingsPage').then((m) => ({ default: m.AdminJobPostingsPage })),
+)
+export const AdminJobPostingEditorPage = lazy(() =>
+  import('../pages/admin/AdminJobPostingEditorPage').then((m) => ({ default: m.AdminJobPostingEditorPage })),
 )
 export const AdminDashboardPage = lazy(() =>
   import('../pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })),

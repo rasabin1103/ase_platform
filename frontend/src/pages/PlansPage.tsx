@@ -41,6 +41,7 @@ type CreateValues = {
   description_en?: string | ''
   cta_label_en?: string | ''
   monthly_download_limit?: string | ''
+  monthly_ai_analysis_limit?: string | ''
   loyalty_bonus_downloads?: string | ''
   loyalty_bonus_interval_months?: string | ''
 }
@@ -63,9 +64,11 @@ type EditValues = {
   description_en?: string | ''
   cta_label_en?: string | ''
   monthly_download_limit?: string | ''
+  monthly_ai_analysis_limit?: string | ''
   loyalty_bonus_downloads?: string | ''
   loyalty_bonus_interval_months?: string | ''
   clear_monthly_download_limit?: boolean
+  clear_monthly_ai_analysis_limit?: boolean
   clear_loyalty_bonus?: boolean
 }
 
@@ -137,6 +140,11 @@ export function PlansPage() {
           .optional()
           .or(z.literal(''))
           .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        monthly_ai_analysis_limit: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
         loyalty_bonus_downloads: z
           .string()
           .optional()
@@ -179,6 +187,11 @@ export function PlansPage() {
         description_en: z.string().max(4000).optional().or(z.literal('')),
         cta_label_en: z.string().max(80).optional().or(z.literal('')),
         monthly_download_limit: z
+          .string()
+          .optional()
+          .or(z.literal(''))
+          .refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), t('plansPage.errors.quotaInvalid') as string),
+        monthly_ai_analysis_limit: z
           .string()
           .optional()
           .or(z.literal(''))
@@ -236,6 +249,7 @@ export function PlansPage() {
       description_en: '',
       cta_label_en: '',
       monthly_download_limit: '',
+      monthly_ai_analysis_limit: '',
       loyalty_bonus_downloads: '',
       loyalty_bonus_interval_months: '',
     },
@@ -264,6 +278,7 @@ export function PlansPage() {
       description_en: '',
       cta_label_en: '',
       monthly_download_limit: '',
+      monthly_ai_analysis_limit: '',
       loyalty_bonus_downloads: '',
       loyalty_bonus_interval_months: '',
     },
@@ -293,6 +308,7 @@ export function PlansPage() {
         description_en: '',
         cta_label_en: '',
         monthly_download_limit: '',
+        monthly_ai_analysis_limit: '',
         loyalty_bonus_downloads: '',
         loyalty_bonus_interval_months: '',
       })
@@ -509,6 +525,8 @@ export function PlansPage() {
                                 cta_label_en: p.cta_label_en ?? '',
                                 monthly_download_limit:
                                   typeof p.monthly_download_limit === 'number' ? String(p.monthly_download_limit) : '',
+                                monthly_ai_analysis_limit:
+                                  typeof p.monthly_ai_analysis_limit === 'number' ? String(p.monthly_ai_analysis_limit) : '',
                                 loyalty_bonus_downloads:
                                   typeof p.loyalty_bonus_downloads === 'number' ? String(p.loyalty_bonus_downloads) : '',
                                 loyalty_bonus_interval_months:
@@ -568,6 +586,7 @@ export function PlansPage() {
                   description_en: values.description_en ? values.description_en.trim() : null,
                   cta_label_en: values.cta_label_en ? values.cta_label_en.trim() : null,
                   monthly_download_limit: values.monthly_download_limit ? Number(values.monthly_download_limit) : null,
+                  monthly_ai_analysis_limit: values.monthly_ai_analysis_limit ? Number(values.monthly_ai_analysis_limit) : null,
                   loyalty_bonus_downloads: values.loyalty_bonus_downloads ? Number(values.loyalty_bonus_downloads) : null,
                   loyalty_bonus_interval_months: values.loyalty_bonus_interval_months
                     ? Number(values.loyalty_bonus_interval_months)
@@ -719,6 +738,21 @@ export function PlansPage() {
                     <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.monthly_download_limit.message}</p>
                   )}
                 </div>
+                <div>
+                  <label htmlFor="plan-create-monthly-ai-analysis-limit" className="mb-1 block text-xs font-medium text-ase-muted">
+                    {t('plansPage.create.fields.monthlyAiAnalysisLimit')}
+                  </label>
+                  <p className="mb-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.aiAnalysisHint')}</p>
+                  <Input
+                    id="plan-create-monthly-ai-analysis-limit"
+                    inputMode="numeric"
+                    placeholder={t('plansPage.create.placeholders.unlimited') as string}
+                    {...createForm.register('monthly_ai_analysis_limit')}
+                  />
+                  {createForm.formState.errors.monthly_ai_analysis_limit && (
+                    <p className="mt-1 text-sm text-ase-error">{createForm.formState.errors.monthly_ai_analysis_limit.message}</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor="plan-create-loyalty-bonus-downloads" className="mb-1 block text-xs font-medium text-ase-muted">
@@ -825,6 +859,7 @@ export function PlansPage() {
                       dirty.description_en && values.description_en ? values.description_en.trim() : null,
                     cta_label_en: dirty.cta_label_en && values.cta_label_en ? values.cta_label_en.trim() : null,
                     monthly_download_limit: values.monthly_download_limit ? Number(values.monthly_download_limit) : null,
+                    monthly_ai_analysis_limit: values.monthly_ai_analysis_limit ? Number(values.monthly_ai_analysis_limit) : null,
                     loyalty_bonus_downloads: values.loyalty_bonus_downloads ? Number(values.loyalty_bonus_downloads) : null,
                     loyalty_bonus_interval_months: values.loyalty_bonus_interval_months
                       ? Number(values.loyalty_bonus_interval_months)
@@ -834,6 +869,7 @@ export function PlansPage() {
                     // unchanged" — these explicit flags are the only way to
                     // actually blank it out (see PlanUpdate docstring).
                     clear_monthly_download_limit: dirty.monthly_download_limit && !values.monthly_download_limit,
+                    clear_monthly_ai_analysis_limit: dirty.monthly_ai_analysis_limit && !values.monthly_ai_analysis_limit,
                     clear_loyalty_bonus:
                       (dirty.loyalty_bonus_downloads && !values.loyalty_bonus_downloads) ||
                       (dirty.loyalty_bonus_interval_months && !values.loyalty_bonus_interval_months),
@@ -981,6 +1017,21 @@ export function PlansPage() {
               />
               {editForm.formState.errors.monthly_download_limit && (
                 <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.monthly_download_limit.message}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="plan-edit-monthly-ai-analysis-limit" className="mb-1 block text-xs font-medium text-ase-muted">
+                {t('plansPage.create.fields.monthlyAiAnalysisLimit')}
+              </label>
+              <p className="mb-1 text-[11px] text-ase-muted">{t('plansPage.create.helpers.aiAnalysisHint')}</p>
+              <Input
+                id="plan-edit-monthly-ai-analysis-limit"
+                inputMode="numeric"
+                placeholder={t('plansPage.create.placeholders.unlimited') as string}
+                {...editForm.register('monthly_ai_analysis_limit')}
+              />
+              {editForm.formState.errors.monthly_ai_analysis_limit && (
+                <p className="mt-1 text-sm text-ase-error">{editForm.formState.errors.monthly_ai_analysis_limit.message}</p>
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -3,7 +3,7 @@ import { FolderGit2, BookOpen } from 'lucide-react'
 import { listMyRedeemedBooks, type RedeemedBook } from '../../api/bookRedemption.api'
 import { RedeemCodeForm } from '../../components/catalog/RedeemCodeForm'
 import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
+import { ButtonAnchor } from '../../components/ui/Button'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
@@ -30,12 +30,10 @@ function RedeemedBookRow({ book }: { book: RedeemedBook }) {
           {t('redeemCode.redeemedOn')} {new Date(book.redeemed_at).toLocaleDateString()}
         </div>
       </div>
-      <a href={book.repo_url} target="_blank" rel="noreferrer">
-        <Button size="sm" variant="secondary">
-          <FolderGit2 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
-          {t('redeemCode.openRepo')}
-        </Button>
-      </a>
+      <ButtonAnchor href={book.repo_url} target="_blank" rel="noreferrer" size="sm" variant="secondary">
+        <FolderGit2 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+        {t('redeemCode.openRepo')}
+      </ButtonAnchor>
     </Card>
   )
 }

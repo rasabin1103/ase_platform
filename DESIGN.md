@@ -8,7 +8,7 @@ Guía de diseño para **Arce Sabin Engineering (ASE)**. Usar estos tokens y patr
 |----------|-------|
 | Sector | Ingeniería de software, QA automation, arquitectura de plataformas |
 | Personalidad | Precisa, técnica, confiable, sobria |
-| Tono visual | Oscuro, alto contraste, acento cian de marca |
+| Tono visual | Oscuro, alto contraste, acento azul/violeta de marca |
 
 ## Tipografía
 
@@ -23,14 +23,21 @@ Guía de diseño para **Arce Sabin Engineering (ASE)**. Usar estos tokens y patr
 ## Color
 
 ```text
-Marca (brand)     #38BDF8   ase-brand / ase-primary
-Marca fuerte      #0EA5E9   ase-brand-strong
-Fondo             #020617   ase-bg
-Superficie        #111827   ase-surface
-Texto             #F8FAFC   ase-text
+Marca (brand)     #4C7DFF   ase-brand / ase-primary
+Marca fuerte      #7C5CFF   ase-brand-strong (segundo stop del gradiente, no un hover-darken)
+Acento secundario #F0B429   ase-gold (reservado para UN momento "premium/destacado" — plan recomendado, CTA estrella)
+Fondo             #0B1220   ase-bg (navy, no negro puro)
+Superficie        #131B2E   ase-surface
+Texto             #F3F6FC   ase-text
 Texto secundario  #CBD5E1   ase-text2
 Éxito / aviso / error → ver tailwind.config.ts (ase.success, ase.warning, ase.error)
 ```
+
+Nota: la paleta real es azul/violeta sobre navy (ver `tailwind.config.ts`), no cian sobre negro — este documento se actualizó para reflejar lo implementado tras la re-auditoría de frontend (hallazgo de "design-system drift").
+
+### Glass / backdrop-blur: prohibido
+
+`frontend/src/index.css` fuerza `backdrop-filter: none !important` en todas las utilidades `backdrop-blur-*` — es una decisión deliberada ("sin efectos de cristal"), no un olvido. Al escribir una superficie traslúcida (headers fijos, tablas con scroll, etc.), **no** uses el patrón `bg-x/80 backdrop-blur supports-[backdrop-filter]:bg-x/60`: `@supports` detecta que el navegador entiende la propiedad `backdrop-filter`, no que esté activa, así que ese patrón aplicaba la opacidad *más transparente* sin ningún blur que la compensara. Usa directamente la opacidad sólida pensada como *fallback* (p. ej. `bg-ase-bg2/80`, `bg-ase-surface/90`) sin la clase `backdrop-blur` ni la variante `supports-[...]`.
 
 ## Iconografía y favicon
 

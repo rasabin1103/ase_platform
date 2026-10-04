@@ -96,11 +96,6 @@ export type PreferencesProfileSubmitRequest = {
   level: PreferenceLevel
 }
 
-export async function getMyPreferencesProfile(): Promise<PreferencesProfile | null> {
-  const { data } = await apiClient.get<PreferencesProfile | null>('/preferences-profile/me')
-  return data
-}
-
 export async function submitMyPreferencesProfile(
   payload: PreferencesProfileSubmitRequest,
 ): Promise<PreferencesProfile> {

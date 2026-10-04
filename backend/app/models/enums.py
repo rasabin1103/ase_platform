@@ -65,14 +65,6 @@ class AccessRequestType(str, Enum):
     course_creator_application = "course_creator_application"
 
 
-class AccessTargetType(str, Enum):
-    product = "product"
-    course = "course"
-    book = "book"
-    resource = "resource"
-    platform_creator_permission = "platform_creator_permission"
-
-
 class CreatorStatus(str, Enum):
     none = "none"
     pending = "pending"
@@ -322,3 +314,35 @@ class TestRunConclusion(str, Enum):
     timed_out = "timed_out"
     action_required = "action_required"
     unknown = "unknown"
+
+
+class JobPostingStatus(str, Enum):
+    draft = "draft"
+    published = "published"
+
+
+class JobContractType(str, Enum):
+    permanent = "permanent"
+    temporary = "temporary"
+    freelance = "freelance"
+    internship = "internship"
+
+
+class JobWorkMode(str, Enum):
+    remote = "remote"
+    hybrid = "hybrid"
+    onsite = "onsite"
+
+
+class JobScheduleType(str, Enum):
+    full_time = "full_time"
+    part_time = "part_time"
+
+
+class JobSalaryType(str, Enum):
+    """Whether `salary_amount`(/`salary_amount_max`) on a JobPosting is a
+    gross yearly figure or an hourly rate — purely a display/filtering hint,
+    the numbers themselves are stored as plain Numeric regardless."""
+
+    gross_yearly = "gross_yearly"
+    hourly = "hourly"

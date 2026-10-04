@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from uuid import UUID
 
 from app.models.blog_post import BlogPost
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_image import CatalogItemImage
+from app.models.job_posting import JobPosting
 from app.models.user import User
 
 
@@ -22,10 +22,6 @@ def catalog_image_api_path(item_id: int) -> str:
 
 def catalog_gallery_image_api_path(item_id: int, image_id: int) -> str:
     return f"/media/catalog/{item_id}/images/{image_id}"
-
-
-def user_avatar_api_path(user_uuid: UUID) -> str:
-    return f"/api/v1/auth/users/{user_uuid}/avatar"
 
 
 def resolve_user_avatar_url(user: User) -> str | None:
@@ -125,3 +121,23 @@ def resolve_blog_cover_url(post: BlogPost) -> str | None:
     if blog_has_stored_image(post):
         return blog_cover_image_api_path(post.id)
     return post.cover_image_url
+
+
+# --- Job posting image (gated behind plain auth — any logged-in user) -------
+# Unlike blog covers, job postings have no unauthenticated public page, so
+# there's no need for a separate /api/v1/public/... path — the consumer
+# listing endpoint is itself already behind get_current_active_user.
+
+
+def job_posting_has_stored_image(posting: JobPosting) -> bool:
+    return bool(posting.image_data)
+
+
+def job_posting_image_api_path(posting_id: int) -> str:
+    return f"/api/v1/job-postings/{posting_id}/image"
+
+
+def resolve_job_posting_image_url(posting: JobPosting) -> str | None:
+    if job_posting_has_stored_image(posting):
+        return job_posting_image_api_path(posting.id)
+    return None

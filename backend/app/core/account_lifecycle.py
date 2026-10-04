@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.audit import record_audit_log
@@ -38,16 +38,24 @@ def _super_admin_user_ids(db: Session) -> set[int]:
 
 
 def run_two_factor_grace_sweep(db: Session) -> int:
-    """Suspends any active account that never activated 2FA within
-    settings.TWO_FACTOR_GRACE_DAYS of creation. Login still works enough to
-    reach /auth/2fa/setup + /auth/2fa/confirm — confirming 2FA reactivates
-    the account immediately (see AuthService.confirm_two_factor)."""
+    """Suspends any active account that never activated 2FA by its 2FA
+    deadline. That deadline is either a personal one an admin set when
+    activating this specific user (`two_factor_deadline_at` — see
+    UsersService.activate_user), or — when that's NULL — the global
+    settings.TWO_FACTOR_GRACE_DAYS counted from `created_at`, same as
+    before. Login still works enough to reach /auth/2fa/setup +
+    /auth/2fa/confirm — confirming 2FA reactivates the account immediately
+    (see AuthService.confirm_two_factor)."""
     exempt = _super_admin_user_ids(db)
-    cutoff = datetime.now(timezone.utc) - timedelta(days=settings.TWO_FACTOR_GRACE_DAYS)
+    now = datetime.now(timezone.utc)
+    global_cutoff = now - timedelta(days=settings.TWO_FACTOR_GRACE_DAYS)
     stmt = select(User).where(
         User.status == UserStatus.active,
         User.two_factor_enabled.is_(False),
-        User.created_at < cutoff,
+        or_(
+            User.two_factor_deadline_at < now,
+            (User.two_factor_deadline_at.is_(None)) & (User.created_at < global_cutoff),
+        ),
     )
     users = [u for u in db.execute(stmt).scalars().all() if u.id not in exempt]
 
@@ -55,13 +63,18 @@ def run_two_factor_grace_sweep(db: Session) -> int:
     count = 0
     for user in users:
         try:
+            # The grace period actually applied to this user — their own
+            # custom deadline if the admin set one, else the global setting
+            # — purely for the notice email/audit log, not the query above.
+            had_custom_deadline = user.two_factor_deadline_at is not None
+            grace_days = settings.TWO_FACTOR_GRACE_DAYS
             user.status = UserStatus.suspended
             user.suspension_reason = SuspensionReason.two_factor_required.value
             user.suspended_at = datetime.now(timezone.utc)
             db.commit()
             language = user.preferred_language
             html, text = account_suspended_two_factor_email(
-                login_url, grace_days=settings.TWO_FACTOR_GRACE_DAYS, language=language,
+                login_url, grace_days=grace_days, language=language,
             )
             subject = (
                 "Your account has been deactivated — Arce Sabin Engineering"
@@ -75,7 +88,7 @@ def run_two_factor_grace_sweep(db: Session) -> int:
                 action="user.auto_suspended_two_factor",
                 entity_type="user",
                 entity_id=str(user.id),
-                metadata={"grace_days": settings.TWO_FACTOR_GRACE_DAYS},
+                metadata={"grace_days": grace_days, "custom_deadline": had_custom_deadline},
             )
             count += 1
         except Exception:

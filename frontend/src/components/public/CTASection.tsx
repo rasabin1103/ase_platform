@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import { Button } from '../ui/Button'
+import { ButtonLink } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Eyebrow } from '../ui/Eyebrow'
 import { useI18n } from '../../i18n'
@@ -24,16 +23,12 @@ export function CTASection() {
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link to="/contact" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t('cta.contact')}
-                </Button>
-              </Link>
-              <Link to="/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  {t('cta.login')}
-                </Button>
-              </Link>
+              <ButtonLink to="/contact" size="lg" className="w-full sm:w-auto">
+                {t('cta.contact')}
+              </ButtonLink>
+              <ButtonLink to="/login" size="lg" variant="secondary" className="w-full sm:w-auto">
+                {t('cta.login')}
+              </ButtonLink>
             </div>
           </div>
         </Card>

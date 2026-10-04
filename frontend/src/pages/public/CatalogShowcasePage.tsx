@@ -11,7 +11,7 @@ import {
 import type { CatalogShowcaseItem, CatalogShowcaseSort } from '../../api/catalogShowcase.api'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { CatalogShowcasePreviewModal } from '../../components/catalog/CatalogShowcasePreviewModal'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
@@ -237,11 +237,9 @@ function ShowcaseCard({ item, language, t, onPreview }: CardProps) {
         </div>
       </Link>
       <div className="mt-auto flex flex-wrap items-center gap-2 p-4 pt-3">
-        <Link to={detailPath} className="min-w-0 flex-1">
-          <Button size="sm" variant="primary" className="w-full">
-            {t('publicCatalogShowcase.viewDetails')}
-          </Button>
-        </Link>
+        <ButtonLink to={detailPath} size="sm" variant="primary" className="min-w-0 flex-1">
+          {t('publicCatalogShowcase.viewDetails')}
+        </ButtonLink>
         {item.hasPreview ? (
           <Button
             size="sm"
@@ -294,11 +292,9 @@ function ShowcaseListRow({ item, language, t, onPreview }: CardProps) {
                 {t('publicCatalogShowcase.preview')}
               </Button>
             ) : null}
-            <Link to={detailPath}>
-              <Button size="sm" variant="primary">
-                {t('publicCatalogShowcase.viewDetails')}
-              </Button>
-            </Link>
+            <ButtonLink to={detailPath} size="sm" variant="primary">
+              {t('publicCatalogShowcase.viewDetails')}
+            </ButtonLink>
           </div>
         </div>
       </div>

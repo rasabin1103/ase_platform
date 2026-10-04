@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonAnchor } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { TurnstileWidget } from '../../components/auth/TurnstileWidget'
 import { submitContactMessage } from '../../api/plansCatalog.api'
@@ -133,11 +133,13 @@ export function ContactPage() {
               <Button type="submit" className="w-full sm:w-auto" disabled={mutation.isPending}>
                 {mutation.isPending ? t('pages.contact.submitting') : t('pages.contact.submit')}
               </Button>
-              <a href="mailto:contact@arcesabinengineering.com" className="w-full sm:w-auto">
-                <Button type="button" variant="secondary" className="w-full sm:w-auto">
-                  {t('pages.contact.directEmail')}
-                </Button>
-              </a>
+              <ButtonAnchor
+                href="mailto:contact@arcesabinengineering.com"
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                {t('pages.contact.directEmail')}
+              </ButtonAnchor>
             </div>
           </form>
 

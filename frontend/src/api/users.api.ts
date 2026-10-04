@@ -21,6 +21,14 @@ export async function deleteUser(user_uuid: string) {
   return data
 }
 
+/** Admin "activate" action: flips status to active and starts this user's
+ * personal 2FA grace period (two_factor_grace_days from now), overriding
+ * the platform-wide 2FA deadline for just this account. */
+export async function activateUser(user_uuid: string, two_factor_grace_days: number) {
+  const { data } = await apiClient.post<User>(`/users/${user_uuid}/activate`, { two_factor_grace_days })
+  return data
+}
+
 export type ImpersonationToken = {
   access_token: string
   token_type: string

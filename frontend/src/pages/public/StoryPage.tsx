@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
+import { ButtonLink } from '../../components/ui/Button'
 import { useI18n } from '../../i18n'
 import { usePageTitle } from '../../hooks/usePageTitle'
 
@@ -43,14 +42,12 @@ export function StoryPage() {
       </div>
 
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-        <Link to="/about">
-          <Button variant="secondary" className="w-full sm:w-auto">
-            {t('pages.story.about')}
-          </Button>
-        </Link>
-        <Link to="/contact">
-          <Button className="w-full sm:w-auto">{t('pages.story.contact')}</Button>
-        </Link>
+        <ButtonLink to="/about" variant="secondary" className="w-full sm:w-auto">
+          {t('pages.story.about')}
+        </ButtonLink>
+        <ButtonLink to="/contact" className="w-full sm:w-auto">
+          {t('pages.story.contact')}
+        </ButtonLink>
       </div>
     </div>
   )

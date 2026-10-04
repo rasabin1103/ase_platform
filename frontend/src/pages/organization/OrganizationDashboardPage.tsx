@@ -6,7 +6,7 @@ import { listOrgCatalogItems } from '../../api/orgCatalog.api'
 import { listOrganizations, updateOrganization } from '../../api/organizations.api'
 import { Card } from '../../components/ui/Card'
 import { Eyebrow } from '../../components/ui/Eyebrow'
-import { Button } from '../../components/ui/Button'
+import { buttonClassName } from '../../components/ui/buttonStyles'
 import { Switch } from '../../components/ui/Switch'
 import { OrganizationAnalyticsCharts } from '../../components/organization/OrganizationAnalyticsCharts'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
@@ -73,9 +73,15 @@ export function OrganizationDashboardPage() {
                     loading" — misleading on first paint. */}
                 {catalogQuery.isLoading ? '…' : `${associatedCount} ${associatedCount === 1 ? 'item' : 'items'}`}
               </span>
-              <Button size="sm" variant="outline">
+              {/* Visual-only CTA, not a focusable control: the whole card above
+                  is already the single <Link> activation target. A real
+                  <Button> here would nest a native button inside that anchor
+                  (invalid HTML content model) and give keyboard/AT users two
+                  focus stops for one destination — see OrganizationDashboardPage
+                  re-audit finding. */}
+              <span className={buttonClassName('outline', 'sm')} aria-hidden="true">
                 {t('organizationWorkspace.dashboard.catalogCard.cta')}
-              </Button>
+              </span>
             </div>
           </Card>
         </Link>
@@ -90,9 +96,9 @@ export function OrganizationDashboardPage() {
               <p className="mt-1.5 text-sm text-ase-text2">{t('organizationWorkspace.dashboard.grantCard.body')}</p>
             </div>
             <div className="mt-auto flex items-center justify-end">
-              <Button size="sm" variant="outline">
+              <span className={buttonClassName('outline', 'sm')} aria-hidden="true">
                 {t('organizationWorkspace.dashboard.grantCard.cta')}
-              </Button>
+              </span>
             </div>
           </Card>
         </Link>
@@ -107,9 +113,9 @@ export function OrganizationDashboardPage() {
               <p className="mt-1.5 text-sm text-ase-text2">{t('orgMembership.admin.heroSubtitle')}</p>
             </div>
             <div className="mt-auto flex items-center justify-end">
-              <Button size="sm" variant="outline">
+              <span className={buttonClassName('outline', 'sm')} aria-hidden="true">
                 {t('orgMembership.admin.membersNavLabel')}
-              </Button>
+              </span>
             </div>
           </Card>
         </Link>

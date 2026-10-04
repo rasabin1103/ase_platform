@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { Eyebrow } from '../../components/ui/Eyebrow'
-import { Button } from '../../components/ui/Button'
+import { ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { cn } from '../../components/ui/cn'
 import { tStringArray, useI18n } from '../../i18n'
@@ -45,16 +44,12 @@ export function AboutPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link to="/services" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:min-w-[200px]">
-                    {t('aboutPage.hero.primaryCta')}
-                  </Button>
-                </Link>
-                <Link to="/contact" className="w-full sm:w-auto">
-                  <Button size="lg" variant="secondary" className="w-full sm:min-w-[200px]">
-                    {t('aboutPage.hero.secondaryCta')}
-                  </Button>
-                </Link>
+                <ButtonLink to="/services" size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
+                  {t('aboutPage.hero.primaryCta')}
+                </ButtonLink>
+                <ButtonLink to="/contact" size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[200px]">
+                  {t('aboutPage.hero.secondaryCta')}
+                </ButtonLink>
               </div>
 
               {/* Micro-interaction: real counters when visible */}
@@ -286,16 +281,12 @@ export function AboutPage() {
               {t('aboutPage.closing.body')}
             </p>
             <div className="mt-10 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-              <Link to="/platform" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:min-w-[220px]">
-                  {t('aboutPage.closing.ctas.platform')}
-                </Button>
-              </Link>
-              <Link to="/contact" className="w-full sm:w-auto">
-                <Button size="lg" variant="secondary" className="w-full sm:min-w-[220px]">
-                  {t('aboutPage.closing.ctas.talk')}
-                </Button>
-              </Link>
+              <ButtonLink to="/platform" size="lg" className="w-full sm:w-auto sm:min-w-[220px]">
+                {t('aboutPage.closing.ctas.platform')}
+              </ButtonLink>
+              <ButtonLink to="/contact" size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[220px]">
+                {t('aboutPage.closing.ctas.talk')}
+              </ButtonLink>
             </div>
           </div>
         </div>

@@ -25,6 +25,7 @@ import {
   Activity,
   Newspaper,
   ShoppingBag,
+  Briefcase,
   Users,
   Wrench,
 } from 'lucide-react'
@@ -71,6 +72,7 @@ export const INDEPENDENT_NAV_GROUPS: NavGroupDef[] = [
       { to: '/test-execution', labelKey: 'private.nav.testExecution', icon: Activity },
       { to: '/booking', labelKey: 'private.nav.booking', icon: CalendarClock },
       { to: '/redeem-code', labelKey: 'private.nav.redeemCode', icon: KeyRound },
+      { to: '/job-postings', labelKey: 'private.nav.jobPostings', icon: Briefcase },
     ],
   },
   {
@@ -93,6 +95,7 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
     items: [
       { to: '/admin/catalog', labelKey: 'private.nav.catalogManage', icon: Boxes, anyPermission: ['catalog.manage'] },
       { to: '/admin/blog', labelKey: 'private.nav.blogManage', icon: Newspaper, anyPermission: ['catalog.manage'] },
+      { to: '/admin/job-postings', labelKey: 'private.nav.jobPostingsManage', icon: Briefcase, anyPermission: ['catalog.manage'] },
       { to: '/users', labelKey: 'private.nav.users', icon: Users, anyPermission: ['users.read'] },
       { to: '/admin/purchases', labelKey: 'private.nav.purchasesAdmin', icon: Receipt, anyPermission: ['purchases.read_all'] },
       { to: '/requests', labelKey: 'private.nav.requestsReview', icon: ClipboardCheck, anyPermission: ['requests.read'] },
@@ -127,6 +130,7 @@ export const ORGANIZATION_NAV_GROUPS: NavGroupDef[] = [
       { to: '/organization/grant', labelKey: 'private.nav.orgGrant', icon: Gift, anyPermission: ['products.assign'] },
       { to: '/organization/members', labelKey: 'private.nav.orgMembers', icon: Users, anyPermission: ['users.read'] },
       { to: '/users', labelKey: 'private.nav.users', icon: Users, anyPermission: ['users.read'] },
+      { to: '/job-postings', labelKey: 'private.nav.jobPostings', icon: Briefcase },
     ],
   },
   {
@@ -145,6 +149,7 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/dashboard',
     '/admin/catalog',
     '/admin/blog',
+    '/admin/job-postings',
     '/users',
     '/admin/purchases',
     '/requests',
@@ -159,8 +164,8 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/admin/booking',
     '/profile',
   ],
-  org_owner: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/requests', '/profile'],
-  org_admin: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/requests', '/profile'],
+  org_owner: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/job-postings', '/requests', '/profile'],
+  org_admin: ['/dashboard', '/organization/catalog', '/organization/grant', '/organization/members', '/users', '/job-postings', '/requests', '/profile'],
   independent_user: [
     '/dashboard',
     '/onboarding',
@@ -181,6 +186,7 @@ export const ROLE_NAV_ROUTES: Record<PlatformRole, string[]> = {
     '/test-execution',
     '/booking',
     '/redeem-code',
+    '/job-postings',
     '/requests',
     '/profile',
   ],

@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { BrandLogo } from '../components/brand/BrandLogo'
-import { Button } from '../components/ui/Button'
+import { ButtonLink } from '../components/ui/Button'
 import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicHeader } from '../components/public/PublicHeader'
 import { ScrollToTop } from '../components/layout/ScrollToTop'
@@ -23,14 +22,12 @@ export function NotFoundPage() {
         <p className="mt-6 max-w-lg text-heading-sm text-ase-text sm:text-heading-md">{t('notFound.title')}</p>
         <p className="mt-4 max-w-md text-body-md text-ase-text2">{t('notFound.subtitle')}</p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <Link to="/">
-            <Button size="lg">{t('notFound.home')}</Button>
-          </Link>
-          <Link to="/contact">
-            <Button size="lg" variant="secondary">
-              {t('notFound.contact')}
-            </Button>
-          </Link>
+          <ButtonLink to="/" size="lg">
+            {t('notFound.home')}
+          </ButtonLink>
+          <ButtonLink to="/contact" size="lg" variant="secondary">
+            {t('notFound.contact')}
+          </ButtonLink>
         </div>
         <div className="mt-16 opacity-60">
           <BrandLogo variant="monochrome" size="sm" />
