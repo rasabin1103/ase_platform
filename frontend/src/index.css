@@ -9,6 +9,16 @@ html {
   html {
     scroll-behavior: auto;
   }
+
+  /* Decorative entry/pulse motion (fade-in-up on cards/sections, glow-pulse
+     on badges) previously only respected scroll-behavior — these utilities
+     end at a fully visible, static state without their animation (see
+     fadeInUp/glowPulse keyframes in tailwind.config.ts), so disabling the
+     animation here is a safe static fallback, not a broken transition. */
+  .animate-fade-in-up,
+  .animate-glow-pulse {
+    animation: none !important;
+  }
 }
 
 html,
@@ -83,9 +93,16 @@ body,
   }
 
   /* The single deliberate gradient in the app — electric blue to violet,
-     used on the primary CTA (Button.tsx) for a "premium tech" accent. */
+     used on the primary CTA (Button.tsx) for a "premium tech" accent.
+     Darkened from the original #4c7dff/#7c5cff endpoints: white button
+     text over those measured 3.69:1 / 4.35:1, both below the 4.5:1
+     WCAG 1.4.3 normal-text threshold (buttons use 14-16px text, not large
+     bold text, so the 3:1 large-text allowance doesn't apply). These
+     endpoints hold >=4.5:1 at rest AND under Button's hover:brightness-110
+     (verified ~4.8-4.9:1 there); active:brightness-95 only darkens further,
+     so it's never the tighter case. */
   .ase-gradient-brand {
-    background-image: linear-gradient(135deg, #4c7dff, #7c5cff);
+    background-image: linear-gradient(135deg, #2f5ce0, #6a4ae0);
   }
 
   /* Replace default Tailwind shadow presets with our custom soft shadow */

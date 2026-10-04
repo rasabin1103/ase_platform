@@ -257,6 +257,7 @@ def me(
             "has_avatar": user_has_stored_avatar(user),
             "phone_verified": user.phone_verified_at is not None,
             "two_factor_enabled": bool(user.two_factor_enabled),
+            "two_factor_deadline_at": user.two_factor_deadline_at,
             "organization_uuid": organization_uuid,
             "active_workspace_uuid": active_workspace_uuid,
             "is_superuser": is_superuser,

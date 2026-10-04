@@ -748,6 +748,7 @@ export const adminCatalogEn = {
     addUrl: 'Add',
     urlPlaceholder: 'Image URL…',
   },
+  carouselThumbnail: 'Show image {{index}} of {{total}}',
   premium: { badge: 'Catalog ops', viewCards: 'Cards', viewTable: 'Table' },
   status: { published: 'Published', draft: 'Draft', coming_soon: 'Coming soon', request_only: 'Request only' },
   testStats: {
@@ -968,6 +969,7 @@ export const adminCatalogEs = {
     addUrl: 'Añadir',
     urlPlaceholder: 'URL de la imagen…',
   },
+  carouselThumbnail: 'Mostrar imagen {{index}} de {{total}}',
   premium: { badge: 'Operaciones catálogo', viewCards: 'Tarjetas', viewTable: 'Tabla' },
   status: { published: 'Publicado', draft: 'Borrador', coming_soon: 'Próximamente', request_only: 'Solo solicitud' },
   testStats: {

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, Download, ExternalLink, LifeBuoy, ReceiptText } from 'lucide-react'
 import {
@@ -11,7 +10,7 @@ import {
 import { createSuggestion } from '../../api/suggestions.api'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Modal } from '../../components/ui/Modal'
@@ -139,11 +138,9 @@ export function MyPurchasesPage() {
                     ) : null}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
-                    <Link to={`/catalog/${item.type}/${item.slug}`}>
-                      <Button size="sm" variant="primary">
-                        {t('catalog.myPurchases.access')}
-                      </Button>
-                    </Link>
+                    <ButtonLink to={`/catalog/${item.type}/${item.slug}`} size="sm" variant="primary">
+                      {t('catalog.myPurchases.access')}
+                    </ButtonLink>
                     {item.hasResourceContent ? (
                       <Button
                         size="sm"

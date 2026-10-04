@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import type { Service } from '../../types/service.types'
 import { localizedServiceCopy } from '../../i18n/localizedService'
 import { tStringArray, useI18n } from '../../i18n'
 import { Badge } from '../ui/Badge'
-import { Button } from '../ui/Button'
+import { ButtonLink } from '../ui/Button'
 import { cn } from '../ui/cn'
 
 type Props = {
@@ -148,16 +147,12 @@ export function ServiceShowcaseBlock({ service, reverse, categoryLabel }: Props)
             ) : null}
 
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
-              <Link to="/contact" className="sm:flex-initial">
-                <Button size="lg" className="w-full sm:w-auto">
-                  {t('servicesPage.showcase.ctaTalk')}
-                </Button>
-              </Link>
-              <Link to="/platform" className="sm:flex-initial">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                  {t('servicesPage.showcase.ctaPlatform')}
-                </Button>
-              </Link>
+              <ButtonLink to="/contact" size="lg" className="w-full sm:w-auto sm:flex-initial">
+                {t('servicesPage.showcase.ctaTalk')}
+              </ButtonLink>
+              <ButtonLink to="/platform" size="lg" variant="secondary" className="w-full sm:w-auto sm:flex-initial">
+                {t('servicesPage.showcase.ctaPlatform')}
+              </ButtonLink>
             </div>
           </div>
         </div>

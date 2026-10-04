@@ -49,7 +49,7 @@ import {
   toggleCatalogFavorite,
   type ResourceDownloadFormat,
 } from '../../api/consumerCatalog.api'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonAnchor } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -706,11 +706,15 @@ export function CatalogDetailPage() {
                 </Button>
               ) : null}
               {item.previewUrl ? (
-                <a href={item.previewUrl} target="_blank" rel="noreferrer">
-                  <Button variant="outline" leftIcon={<ExternalLink className="h-4 w-4" strokeWidth={1.75} />}>
-                    {t('catalog.openPreview')}
-                  </Button>
-                </a>
+                <ButtonAnchor
+                  href={item.previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="outline"
+                  leftIcon={<ExternalLink className="h-4 w-4" strokeWidth={1.75} />}
+                >
+                  {t('catalog.openPreview')}
+                </ButtonAnchor>
               ) : null}
               {hasFullAccess && (item.audiobookUrl || (catalogType === 'book' && canViewResource)) ? (
                 <Button

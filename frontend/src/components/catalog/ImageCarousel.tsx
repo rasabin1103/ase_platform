@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { cn } from '../ui/cn'
+import { useI18n } from '../../i18n'
 import type { CatalogItemGalleryImage } from '../../types/catalog.types'
 
 type Props = {
@@ -35,6 +36,7 @@ export function ImageCarousel({
   fit = 'cover',
   zoomable = false,
 }: Props) {
+  const { t } = useI18n()
   const gallery = useMemo(() => {
     if (images.length > 0) return images
     if (fallbackUrl) return [{ url: fallbackUrl, isCover: true }]
@@ -64,11 +66,17 @@ export function ImageCarousel({
         {overlay}
         {gallery.length > 1 ? (
           <>
+            {/* 44x44 hit area (was 32x32): kept visible since arrows were
+                invisible to keyboard focus and off on touch (no hover) —
+                this is a real, modest visual size increase, not just a
+                hit-area trick. Reveal on focus-visible (keyboard) and via
+                an explicit no-hover media query (touch/coarse pointers),
+                in addition to the existing hover reveal. */}
             <button
               type="button"
               aria-label="Previous image"
               onClick={() => go(-1)}
-              className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70"
+              className="absolute left-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2} />
             </button>
@@ -76,22 +84,31 @@ export function ImageCarousel({
               type="button"
               aria-label="Next image"
               onClick={() => go(1)}
-              className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70"
+              className="absolute right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
             >
               <ChevronRight className="h-4 w-4" strokeWidth={2} />
             </button>
             <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
               {gallery.map((img, i) => (
+                // Visible pill kept at its original 6px height (the `span`)
+                // but the clickable `button` around it gets padding to grow
+                // the hit area to ~24px tall without changing what's drawn —
+                // WCAG 2.5.8 target-size exception applies at this size, and
+                // it avoids resizing the dots themselves.
                 <button
                   key={img.url + i}
                   type="button"
                   aria-label={`Go to image ${i + 1}`}
                   onClick={() => setIndex(i)}
-                  className={cn(
-                    'h-1.5 rounded-full transition-all',
-                    i === safeIndex ? 'w-5 bg-ase-primary' : 'w-1.5 bg-white/40 hover:bg-white/60',
-                  )}
-                />
+                  className="group rounded-full p-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ase-brand/60"
+                >
+                  <span
+                    className={cn(
+                      'block h-1.5 rounded-full transition-all',
+                      i === safeIndex ? 'w-5 bg-ase-primary' : 'w-1.5 bg-white/40 group-hover:bg-white/60',
+                    )}
+                  />
+                </button>
               ))}
             </div>
           </>
@@ -104,6 +121,10 @@ export function ImageCarousel({
               key={img.url + i}
               type="button"
               onClick={() => setIndex(i)}
+              aria-label={String(t('catalog.carouselThumbnail'))
+                .replace('{{index}}', String(i + 1))
+                .replace('{{total}}', String(gallery.length))}
+              aria-current={i === safeIndex ? 'true' : undefined}
               className={cn(
                 'h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition',
                 i === safeIndex ? 'border-ase-primary' : 'border-white/10 hover:border-white/25',

@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { PiggyBank } from 'lucide-react'
 import { getPlanSavings } from '../../api/plansCatalog.api'
 import { Modal } from '../ui/Modal'
-import { Button } from '../ui/Button'
+import { Button, ButtonLink } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { useI18n } from '../../i18n'
 
@@ -90,11 +89,14 @@ export function PlanSavingsModal({ open, itemSlug, onClose, onBuyAlone }: Props)
               </dd>
             </dl>
 
-            <Link to="/pricing" onClick={onClose} className="mt-3 inline-block">
-              <Button variant="primary" className="h-9 px-3.5 text-xs">
-                {t('catalog.planSavings.seePlan')}
-              </Button>
-            </Link>
+            <ButtonLink
+              to="/pricing"
+              onClick={onClose}
+              variant="primary"
+              className="mt-3 h-9 px-3.5 text-xs"
+            >
+              {t('catalog.planSavings.seePlan')}
+            </ButtonLink>
           </div>
         ))}
       </div>

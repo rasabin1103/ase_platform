@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getPublicBlogPost } from '../../api/publicBlog.api'
 import { Badge } from '../../components/ui/Badge'
@@ -20,6 +20,7 @@ export function BlogPostPage() {
   const { t } = useI18n()
   const { slug } = useParams<{ slug: string }>()
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const articleRef = useRef<HTMLDivElement | null>(null)
 
   const query = useQuery({
     queryKey: ['public-blog-post', slug],
@@ -33,6 +34,25 @@ export function BlogPostPage() {
     (post?.meta_title || post?.title || t('blogPage.title')) as string,
     (post?.meta_description || post?.excerpt) as string | undefined,
   )
+
+  // The article body is raw sanitized HTML (dangerouslySetInnerHTML), so its
+  // <img> tags can't carry React props/handlers — they're native <img>
+  // elements with no tabindex, so keyboard users can never reach the zoom
+  // the click handler below offers. Make each one a real keyboard target
+  // after every content render (post content, or language switch re-render
+  // of post.content_html, replaces the whole subtree).
+  useEffect(() => {
+    const container = articleRef.current
+    if (!container) return
+    const images = container.querySelectorAll('img')
+    images.forEach((el) => {
+      el.setAttribute('tabindex', '0')
+      el.setAttribute('role', 'button')
+      if (!el.getAttribute('aria-label')) {
+        el.setAttribute('aria-label', (t('a11y.zoomImage') as string) || 'Open full-screen view')
+      }
+    })
+  }, [post?.content_html, t])
 
   if (query.isLoading) {
     return (
@@ -118,16 +138,30 @@ export function BlogPostPage() {
 
       {post.cover_image_url && (
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 ease-out hover:border-ase-brand/30 hover:shadow-glow-cyan">
-          <img
-            src={resolveMediaUrl(post.cover_image_url) ?? undefined}
-            alt=""
+          {/* A real <button> instead of an onClick on the <img> — keyboard
+           * users need a focusable, Enter/Space-activatable control to
+           * reach the same zoom a mouse click gives (WCAG 2.1.1).
+           * `block` (not `contents`) so the focus-visible ring below has
+           * an actual box to outline — `display: contents` renders no box
+           * of its own, so the keyboard focus indicator was invisible
+           * (WCAG 2.4.7). */}
+          <button
+            type="button"
             onClick={() => setLightboxSrc(resolveMediaUrl(post.cover_image_url))}
-            className="max-h-[30rem] w-full cursor-zoom-in object-cover transition hover:brightness-95"
-          />
+            aria-label={t('a11y.zoomImage') as string}
+            className="block w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg"
+          >
+            <img
+              src={resolveMediaUrl(post.cover_image_url) ?? undefined}
+              alt=""
+              className="max-h-[30rem] w-full cursor-zoom-in object-cover transition hover:brightness-95"
+            />
+          </button>
         </div>
       )}
 
       <div
+        ref={articleRef}
         className={[
           // Comfortable article reading measure — larger, more relaxed body
           // text than the default so long posts stay readable regardless of
@@ -160,6 +194,17 @@ export function BlogPostPage() {
         onClick={(e) => {
           const target = e.target as HTMLElement
           if (target.tagName === 'IMG') {
+            const img = target as HTMLImageElement
+            setLightboxSrc(img.currentSrc || img.src)
+          }
+        }}
+        // Keyboard equivalent of the click delegation above — the images
+        // are made focusable (tabindex/role="button") by the effect above,
+        // so Enter/Space here is their only way to actually open the zoom.
+        onKeyDown={(e) => {
+          const target = e.target as HTMLElement
+          if (target.tagName === 'IMG' && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
             const img = target as HTMLImageElement
             setLightboxSrc(img.currentSrc || img.src)
           }

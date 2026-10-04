@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { BarChart3, Eye, MessageCircle, Share2, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { deleteAdminBlogPost, listAdminBlogPosts, listAdminBlogTags, type BlogPostAdmin } from '../../api/blogAdmin.api'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
@@ -53,11 +52,9 @@ export function AdminBlogPage() {
         title={t('adminBlog.title')}
         subtitle={t('adminBlog.subtitle')}
         actions={
-          <Link to="/admin/blog/new">
-            <Button size="sm" leftIcon={<span>+</span>}>
-              {t('adminBlog.create')}
-            </Button>
-          </Link>
+          <ButtonLink to="/admin/blog/new" size="sm" leftIcon={<span>+</span>}>
+            {t('adminBlog.create')}
+          </ButtonLink>
         }
         sidePanel={
           <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
@@ -136,11 +133,9 @@ export function AdminBlogPage() {
                 <Button size="sm" variant="secondary" leftIcon={<BarChart3 className="h-3.5 w-3.5" strokeWidth={1.75} />} onClick={() => setViewingStats(post)}>
                   {t('adminBlog.stats.button')}
                 </Button>
-                <Link to={`/admin/blog/${post.id}/edit`}>
-                  <Button size="sm" variant="secondary">
-                    {t('adminBlog.edit')}
-                  </Button>
-                </Link>
+                <ButtonLink to={`/admin/blog/${post.id}/edit`} size="sm" variant="secondary">
+                  {t('adminBlog.edit')}
+                </ButtonLink>
                 <Button size="sm" variant="outline" className="border-ase-error/30" onClick={() => setDeleting(post)}>
                   {t('adminBlog.delete')}
                 </Button>

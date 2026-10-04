@@ -19,6 +19,37 @@ export const servicesPageEn = {
       stack: { label: 'CONSULTING', value: 'Access to senior services included in Enterprise plans' },
     },
   },
+  jobs: {
+    badge: 'Job board',
+    title: 'Job offers, with an honest read on how well you fit',
+    subtitle:
+      'Browse curated tech and QA openings and, once you upload your CV, see in seconds how closely each one matches your profile — and how to prepare if you decide to apply.',
+    offersTitle: 'The offers',
+    offers: [
+      'Curated openings with salary, contract type, work mode and schedule shown up front.',
+      'Filter by category, contract, remote/hybrid/on-site and working hours.',
+      'Available in English and Spanish, translated automatically.',
+      'One click to apply on the employer’s own page.',
+    ],
+    analysisTitle: 'The analysis you get',
+    analysis: [
+      { title: 'Fit score', description: 'A percentage from 0 to 100 with a clear level: low, moderate, good or high.' },
+      { title: 'Why this score', description: 'A short written verdict that takes your seniority and implied skills into account, not just repeated words.' },
+      { title: 'Strengths', description: 'What your CV already covers that matters for this specific role.' },
+      { title: 'Gaps', description: 'What the role asks for that your CV does not yet show evidence of.' },
+      { title: 'Keyword match', description: 'The key terms of the offer that appear in your CV, and the ones that are missing.' },
+      { title: '5 interview tips', description: 'Five concrete suggestions to prepare, tailored to your CV and to the offer.' },
+    ],
+    levelsTitle: 'Fit levels',
+    levels: [
+      { range: '75–100%', label: 'High' },
+      { range: '50–74%', label: 'Good' },
+      { range: '30–49%', label: 'Moderate' },
+      { range: '0–29%', label: 'Low' },
+    ],
+    note: 'Nothing is calculated until you ask for it, and each offer is analyzed once so your result stays consistent.',
+    cta: 'Sign in to try it',
+  },
   inside: {
     title: 'What you find inside ASE',
     cards: {
@@ -263,6 +294,37 @@ export const servicesPageEs = {
       model: { label: 'RECURSOS', value: 'Plantillas, frameworks y herramientas listas para usar' },
       stack: { label: 'CONSULTORÍA', value: 'Acceso a servicios senior incluidos en planes Enterprise' },
     },
+  },
+  jobs: {
+    badge: 'Bolsa de empleo',
+    title: 'Ofertas laborales, con una lectura honesta de cuánto encajas',
+    subtitle:
+      'Explora ofertas seleccionadas de tecnología y QA y, al subir tu CV, comprueba en segundos cuánto se ajusta cada una a tu perfil — y cómo prepararte si decides presentarte.',
+    offersTitle: 'Las ofertas',
+    offers: [
+      'Ofertas seleccionadas con salario, tipo de contrato, modalidad y horario a la vista.',
+      'Filtra por categoría, contrato, remoto/híbrido/presencial y jornada.',
+      'Disponibles en español e inglés, traducidas automáticamente.',
+      'Un clic para postularte en la página de la propia empresa.',
+    ],
+    analysisTitle: 'El análisis que recibes',
+    analysis: [
+      { title: 'Porcentaje de encaje', description: 'Un valor de 0 a 100 con un nivel claro: bajo, moderado, bueno o alto.' },
+      { title: 'Por qué esta puntuación', description: 'Un breve veredicto escrito que tiene en cuenta tu seniority y las habilidades implícitas, no solo palabras repetidas.' },
+      { title: 'Fortalezas', description: 'Lo que tu CV ya cubre y es relevante para este puesto concreto.' },
+      { title: 'Brechas', description: 'Lo que el puesto pide y tu CV aún no evidencia.' },
+      { title: 'Coincidencia de palabras clave', description: 'Los términos clave de la oferta que aparecen en tu CV y los que faltan.' },
+      { title: '5 consejos para la entrevista', description: 'Cinco sugerencias concretas para prepararte, adaptadas a tu CV y a la oferta.' },
+    ],
+    levelsTitle: 'Niveles de encaje',
+    levels: [
+      { range: '75–100%', label: 'Alto' },
+      { range: '50–74%', label: 'Bueno' },
+      { range: '30–49%', label: 'Moderado' },
+      { range: '0–29%', label: 'Bajo' },
+    ],
+    note: 'No se calcula nada hasta que lo pides, y cada oferta se analiza una sola vez para que tu resultado sea coherente.',
+    cta: 'Inicia sesión para probarlo',
   },
   inside: {
     title: 'Lo que encuentras dentro de ASE',

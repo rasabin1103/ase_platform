@@ -5,7 +5,7 @@ import { KeyRound, UserRound, FolderGit2 } from 'lucide-react'
 import { redeemBookCode, type RedeemResult } from '../../api/bookRedemption.api'
 import { Card } from '../ui/Card'
 import { Input } from '../ui/Input'
-import { Button } from '../ui/Button'
+import { Button, ButtonAnchor } from '../ui/Button'
 import { useI18n } from '../../i18n'
 import { parseApiError } from '../../utils/apiError'
 
@@ -100,12 +100,10 @@ export function RedeemCodeForm({ onRedeemed, footer }: Props) {
           <p className="mt-1.5 text-sm text-ase-text2">
             {lastResult.invite_status === 'invited' ? t('redeemCode.invitedHint') : t('redeemCode.alreadyCollaboratorHint')}
           </p>
-          <a href={lastResult.repo_url} target="_blank" rel="noreferrer" className="mt-3 inline-block">
-            <Button size="sm">
-              <FolderGit2 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
-              {t('redeemCode.openRepo')}
-            </Button>
-          </a>
+          <ButtonAnchor href={lastResult.repo_url} target="_blank" rel="noreferrer" className="mt-3" size="sm">
+            <FolderGit2 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
+            {t('redeemCode.openRepo')}
+          </ButtonAnchor>
         </div>
       ) : null}
 

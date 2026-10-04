@@ -135,11 +135,6 @@ export async function listMyTestRuns(params?: { slug?: string; limit?: number; o
   return data
 }
 
-export async function getMyTestRun(runUuid: string) {
-  const { data } = await apiClient.get<TestRun>(`/test-execution/runs/${runUuid}`)
-  return data
-}
-
 // Removes a run from this user's own history — never a real delete, the row
 // still counts against the run quota either way (see the backend's
 // TestRun.hidden_at docstring).

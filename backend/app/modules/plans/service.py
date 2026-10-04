@@ -175,6 +175,7 @@ class PlansService:
             cta_label=payload.cta_label,
             stripe_price_id=payload.stripe_price_id,
             monthly_download_limit=payload.monthly_download_limit,
+            monthly_ai_analysis_limit=payload.monthly_ai_analysis_limit,
             loyalty_bonus_downloads=payload.loyalty_bonus_downloads,
             loyalty_bonus_interval_months=payload.loyalty_bonus_interval_months,
         )
@@ -249,12 +250,16 @@ class PlansService:
             plan.stripe_price_id = payload.stripe_price_id
         if payload.monthly_download_limit is not None:
             plan.monthly_download_limit = payload.monthly_download_limit
+        if payload.monthly_ai_analysis_limit is not None:
+            plan.monthly_ai_analysis_limit = payload.monthly_ai_analysis_limit
         if payload.loyalty_bonus_downloads is not None:
             plan.loyalty_bonus_downloads = payload.loyalty_bonus_downloads
         if payload.loyalty_bonus_interval_months is not None:
             plan.loyalty_bonus_interval_months = payload.loyalty_bonus_interval_months
         if payload.clear_monthly_download_limit:
             plan.monthly_download_limit = None
+        if payload.clear_monthly_ai_analysis_limit:
+            plan.monthly_ai_analysis_limit = None
         if payload.clear_loyalty_bonus:
             plan.loyalty_bonus_downloads = None
             plan.loyalty_bonus_interval_months = None

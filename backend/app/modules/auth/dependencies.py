@@ -340,49 +340,6 @@ def require_organization_context(request: Request, db: Session, user: User) -> O
     return org
 
 
-def require_same_organization(
-    request: Request,
-    db: Session,
-    user: User,
-    *,
-    target_organization_id: int,
-) -> Organization:
-    org = require_organization_context(request, db, user)
-    if not is_super_admin(db, user) and org.id != target_organization_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cross-tenant access denied")
-    return org
-
-
-def require_organization_member() -> Callable[..., OrganizationMember]:
-    def _dep(
-        request: Request,
-        db: Session = Depends(get_db),
-        user: User = Depends(get_current_user),
-    ) -> OrganizationMember:
-        if user.status in (UserStatus.suspended, UserStatus.deleted):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not allowed")
-
-        org_id = _resolve_effective_org_id(request, db, user)
-        if org_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No workspace is associated with this user.",
-            )
-
-        stmt = select(OrganizationMember).where(
-            OrganizationMember.organization_id == org_id,
-            OrganizationMember.user_id == user.id,
-        )
-        member = db.execute(stmt).scalar_one_or_none()
-        if member is None:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this organization")
-        if member.membership_status != MembershipStatus.active:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Membership is not active")
-        return member
-
-    return _dep
-
-
 def require_tenant_context(request: Request, db: Session, current_user: User) -> Organization:
     if is_super_admin(db, current_user):
         org_id = _resolve_effective_org_id(request, db, current_user)

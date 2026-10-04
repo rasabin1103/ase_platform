@@ -11,3 +11,15 @@ export function localizedCatalogText(
   if (language === 'en' && enValue) return enValue
   return esValue ?? ''
 }
+
+/** Same fallback rule as localizedCatalogText but for a list of short
+ * phrases (e.g. the AI analysis's "strengths"/"gaps") — picks the English
+ * array only when it's present and non-empty, otherwise the Spanish one. */
+export function localizedCatalogList(
+  language: 'en' | 'es',
+  esValue: string[] | null | undefined,
+  enValue: string[] | null | undefined,
+): string[] {
+  if (language === 'en' && enValue && enValue.length > 0) return enValue
+  return esValue ?? []
+}

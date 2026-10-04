@@ -50,9 +50,15 @@ export function TwoFactorGraceModal() {
   const navigate = useNavigate()
   const [dismissed, setDismissed] = useState(false)
 
-  const daysLeft = currentUser?.created_at
-    ? Math.max(0, Math.ceil((new Date(currentUser.created_at).getTime() + TWO_FACTOR_GRACE_DAYS * DAY_MS - PAGE_LOAD_TIME) / DAY_MS))
-    : null
+  // An admin-set personal deadline (set when activating the user) wins over
+  // the global grace period counted from account creation — mirrors
+  // run_two_factor_grace_sweep on the backend.
+  const deadlineMs = currentUser?.two_factor_deadline_at
+    ? new Date(currentUser.two_factor_deadline_at).getTime()
+    : currentUser?.created_at
+      ? new Date(currentUser.created_at).getTime() + TWO_FACTOR_GRACE_DAYS * DAY_MS
+      : null
+  const daysLeft = deadlineMs !== null ? Math.max(0, Math.ceil((deadlineMs - PAGE_LOAD_TIME) / DAY_MS)) : null
 
   const alreadyShownToday = currentUser ? wasAlreadyShownToday(currentUser.uuid) : true
 

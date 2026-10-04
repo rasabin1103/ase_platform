@@ -30,7 +30,7 @@ export function CriticalErrorModal() {
       open={current !== null}
       onClose={() => setCurrent(null)}
       allowFullscreen={false}
-      closeLabel={getModalCloseLabel()}
+      hideHeaderClose
       title={
         current ? (
           <span className="flex items-center gap-2">

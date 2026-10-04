@@ -237,6 +237,8 @@ from app.modules.newsletter.router import router as newsletter_router
 from app.modules.admin_newsletter.router import router as admin_newsletter_router
 from app.modules.pricing_admin.router import router as pricing_admin_router
 from app.modules.user_preferences.router import router as user_preferences_router
+from app.modules.job_postings.router import admin_router as job_postings_admin_router
+from app.modules.job_postings.router import router as job_postings_router
 
 
 def create_app() -> FastAPI:
@@ -276,6 +278,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_newsletter_router)
     app.include_router(pricing_admin_router)
     app.include_router(user_preferences_router)
+    app.include_router(job_postings_admin_router)
+    app.include_router(job_postings_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)

@@ -102,8 +102,6 @@ export function ApplicationMapTree({
 
       <div className="amt-tree relative overflow-x-auto pb-4">
         <style>{`
-          @keyframes amtFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes amtGlowPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
           .amt-tree ul { display: flex; justify-content: center; padding-top: 32px; position: relative; }
           .amt-tree li { display: flex; flex-direction: column; align-items: center; list-style: none; position: relative; padding: 32px 16px 0 16px; }
           .amt-tree li::before, .amt-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid rgba(34,211,238,0.28); width: 50%; height: 32px; }
@@ -116,8 +114,16 @@ export function ApplicationMapTree({
           .amt-tree > ul { padding-top: 0; }
           .amt-tree > ul > li { padding-top: 0; }
           .amt-tree > ul > li::before, .amt-tree > ul > li::after { display: none; }
-          .amt-node { animation: amtFadeIn 0.45s ease-out both; }
-          .amt-glow-ring { animation: amtGlowPulse 2.8s ease-in-out infinite; }
+          /* Fade-in and glow-pulse are purely decorative, so they're scoped
+             to no-preference: a reduced-motion user gets static nodes
+             (full opacity, no translate, steady glow) instead of being
+             excluded from motion entirely. */
+          @media (prefers-reduced-motion: no-preference) {
+            @keyframes amtFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes amtGlowPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+            .amt-node { animation: amtFadeIn 0.45s ease-out both; }
+            .amt-glow-ring { animation: amtGlowPulse 2.8s ease-in-out infinite; }
+          }
         `}</style>
 
         <ul>

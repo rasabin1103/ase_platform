@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -118,6 +119,22 @@ class UsersService:
             user.two_factor_enabled = False
             user.two_factor_secret = None
 
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def activate_user(self, user_uuid: UUID, *, two_factor_grace_days: int) -> User:
+        """Admin action for an invited/suspended account: flip it to active
+        and set a personal `two_factor_deadline_at` = now + X days,
+        overriding the global settings.TWO_FACTOR_GRACE_DAYS-since-creation
+        rule for this one user (see account_lifecycle.run_two_factor_grace_
+        sweep, which prefers this per-user deadline when it's set). Clears
+        any prior suspension bookkeeping, same as a normal reactivation."""
+        user = self.get_user(user_uuid)
+        user.status = UserStatus.active
+        user.suspended_at = None
+        user.suspension_reason = None
+        user.two_factor_deadline_at = datetime.now(timezone.utc) + timedelta(days=two_factor_grace_days)
         self.db.commit()
         self.db.refresh(user)
         return user

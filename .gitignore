@@ -60,3 +60,6 @@ pgadmin_data/
 
 # Alembic / local dumps
 ase_backend/schema_dump.sql
+
+# Cleanup safety backup
+_cleanup_backup_*

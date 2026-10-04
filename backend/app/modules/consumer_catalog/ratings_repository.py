@@ -178,15 +178,3 @@ class CatalogItemRatingsRepository:
             item_id: (round(float(avg), 1), int(count)) for item_id, avg, count in self.db.execute(stmt).all()
         }
 
-    def net_score_subquery(self):
-        """Subquery of (catalog_item_id, net_score) for ORDER BY use in the main catalog query."""
-        return (
-            select(
-                CatalogItemRating.catalog_item_id.label("catalog_item_id"),
-                func.sum(
-                    case((CatalogItemRating.is_positive.is_(True), 1), else_=-1)
-                ).label("net_score"),
-            )
-            .group_by(CatalogItemRating.catalog_item_id)
-            .subquery()
-        )

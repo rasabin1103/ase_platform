@@ -12,7 +12,12 @@ export function SkipLink() {
   return (
     <a
       href="#main-content"
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-ase-md focus:bg-ase-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg"
+      // focus:bg-[#2f5ce0] rather than focus:bg-ase-brand (#4C7DFF): white
+      // text on the raw brand blue measures 3.69:1, below the 4.5:1
+      // WCAG 1.4.3 normal-text threshold — same defect class as the
+      // Button primary gradient fix in index.css. This darker shade keeps
+      // the brand hue but clears 4.5:1.
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-ase-md focus:bg-[#2f5ce0] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg"
     >
       {t('a11y.skipToContent')}
     </a>

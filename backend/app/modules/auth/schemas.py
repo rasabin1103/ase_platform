@@ -198,6 +198,10 @@ class MeResponse(BaseModel):
     phone_e164: str | None = None
     phone_verified: bool = False
     two_factor_enabled: bool = False
+    # Personal 2FA deadline set by an admin on activation (null = the global
+    # grace period counted from created_at applies). The frontend warning
+    # modal must use this when present.
+    two_factor_deadline_at: datetime | None = None
     can_create_content: bool = False
     creator_status: CreatorStatus = CreatorStatus.none
     status: UserStatus

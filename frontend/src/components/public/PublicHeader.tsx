@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { BrandLogo } from '../brand/BrandLogo'
-import { Button } from '../ui/Button'
+import { Button, ButtonLink } from '../ui/Button'
 import { cn } from '../ui/cn'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
@@ -32,13 +32,20 @@ export function PublicHeader() {
   )
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ase-border bg-ase-bg2/80 backdrop-blur supports-[backdrop-filter]:bg-ase-bg2/60">
+    // index.css forces backdrop-filter: none project-wide (no "glass" effects),
+    // so the backdrop-blur + supports-[backdrop-filter] pair below was dead:
+    // `supports` still resolves true (the browser understands the property)
+    // even though the !important override blocks it, leaving the *lower*
+    // opacity (/60) active with no blur to soften it — thinner and less
+    // legible than intended. Using the solid fallback opacity (/80) directly
+    // is what this header actually renders as today; this just names it.
+    <header className="sticky top-0 z-40 border-b border-ase-border bg-ase-bg2/80">
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-6 sm:px-8">
         <Link to="/" className="min-w-0 shrink-0">
           <BrandLogo variant="dark" size="sm" showText className="opacity-95" />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-1 navfit:flex">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} className={({ isActive }) => cn(navLinkBase, isActive && navLinkActive)}>
               {it.label}
@@ -47,7 +54,7 @@ export function PublicHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 navfit:flex">
             <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
               <button
                 type="button"
@@ -79,9 +86,9 @@ export function PublicHeader() {
                 <span className="hidden max-w-[220px] truncate text-sm text-ase-text2 lg:inline">
                   {auth.currentUser?.display_name ?? auth.currentUser?.email}
                 </span>
-                <Link to="/dashboard">
-                  <Button size="sm">{t('session.dashboard')}</Button>
-                </Link>
+                <ButtonLink to="/dashboard" size="sm">
+                  {t('session.dashboard')}
+                </ButtonLink>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -95,21 +102,19 @@ export function PublicHeader() {
               </div>
             ) : (
               <>
-                <Link to="/login">
-                  <Button size="sm" variant="secondary">
-                    {t('nav.clients')}
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button size="sm">{t('nav.cta')}</Button>
-                </Link>
+                <ButtonLink to="/login" size="sm" variant="secondary">
+                  {t('nav.clients')}
+                </ButtonLink>
+                <ButtonLink to="/pricing" size="sm">
+                  {t('nav.cta')}
+                </ButtonLink>
               </>
             )}
           </div>
 
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60 md:hidden"
+            className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60 navfit:hidden"
             aria-label="Open menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -121,7 +126,7 @@ export function PublicHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-white/5 bg-ase-bg2/90 md:hidden">
+        <div className="border-t border-white/5 bg-ase-bg2/90 navfit:hidden">
           <div className="mx-auto w-full max-w-[1440px] px-6 sm:px-8 py-4">
             <div className="mb-3 flex items-center justify-end">
               <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
@@ -176,33 +181,29 @@ export function PublicHeader() {
             <div className="mt-4 grid grid-cols-1 gap-2">
               {auth.isAuthenticated ? (
                 <>
-                  <Link to="/dashboard" onClick={() => setOpen(false)}>
-                    <Button className="w-full">{t('session.dashboard')}</Button>
-                  </Link>
-                  <button
-                    type="button"
+                  <ButtonLink to="/dashboard" className="w-full" onClick={() => setOpen(false)}>
+                    {t('session.dashboard')}
+                  </ButtonLink>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
                     onClick={() => {
                       auth.logout()
                       setOpen(false)
                       window.location.assign('/')
                     }}
-                    className="w-full"
                   >
-                    <Button variant="secondary" className="w-full">
-                      {t('session.logout')}
-                    </Button>
-                  </button>
+                    {t('session.logout')}
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Link to="/pricing" onClick={() => setOpen(false)}>
-                    <Button className="w-full">{t('nav.cta')}</Button>
-                  </Link>
-                  <Link to="/login" onClick={() => setOpen(false)}>
-                    <Button variant="secondary" className="w-full">
-                      {t('nav.clients')}
-                    </Button>
-                  </Link>
+                  <ButtonLink to="/pricing" className="w-full" onClick={() => setOpen(false)}>
+                    {t('nav.cta')}
+                  </ButtonLink>
+                  <ButtonLink to="/login" variant="secondary" className="w-full" onClick={() => setOpen(false)}>
+                    {t('nav.clients')}
+                  </ButtonLink>
                 </>
               )}
             </div>

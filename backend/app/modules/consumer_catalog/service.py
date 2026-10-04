@@ -986,13 +986,6 @@ class ConsumerCatalogService:
             raise HTTPException(status_code=exc.status_code or status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
     @staticmethod
-    def _find_folder_entry(entries: list[dict], *, matcher: Callable[[str], bool], not_found_detail: str) -> dict:
-        found = ConsumerCatalogService._find_folder_entry_optional(entries, matcher=matcher)
-        if found is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=not_found_detail)
-        return found
-
-    @staticmethod
     def _find_folder_entry_optional(entries: list[dict], *, matcher: Callable[[str], bool]) -> dict | None:
         for entry in entries:
             if entry.get("type") == "file" and matcher(str(entry.get("name", ""))):

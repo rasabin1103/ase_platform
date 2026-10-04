@@ -101,6 +101,8 @@ class PlanCreate(BaseModel):
     # Download quota / loyalty — None means "not configured", same as every
     # plan today (unlimited downloads, no bonus). See Plan model docstrings.
     monthly_download_limit: int | None = Field(default=None, ge=0)
+    # AI job-fit analyses per calendar month — None = unlimited.
+    monthly_ai_analysis_limit: int | None = Field(default=None, ge=0)
     loyalty_bonus_downloads: int | None = Field(default=None, ge=0)
     loyalty_bonus_interval_months: int | None = Field(default=None, ge=1)
     # Discounts on items this plan does NOT include — see
@@ -129,6 +131,7 @@ class PlanUpdate(BaseModel):
     description_en: str | None = None
     cta_label_en: str | None = Field(default=None, max_length=200)
     monthly_download_limit: int | None = Field(default=None, ge=0)
+    monthly_ai_analysis_limit: int | None = Field(default=None, ge=0)
     loyalty_bonus_downloads: int | None = Field(default=None, ge=0)
     loyalty_bonus_interval_months: int | None = Field(default=None, ge=1)
     discount_items: list[PlanCatalogItemDiscountCreate] | None = None
@@ -138,6 +141,7 @@ class PlanUpdate(BaseModel):
     # once set. Sending true clears it regardless of what the numeric field
     # above carries.
     clear_monthly_download_limit: bool = False
+    clear_monthly_ai_analysis_limit: bool = False
     clear_loyalty_bonus: bool = False
 
 
@@ -173,6 +177,7 @@ class PlanRead(BaseModel):
     features: list[PlanFeatureRead] = Field(default_factory=list)
     included_catalog_items: list[PlanCatalogItemRead] = Field(default_factory=list)
     monthly_download_limit: int | None = None
+    monthly_ai_analysis_limit: int | None = None
     loyalty_bonus_downloads: int | None = None
     loyalty_bonus_interval_months: int | None = None
     discount_items: list[PlanCatalogItemDiscountRead] = Field(

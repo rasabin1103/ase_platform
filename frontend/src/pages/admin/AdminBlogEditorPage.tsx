@@ -14,7 +14,7 @@ import {
 } from '../../api/blogAdmin.api'
 import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
 import { RichTextEditor } from '../../components/admin/premium/RichTextEditor'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
@@ -303,11 +303,9 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
         )}
 
         <div className="flex justify-end gap-3">
-          <Link to="/admin/blog">
-            <Button type="button" variant="secondary">
-              {t('adminBlog.cancel')}
-            </Button>
-          </Link>
+          <ButtonLink to="/admin/blog" variant="secondary">
+            {t('adminBlog.cancel')}
+          </ButtonLink>
           <Button type="submit" disabled={saving}>
             {saving ? t('adminBlog.saving') : t('adminBlog.save')}
           </Button>

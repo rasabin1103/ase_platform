@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
 import { useMemo } from 'react'
 import { Eyebrow } from '../../components/ui/Eyebrow'
-import { Button } from '../../components/ui/Button'
+import { ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { cn } from '../../components/ui/cn'
 import { tStringArray, useI18n } from '../../i18n'
@@ -45,21 +44,15 @@ export function PlatformPage() {
               </p>
 
               <div className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
-                <Link to="/services" className="w-full sm:w-auto sm:flex-1">
-                  <Button size="lg" className="w-full">
-                    {t('platformPage.hero.ctas.services')}
-                  </Button>
-                </Link>
-                <Link to="/contact" className="w-full sm:w-auto sm:flex-1">
-                  <Button size="lg" variant="secondary" className="w-full">
-                    {t('platformPage.hero.ctas.contact')}
-                  </Button>
-                </Link>
-                <Link to="/login" className="w-full sm:w-auto sm:flex-1">
-                  <Button size="lg" variant="ghost" className="w-full">
-                    {t('platformPage.hero.ctas.login')}
-                  </Button>
-                </Link>
+                <ButtonLink to="/services" size="lg" className="w-full sm:w-auto sm:flex-1">
+                  {t('platformPage.hero.ctas.services')}
+                </ButtonLink>
+                <ButtonLink to="/contact" size="lg" variant="secondary" className="w-full sm:w-auto sm:flex-1">
+                  {t('platformPage.hero.ctas.contact')}
+                </ButtonLink>
+                <ButtonLink to="/login" size="lg" variant="ghost" className="w-full sm:w-auto sm:flex-1">
+                  {t('platformPage.hero.ctas.login')}
+                </ButtonLink>
               </div>
 
               <div className="mt-10 grid max-w-xl grid-cols-3 gap-4 border-t border-white/10 pt-8">
@@ -136,21 +129,15 @@ export function PlatformPage() {
             </p>
 
             <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-              <Link to="/services" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:min-w-[220px]">
-                  {t('platformPage.cta.primary')}
-                </Button>
-              </Link>
-              <Link to="/contact" className="w-full sm:w-auto">
-                <Button size="lg" variant="secondary" className="w-full sm:min-w-[220px]">
-                  {t('platformPage.cta.secondary')}
-                </Button>
-              </Link>
-              <Link to="/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="ghost" className="w-full sm:min-w-[220px]">
-                  {t('platformPage.cta.tertiary')}
-                </Button>
-              </Link>
+              <ButtonLink to="/services" size="lg" className="w-full sm:w-auto sm:min-w-[220px]">
+                {t('platformPage.cta.primary')}
+              </ButtonLink>
+              <ButtonLink to="/contact" size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[220px]">
+                {t('platformPage.cta.secondary')}
+              </ButtonLink>
+              <ButtonLink to="/login" size="lg" variant="ghost" className="w-full sm:w-auto sm:min-w-[220px]">
+                {t('platformPage.cta.tertiary')}
+              </ButtonLink>
             </div>
           </div>
         </div>

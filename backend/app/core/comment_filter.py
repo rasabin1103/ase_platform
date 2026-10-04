@@ -38,12 +38,6 @@ def _build_pattern() -> re.Pattern[str]:
 _PATTERN = _build_pattern()
 
 
-def contains_banned_words(text: str) -> bool:
-    if not text:
-        return False
-    return _PATTERN.search(_strip_accents(text)) is not None
-
-
 def censor_text(text: str) -> str:
     """Replaces every banned-word match with asterisks of the same length,
     preserving the rest of the comment untouched. Matching is done against

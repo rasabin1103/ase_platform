@@ -22,6 +22,8 @@ import {
   AdminBlogPage,
   AdminBookRedemptionsPage,
   AdminCatalogPage,
+  AdminJobPostingEditorPage,
+  AdminJobPostingsPage,
   AdminPurchasesPage,
   AdminSuggestionsPage,
   AdminSystemPage,
@@ -33,6 +35,8 @@ import {
   ContactPage,
   ForgotPasswordPage,
   HomePage,
+  JobPostingDetailPage,
+  JobPostingsPage,
   LoginPage,
   MyPurchasesPage,
   NewsletterUnsubscribePage,
@@ -148,6 +152,12 @@ export const router = createBrowserRouter([
           // Self-service — every authenticated role manages its own
           // profile, so this stays ungated beyond being logged in.
           { path: '/profile', element: <ProfilePage /> },
+          // Job postings: browsable by any authenticated user regardless of
+          // role (independent, org_owner/org_admin, or super_admin) — same
+          // "ungated beyond login" treatment as /profile. Management lives
+          // separately at /admin/job-postings, gated by catalog.manage below.
+          { path: '/job-postings', element: <JobPostingsPage /> },
+          { path: '/job-postings/:id', element: <JobPostingDetailPage /> },
 
           // Every group below mirrors the `anyPermission` already declared
           // for this route's nav entry in rbac/config.ts (SUPER_ADMIN_NAV_GROUPS /
@@ -164,6 +174,9 @@ export const router = createBrowserRouter([
               { path: '/admin/blog', element: <AdminBlogPage /> },
               { path: '/admin/blog/new', element: <AdminBlogEditorPage /> },
               { path: '/admin/blog/:id/edit', element: <AdminBlogEditorPage /> },
+              { path: '/admin/job-postings', element: <AdminJobPostingsPage /> },
+              { path: '/admin/job-postings/new', element: <AdminJobPostingEditorPage /> },
+              { path: '/admin/job-postings/:id/edit', element: <AdminJobPostingEditorPage /> },
               { path: '/admin/book-redemptions', element: <AdminBookRedemptionsPage /> },
               { path: '/admin/booking', element: <AdminBookingPage /> },
             ],

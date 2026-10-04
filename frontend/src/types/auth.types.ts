@@ -43,6 +43,7 @@ export type MeResponse = {
   phone_e164?: string | null
   phone_verified?: boolean
   two_factor_enabled?: boolean
+  two_factor_deadline_at?: string | null
   can_create_content?: boolean
   creator_status?: 'none' | 'pending' | 'approved' | 'rejected' | string
   status: 'active' | 'suspended' | 'deleted' | string

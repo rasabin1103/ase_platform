@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePrefersReducedMotion } from '../../utils/usePrefersReducedMotion'
 
 type Props = {
   value: number
@@ -12,6 +13,7 @@ export function CountUpInView({ value, durationMs = 900, decimals = 0, className
   const elRef = useRef<HTMLSpanElement | null>(null)
   const [started, setStarted] = useState(false)
   const [n, setN] = useState(0)
+  const reducedMotion = usePrefersReducedMotion()
 
   const formatter = useMemo(() => {
     if (format) return format
@@ -38,7 +40,10 @@ export function CountUpInView({ value, durationMs = 900, decimals = 0, className
   }, [])
 
   useEffect(() => {
-    if (!started) return
+    // Reduced motion: skip the raf loop entirely — the rendered value below
+    // derives straight from `started` in that case, so there's nothing for
+    // this effect to drive.
+    if (!started || reducedMotion) return
     const start = performance.now()
 
     let raf = 0
@@ -53,11 +58,13 @@ export function CountUpInView({ value, durationMs = 900, decimals = 0, className
 
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [started, value, durationMs])
+  }, [started, value, durationMs, reducedMotion])
+
+  const displayValue = reducedMotion ? (started ? value : 0) : n
 
   return (
     <span ref={elRef} className={className}>
-      {formatter(n)}
+      {formatter(displayValue)}
     </span>
   )
 }

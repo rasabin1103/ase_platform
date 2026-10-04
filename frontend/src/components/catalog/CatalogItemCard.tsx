@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Heart, Check, ShoppingCart } from 'lucide-react'
-import { Button } from '../ui/Button'
+import { Button, ButtonLink } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { cn } from '../ui/cn'
@@ -127,17 +127,13 @@ export function CatalogItemCard({
         ) : null}
         <RatingWidget item={item} compact />
         <div className="mt-auto flex flex-wrap items-center gap-2">
-          <Link to={detailPath}>
-            <Button size="sm" variant="primary">
-              {t('catalog.viewDetail')}
-            </Button>
-          </Link>
+          <ButtonLink to={detailPath} size="sm" variant="primary">
+            {t('catalog.viewDetail')}
+          </ButtonLink>
           {item.hasResourceContent ? (
-            <Link to={`${detailPath}?preview=1`}>
-              <Button size="sm" variant="outline">
-                {t('catalog.preview')}
-              </Button>
-            </Link>
+            <ButtonLink to={`${detailPath}?preview=1`} size="sm" variant="outline">
+              {t('catalog.preview')}
+            </ButtonLink>
           ) : null}
           {!isFree ? (
             <Button

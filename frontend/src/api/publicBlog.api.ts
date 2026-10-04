@@ -89,11 +89,6 @@ export type BlogReactionCounts = {
   myReaction: BlogReaction | null
 }
 
-export async function getBlogReaction(slug: string) {
-  const { data } = await apiClient.get<BlogReactionCounts>(`/public/blog/${slug}/reaction`)
-  return data
-}
-
 export async function setBlogReaction(slug: string, reaction: BlogReaction) {
   const { data } = await apiClient.post<BlogReactionCounts>(`/public/blog/${slug}/reaction`, { reaction })
   return data

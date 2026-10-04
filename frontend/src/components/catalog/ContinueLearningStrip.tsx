@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, History } from 'lucide-react'
 import { listMyRecentlyOpened } from '../../api/consumerCatalog.api'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
-import { Button } from '../ui/Button'
+import { ButtonLink } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Eyebrow } from '../ui/Eyebrow'
 import { Skeleton } from '../ui/Skeleton'
@@ -67,11 +66,15 @@ export function ContinueLearningStrip() {
                   </p>
                   <h3 className="mt-0.5 truncate text-sm font-semibold text-ase-text">{title}</h3>
                 </div>
-                <Link to={detailPath} className="shrink-0">
-                  <Button size="sm" variant="secondary" rightIcon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />}>
-                    {t('independentDashboard.continueLearning.cta')}
-                  </Button>
-                </Link>
+                <ButtonLink
+                  to={detailPath}
+                  className="shrink-0"
+                  size="sm"
+                  variant="secondary"
+                  rightIcon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />}
+                >
+                  {t('independentDashboard.continueLearning.cta')}
+                </ButtonLink>
               </Card>
             )
           })}

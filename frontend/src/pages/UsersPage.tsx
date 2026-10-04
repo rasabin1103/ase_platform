@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
 import { BarChart3, Download, LogIn } from 'lucide-react'
 import { z } from 'zod'
-import { createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
+import { activateUser, createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
 import type { UserUpdateRequest } from '../types/user.types'
 import { downloadCsv } from '../utils/csv'
 import { passwordSchema } from '../utils/passwordPolicy'
@@ -71,6 +71,8 @@ export function UsersPage() {
   const [editing, setEditing] = useState<User | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
+  const [activateFor, setActivateFor] = useState<User | null>(null)
+  const [activateDays, setActivateDays] = useState(30)
   const [statsForUser, setStatsForUser] = useState<User | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
   const [verificationSentEmail, setVerificationSentEmail] = useState<string | null>(null)
@@ -209,6 +211,14 @@ export function UsersPage() {
     mutationFn: (user_uuid: string) => deleteUser(user_uuid),
     onSuccess: async () => {
       setConfirmDelete(null)
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+
+  const activateMutation = useMutation({
+    mutationFn: ({ user_uuid, days }: { user_uuid: string; days: number }) => activateUser(user_uuid, days),
+    onSuccess: async () => {
+      setActivateFor(null)
       await queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })
@@ -363,6 +373,14 @@ export function UsersPage() {
                   onDelete={() => setConfirmDelete(u)}
                   onImpersonate={isSuperAdmin && u.uuid !== currentUser?.uuid ? () => setConfirmImpersonate(u) : undefined}
                   onViewStats={isSuperAdmin ? () => setStatsForUser(u) : undefined}
+                  onActivate={
+                    u.status !== 'active'
+                      ? () => {
+                          setActivateDays(30)
+                          setActivateFor(u)
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -405,6 +423,18 @@ export function UsersPage() {
                       <TD className="hidden text-ase-muted xl:table-cell">{fmtDate(u.created_at)}</TD>
                       <TD className="text-right">
                         <div className="inline-flex gap-2">
+                          {u.status !== 'active' ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => {
+                                setActivateDays(30)
+                                setActivateFor(u)
+                              }}
+                            >
+                              {t('usersPage.actions.activate')}
+                            </Button>
+                          ) : null}
                           <Button
                             size="sm"
                             variant="secondary"
@@ -608,6 +638,52 @@ export function UsersPage() {
         </div>
       </Modal>
 
+      <Modal
+        open={!!activateFor}
+        title={t('usersPage.activateModal.title') as string}
+        closeLabel={t('usersPage.delete.cancel')}
+        onClose={() => setActivateFor(null)}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="primary"
+              disabled={activateMutation.isPending || activateDays < 1}
+              onClick={() => {
+                if (!activateFor) return
+                activateMutation.mutate({ user_uuid: activateFor.uuid, days: activateDays })
+              }}
+            >
+              {activateMutation.isPending ? t('usersPage.activateModal.activating') : t('usersPage.activateModal.confirm')}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ase-text">
+            {String(t('usersPage.activateModal.body')).replace('{{email}}', activateFor?.email ?? '')}
+          </p>
+          <div>
+            <label htmlFor="activate-2fa-days" className="mb-1 block text-xs font-medium text-ase-muted">
+              {t('usersPage.activateModal.daysLabel')}
+            </label>
+            <Input
+              id="activate-2fa-days"
+              type="number"
+              min={1}
+              max={365}
+              value={activateDays}
+              onChange={(e) => setActivateDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+            />
+            <p className="mt-1 text-xs text-ase-muted">{t('usersPage.activateModal.daysHint')}</p>
+          </div>
+          {activateMutation.isError && (
+            <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+              {t('usersPage.activateModal.error')}
+            </div>
+          )}
+        </div>
+      </Modal>
+
       <MemberCatalogStatsModal open={statsOpen} onClose={() => setStatsOpen(false)} />
 
       <UserStatsModal user={statsForUser} onClose={() => setStatsForUser(null)} />
@@ -686,6 +762,15 @@ function PremiumUserMetric({ label, hint, value, icon }: { label: string; hint: 
   )
 }
 
+function twoFactorStatusLabel(t: (k: string) => string, user: User): string {
+  if (user.two_factor_enabled) return t('usersPage.twoFactor.enabled') as string
+  if (user.two_factor_deadline_at) {
+    const date = new Date(user.two_factor_deadline_at).toLocaleDateString()
+    return String(t('usersPage.twoFactor.deadline')).replace('{{date}}', date)
+  }
+  return t('usersPage.twoFactor.disabled') as string
+}
+
 function UserPremiumCard({
   user,
   t,
@@ -694,6 +779,7 @@ function UserPremiumCard({
   onDelete,
   onImpersonate,
   onViewStats,
+  onActivate,
 }: {
   user: User
   t: (k: string) => string
@@ -702,6 +788,7 @@ function UserPremiumCard({
   onDelete: () => void
   onImpersonate?: () => void
   onViewStats?: () => void
+  onActivate?: () => void
 }) {
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
@@ -717,6 +804,7 @@ function UserPremiumCard({
           label={t('usersPage.premium.cards.verification') as string}
           value={(user.email_verified_at ? t('usersPage.premium.cards.verified') : t('usersPage.premium.cards.pending')) as string}
         />
+        <MiniUserMetric label="2FA" value={twoFactorStatusLabel(t, user)} />
         {catalogStat ? (
           <>
             <MiniUserMetric
@@ -731,6 +819,11 @@ function UserPremiumCard({
         ) : null}
       </div>
       <div className="relative mt-5 flex flex-wrap gap-2">
+        {onActivate ? (
+          <Button size="sm" onClick={onActivate}>
+            {t('usersPage.actions.activate')}
+          </Button>
+        ) : null}
         <Button size="sm" variant="secondary" onClick={onEdit}>
           {t('usersPage.premium.actions.viewProfile')}
         </Button>

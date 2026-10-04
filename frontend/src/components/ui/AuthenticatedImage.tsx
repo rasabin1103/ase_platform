@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../../api/client'
 import { isApiMediaPath, resolveMediaUrl, toApiClientPath } from '../../utils/mediaUrls'
+import { useI18n } from '../../i18n'
 import { cn } from './cn'
 import { ImageLightbox } from './ImageLightbox'
 
@@ -32,10 +33,47 @@ export function AuthenticatedImage({
   fit = 'cover',
   zoomable = false,
 }: Props) {
+  const { t } = useI18n()
   const [zoomOpen, setZoomOpen] = useState(false)
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
   const direct = src && !isApiMediaPath(src) ? resolveMediaUrl(src) : null
+
+  // Protected (API-fetched) images used to start their blob download on
+  // mount regardless of scroll position — every thumbnail in a long list
+  // or gallery fired its request immediately. This gates that fetch on the
+  // element actually entering (near) the viewport, the way native
+  // loading="lazy" already does for the plain <img> path below. Once a
+  // given instance has been visible, it stays "unlocked" — a later src
+  // change (e.g. carousel next/prev reusing the same mounted node) fetches
+  // immediately rather than re-checking visibility. Request de-duplication/
+  // shared caching across instances is a separate, larger change and isn't
+  // done here.
+  const [inView, setInView] = useState(false)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const setObservedRef = useCallback(
+    (node: Element | null) => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+        observerRef.current = null
+      }
+      if (node && !inView) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              setInView(true)
+              io.disconnect()
+            }
+          },
+          { rootMargin: '200px' },
+        )
+        io.observe(node)
+        observerRef.current = io
+      }
+    },
+    [inView],
+  )
+  useEffect(() => () => observerRef.current?.disconnect(), [])
 
   // Reset transient fetch state whenever the image identity changes, during
   // render (React's blessed pattern for resetting state from a changed
@@ -50,7 +88,7 @@ export function AuthenticatedImage({
   }
 
   useEffect(() => {
-    if (!src || !isApiMediaPath(src)) {
+    if (!src || !isApiMediaPath(src) || !inView) {
       return
     }
     let revoked: string | null = null
@@ -75,31 +113,62 @@ export function AuthenticatedImage({
       cancelled = true
       if (revoked) URL.revokeObjectURL(revoked)
     }
-  }, [src, cacheKey])
+  }, [src, cacheKey, inView])
 
   const finalSrc = blobUrl ?? direct
   if (!finalSrc || failed) {
     return (
-      <div className={cn('flex items-center justify-center bg-white/[0.04] text-ase-muted', className)}>
+      <div ref={setObservedRef} className={cn('flex items-center justify-center bg-white/[0.04] text-ase-muted', className)}>
         {fallback ?? '◇'}
       </div>
     )
   }
-  return (
-    <>
+  if (!zoomable) {
+    return (
       <img
+        ref={setObservedRef}
         src={finalSrc}
         alt={alt}
         loading="lazy"
         decoding="async"
-        onClick={zoomable ? () => setZoomOpen(true) : undefined}
+        className={cn(fit === 'contain' ? 'object-contain' : 'object-cover', className)}
+      />
+    )
+  }
+
+  const zoomLabel = alt ? `${alt} — ${t('a11y.zoomImage')}` : (t('a11y.zoomImage') as string)
+
+  return (
+    <>
+      {/* A real <button> (not a click handler on the <img>) so keyboard
+       * users can reach and activate the zoom — WCAG 2.1.1. The caller's
+       * sizing `className` moves to the button itself (not the image)
+       * because this needs an actual box for the focus-visible ring to
+       * outline: an earlier version used `display: contents` on the
+       * button so the image's own classes would size it as if it were the
+       * direct layout child, but a `contents` element renders no box of
+       * its own, so keyboard focus landed with no visible indicator at
+       * all (WCAG 2.4.7). The image just fills whatever box the button
+       * ends up with instead. */}
+      <button
+        ref={setObservedRef}
+        type="button"
+        onClick={() => setZoomOpen(true)}
+        aria-label={zoomLabel}
         className={cn(
-          fit === 'contain' ? 'object-contain' : 'object-cover',
-          zoomable && 'cursor-zoom-in',
+          'relative block overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg',
           className,
         )}
-      />
-      {zoomable && zoomOpen ? <ImageLightbox src={finalSrc} alt={alt} onClose={() => setZoomOpen(false)} /> : null}
+      >
+        <img
+          src={finalSrc}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className={cn('h-full w-full cursor-zoom-in', fit === 'contain' ? 'object-contain' : 'object-cover')}
+        />
+      </button>
+      {zoomOpen ? <ImageLightbox src={finalSrc} alt={alt} onClose={() => setZoomOpen(false)} /> : null}
     </>
   )
 }

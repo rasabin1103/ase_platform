@@ -21,6 +21,7 @@ from app.modules.auth.security import create_impersonation_token, IMPERSONATION_
 from app.modules.users.repository import UsersRepository
 from app.modules.users.schemas import (
     ImpersonationTokenRead,
+    UserActivateRequest,
     UserCreate,
     UserListResponse,
     UserRead,
@@ -131,6 +132,34 @@ def update_user(
         metadata={"fields": sorted(payload.model_dump(exclude_unset=True).keys())},
     )
     return updated
+
+
+@router.post("/{user_uuid}/activate", response_model=UserRead, dependencies=[Depends(require_permission("users.update"))])
+def activate_user(
+    user_uuid: UUID,
+    payload: UserActivateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: UsersService = Depends(get_users_service),
+):
+    """Activates an invited/suspended user and starts their personal 2FA
+    grace period (two_factor_grace_days from now) — see
+    UsersService.activate_user. Same tenant-scoping as PATCH above: an
+    org admin can only activate members of their own organization."""
+    if not is_platform_admin(db, current_user):
+        org = require_tenant_context(request, db, current_user)
+        svc.get_user_for_organization(user_uuid, organization_id=org.id)
+    activated = svc.activate_user(user_uuid, two_factor_grace_days=payload.two_factor_grace_days)
+    record_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        action="user.activate",
+        entity_type="user",
+        entity_id=str(activated.id),
+        metadata={"two_factor_grace_days": payload.two_factor_grace_days},
+    )
+    return activated
 
 
 @router.post(

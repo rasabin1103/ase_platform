@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
 import { tStringArray, useI18n } from '../../i18n'
 import { Eyebrow } from '../ui/Eyebrow'
-import { Button } from '../ui/Button'
+import { ButtonLink } from '../ui/Button'
 import { cn } from '../ui/cn'
 
 export function ServicesHeroPremium() {
@@ -22,16 +21,12 @@ export function ServicesHeroPremium() {
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-ase-text2 sm:text-lg lg:text-xl">{t('servicesPage.hero.subtitle')}</p>
 
             <div className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
-              <Link to="/contact" className="w-full sm:w-auto sm:flex-1">
-                <Button size="lg" className="w-full">
-                  {t('servicesPage.hero.primaryCta')}
-                </Button>
-              </Link>
-              <Link to="/platform" className="w-full sm:w-auto sm:flex-1">
-                <Button size="lg" variant="secondary" className="w-full">
-                  {t('servicesPage.hero.secondaryCta')}
-                </Button>
-              </Link>
+              <ButtonLink to="/contact" size="lg" className="w-full sm:w-auto sm:flex-1">
+                {t('servicesPage.hero.primaryCta')}
+              </ButtonLink>
+              <ButtonLink to="/platform" size="lg" variant="secondary" className="w-full sm:w-auto sm:flex-1">
+                {t('servicesPage.hero.secondaryCta')}
+              </ButtonLink>
             </div>
 
             {/* grid-cols-1: each stat's value is a full sentence (see

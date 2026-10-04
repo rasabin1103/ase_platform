@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Area, AreaChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Badge } from '../../ui/Badge'
-import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { cn } from '../../ui/cn'
 
@@ -496,8 +495,4 @@ export function MiniMetric({ label, value }: { label: string; value: string }) {
       <div className="mt-1 truncate text-sm font-semibold text-ase-text">{value}</div>
     </div>
   )
-}
-
-export function PremiumActionButton(props: React.ComponentProps<typeof Button>) {
-  return <Button size="sm" {...props} />
 }

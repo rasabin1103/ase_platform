@@ -71,6 +71,8 @@ export type Plan = {
   included_catalog_items?: PlanCatalogItem[]
   /** Shared monthly download quota across every included item — null means unlimited (every plan's default). */
   monthly_download_limit?: number | null
+  /** AI job-fit analyses allowed per calendar month — null means unlimited. */
+  monthly_ai_analysis_limit?: number | null
   /** Every loyalty_bonus_interval_months, this many extra downloads are added to that month's quota. */
   loyalty_bonus_downloads?: number | null
   loyalty_bonus_interval_months?: number | null
@@ -111,6 +113,7 @@ export type PlanCreateRequest = {
   description_en?: string | null
   cta_label_en?: string | null
   monthly_download_limit?: number | null
+  monthly_ai_analysis_limit?: number | null
   loyalty_bonus_downloads?: number | null
   loyalty_bonus_interval_months?: number | null
   discount_items?: PlanCatalogItemDiscountInput[] | null
@@ -141,10 +144,12 @@ export type PlanUpdateRequest = {
   description_en?: string | null
   cta_label_en?: string | null
   monthly_download_limit?: number | null
+  monthly_ai_analysis_limit?: number | null
   loyalty_bonus_downloads?: number | null
   loyalty_bonus_interval_months?: number | null
   discount_items?: PlanCatalogItemDiscountInput[] | null
   clear_monthly_download_limit?: boolean
+  clear_monthly_ai_analysis_limit?: boolean
   clear_loyalty_bonus?: boolean
 }
 

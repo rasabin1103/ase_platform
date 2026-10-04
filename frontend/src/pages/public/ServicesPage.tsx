@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { listPublicServices } from '../../api/services.api'
 import { CapabilitiesMap } from '../../components/public/CapabilitiesMap'
 import { ServiceBooksDigitalSection } from '../../components/public/ServiceBooksDigitalSection'
@@ -9,9 +8,10 @@ import { ServiceShowcaseBlock } from '../../components/public/ServiceShowcaseBlo
 import { ServiceTrainingEcosystem } from '../../components/public/ServiceTrainingEcosystem'
 import { ServicesHeroPremium } from '../../components/public/ServicesHeroPremium'
 import { ServicesInsideSection } from '../../components/public/ServicesInsideSection'
+import { ServicesJobsSection } from '../../components/public/ServicesJobsSection'
 import { Eyebrow } from '../../components/ui/Eyebrow'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { useI18n } from '../../i18n'
 import { usePageTitle } from '../../hooks/usePageTitle'
@@ -59,6 +59,7 @@ export function ServicesPage() {
     <div className="min-h-screen bg-ase-bg">
       <ServicesHeroPremium />
       <ServicesInsideSection />
+      <ServicesJobsSection />
 
       {servicesQuery.isError ? (
         <div className="mx-auto max-w-[min(100%,720px)] px-5 py-16 text-center sm:px-8">
@@ -137,16 +138,12 @@ export function ServicesPage() {
               </h2>
               <p className="mt-4 max-w-2xl text-base text-ase-text2 sm:text-lg">{t('servicesPage.cta.subtitle')}</p>
               <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-                <Link to="/contact" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:min-w-[200px]">
-                    {t('servicesPage.cta.primary')}
-                  </Button>
-                </Link>
-                <Link to="/platform" className="w-full sm:w-auto">
-                  <Button size="lg" variant="secondary" className="w-full sm:min-w-[200px]">
-                    {t('servicesPage.cta.secondary')}
-                  </Button>
-                </Link>
+                <ButtonLink to="/contact" size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
+                  {t('servicesPage.cta.primary')}
+                </ButtonLink>
+                <ButtonLink to="/platform" size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[200px]">
+                  {t('servicesPage.cta.secondary')}
+                </ButtonLink>
               </div>
             </div>
           </section>

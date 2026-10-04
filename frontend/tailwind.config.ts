@@ -36,6 +36,19 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // Custom breakpoint for PublicHeader only. Browser-verified (frontend
+      // re-audit, 2026-10-02): the public header's full nav + language
+      // switch + session controls fit at 1440px but visibly overflow past
+      // the viewport at 768px (the `md` breakpoint it used to switch on at),
+      // while the mobile menu switched off at that same `md` point — so
+      // tablet users lost Contact/language/sign-in/CTA entirely. 1024/1280
+      // weren't measured, so rather than guess a stock breakpoint that
+      // might still clip, this names the one width actually confirmed to
+      // fit. Costs the mobile menu showing unnecessarily between ~1024 and
+      // 1439px — a conservative trade-off, not a new defect.
+      screens: {
+        navfit: '1440px',
+      },
       fontFamily: {
         display: ['"Fraunces Variable"', 'Fraunces', 'Georgia', 'serif'],
         sans: ['"Public Sans Variable"', 'Public Sans', 'sans-serif'],
