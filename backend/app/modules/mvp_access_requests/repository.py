@@ -44,14 +44,20 @@ class MvpAccessRequestsRepository:
         limit: int,
         offset: int,
         status: AccessRequestStatus | None = None,
+        escalated: bool | None = None,
     ) -> tuple[list[AccessRequest], int]:
         base = select(AccessRequest)
         if status is not None:
             base = base.where(AccessRequest.status == status)
+        if escalated is True:
+            base = base.where(AccessRequest.escalated_at.is_not(None))
+        elif escalated is False:
+            base = base.where(AccessRequest.escalated_at.is_(None))
         total = int(self.db.execute(select(func.count()).select_from(base.subquery())).scalar_one())
         stmt = (
-            base.options(selectinload(AccessRequest.requested_by_user))
-            .order_by(AccessRequest.created_at.desc(), AccessRequest.id.desc())
+            base.options(selectinload(AccessRequest.requested_by_user), selectinload(AccessRequest.organization))
+            # Las escaladas por una organización van primero.
+            .order_by(AccessRequest.escalated_at.desc().nulls_last(), AccessRequest.created_at.desc(), AccessRequest.id.desc())
             .limit(limit)
             .offset(offset)
         )

@@ -18,6 +18,7 @@ from app.core.loyalty import run_loyalty_sweep
 from app.core.newsletter import run_weekly_newsletter
 from app.core.test_run_polling import run_test_run_polling_sweep
 from app.core.database import SessionLocal
+from app.core.notification_email import run_notification_email_sweep
 from app.core.error_logging import record_error_log
 from app.core.monitoring import init_sentry
 from app.core.rate_limit import limiter
@@ -80,6 +81,21 @@ def _run_weekly_newsletter_job() -> None:
         db.close()
 
 
+def _run_notification_email_job() -> None:
+    """Every ~15 min: emails new notifications (or digests) to users who
+    enabled email for a category — same isolated-session, never-raise
+    pattern as the other sweeps."""
+    db = SessionLocal()
+    try:
+        count = run_notification_email_sweep(db)
+        if count:
+            logger.info("Notification email sweep sent %s email(s)", count)
+    except Exception:
+        logger.exception("Notification email sweep failed")
+    finally:
+        db.close()
+
+
 def _run_test_run_polling_job() -> None:
     """Frequent (every ~45s) job body syncing TestRun rows against GitHub
     Actions — same isolated-session, never-raise pattern as the other
@@ -121,6 +137,13 @@ async def lifespan(app: FastAPI):
             next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2),
             id="anniversary_sweep",
         )
+    scheduler.add_job(
+        _run_notification_email_job,
+        "interval",
+        minutes=15,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=4),
+        id="notification_email_sweep",
+    )
     if settings.LOYALTY_SWEEP_ENABLED:
         scheduler.add_job(
             _run_loyalty_sweep_job,
@@ -239,6 +262,7 @@ from app.modules.pricing_admin.router import router as pricing_admin_router
 from app.modules.user_preferences.router import router as user_preferences_router
 from app.modules.job_postings.router import admin_router as job_postings_admin_router
 from app.modules.job_postings.router import router as job_postings_router
+from app.modules.academy.router import router as academy_router
 
 
 def create_app() -> FastAPI:
@@ -280,6 +304,7 @@ def create_app() -> FastAPI:
     app.include_router(user_preferences_router)
     app.include_router(job_postings_admin_router)
     app.include_router(job_postings_router)
+    app.include_router(academy_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)

@@ -49,7 +49,7 @@ export function ToastViewport() {
         <div
           key={toast.id}
           role="alert"
-          className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-ase-error/30 bg-ase-surface/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-md animate-fade-in-up"
+          className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-ase-error/30 bg-ase-surface/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.45)] animate-fade-in-up"
         >
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ase-error/30 bg-ase-error/10 text-ase-error">
             <AlertTriangle className="h-4 w-4" strokeWidth={1.75} />

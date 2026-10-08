@@ -1,44 +1,30 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { UseMutationResult } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
-import { deleteOrganization, listOrganizations, updateOrganization } from '../api/organizations.api'
 import { createOrganization } from '../api/onboarding.api'
-import type { CreateOrganizationResponse } from '../api/onboarding.api'
+import { deleteOrganization, listOrganizations, updateOrganization } from '../api/organizations.api'
+import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../auth/auth.store'
+import { AdminEyebrow, AdminHeroHalo } from '../components/admin/premium/PremiumHero'
+import { ADMIN_HERO_SECTION, ADMIN_HERO_SUBTITLE, ADMIN_HERO_TITLE } from '../components/admin/premium/adminHeroStyles'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
-import { Select } from '../components/ui/Select'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
+import { Select } from '../components/ui/Select'
 import { Skeleton } from '../components/ui/Skeleton'
-import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
-import type { OrganizationType } from '../types/organization.types'
-import type { Organization } from '../types/organization.types'
+import { Table, TBody, TD, TH, THead, TR } from '../components/ui/Table'
 import { cn } from '../components/ui/cn'
-import { useForm, useWatch } from 'react-hook-form'
-import type { UseFormReturn } from 'react-hook-form'
-import { useI18n } from '../i18n'
-import { getActiveOrganizationUuid, setActiveOrganizationUuid } from '../auth/auth.store'
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n'
+import type { Organization, OrganizationType } from '../types/organization.types'
+import { OrganizationPremiumCard, PlatformInsightsPanel, StatCard, SuperMetricCard } from './OrganizationsPage.parts'
+import { renderCreateOrganizationForm, renderDetailsDrawer, renderOrganizationBadges, renderStatusBadge } from './OrganizationsPage.render'
+import { type FormValues, type SuperAdminViewMode, isManagedOrganization, relationshipKey, relationshipLabel, slugify } from './OrganizationsPage.utils'
 
-type FormValues = {
-  organization_name: string
-  organization_slug: string
-  organization_type: OrganizationType
-}
-
-type SuperAdminViewMode = 'cards' | 'table'
-
-function slugify(input: string) {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
 
 export function OrganizationsPage() {
   const queryClient = useQueryClient()
@@ -201,17 +187,16 @@ export function OrganizationsPage() {
   if (isSuperAdmin) {
     return (
       <div className="space-y-8 pb-16">
-        <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
+        <section className={ADMIN_HERO_SECTION}>
+          <AdminHeroHalo accent="cyan" />
 
           <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-center">
             <div>
-              <Badge variant="info" className="mb-5">
-                {t('organizationsPage.superAdmin.badge')}
-              </Badge>
-              <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">
+              <AdminEyebrow accent="cyan" className="mb-4">{t('organizationsPage.superAdmin.badge')}</AdminEyebrow>
+              <h1 className={ADMIN_HERO_TITLE}>
                 {t('organizationsPage.superAdmin.title')}
               </h1>
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ase-text2 md:text-base">
+              <p className={ADMIN_HERO_SUBTITLE}>
                 {t('organizationsPage.superAdmin.subtitle')}
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -224,13 +209,13 @@ export function OrganizationsPage() {
               </div>
             </div>
 
-            <div className="relative min-h-[220px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+            <div className="relative min-h-[220px] overflow-hidden rounded-3xl border border-white/10 bg-ase-surface p-5 shadow-soft">
               {items.slice(0, 5).map((org, index) => (
                 <div
                   key={org.uuid}
                   className={cn(
-                    'absolute h-16 w-16 rounded-2xl border border-white/[0.08] bg-ase-bg2 p-2 text-center text-[10px] font-semibold text-ase-text shadow-soft',
-                    org.status === 'suspended' ? 'border-amber-300/30' : 'border-cyan-300/25',
+                    'absolute h-16 w-16 rounded-2xl border border-white/10 bg-ase-bg2 p-2 text-center text-[10px] font-semibold text-ase-text shadow-soft',
+                    org.status === 'suspended' ? 'border-amber-300/30' : 'border-ase-brand/25',
                     ['left-[10%] top-[18%]', 'left-[62%] top-[12%]', 'left-[70%] top-[58%]', 'left-[24%] top-[66%]', 'left-[42%] top-[36%]'][index],
                   )}
                 >
@@ -257,7 +242,7 @@ export function OrganizationsPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+            <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
               <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_160px_190px_auto]">
                 <Input
                   value={superSearch}
@@ -305,13 +290,13 @@ export function OrganizationsPage() {
 
             {orgsQuery.isLoading ? (
               <div className="grid gap-4 lg:grid-cols-2">
-                <Skeleton className="h-56 rounded-[2rem]" />
-                <Skeleton className="h-56 rounded-[2rem]" />
+                <Skeleton className="h-56 rounded-3xl" />
+                <Skeleton className="h-56 rounded-3xl" />
               </div>
             ) : orgsQuery.isError ? (
               <EmptyState title={t('organizationsPage.errors.loadTitle') as string} description={t('organizationsPage.errors.loadSubtitle') as string} />
             ) : filteredSuperItems.length === 0 ? (
-              <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-8 text-sm text-ase-text2">
+              <Card className="rounded-3xl border-white/10 bg-ase-surface/55 p-8 text-sm text-ase-text2">
                 {t('organizationsPage.superAdmin.empty')}
               </Card>
             ) : superView === 'cards' ? (
@@ -335,7 +320,7 @@ export function OrganizationsPage() {
             ) : (
               <div className="space-y-3">
                 {filteredSuperItems.map((org) => (
-                  <Card key={org.uuid} className="rounded-2xl border-white/[0.08] bg-ase-surface/55 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/20">
+                  <Card key={org.uuid} className="rounded-2xl border-white/10 bg-ase-surface/55 p-4 transition hover:-translate-y-0.5 hover:border-ase-brand/20">
                     <div className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_1fr_1fr_auto] md:items-center">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-ase-text">{org.name}</div>
@@ -366,7 +351,7 @@ export function OrganizationsPage() {
         {createOpen ? (
           <div className="fixed inset-0 z-50">
             <button className="absolute inset-0 bg-black/65" onClick={() => setCreateOpen(false)} />
-            <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2 p-6 shadow-soft sm:p-8">
+            <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-ase-bg2 p-6 shadow-soft sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.create.open')}</div>
@@ -446,8 +431,8 @@ export function OrganizationsPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/40 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_18px_70px_rgba(0,0,0,0.55)] backdrop-blur-md sm:p-8">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_30%_0%,rgba(56,189,248,0.10),transparent_55%)]" />
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-ase-surface/40 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_18px_70px_rgba(0,0,0,0.55)] sm:p-8">
+        <div className="pointer-events-none absolute inset-0" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-ase-primary/12 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-ase-accent/10 blur-3xl" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:34px_34px]" />
@@ -457,7 +442,7 @@ export function OrganizationsPage() {
             <h1 className="text-2xl font-extrabold tracking-tight text-ase-text sm:text-3xl">{t('organizationsPage.title')}</h1>
             <p className="mt-2 max-w-3xl text-sm text-ase-text2 sm:text-base">{t('organizationsPage.subtitle')}</p>
             {isSuperAdmin ? (
-              <div className="mt-5 rounded-2xl border border-ase-primary/20 bg-ase-primary/10 p-4 text-sm text-ase-text2 backdrop-blur-sm">
+              <div className="mt-5 rounded-2xl border border-ase-primary/20 bg-ase-primary/10 p-4 text-sm text-ase-text2">
                 <Badge variant="info" className="mb-3">
                   {t('organizationsPage.platformView.badge')}
                 </Badge>
@@ -465,7 +450,7 @@ export function OrganizationsPage() {
                 <div className="mt-1 leading-relaxed">{t('organizationsPage.platformView.subtitle')}</div>
               </div>
             ) : null}
-            <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-sm text-ase-text2 backdrop-blur-sm">
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-ase-text2">
               <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.explainer.title')}</div>
               <div className="mt-2 leading-relaxed">{t('organizationsPage.explainer.body')}</div>
             </div>
@@ -488,7 +473,7 @@ export function OrganizationsPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card
-          className="relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md lg:col-span-2"
+          className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/40 p-6 lg:col-span-2"
           interactive
         >
           <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_20%_15%,rgba(56,189,248,0.10),transparent_52%)]" />
@@ -617,7 +602,7 @@ export function OrganizationsPage() {
 
         <div id="org-create-panel">
           <Card
-            className="relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md"
+            className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/40 p-6"
             interactive
           >
           <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_20%_15%,rgba(34,211,238,0.10),transparent_52%)]" />
@@ -699,7 +684,7 @@ export function OrganizationsPage() {
       {detailsOrg && (
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/65" onClick={() => setDetailsOrg(null)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-md border-l border-white/[0.08] bg-ase-bg2/80 p-6 backdrop-blur-md sm:p-8">
+          <div className="absolute right-0 top-0 h-full w-full max-w-md border-l border-white/10 bg-ase-bg2/80 p-6 sm:p-8">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.actions.viewDetails')}</div>
@@ -712,7 +697,7 @@ export function OrganizationsPage() {
             </div>
 
             <div className="mt-6 grid gap-3">
-              <Card className="rounded-2xl border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm">
+              <Card className="rounded-2xl border-white/10 bg-white/[0.03] p-4">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.list.columns.type')}</div>
                 <div className="mt-1 text-sm font-semibold text-ase-text2">
                   {detailsOrg.type === 'individual' || detailsOrg.type === 'business' || detailsOrg.type === 'enterprise' || detailsOrg.type === 'academy'
@@ -720,14 +705,14 @@ export function OrganizationsPage() {
                     : (t('organizationsPage.types.unknown') as string)}
                 </div>
               </Card>
-              <Card className="rounded-2xl border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm">
+              <Card className="rounded-2xl border-white/10 bg-white/[0.03] p-4">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.list.columns.status')}</div>
                 <div className="mt-2">
                   {renderStatusBadge(t, detailsOrg.status ?? null)}
                 </div>
               </Card>
               {activeUuid === detailsOrg.uuid ? (
-                <Card className="rounded-2xl border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm">
+                <Card className="rounded-2xl border-white/10 bg-white/[0.03] p-4">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.actions.active')}</div>
                   <div className="mt-1 text-sm font-semibold text-ase-text2">{t('organizationsPage.actions.active')}</div>
                 </Card>
@@ -743,478 +728,3 @@ export function OrganizationsPage() {
     </div>
   )
 }
-
-function StatCard({ label, value, icon, horizontal }: { label: string; value: string; icon: string; horizontal?: boolean }) {
-  return (
-    <Card className="rounded-2xl border-white/[0.08] bg-ase-surface p-4 shadow-soft" interactive>
-      <div className={cn('flex items-start justify-between gap-3', horizontal && 'items-center')}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">
-          {icon}
-        </span>
-        <div className={cn('min-w-0 flex-1', horizontal ? 'flex items-center justify-between gap-4' : '')}>
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
-            <div className="mt-1 truncate text-xl font-extrabold tracking-tight text-ase-text">{value}</div>
-          </div>
-          <div className="mt-2 h-2 w-2 rounded-full bg-ase-brand/80" />
-        </div>
-      </div>
-    </Card>
-  )
-}
-
-function SuperMetricCard({
-  label,
-  hint,
-  value,
-  icon,
-}: {
-  label: string
-  hint: string
-  value: number
-  icon: string
-  accent: string
-}) {
-  return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
-      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
-          <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{value.toLocaleString()}</div>
-          <div className="mt-2 text-xs text-ase-text2">{hint}</div>
-        </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
-      </div>
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${Math.min(100, 26 + value * 12)}%` }} />
-      </div>
-    </Card>
-  )
-}
-
-function OrganizationPremiumCard({
-  org,
-  activeUuid,
-  currentUserUuid,
-  t,
-  onDetails,
-  onSetActive,
-  onToggleStatus,
-  onDelete,
-  statusPending,
-  disableDangerActions,
-}: {
-  org: Organization
-  activeUuid: string | null
-  currentUserUuid: string | null
-  t: (k: string) => string
-  onDetails: () => void
-  onSetActive: () => void
-  onToggleStatus: () => void
-  onDelete: () => void
-  statusPending: boolean
-  disableDangerActions: boolean
-}) {
-  const isActive = activeUuid === org.uuid
-  const members = Math.max(1, (org.slug.length % 7) + (isManagedOrganization(org, currentUserUuid) ? 3 : 1))
-  const products = Math.max(1, org.type === 'enterprise' ? 5 : org.type === 'business' ? 3 : 1)
-  const subscriptions = org.status === 'suspended' ? 0 : 1
-
-  return (
-    <Card
-      className={cn(
-        'group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1',
-        isActive && 'border-ase-brand/25',
-        org.status === 'suspended' && 'border-amber-300/20',
-      )}
-    >
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={cn(
-              'grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ase-bg2 text-sm font-bold text-ase-text ring-1 ring-white/10',
-              isActive && 'ring-ase-brand/25',
-              org.status === 'suspended' && 'ring-amber-300/20',
-            )}
-          >
-            {org.name.slice(0, 2).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-base font-semibold text-ase-text">{org.name}</div>
-            <div className="mt-1 truncate text-xs text-ase-muted">{org.slug}</div>
-          </div>
-        </div>
-        {renderStatusBadge(t, org.status ?? null)}
-      </div>
-
-      <div className="relative mt-4 flex flex-wrap gap-2">
-        {renderOrganizationBadges(t, org, { activeUuid, currentUserUuid })}
-        <Badge variant="default">{organizationTypeLabel(t, org.type)}</Badge>
-      </div>
-
-      <div className="relative mt-5 grid grid-cols-2 gap-3">
-        <MiniOrgMetric label={t('organizationsPage.superAdmin.cards.members') as string} value={String(members)} />
-        <MiniOrgMetric label={t('organizationsPage.superAdmin.cards.subscriptions') as string} value={String(subscriptions)} />
-        <MiniOrgMetric label={t('organizationsPage.superAdmin.cards.products') as string} value={String(products)} />
-        <MiniOrgMetric label={t('organizationsPage.superAdmin.cards.lastActivity') as string} value={t('organizationsPage.superAdmin.cards.activityRecent') as string} />
-      </div>
-
-      <div className="relative mt-5 flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onClick={onDetails}>
-          {t('organizationsPage.superAdmin.actions.viewDetails')}
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onDetails}>
-          {t('organizationsPage.superAdmin.actions.manage')}
-        </Button>
-        {isActive ? null : (
-          <Button size="sm" onClick={onSetActive}>
-            {t('organizationsPage.superAdmin.actions.setActive')}
-          </Button>
-        )}
-        {org.status !== 'deleted' ? (
-          <Button size="sm" variant="outline" disabled={disableDangerActions || statusPending} onClick={onToggleStatus}>
-            {org.status === 'suspended' ? t('organizationsPage.superAdmin.actions.reactivate') : t('organizationsPage.superAdmin.actions.suspend')}
-          </Button>
-        ) : null}
-        {org.status !== 'deleted' ? (
-          <Button size="sm" variant="danger" disabled={disableDangerActions} onClick={onDelete}>
-            {t('organizationsPage.superAdmin.actions.delete')}
-          </Button>
-        ) : null}
-      </div>
-    </Card>
-  )
-}
-
-function MiniOrgMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-ase-text">{value}</div>
-    </div>
-  )
-}
-
-function PlatformInsightsPanel({
-  t,
-  items,
-  typeDistribution,
-  activeCount,
-  suspendedCount,
-  onCreate,
-}: {
-  t: (k: string) => string
-  items: Organization[]
-  typeDistribution: Array<[string, number]>
-  activeCount: number
-  suspendedCount: number
-  onCreate: () => void
-}) {
-  const maxType = Math.max(1, ...typeDistribution.map(([, count]) => count))
-  const recent = [...items].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))).slice(0, 3)
-  const attention = items.filter((org) => org.status === 'suspended')
-
-  return (
-    <aside className="space-y-6">
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-ase-text">{t('organizationsPage.superAdmin.insights.title')}</h2>
-          <Button size="sm" onClick={onCreate}>
-            {t('organizationsPage.superAdmin.create.open')}
-          </Button>
-        </div>
-
-        <div className="mt-6 space-y-6">
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.insights.distribution')}</div>
-            <div className="mt-3 space-y-3">
-              {typeDistribution.map(([type, count]) => (
-                <div key={type}>
-                  <div className="mb-1 flex justify-between text-xs text-ase-text2">
-                    <span>{organizationTypeLabel(t, type)}</span>
-                    <span>{count}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${(count / maxType) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.insights.status')}</div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <MiniOrgMetric label={t('organizationsPage.status.active') as string} value={String(activeCount)} />
-              <MiniOrgMetric label={t('organizationsPage.status.suspended') as string} value={String(suspendedCount)} />
-            </div>
-          </section>
-
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.insights.recent')}</div>
-            <div className="mt-3 space-y-2">
-              {recent.map((org) => (
-                <div key={org.uuid} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <div className="truncate text-sm font-medium text-ase-text">{org.name}</div>
-                  <div className="mt-1 truncate text-xs text-ase-muted">{org.slug}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('organizationsPage.superAdmin.insights.attention')}</div>
-            <div className="mt-3 space-y-2">
-              {(attention.length ? attention : items.slice(0, 1)).map((org) => (
-                <div key={org.uuid} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <span className="truncate text-sm text-ase-text2">{org.name}</span>
-                  {renderStatusBadge(t, org.status ?? null)}
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </Card>
-    </aside>
-  )
-}
-
-function renderCreateOrganizationForm({
-  t,
-  form,
-  computedSlug,
-  na,
-  orgTypes,
-  createMutation,
-}: {
-  t: (k: string) => string
-  form: UseFormReturn<FormValues>
-  computedSlug: string
-  na: string
-  orgTypes: Array<{ value: OrganizationType; label: string }>
-  createMutation: UseMutationResult<CreateOrganizationResponse, Error, FormValues, unknown>
-}) {
-  return (
-    <form className="space-y-4" onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}>
-      <div>
-        <label htmlFor="org-create-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.name')}</label>
-        <Input
-          id="org-create-name"
-          placeholder={t('organizationsPage.create.placeholders.name') as string}
-          {...form.register('organization_name', {
-            onChange: (e) => {
-              const name = String(e.target.value ?? '')
-              const current = form.getValues('organization_slug')
-              if (!current) form.setValue('organization_slug', slugify(name))
-            },
-          })}
-        />
-        {form.formState.errors.organization_name && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.organization_name.message}</p>}
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="org-create-slug" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.slug')}</label>
-          <button
-            type="button"
-            className={cn('rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-ase-text2 transition hover:bg-white/[0.05]', !computedSlug && 'opacity-50')}
-            disabled={!computedSlug}
-            onClick={() => form.setValue('organization_slug', computedSlug)}
-          >
-            {String(t('organizationsPage.create.helper.suggest')).replace('{{slug}}', computedSlug || na)}
-          </button>
-        </div>
-        <Input id="org-create-slug" placeholder={t('organizationsPage.create.placeholders.slug') as string} {...form.register('organization_slug')} />
-        {form.formState.errors.organization_slug && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.organization_slug.message}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="org-create-type" className="mb-1 block text-xs font-medium text-ase-muted">{t('organizationsPage.create.fields.type')}</label>
-        <Select id="org-create-type" {...form.register('organization_type')}>
-          {orgTypes.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      {createMutation.isError && (
-        <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
-          {t('organizationsPage.create.error')}
-        </div>
-      )}
-
-      <Button type="submit" className="w-full" disabled={createMutation.isPending} leftIcon={<span className="text-xs">+</span>}>
-        {createMutation.isPending ? t('organizationsPage.create.creating') : t('organizationsPage.create.button')}
-      </Button>
-    </form>
-  )
-}
-
-function renderDetailsDrawer({
-  org,
-  t,
-  activeUuid,
-  activateOrganization,
-  onClose,
-  onToggleStatus,
-  onDelete,
-  statusPending,
-  disableDangerActions,
-}: {
-  org: Organization
-  t: (k: string) => string
-  activeUuid: string | null
-  activateOrganization: (uuid: string) => void
-  onClose: () => void
-  onToggleStatus: () => void
-  onDelete: () => void
-  statusPending: boolean
-  disableDangerActions: boolean
-}) {
-  return (
-    <div className="fixed inset-0 z-50">
-      <button className="absolute inset-0 bg-black/65" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full max-w-md border-l border-white/[0.08] bg-ase-bg2/90 p-6 backdrop-blur-md sm:p-8">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('organizationsPage.actions.viewDetails')}</div>
-            <div className="mt-2 truncate text-xl font-extrabold tracking-tight text-ase-text">{org.name}</div>
-            <div className="mt-1 text-sm text-ase-text2">{org.slug}</div>
-          </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            {t('organizationsPage.actions.close')}
-          </Button>
-        </div>
-        <div className="mt-6 grid gap-3">
-          <MiniOrgMetric label={t('organizationsPage.list.columns.type') as string} value={organizationTypeLabel(t, org.type)} />
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">{renderStatusBadge(t, org.status ?? null)}</div>
-          {activeUuid === org.uuid ? (
-            <MiniOrgMetric label={t('organizationsPage.badges.activeOrganization') as string} value={t('organizationsPage.actions.active') as string} />
-          ) : (
-            <Button className="w-full" onClick={() => activateOrganization(org.uuid)}>
-              {t('organizationsPage.actions.setActive')}
-            </Button>
-          )}
-          {org.status !== 'deleted' ? (
-            <Button className="w-full" variant="outline" disabled={disableDangerActions || statusPending} onClick={onToggleStatus}>
-              {org.status === 'suspended'
-                ? t('organizationsPage.superAdmin.actions.reactivate')
-                : t('organizationsPage.superAdmin.actions.suspend')}
-            </Button>
-          ) : null}
-          {org.status !== 'deleted' ? (
-            <Button className="w-full" variant="danger" disabled={disableDangerActions} onClick={onDelete}>
-              {t('organizationsPage.superAdmin.actions.delete')}
-            </Button>
-          ) : null}
-          {disableDangerActions ? (
-            <p className="text-center text-[11px] text-ase-muted">{t('organizationsPage.errors.ownOrganizationHint')}</p>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function renderStatusBadge(t: (k: string) => string, status: string | null) {
-  if (!status) return <span className="text-ase-muted">{t('organizationsPage.common.na') as string}</span>
-  const key =
-    status === 'active' || status === 'suspended' || status === 'deleted'
-      ? (`organizationsPage.status.${status}` as const)
-      : ('organizationsPage.status.unknown' as const)
-
-  const variant = status === 'active' ? 'success' : status === 'suspended' ? 'warning' : status === 'deleted' ? 'error' : 'default'
-  return <Badge variant={variant}>{t(key) as string}</Badge>
-}
-
-function organizationTypeLabel(t: (k: string) => string, type: string | null | undefined) {
-  if (type === 'individual' || type === 'business' || type === 'enterprise' || type === 'academy') {
-    return t(`organizationsPage.types.${type}`) as string
-  }
-  return t('organizationsPage.types.unknown') as string
-}
-
-// These four helpers describe the viewer's relationship to one
-// organization, from broadest to narrowest:
-//  - isMyOrganization: the viewer owns it OR has ANY membership at all
-//    (including a plain, non-admin member, or a pending invite).
-//  - isManagedOrganization: the narrower subset of that — owner, or holds
-//    org_owner/org_admin — i.e. can actually administer it, not just
-//    belong to it.
-// relationshipLabel/relationshipKey both derive from these two checks, but
-// aren't identical: the label further splits "mine" into
-// managed/invited/member for display, while the key only distinguishes
-// managed/mine/platform/none (used for the super-admin filter dropdown,
-// which doesn't need the member-vs-invited distinction).
-function isManagedOrganization(org: Organization, currentUserUuid: string | null) {
-  if (!currentUserUuid) return false
-  return org.owner_user_uuid === currentUserUuid || Boolean(org.current_user_role_codes?.some((role) => role === 'org_owner' || role === 'org_admin'))
-}
-
-function isMyOrganization(org: Organization, currentUserUuid: string | null) {
-  if (!currentUserUuid) return false
-  return org.owner_user_uuid === currentUserUuid || Boolean(org.current_user_membership_status)
-}
-
-function relationshipLabel(t: (k: string) => string, org: Organization, currentUserUuid: string | null, isSuperAdmin: boolean) {
-  if (isMyOrganization(org, currentUserUuid)) {
-    if (isManagedOrganization(org, currentUserUuid)) return t('organizationsPage.relationship.managed') as string
-    if (org.current_user_membership_status === 'invited') return t('organizationsPage.relationship.invited') as string
-    return t('organizationsPage.relationship.member') as string
-  }
-  // Not "mine" at all — a super admin sees every organization on the
-  // platform regardless of membership, so that's labeled distinctly from
-  // "none" (which is what a non-superuser would see here, though in
-  // practice a non-superuser's list is already scoped to orgs they belong
-  // to, so this branch is mostly a super-admin-only code path).
-  return isSuperAdmin
-    ? (t('organizationsPage.relationship.platformManaged') as string)
-    : (t('organizationsPage.relationship.none') as string)
-}
-
-function relationshipKey(org: Organization, currentUserUuid: string | null, isSuperAdmin: boolean) {
-  if (isManagedOrganization(org, currentUserUuid)) return 'managed'
-  if (isMyOrganization(org, currentUserUuid)) return 'mine'
-  return isSuperAdmin ? 'platform' : 'none'
-}
-
-function renderOrganizationBadges(
-  t: (k: string) => string,
-  org: Organization,
-  context: { activeUuid: string | null; currentUserUuid: string | null },
-) {
-  const badges = []
-  if (context.activeUuid === org.uuid) {
-    badges.push(
-      <Badge key="active" variant="info" className="text-[10px]">
-        {t('organizationsPage.badges.activeOrganization') as string}
-      </Badge>,
-    )
-  }
-  if (isMyOrganization(org, context.currentUserUuid)) {
-    badges.push(
-      <Badge key="mine" variant="success" className="text-[10px]">
-        {t('organizationsPage.badges.myOrganization') as string}
-      </Badge>,
-    )
-  }
-  if (isManagedOrganization(org, context.currentUserUuid)) {
-    badges.push(
-      <Badge key="managed" variant="info" className="text-[10px]">
-        {t('organizationsPage.badges.managed') as string}
-      </Badge>,
-    )
-  }
-  if (org.status === 'suspended') {
-    badges.push(
-      <Badge key="suspended" variant="warning" className="text-[10px]">
-        {t('organizationsPage.badges.suspended') as string}
-      </Badge>,
-    )
-  }
-  return badges
-}
-

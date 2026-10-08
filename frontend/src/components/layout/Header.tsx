@@ -29,7 +29,7 @@ export function Header({
     // but `supports-[backdrop-filter]` still matched and applied the
     // thinner /60 fallback with no blur to soften it. Using the solid /80
     // directly matches intended surface legibility.
-    <header className="flex h-16 items-center justify-between gap-4 border-b border-ase-border bg-ase-bg2/80 px-6">
+    <header className="flex h-16 items-center justify-between gap-2 border-b border-ase-border bg-ase-bg2/80 px-3 sm:gap-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {onToggleSidebar ? (
           <button
@@ -46,10 +46,10 @@ export function Header({
             )}
           </button>
         ) : null}
-        <BrandLogo variant="horizontal" size="sm" showText subtitle={t('session.enterpriseDashboard') as string} className="min-w-0" />
+        <BrandLogo variant="horizontal" size="sm" showText subtitle={t('session.enterpriseDashboard') as string} className="hidden min-w-0 sm:flex" />
       </div>
       {isSuperAdmin ? <GlobalAdminSearch /> : null}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <NotificationBell />
         <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
           <button
@@ -73,7 +73,7 @@ export function Header({
             ES
           </button>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/')}>
+        <Button variant="ghost" className="hidden md:inline-flex" onClick={() => navigate('/')}>
           {t('session.publicSite')}
         </Button>
         <Button

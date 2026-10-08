@@ -79,9 +79,9 @@ export function PublicHeader() {
             </div>
             {auth.isAuthenticated ? (
               <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-ase-text2">
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-ase-text2">
                   <span className="mr-2 h-1.5 w-1.5 rounded-full bg-ase-success/80 shadow-[0_0_18px_rgba(34,197,94,0.12)]" />
-                    {t('session.loggedIn')}
+                  {t('session.loggedIn')}
                 </span>
                 <span className="hidden max-w-[220px] truncate text-sm text-ase-text2 lg:inline">
                   {auth.currentUser?.display_name ?? auth.currentUser?.email}
@@ -213,4 +213,3 @@ export function PublicHeader() {
     </header>
   )
 }
-

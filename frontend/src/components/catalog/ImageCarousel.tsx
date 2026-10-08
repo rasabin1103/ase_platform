@@ -74,7 +74,7 @@ export function ImageCarousel({
                 in addition to the existing hover reveal. */}
             <button
               type="button"
-              aria-label="Previous image"
+              aria-label={t('catalog.carouselPrev') as string}
               onClick={() => go(-1)}
               className="absolute left-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
             >
@@ -82,7 +82,7 @@ export function ImageCarousel({
             </button>
             <button
               type="button"
-              aria-label="Next image"
+              aria-label={t('catalog.carouselNext') as string}
               onClick={() => go(1)}
               className="absolute right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/50 text-ase-text opacity-0 transition group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
             >
@@ -98,7 +98,7 @@ export function ImageCarousel({
                 <button
                   key={img.url + i}
                   type="button"
-                  aria-label={`Go to image ${i + 1}`}
+                  aria-label={String(t('catalog.carouselGoTo')).replace('{{index}}', String(i + 1))}
                   onClick={() => setIndex(i)}
                   className="group rounded-full p-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ase-brand/60"
                 >

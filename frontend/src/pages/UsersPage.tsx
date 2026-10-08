@@ -1,65 +1,36 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import type { UseFormReturn } from 'react-hook-form'
 import { BarChart3, Download, LogIn } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
-import { activateUser, createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
-import type { UserUpdateRequest } from '../types/user.types'
-import { downloadCsv } from '../utils/csv'
-import { passwordSchema } from '../utils/passwordPolicy'
 import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
+import { activateUser, createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
+import { UserStatsModal } from '../components/admin/UserStatsModal'
+import { AdminEyebrow, AdminHeroHalo } from '../components/admin/premium/PremiumHero'
+import { ADMIN_HERO_SECTION, ADMIN_HERO_SUBTITLE, ADMIN_HERO_TITLE } from '../components/admin/premium/adminHeroStyles'
+import { MemberCatalogStatsModal } from '../components/organization/MemberCatalogStatsModal'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
-import { Select } from '../components/ui/Select'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { Skeleton } from '../components/ui/Skeleton'
-import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
-import { MemberCatalogStatsModal } from '../components/organization/MemberCatalogStatsModal'
-import { UserStatsModal } from '../components/admin/UserStatsModal'
-import type { User, UserStatus } from '../types/user.types'
-import { useI18n } from '../i18n'
+import { Select } from '../components/ui/Select'
+import { Skeleton } from '../components/ui/Skeleton'
+import { Table, TBody, TD, TH, THead, TR } from '../components/ui/Table'
 import { cn } from '../components/ui/cn'
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n'
 import { Can } from '../rbac/Can'
 import { useRbac } from '../rbac/useRbac'
+import type { User, UserStatus, UserUpdateRequest } from '../types/user.types'
+import { downloadCsv } from '../utils/csv'
+import { passwordSchema } from '../utils/passwordPolicy'
+import { CreateUserForm, IdentityOrb, MiniUserMetric, PremiumUserMetric, UserIdentity, UserPremiumCard, UsersInsightsPanel } from './UsersPage.parts'
+import { displayName, fmtDate, renderStatusBadge, twoFactorStatusLabel, type CreateValues, type EditValues, type UsersViewMode } from './UsersPage.utils'
 
-type CreateValues = {
-  email: string
-  plain_password: string
-  first_name?: string | ''
-  last_name?: string | ''
-  display_name?: string | ''
-  status: 'active' | 'suspended' | 'deleted'
-}
-
-type EditValues = {
-  email?: string | ''
-  plain_password?: string | ''
-  first_name?: string | ''
-  last_name?: string | ''
-  display_name?: string | ''
-  status?: 'active' | 'suspended' | 'deleted'
-}
-
-type UsersViewMode = 'cards' | 'table'
-
-function fmtDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleString()
-  } catch {
-    return iso
-  }
-}
-
-function displayName(u: User) {
-  return u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email
-}
 
 export function UsersPage() {
   const queryClient = useQueryClient()
@@ -69,6 +40,7 @@ export function UsersPage() {
   const { currentUser } = auth
   const { hasPermission } = useRbac()
   const [editing, setEditing] = useState<User | null>(null)
+  const [viewing, setViewing] = useState<User | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
   const [activateFor, setActivateFor] = useState<User | null>(null)
@@ -262,14 +234,13 @@ export function UsersPage() {
 
   return (
     <div className="space-y-8 pb-16">
-      <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
+      <section className={ADMIN_HERO_SECTION}>
+        <AdminHeroHalo accent="cyan" />
         <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
           <div>
-            <Badge variant="info" className="mb-5">
-              {t('usersPage.premium.badge')}
-            </Badge>
-            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{t('usersPage.title')}</h1>
-            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ase-text2 md:text-base">{t('usersPage.subtitle')}</p>
+            <AdminEyebrow accent="cyan" className="mb-4">{t('usersPage.premium.badge')}</AdminEyebrow>
+            <h1 className={ADMIN_HERO_TITLE}>{t('usersPage.title')}</h1>
+            <p className={ADMIN_HERO_SUBTITLE}>{t('usersPage.subtitle')}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-ase-text2">
                 {t('usersPage.premium.context')}
@@ -294,7 +265,7 @@ export function UsersPage() {
             </div>
           </div>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.heroMetric')}</div>
             <div className="mt-5 grid grid-cols-3 gap-3">
               <IdentityOrb label={t('usersPage.status.active') as string} value={activeCount} tone="success" />
@@ -314,7 +285,7 @@ export function UsersPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto]">
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('usersPage.premium.filters.search') as string} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50" />
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-11 rounded-xl border-white/10 bg-ase-bg2/50">
@@ -344,8 +315,8 @@ export function UsersPage() {
 
           {usersQuery.isLoading ? (
             <div className="grid gap-4 lg:grid-cols-2">
-              <Skeleton className="h-56 rounded-[2rem]" />
-              <Skeleton className="h-56 rounded-[2rem]" />
+              <Skeleton className="h-56 rounded-3xl" />
+              <Skeleton className="h-56 rounded-3xl" />
             </div>
           ) : usersQuery.isError ? (
             <EmptyState title={t('usersPage.errors.loadTitle') as string} description={t('usersPage.errors.loadSubtitle') as string} />
@@ -359,6 +330,7 @@ export function UsersPage() {
                   user={u}
                   t={t}
                   catalogStat={catalogStatsByUuid.get(u.uuid)}
+                  onView={() => setViewing(u)}
                   onEdit={() => {
                     setEditing(u)
                     editForm.reset({
@@ -385,7 +357,7 @@ export function UsersPage() {
               ))}
             </div>
           ) : (
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-0 shadow-soft">
+            <Card className="rounded-3xl border-white/10 bg-ase-surface p-0 shadow-soft">
               <Table className="table-fixed">
                 <THead>
                   <TR>
@@ -479,7 +451,7 @@ export function UsersPage() {
       {createOpen && (
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/65" onClick={() => setCreateOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/[0.08] bg-ase-bg2 p-6 shadow-soft sm:p-8">
+          <div className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-ase-bg2 p-6 shadow-soft sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.actions.create')}</div>
@@ -496,6 +468,50 @@ export function UsersPage() {
           </div>
         </div>
       )}
+
+      <Modal
+        open={!!viewing}
+        title={viewing ? displayName(viewing) : ''}
+        closeLabel={t('usersPage.edit.cancel')}
+        onClose={() => setViewing(null)}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="primary"
+              onClick={() => {
+                const u = viewing
+                if (!u) return
+                setViewing(null)
+                setEditing(u)
+                editForm.reset({
+                  email: u.email,
+                  plain_password: '',
+                  first_name: u.first_name ?? '',
+                  last_name: u.last_name ?? '',
+                  display_name: u.display_name ?? '',
+                  status: (u.status as 'active' | 'suspended' | 'deleted') ?? 'active',
+                })
+              }}
+            >
+              {t('usersPage.actions.edit')}
+            </Button>
+          </div>
+        }
+      >
+        {viewing ? (
+          <div className="grid grid-cols-2 gap-3">
+            <MiniUserMetric label={t('usersPage.create.fields.email') as string} value={viewing.email} />
+            <MiniUserMetric label={t('usersPage.premium.cards.identity') as string} value={displayName(viewing)} />
+            <MiniUserMetric label={t('usersPage.premium.cards.accessState') as string} value={t(`usersPage.status.${viewing.status}`) as string} />
+            <MiniUserMetric label={t('usersPage.premium.cards.joined') as string} value={fmtDate(viewing.created_at)} />
+            <MiniUserMetric
+              label={t('usersPage.premium.cards.verification') as string}
+              value={(viewing.email_verified_at ? t('usersPage.premium.cards.verified') : t('usersPage.premium.cards.pending')) as string}
+            />
+            <MiniUserMetric label="2FA" value={twoFactorStatusLabel(t, viewing)} />
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal
         open={!!editing}
@@ -703,317 +719,3 @@ export function UsersPage() {
     </div>
   )
 }
-
-function renderStatusBadge(t: (k: string) => string, status: string | null) {
-  if (!status) return <span className="text-ase-muted">{t('usersPage.common.na') as string}</span>
-  const key =
-    status === 'active' || status === 'suspended' || status === 'deleted'
-      ? (`usersPage.status.${status}` as const)
-      : ('usersPage.status.unknown' as const)
-  const variant = status === 'active' ? 'success' : status === 'suspended' ? 'warning' : status === 'deleted' ? 'error' : 'default'
-  return <Badge variant={variant}>{t(key) as string}</Badge>
-}
-
-function initials(u: User) {
-  const name = u.display_name || [u.first_name, u.last_name].filter(Boolean).join(' ')
-  const source = (name || u.email || '').trim()
-  const parts = source.split(/\s+/).filter(Boolean)
-  const two = parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : source.slice(0, 2)
-  return two.toUpperCase()
-}
-
-function UserIdentity({ user }: { user: User }) {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-xs font-extrabold text-ase-text ring-1 ring-ase-brand/20">
-        {initials(user)}
-      </div>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-semibold text-ase-text">{displayName(user)}</div>
-        <div className="truncate text-xs text-ase-text2">{user.email}</div>
-      </div>
-    </div>
-  )
-}
-
-function IdentityOrb({ label, value, tone }: { label: string; value: number; tone: 'success' | 'info' | 'warning' }) {
-  const toneClass = tone === 'success' ? 'border-emerald-300/20' : tone === 'warning' ? 'border-amber-300/20' : 'border-white/10'
-  return (
-    <div className={cn('rounded-3xl border bg-ase-bg2/60 p-4 text-center shadow-soft', toneClass)}>
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide opacity-75">{label}</div>
-    </div>
-  )
-}
-
-function PremiumUserMetric({ label, hint, value, icon }: { label: string; hint: string; value: number; icon: string; accent: string }) {
-  return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
-      <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
-          <div className="mt-3 text-3xl font-semibold tabular-nums text-ase-text">{value.toLocaleString()}</div>
-          <div className="mt-2 text-xs text-ase-text2">{hint}</div>
-        </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-ase-bg2 text-sm text-ase-text">{icon}</div>
-      </div>
-    </Card>
-  )
-}
-
-function twoFactorStatusLabel(t: (k: string) => string, user: User): string {
-  if (user.two_factor_enabled) return t('usersPage.twoFactor.enabled') as string
-  if (user.two_factor_deadline_at) {
-    const date = new Date(user.two_factor_deadline_at).toLocaleDateString()
-    return String(t('usersPage.twoFactor.deadline')).replace('{{date}}', date)
-  }
-  return t('usersPage.twoFactor.disabled') as string
-}
-
-function UserPremiumCard({
-  user,
-  t,
-  catalogStat,
-  onEdit,
-  onDelete,
-  onImpersonate,
-  onViewStats,
-  onActivate,
-}: {
-  user: User
-  t: (k: string) => string
-  catalogStat?: MemberCatalogStat
-  onEdit: () => void
-  onDelete: () => void
-  onImpersonate?: () => void
-  onViewStats?: () => void
-  onActivate?: () => void
-}) {
-  return (
-    <Card className="group relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
-      <div className="relative flex items-start justify-between gap-4">
-        <UserIdentity user={user} />
-        {renderStatusBadge(t, user.status ?? null)}
-      </div>
-      <div className="relative mt-5 grid grid-cols-2 gap-3">
-        <MiniUserMetric label={t('usersPage.premium.cards.identity') as string} value={displayName(user)} />
-        <MiniUserMetric label={t('usersPage.premium.cards.accessState') as string} value={t(`usersPage.status.${user.status}`) as string} />
-        <MiniUserMetric label={t('usersPage.premium.cards.joined') as string} value={fmtDate(user.created_at)} />
-        <MiniUserMetric
-          label={t('usersPage.premium.cards.verification') as string}
-          value={(user.email_verified_at ? t('usersPage.premium.cards.verified') : t('usersPage.premium.cards.pending')) as string}
-        />
-        <MiniUserMetric label="2FA" value={twoFactorStatusLabel(t, user)} />
-        {catalogStat ? (
-          <>
-            <MiniUserMetric
-              label={t('organizationWorkspace.memberStats.columnSent') as string}
-              value={String(catalogStat.sentCount)}
-            />
-            <MiniUserMetric
-              label={t('organizationWorkspace.memberStats.columnConsumed') as string}
-              value={String(catalogStat.consumedCount)}
-            />
-          </>
-        ) : null}
-      </div>
-      <div className="relative mt-5 flex flex-wrap gap-2">
-        {onActivate ? (
-          <Button size="sm" onClick={onActivate}>
-            {t('usersPage.actions.activate')}
-          </Button>
-        ) : null}
-        <Button size="sm" variant="secondary" onClick={onEdit}>
-          {t('usersPage.premium.actions.viewProfile')}
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit}>
-          {t('usersPage.actions.edit')}
-        </Button>
-        <Button size="sm" variant="outline" className="border-ase-error/30" onClick={onDelete}>
-          {t('usersPage.actions.delete')}
-        </Button>
-        {onViewStats ? (
-          <Button size="sm" variant="ghost" onClick={onViewStats}>
-            <BarChart3 className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
-            {t('usersPage.actions.viewStats')}
-          </Button>
-        ) : null}
-        {onImpersonate ? (
-          <Button size="sm" variant="ghost" onClick={onImpersonate}>
-            <LogIn className="mr-1.5 h-4 w-4" strokeWidth={1.75} />
-            {t('impersonation.action')}
-          </Button>
-        ) : null}
-      </div>
-    </Card>
-  )
-}
-
-function MiniUserMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-ase-text">{value}</div>
-    </div>
-  )
-}
-
-function UsersInsightsPanel({
-  t,
-  items,
-  activeCount,
-  invitedCount,
-  suspendedCount,
-  onCreate,
-}: {
-  t: (k: string) => string
-  items: User[]
-  activeCount: number
-  invitedCount: number
-  suspendedCount: number
-  onCreate: () => void
-}) {
-  const recent = [...items].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 3)
-  const attention = items.filter((u) => u.status === 'suspended' || !u.email_verified_at)
-  const total = Math.max(1, items.length)
-  return (
-    <aside className="space-y-6">
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-ase-text">{t('usersPage.premium.insights.title')}</h2>
-          <Button size="sm" onClick={onCreate}>{t('usersPage.premium.actions.create')}</Button>
-        </div>
-        <div className="mt-6 space-y-6">
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.insights.lifecycle')}</div>
-            <div className="mt-3 space-y-3">
-              <InsightBar label={t('usersPage.status.active') as string} value={activeCount} total={total} />
-              <InsightBar label={t('usersPage.premium.cards.verification') as string} value={invitedCount} total={total} />
-              <InsightBar label={t('usersPage.status.suspended') as string} value={suspendedCount} total={total} />
-            </div>
-          </section>
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.insights.recent')}</div>
-            <div className="mt-3 space-y-2">
-              {recent.map((u) => (
-                <div key={u.uuid} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <div className="truncate text-sm font-medium text-ase-text">{displayName(u)}</div>
-                  <div className="mt-1 truncate text-xs text-ase-muted">{u.email}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-          <section>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('usersPage.premium.insights.attention')}</div>
-            <div className="mt-3 space-y-2">
-              {(attention.length ? attention.slice(0, 4) : items.slice(0, 1)).map((u) => (
-                <div key={u.uuid} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
-                  <span className="truncate text-sm text-ase-text2">{displayName(u)}</span>
-                  {renderStatusBadge(t, u.status ?? null)}
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </Card>
-    </aside>
-  )
-}
-
-function InsightBar({ label, value, total }: { label: string; value: number; total: number }) {
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-xs text-ase-text2">
-        <span>{label}</span>
-        <span>{value}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-        <div className="h-full rounded-full bg-ase-brand/80" style={{ width: `${(value / total) * 100}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function friendlyCreateUserError(t: (k: string) => string, error: unknown): string {
-  const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-  if (detail === 'Email already exists') {
-    return t('usersPage.create.duplicateEmail')
-  }
-  return t('usersPage.create.error')
-}
-
-function CreateUserForm({
-  t,
-  form,
-  statusOptions,
-  createMutation,
-}: {
-  t: (k: string) => string
-  form: UseFormReturn<CreateValues>
-  statusOptions: Array<{ value: UserStatus; label: string }>
-  createMutation: {
-    mutate: (payload: Parameters<typeof createUser>[0]) => void
-    isError: boolean
-    isPending: boolean
-    error: unknown
-  }
-}) {
-  return (
-    <form
-      className="space-y-4"
-      onSubmit={form.handleSubmit((values) => {
-        createMutation.mutate({
-          email: values.email,
-          plain_password: values.plain_password,
-          first_name: values.first_name || null,
-          last_name: values.last_name || null,
-          display_name: values.display_name || null,
-          status: values.status,
-        })
-      })}
-    >
-      <div>
-        <label htmlFor="user-create-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.email')}</label>
-        <Input id="user-create-email" placeholder={t('usersPage.create.placeholders.email') as string} {...form.register('email')} />
-        {form.formState.errors.email && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>}
-      </div>
-      <div>
-        <label htmlFor="user-create-password" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.temporaryPassword')}</label>
-        <Input id="user-create-password" type="password" placeholder={t('usersPage.create.placeholders.temporaryPassword') as string} {...form.register('plain_password')} />
-        {form.formState.errors.plain_password && <p className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>}
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label htmlFor="user-create-first-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.firstName')}</label>
-          <Input id="user-create-first-name" placeholder={t('usersPage.create.placeholders.firstName') as string} {...form.register('first_name')} />
-        </div>
-        <div>
-          <label htmlFor="user-create-last-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.lastName')}</label>
-          <Input id="user-create-last-name" placeholder={t('usersPage.create.placeholders.lastName') as string} {...form.register('last_name')} />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="user-create-display-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.displayName')}</label>
-        <Input id="user-create-display-name" placeholder={t('usersPage.create.placeholders.displayName') as string} {...form.register('display_name')} />
-      </div>
-      <div>
-        <label htmlFor="user-create-status" className="mb-1 block text-xs font-medium text-ase-muted">{t('usersPage.create.fields.status')}</label>
-        <Select id="user-create-status" {...form.register('status')}>
-          {statusOptions.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </Select>
-      </div>
-      {createMutation.isError && (
-        <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
-          {friendlyCreateUserError(t, createMutation.error)}
-        </div>
-      )}
-      <Button type="submit" className="w-full" disabled={createMutation.isPending} leftIcon={<span className="text-xs">+</span>}>
-        {createMutation.isPending ? t('usersPage.create.creating') : t('usersPage.create.button')}
-      </Button>
-    </form>
-  )
-}
-

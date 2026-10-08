@@ -75,10 +75,19 @@ class AccessRequest(Base, IdPkMixin, TimestampMixin):
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     admin_notes: Mapped[str | None] = mapped_column(Text)
+    # Escalado por la organización al equipo de la plataforma (super_admin).
+    escalated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    escalated_by_user_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    escalation_note: Mapped[str | None] = mapped_column(Text)
 
     organization: Mapped["Organization | None"] = relationship()
     requested_by_user: Mapped["User"] = relationship(foreign_keys=[requested_by_user_id])
     reviewed_by_user: Mapped["User | None"] = relationship(foreign_keys=[reviewed_by_user_id])
+    escalated_by_user: Mapped["User | None"] = relationship(foreign_keys=[escalated_by_user_id])
 
     def __repr__(self) -> str:
         return f"<AccessRequest id={self.id} status={self.status.value}>"

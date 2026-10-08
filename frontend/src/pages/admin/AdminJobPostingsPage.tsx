@@ -6,17 +6,22 @@ import { Badge } from '../../components/ui/Badge'
 import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { Pagination } from '../../components/ui/Pagination'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
-import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { JobPostingStatsModal } from '../../components/admin/JobPostingStatsModal'
 import { useI18n } from '../../i18n'
+
+const PAGE_SIZE = 20
 
 export function AdminJobPostingsPage() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [offset, setOffset] = useState(0)
   const [deleting, setDeleting] = useState<JobPostingAdmin | null>(null)
   const [viewingStats, setViewingStats] = useState<JobPostingAdmin | null>(null)
 
@@ -34,6 +39,9 @@ export function AdminJobPostingsPage() {
   })
 
   const items = query.data?.items ?? []
+  // Paginación en cliente: los KPIs siguen calculándose sobre todos los elementos.
+  const pageOffset = offset < items.length ? offset : 0
+  const pageItems = items.slice(pageOffset, pageOffset + PAGE_SIZE)
   const publishedCount = items.filter((i) => i.status === 'published').length
   const totalViews = items.reduce((sum, i) => sum + i.viewsTotal, 0)
   const totalClicks = items.reduce((sum, i) => sum + i.clicksTotal, 0)
@@ -51,20 +59,22 @@ export function AdminJobPostingsPage() {
           </ButtonLink>
         }
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-3xl border-white/10 bg-ase-bg2/45 p-5">
             <div className="grid grid-cols-2 gap-3">
               <PremiumMetricCard label={t('adminJobPostings.colStatus')} value={query.data?.total ?? items.length} icon="◇" accent="from-violet-300 to-fuchsia-500" />
               <PremiumMetricCard label={t('adminJobPostings.status.published')} value={publishedCount} icon="✓" accent="from-emerald-300 to-teal-500" />
-              <PremiumMetricCard label={t('adminJobPostings.stats.views')} value={totalViews} icon="◎" accent="from-cyan-300 to-blue-500" />
+              <PremiumMetricCard label={t('adminJobPostings.stats.views')} value={totalViews} icon="◎" accent="from-ase-brand to-blue-500" />
               <PremiumMetricCard label={t('adminJobPostings.stats.clicks')} value={totalClicks} icon="→" accent="from-amber-300 to-orange-500" />
             </div>
           </Card>
         }
       />
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 backdrop-blur">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface/55 p-5">
         <Input
           className="h-11 min-w-[200px] rounded-xl border-white/10 bg-ase-bg2/50"
+          type="search"
+          aria-label={t('adminJobPostings.searchPlaceholder') as string}
           placeholder={t('adminJobPostings.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -72,22 +82,22 @@ export function AdminJobPostingsPage() {
       </Card>
 
       {query.isLoading ? (
-        <Skeleton className="h-56 rounded-[2rem]" />
+        <Skeleton className="h-56 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminJobPostings.loadError')} />
       ) : items.length === 0 ? (
         <EmptyState title={t('adminJobPostings.empty')} description={t('adminJobPostings.subtitle')} />
       ) : (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0">
-          <div className="grid grid-cols-[1fr_140px_110px_120px_220px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
+        <Card className="divide-y divide-white/10 overflow-x-auto rounded-3xl border-white/10 bg-ase-surface/60 p-0">
+          <div className="grid min-w-[860px] grid-cols-[1fr_140px_110px_120px_220px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
             <span>{t('adminJobPostings.colTitle')}</span>
             <span>{t('adminJobPostings.colCategory')}</span>
             <span>{t('adminJobPostings.colStatus')}</span>
             <span>{t('adminJobPostings.colUpdated')}</span>
             <span>{t('adminJobPostings.colActions')}</span>
           </div>
-          {items.map((posting) => (
-            <div key={posting.id} className="grid grid-cols-[1fr_140px_110px_120px_220px] items-center gap-2 px-4 py-3 text-sm">
+          {pageItems.map((posting) => (
+            <div key={posting.id} className="grid min-w-[860px] grid-cols-[1fr_140px_110px_120px_220px] items-center gap-2 px-4 py-3 text-sm">
               <div className="font-medium text-ase-text">{posting.title}</div>
               <div className="text-xs text-ase-muted">{posting.category}</div>
               <Badge variant={posting.status === 'published' ? 'success' : 'default'}>{t(`adminJobPostings.status.${posting.status}`)}</Badge>
@@ -110,6 +120,7 @@ export function AdminJobPostingsPage() {
               </span>
             </div>
           ))}
+          <Pagination limit={PAGE_SIZE} offset={pageOffset} total={items.length} onOffsetChange={setOffset} />
         </Card>
       )}
 

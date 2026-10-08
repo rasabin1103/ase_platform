@@ -24,6 +24,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Switch } from '../../components/ui/Switch'
 import { useI18n } from '../../i18n'
+import { AdminPricingLinks } from '../../components/admin/premium/AdminPricingLinks'
 import { parseApiError } from '../../utils/apiError'
 
 const PILLAR_ORDER: PricingPillarCode[] = ['product', 'course', 'book', 'resource', 'service']
@@ -65,8 +66,10 @@ export function AdminPricingEnginePanel() {
     <div className="space-y-8">
       <p className="max-w-2xl text-sm text-ase-text2">{t('pricingAdmin.subtitle')}</p>
 
+      <AdminPricingLinks current="engine" />
+
       {query.isLoading ? (
-        <Skeleton className="h-56 rounded-[2rem]" />
+        <Skeleton className="h-56 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('pricingAdmin.loadError')} />
       ) : (
@@ -196,7 +199,7 @@ function PillarCard({
   })
 
   return (
-    <Card className="space-y-6 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur sm:p-8">
+    <Card className="space-y-6 rounded-3xl border-white/10 bg-ase-surface/60 p-6 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-ase-text">{t(`pricingAdmin.pillars.${pillar.code}`)}</h2>
         <div className="flex items-end gap-2">
@@ -247,7 +250,7 @@ function PillarCard({
                     <Button size="sm" variant="ghost" onClick={() => onEditDimensionType(dtype)}>
                       {t('pricingAdmin.edit')}
                     </Button>
-                    <button type="button" onClick={() => onDeleteDimensionType(dtype)} className="text-ase-error hover:opacity-80">
+                    <button type="button" aria-label={t('pricingAdmin.delete') as string} title={t('pricingAdmin.delete') as string} onClick={() => onDeleteDimensionType(dtype)} className="text-ase-error hover:opacity-80">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -279,7 +282,7 @@ function PillarCard({
                           <Button size="sm" variant="ghost" onClick={() => onEditLevel(dtype, l)}>
                             {t('pricingAdmin.edit')}
                           </Button>
-                          <button type="button" onClick={() => onDeleteLevel(l)} className="text-ase-error hover:opacity-80">
+                          <button type="button" aria-label={t('pricingAdmin.delete') as string} title={t('pricingAdmin.delete') as string} onClick={() => onDeleteLevel(l)} className="text-ase-error hover:opacity-80">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>

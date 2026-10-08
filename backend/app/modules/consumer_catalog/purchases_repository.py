@@ -63,7 +63,29 @@ class CatalogPurchasesRepository:
                 ),
             )
         )
-        return set(self.db.execute(stmt).scalars().all())
+        slugs = set(self.db.execute(stmt).scalars().all())
+
+        # Entitlement is defined by the plan's CURRENT included items, not by
+        # the existence of a plan_entitlement row: rows are only written on
+        # subscription webhooks, so an item added to a plan afterwards (or a
+        # subscription created manually by an admin) would otherwise be
+        # advertised as "included" yet still ask the member to buy it.
+        included_stmt = (
+            select(CatalogItem.slug)
+            .join(PlanCatalogItem, PlanCatalogItem.catalog_item_id == CatalogItem.id)
+            .join(Subscription, Subscription.plan_id == PlanCatalogItem.plan_id)
+            .join(
+                OrganizationMember,
+                and_(
+                    OrganizationMember.organization_id == Subscription.organization_id,
+                    OrganizationMember.user_id == user_id,
+                    OrganizationMember.membership_status == MembershipStatus.active,
+                ),
+            )
+            .where(Subscription.status.in_(_LIVE_SUBSCRIPTION_STATUSES))
+        )
+        slugs.update(self.db.execute(included_stmt).scalars().all())
+        return slugs
 
     def permanently_owned_slugs_for_user(self, user_id: int) -> set[str]:
         """Subset of slugs_for_user() the caller actually paid for (directly

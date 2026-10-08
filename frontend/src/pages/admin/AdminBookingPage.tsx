@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2 } from 'lucide-react'
 import { adminCreateSlots, adminDeleteSlot, adminListSlots, type ConsultingSlotAdmin } from '../../api/booking.api'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -50,7 +50,7 @@ export function AdminBookingPage() {
         subtitle={t('adminBookingPage.subtitle') as string}
       />
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft sm:p-8">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface p-6 shadow-soft sm:p-8">
         <h2 className="mb-1 text-lg font-semibold text-ase-text">{t('adminBookingPage.create.title') as string}</h2>
         <p className="mb-4 max-w-2xl text-sm text-ase-text2">{t('adminBookingPage.create.hint') as string}</p>
 
@@ -105,7 +105,7 @@ export function AdminBookingPage() {
         {createMutation.isError ? <p className="mt-3 text-sm text-red-400">{t('adminBookingPage.create.error') as string}</p> : null}
       </Card>
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft sm:p-8">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface p-6 shadow-soft sm:p-8">
         <h2 className="mb-4 text-lg font-semibold text-ase-text">{t('adminBookingPage.list.title') as string}</h2>
         {listQuery.isLoading ? (
           <Skeleton className="h-24 w-full rounded-2xl" />

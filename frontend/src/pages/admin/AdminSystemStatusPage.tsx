@@ -40,7 +40,7 @@ function StatusCard({
   ok: boolean
 }) {
   return (
-    <Card className="rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+    <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{label}</div>
@@ -95,9 +95,9 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
 
       {query.isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-32 rounded-[1.75rem]" />
-          <Skeleton className="h-32 rounded-[1.75rem]" />
-          <Skeleton className="h-32 rounded-[1.75rem]" />
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-32 rounded-3xl" />
         </div>
       ) : query.isError || !data ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminSystemStatus.loadError')} actionLabel={t('adminSystemStatus.refresh')} onAction={() => void query.refetch()} />
@@ -164,7 +164,7 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
             />
           </div>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminSystemStatus.counts.title')}</div>
             <div className="mt-4 grid grid-cols-3 gap-3">
               <PremiumOrb label={t('adminSystemStatus.counts.users')} value={data.counts.users_total} tone="info" />
@@ -173,7 +173,7 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
             </div>
           </Card>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminSystemStatus.adoption.title')}</div>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <PremiumOrb label={t('adminSystemStatus.adoption.emailVerified')} value={`${data.email_verified_pct}%`} tone="info" />
@@ -181,7 +181,7 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
             </div>
           </Card>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminSystemStatus.errors.title')}</div>
               {onViewErrors && (
@@ -200,7 +200,7 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
             )}
           </Card>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">
                 {t('adminSystemStatus.scheduler.title')}
@@ -227,7 +227,7 @@ export function AdminSystemStatusPanel({ onViewErrors }: { onViewErrors?: () => 
             )}
           </Card>
 
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">

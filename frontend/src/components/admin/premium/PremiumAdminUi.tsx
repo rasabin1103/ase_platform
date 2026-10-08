@@ -1,49 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Area, AreaChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Badge } from '../../ui/Badge'
 import { Card } from '../../ui/Card'
+export { AdminEyebrow, AdminHeroHalo, PremiumHero } from './PremiumHero'
 import { cn } from '../../ui/cn'
-
-export function PremiumHero({
-  badge,
-  title,
-  subtitle,
-  contextChips,
-  actions,
-  sidePanel,
-  leading,
-}: {
-  badge: string
-  title: string
-  subtitle: string
-  contextChips?: ReactNode
-  actions?: ReactNode
-  sidePanel?: ReactNode
-  /** Optional slot rendered above everything else (e.g. the account avatar + greeting),
-   * so it's the first, most prominent thing in the header. */
-  leading?: ReactNode
-  accent?: 'cyan' | 'violet' | 'emerald' | 'amber'
-}) {
-  return (
-    <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-ase-surface p-6 shadow-soft md:p-8">
-      <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
-        <div>
-          {leading ? <div className="mb-5">{leading}</div> : null}
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <Badge variant="info" className="mb-0">
-              {badge}
-            </Badge>
-          </div>
-          <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{title}</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ase-text2 md:text-base">{subtitle}</p>
-          {contextChips ? <div className="mt-6 flex flex-wrap items-center gap-3">{contextChips}</div> : null}
-          {actions ? <div className="mt-6 flex flex-wrap gap-3">{actions}</div> : null}
-        </div>
-        {sidePanel}
-      </div>
-    </section>
-  )
-}
 
 export function PremiumMetricCard({
   label,
@@ -66,7 +25,7 @@ export function PremiumMetricCard({
         ? value.toLocaleString(undefined, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
         : value.toLocaleString()
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+    <Card className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft" interactive>
       <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -107,7 +66,7 @@ export function PremiumComparisonStat({
   const isUp = changePct != null && changePct > 0
   const isDown = changePct != null && changePct < 0
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft" interactive>
+    <Card className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft" interactive>
       <div className="absolute inset-x-0 top-0 h-1 bg-ase-brand/80" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -155,7 +114,7 @@ export function PremiumOrb({ label, value, tone }: { label: string; value: numbe
 
 export function PremiumInsightsCard({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+    <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-ase-text">{title}</h2>
         {action}
@@ -195,7 +154,7 @@ export function PremiumChartCard({
 }) {
   const chartData = data.map((d) => ({ ...d, label: d.month.slice(5) || d.month }))
   return (
-    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+    <Card className={cn('rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft', className)}>
       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{title}</div>
       <div className="mt-4 h-52">
         {chartData.length === 0 ? (
@@ -284,7 +243,7 @@ export function PremiumTrendCompareChart({
     valueFormatter ? valueFormatter(v) : unit === 'currency' ? v.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) : String(v)
 
   return (
-    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+    <Card className={cn('rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{title}</div>
         <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-0.5">
@@ -389,7 +348,7 @@ export function PremiumBreakdownCard({
   const total = items.reduce((sum, i) => sum + i.value, 0)
   const sorted = [...items].sort((a, b) => b.value - a.value)
   return (
-    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+    <Card className={cn('rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft', className)}>
       <div className="text-sm font-semibold text-ase-text">{title}</div>
       {subtitle ? <div className="mt-1 text-xs text-ase-text2">{subtitle}</div> : null}
       <div className="mt-5 space-y-3">
@@ -449,7 +408,7 @@ export function PremiumSplitStat({
 }) {
   const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0
   return (
-    <Card className={cn('rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft', className)}>
+    <Card className={cn('rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft', className)}>
       <div className="text-sm font-semibold text-ase-text">{title}</div>
       {subtitle ? <div className="mt-1 text-xs text-ase-text2">{subtitle}</div> : null}
       {total === 0 ? (

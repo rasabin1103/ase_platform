@@ -14,7 +14,8 @@ from app.core.email import send_email
 from app.models.case_study import CaseStudy
 from app.models.catalog_item import CatalogItem
 from app.models.course import Course
-from app.models.enums import CatalogItemStatus, CatalogItemType, CourseStatus
+from app.models.enums import CatalogItemStatus, CatalogItemType, CourseStatus, JobPostingStatus
+from app.models.job_posting import JobPosting
 from app.models.plan import Plan
 from app.models.service import Service
 from app.models.team_member import TeamMember
@@ -170,6 +171,13 @@ def _count_services(db: Session) -> int:
     return _safe_count(db, select(func.count()).select_from(Service).where(Service.is_active.is_(True)))
 
 
+def _count_active_job_postings(db: Session) -> int:
+    return _safe_count(
+        db,
+        select(func.count()).select_from(JobPosting).where(JobPosting.status == JobPostingStatus.published),
+    )
+
+
 def _count_members(db: Session) -> int:
     return _safe_count(db, select(func.count()).select_from(User))
 
@@ -212,6 +220,7 @@ def _build_catalog_stats(db: Session) -> CatalogStatsResponse:
         plans=CatalogPlans(total=plan_total, names=plan_names),
         platform=PlatformStatus(status=platform_status, db_connected=db_connected),
         members_count=_count_members(db),
+        job_postings_active=_count_active_job_postings(db),
         last_updated=last_updated,
     )
 

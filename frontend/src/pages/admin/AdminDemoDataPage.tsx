@@ -19,7 +19,7 @@ export function AdminDemoDataPanel() {
 
   return (
     <div className="space-y-8">
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Users2 className="mt-0.5 h-6 w-6 shrink-0 text-ase-primary" strokeWidth={1.75} />
@@ -41,7 +41,7 @@ export function AdminDemoDataPanel() {
       </Card>
 
       {result && (
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-6">
           <div className="text-sm font-semibold text-ase-text">{t('adminDemoData.resultTitle')}</div>
           <p className="mt-1 text-sm text-ase-text2">{result.note}</p>
           <div className="mt-3 rounded-lg border border-ase-border bg-ase-bg2 px-3 py-2 font-mono text-xs text-ase-text">

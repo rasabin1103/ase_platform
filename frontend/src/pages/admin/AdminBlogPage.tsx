@@ -6,18 +6,23 @@ import { Badge } from '../../components/ui/Badge'
 import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { Pagination } from '../../components/ui/Pagination'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { TagFilterBar } from '../../components/ui/TagFilterBar'
-import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { BlogStatsModal } from '../../components/admin/BlogStatsModal'
 import { useI18n } from '../../i18n'
+
+const PAGE_SIZE = 20
 
 export function AdminBlogPage() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [offset, setOffset] = useState(0)
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [deleting, setDeleting] = useState<BlogPostAdmin | null>(null)
   const [viewingStats, setViewingStats] = useState<BlogPostAdmin | null>(null)
@@ -42,6 +47,9 @@ export function AdminBlogPage() {
   })
 
   const items = query.data?.items ?? []
+  // Paginación en cliente: los KPIs siguen calculándose sobre todos los elementos.
+  const pageOffset = offset < items.length ? offset : 0
+  const pageItems = items.slice(pageOffset, pageOffset + PAGE_SIZE)
   const publishedCount = items.filter((i) => i.status === 'published').length
 
   return (
@@ -57,18 +65,20 @@ export function AdminBlogPage() {
           </ButtonLink>
         }
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-3xl border-white/10 bg-ase-bg2/45 p-5">
             <div className="grid grid-cols-2 gap-3">
-              <PremiumMetricCard label={t('adminBlog.colStatus')} value={query.data?.total ?? items.length} icon="◇" accent="from-cyan-300 to-blue-500" />
+              <PremiumMetricCard label={t('adminBlog.colStatus')} value={query.data?.total ?? items.length} icon="◇" accent="from-ase-brand to-blue-500" />
               <PremiumMetricCard label={t('adminBlog.published')} value={publishedCount} icon="✓" accent="from-emerald-300 to-teal-500" />
             </div>
           </Card>
         }
       />
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 backdrop-blur">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface/55 p-5">
         <Input
           className="h-11 min-w-[200px] rounded-xl border-white/10 bg-ase-bg2/50"
+          type="search"
+          aria-label={t('adminBlog.searchPlaceholder') as string}
           placeholder={t('adminBlog.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -85,22 +95,22 @@ export function AdminBlogPage() {
       />
 
       {query.isLoading ? (
-        <Skeleton className="h-56 rounded-[2rem]" />
+        <Skeleton className="h-56 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminBlog.loadError')} />
       ) : items.length === 0 ? (
         <EmptyState title={t('adminBlog.empty')} description={t('adminBlog.subtitle')} />
       ) : (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0">
-          <div className="grid grid-cols-[1fr_190px_110px_120px_220px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
+        <Card className="divide-y divide-white/10 overflow-x-auto rounded-3xl border-white/10 bg-ase-surface/60 p-0">
+          <div className="grid min-w-[860px] grid-cols-[1fr_190px_110px_120px_220px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
             <span>{t('adminBlog.colTitle')}</span>
             <span>{t('adminBlog.stats.title')}</span>
             <span>{t('adminBlog.colStatus')}</span>
             <span>{t('adminBlog.colUpdated')}</span>
             <span>{t('adminBlog.colActions')}</span>
           </div>
-          {items.map((post) => (
-            <div key={post.id} className="grid grid-cols-[1fr_190px_110px_120px_220px] items-center gap-2 px-4 py-3 text-sm">
+          {pageItems.map((post) => (
+            <div key={post.id} className="grid min-w-[860px] grid-cols-[1fr_190px_110px_120px_220px] items-center gap-2 px-4 py-3 text-sm">
               <div>
                 <div className="font-medium text-ase-text">{post.title}</div>
                 <div className="text-xs text-ase-muted">/{post.slug}</div>
@@ -142,6 +152,7 @@ export function AdminBlogPage() {
               </span>
             </div>
           ))}
+          <Pagination limit={PAGE_SIZE} offset={pageOffset} total={items.length} onOffsetChange={setOffset} />
         </Card>
       )}
 

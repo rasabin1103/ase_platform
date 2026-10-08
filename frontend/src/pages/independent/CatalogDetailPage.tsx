@@ -1,44 +1,26 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Suspense, lazy, useEffect, useState } from 'react'
 import {
   ArrowLeft,
-  Ban,
   Check,
-  ChevronDown,
-  ChevronUp,
   Code,
   Download,
   ExternalLink,
-  FileSpreadsheet,
-  FileText,
   FileWarning,
   FileX,
-  Files,
-  HardDrive,
   Headphones,
   Heart,
-  History,
-  Info,
-  LifeBuoy,
   ListChecks,
   Maximize2,
   Minimize2,
   Package,
-  RefreshCw,
-  ScrollText,
   ShieldCheck,
   ShoppingCart,
-  Sparkles,
   Truck,
 } from 'lucide-react'
-import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
-import { AudiobookPlayer } from '../../components/catalog/AudiobookPlayer'
-import { PlatformAudiobookPlayer } from '../../components/catalog/PlatformAudiobookPlayer'
-import { PlanSavingsModal } from '../../components/catalog/PlanSavingsModal'
+import { Suspense, useEffect, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import type { AccessTargetType } from '../../api/access_requests.api'
 import { buyOrCheckoutCatalogItem } from '../../api/catalogPurchaseFlow'
-import { getPlanSavings } from '../../api/plansCatalog.api'
 import {
   downloadResource,
   getBookDownloadFormats,
@@ -49,380 +31,42 @@ import {
   toggleCatalogFavorite,
   type ResourceDownloadFormat,
 } from '../../api/consumerCatalog.api'
+import { getPlanSavings } from '../../api/plansCatalog.api'
+import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { AudiobookPlayer } from '../../components/catalog/AudiobookPlayer'
+import { catalogImageAspectClass } from '../../components/catalog/catalogCardShape'
+import { CodeViewer } from '../../components/catalog/CodeViewer'
+import { ImageCarousel } from '../../components/catalog/ImageCarousel'
+import { MarkdownViewer } from '../../components/catalog/MarkdownViewer'
+import { PlanSavingsModal } from '../../components/catalog/PlanSavingsModal'
+import { PlatformAudiobookPlayer } from '../../components/catalog/PlatformAudiobookPlayer'
+import { RatingWidget } from '../../components/catalog/RatingWidget'
+import { ReviewWidget } from '../../components/catalog/ReviewWidget'
+import { SeriesPanel } from '../../components/catalog/SeriesPanel'
+import { ShareButton } from '../../components/catalog/ShareButton'
+import { Badge } from '../../components/ui/Badge'
 import { Button, ButtonAnchor } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
+import { cn } from '../../components/ui/cn'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
-import { cn } from '../../components/ui/cn'
-import { parseApiError } from '../../utils/apiError'
-import { catalogImageAspectClass } from '../../components/catalog/catalogCardShape'
-import { ImageCarousel } from '../../components/catalog/ImageCarousel'
-import { RatingWidget } from '../../components/catalog/RatingWidget'
-import { ReviewWidget } from '../../components/catalog/ReviewWidget'
-import { MarkdownContent, MarkdownViewer } from '../../components/catalog/MarkdownViewer'
-import { CodeViewer } from '../../components/catalog/CodeViewer'
-import { ShareButton } from '../../components/catalog/ShareButton'
-import { SeriesPanel } from '../../components/catalog/SeriesPanel'
-import { useI18n } from '../../i18n'
+import { AcademyCatalogPanel } from '../../features/academy/AcademyCatalogPanel'
 import { useAuth } from '../../hooks/useAuth'
-import { localizedCatalogText } from '../../utils/localizedCatalogText'
+import { useI18n } from '../../i18n'
 import type { CatalogItemType } from '../../types/catalog.types'
-
-// Lazy: mammoth (DocxViewer) and SheetJS (XlsxViewer) are only needed for
-// resources whose "Ver contenido" turns out to be a .docx/.xlsx — loading
-// them eagerly would ship both libraries on every catalog item detail page,
-// including the vast majority that only ever show README.md.
-const DocxViewer = lazy(() =>
-  import('../../components/catalog/DocxViewer').then((m) => ({ default: m.DocxViewer })),
-)
-const XlsxViewer = lazy(() =>
-  import('../../components/catalog/XlsxViewer').then((m) => ({ default: m.XlsxViewer })),
-)
-const PdfViewer = lazy(() =>
-  import('../../components/catalog/PdfViewer').then((m) => ({ default: m.PdfViewer })),
-)
-
-// Small "what kind of file is this" chip shown above the viewer body — a
-// premium touch that also doubles as a quick sanity check for the admin
-// (does the folder actually contain what I expect?) without opening the
-// file in a new tab.
-const RESOURCE_KIND_META: Record<
-  'markdown' | 'docx' | 'xlsx' | 'code' | 'pdf',
-  { icon: typeof FileText; labelKey: string }
-> = {
-  markdown: { icon: FileText, labelKey: 'catalog.resource.kindMarkdown' },
-  docx: { icon: FileText, labelKey: 'catalog.resource.kindDocx' },
-  xlsx: { icon: FileSpreadsheet, labelKey: 'catalog.resource.kindXlsx' },
-  code: { icon: Code, labelKey: 'catalog.resource.kindCode' },
-  pdf: { icon: FileText, labelKey: 'catalog.resource.kindPdf' },
-}
-
-const TYPE_CATALOG_PATH: Record<CatalogItemType, string> = {
-  product: '/catalog/products',
-  course: '/catalog/courses',
-  book: '/catalog/books',
-  resource: '/catalog/resources',
-}
-
-function typeLabelKey(type: CatalogItemType): string {
-  const map: Record<CatalogItemType, string> = {
-    product: 'catalog.typeProduct',
-    course: 'catalog.typeCourse',
-    book: 'catalog.typeBook',
-    resource: 'catalog.typeResource',
-  }
-  return map[type]
-}
-
-function formatPrice(price: string | number, currency: string, freeLabel: string) {
-  const n = Number(price)
-  if (!n) return freeLabel
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n)
-}
-
-function BulletList({
-  title,
-  items,
-  icon,
-}: {
-  title: string
-  items: string[]
-  icon: React.ReactNode
-}) {
-  if (!items.length) return null
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
-          {icon}
-        </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">{title}</h2>
-      </div>
-      <ul className="mt-3 space-y-2 text-sm text-ase-text2">
-        {items.map((line) => (
-          <li key={line} className="flex gap-2">
-            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ase-brand/70" />
-            <span>{line}</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  )
-}
-
-// Readable by default — a long Markdown description no longer dumps
-// everything on-screen at once. Collapsed to a fixed height with a fade-out
-// cue, expanded on click. Short descriptions (shorter than the collapsed
-// height) never show the toggle at all — nothing to hide, so nothing to
-// expand.
-// Whether the collapsed height (max-h-64, ~256px) would plausibly need to
-// clip this content — a plain length heuristic instead of a DOM
-// measurement, so no ref/effect/ResizeObserver dance is needed just to
-// decide whether the "show more" toggle should exist at all.
-const DESCRIPTION_COLLAPSE_THRESHOLD = 480
-
-function CollapsibleDescription({ content, t }: { content: string; t: (key: string) => string }) {
-  const [expanded, setExpanded] = useState(false)
-  const overflowing = content.length > DESCRIPTION_COLLAPSE_THRESHOLD
-
-  return (
-    <div>
-      <div className={cn('relative overflow-hidden', !expanded && overflowing && 'max-h-64')}>
-        <MarkdownContent content={content} />
-        {!expanded && overflowing ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ase-bg to-transparent" />
-        ) : null}
-      </div>
-      {overflowing ? (
-        <button
-          type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-cyan-300 hover:underline"
-        >
-          {expanded ? t('catalog.description.showLess') : t('catalog.description.showMore')}
-          {expanded ? <ChevronUp className="h-4 w-4" strokeWidth={1.75} /> : <ChevronDown className="h-4 w-4" strokeWidth={1.75} />}
-        </button>
-      ) : null}
-    </div>
-  )
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes <= 0) return '0 KB'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let value = bytes
-  let unitIndex = 0
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024
-    unitIndex += 1
-  }
-  return `${unitIndex === 0 ? value : value.toFixed(1)} ${units[unitIndex]}`
-}
-
-// What's actually inside the package before the buyer commits — formats,
-// file count, total size. Reuses getResourceDownloadInfo (metadata off the
-// GitHub folder listing, no ownership required) so it can show up before
-// purchase, not just after. Renders nothing while loading/unavailable
-// rather than an error or skeleton: this is supplementary detail, not
-// something that should ever compete for attention with the buy button.
-function DownloadPackagePanel({
-  info,
-  t,
-}: {
-  info: { fileCount: number; totalSizeBytes: number; formats: string[] } | undefined
-  t: (key: string) => string
-}) {
-  if (!info || info.fileCount === 0) return null
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
-          <Files className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">
-          {t('catalog.downloadInfo.title')}
-        </h2>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ase-text2">
-        <span className="flex items-center gap-1.5">
-          <Files className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
-          {info.fileCount} {t(info.fileCount === 1 ? 'catalog.downloadInfo.file' : 'catalog.downloadInfo.files')}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <HardDrive className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
-          {formatBytes(info.totalSizeBytes)}
-        </span>
-      </div>
-      {info.formats.length > 0 ? (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {info.formats.map((fmt) => (
-            <Badge key={fmt} variant="info" className="uppercase">
-              {fmt}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-    </Card>
-  )
-}
-
-// Admin-written setup/usage instructions (resource type only) — shown right
-// after the description so a buyer who already owns the item doesn't have
-// to reverse-engineer the package themselves (which file to open first,
-// prerequisites, setup steps). Plain text with preserved line breaks, same
-// convention as the license/refund-policy free-text fields — not Markdown,
-// to keep the admin form a single textarea like every other free-text field
-// on this item.
-function GettingStartedPanel({ text, t }: { text: string | null | undefined; t: (key: string) => string }) {
-  if (!text) return null
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
-          <ListChecks className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">
-          {t('catalog.gettingStarted.title')}
-        </h2>
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ase-text2">{text}</p>
-    </Card>
-  )
-}
-
-function formatCatalogDate(iso: string, language: string) {
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'es-ES', { dateStyle: 'medium' }).format(new Date(iso))
-}
-
-// Resource-only: current version, when it last changed, the buyer's own
-// acquisition date, whether a newer version has shipped since, and which
-// AI tools/frameworks this resource is known to work with. See
-// ConsumerCatalogService._to_read for how hasNewVersion/purchasedAt are
-// computed server-side.
-function VersionPanel({
-  item,
-  t,
-  language,
-}: {
-  item: {
-    currentVersion?: string | null
-    versionUpdatedAt?: string | null
-    purchasedAt?: string | null
-    hasNewVersion?: boolean
-    compatibility?: string[]
-    changelog?: string[]
-  }
-  t: (key: string) => string
-  language: string
-}) {
-  if (!item.currentVersion) return null
-  const compatibility = item.compatibility ?? []
-  const changelog = item.changelog ?? []
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
-          <History className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">{t('catalog.version.title')}</h2>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Badge variant="info">
-          {t('catalog.version.current')}: {item.currentVersion}
-        </Badge>
-        {item.hasNewVersion ? (
-          <Badge className="items-center gap-1 border-amber-400/30 bg-amber-400/15 text-amber-200">
-            <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} />
-            {t('catalog.version.newVersionAvailable')}
-          </Badge>
-        ) : null}
-      </div>
-      <div className="mt-3 space-y-1 text-sm text-ase-text2">
-        {item.versionUpdatedAt ? (
-          <p>
-            {t('catalog.version.updatedAt')}: {formatCatalogDate(item.versionUpdatedAt, language)}
-          </p>
-        ) : null}
-        {item.purchasedAt ? (
-          <p>
-            {t('catalog.version.acquiredAt')}: {formatCatalogDate(item.purchasedAt, language)}
-          </p>
-        ) : null}
-      </div>
-      {compatibility.length > 0 ? (
-        <div className="mt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('catalog.version.compatibility')}</p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {compatibility.map((tag) => (
-              <Badge key={tag} variant="info" className="items-center gap-1">
-                <Sparkles className="h-3 w-3" strokeWidth={1.75} />
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      {changelog.length > 0 ? (
-        <div className="mt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('catalog.version.changelog')}</p>
-          <ul className="mt-1.5 space-y-1.5 text-sm text-ase-text2">
-            {changelog.map((line, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ase-brand/70" />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </Card>
-  )
-}
-
-// Shown before purchase for every catalog type, per the platform's
-// "clarity before buying" requirement — scope of use, redistribution,
-// whether updates/support come with the purchase, and the refund policy
-// (falls back to the platform's standard digital-content clause when the
-// admin hasn't set a per-item one).
-function LicensePanel({
-  item,
-  t,
-}: {
-  item: {
-    licenseScope?: string[]
-    licenseRedistribution?: string | null
-    licenseUpdatesIncluded?: boolean
-    licenseSupportIncluded?: boolean
-    licenseRefundPolicy?: string | null
-  }
-  t: (key: string) => string
-}) {
-  const scope = item.licenseScope ?? []
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
-          <ScrollText className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ase-text2">{t('catalog.license.title')}</h2>
-      </div>
-      <div className="mt-3 space-y-2 text-sm text-ase-text2">
-        <p>
-          <span className="font-medium text-ase-text">{t('catalog.license.scope')}: </span>
-          {scope.length > 0
-            ? scope.map((s) => t(`catalog.license.scopeOptions.${s}`)).join(' · ')
-            : t('catalog.license.scopeUnspecified')}
-        </p>
-        <p className="flex items-center gap-1.5">
-          <Ban className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-          <span className="font-medium text-ase-text">{t('catalog.license.redistribution')}: </span>
-          {item.licenseRedistribution
-            ? t(`catalog.license.redistributionOptions.${item.licenseRedistribution}`)
-            : t('catalog.license.redistributionUnspecified')}
-        </p>
-        <p className="flex items-center gap-1.5">
-          <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-          {item.licenseUpdatesIncluded ? t('catalog.license.updatesIncluded') : t('catalog.license.updatesNotIncluded')}
-        </p>
-        <p className="flex items-center gap-1.5">
-          <LifeBuoy className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-          {item.licenseSupportIncluded ? t('catalog.license.supportIncluded') : t('catalog.license.supportNotIncluded')}
-          {item.licenseSupportIncluded ? (
-            <span title={t('catalog.license.supportIncludedInfo') as string} className="inline-flex shrink-0 cursor-help">
-              <Info className="h-3.5 w-3.5 text-ase-muted" strokeWidth={1.75} />
-            </span>
-          ) : null}
-        </p>
-        <p>
-          <span className="font-medium text-ase-text">{t('catalog.license.refundPolicy')}: </span>
-          {item.licenseRefundPolicy ?? t('catalog.license.refundPolicyDefault')}
-        </p>
-      </div>
-    </Card>
-  )
-}
+import { parseApiError } from '../../utils/apiError'
+import { localizedCatalogText } from '../../utils/localizedCatalogText'
+import {
+  BulletList,
+  CollapsibleDescription,
+  DownloadPackagePanel,
+  GettingStartedPanel,
+  LicensePanel,
+  VersionPanel,
+} from './CatalogDetailPage.parts'
+import { RESOURCE_KIND_META, TYPE_CATALOG_PATH, formatPrice, typeLabelKey } from './CatalogDetailPage.utils'
+import { DocxViewer, PdfViewer, XlsxViewer } from './CatalogDetailPage.viewers'
 
 export function CatalogDetailPage() {
   const { type, slug } = useParams<{ type: CatalogItemType; slug: string }>()
@@ -572,10 +216,10 @@ export function CatalogDetailPage() {
   // backend app.modules.plans.quota.has_ever_downloaded_item).
   const quotaExhausted = Boolean(
     item?.isPlanIncluded &&
-      !item?.alreadyDownloaded &&
-      quotaQuery.data &&
-      !quotaQuery.data.unlimited &&
-      (quotaQuery.data.remaining ?? 0) <= 0,
+    !item?.alreadyDownloaded &&
+    quotaQuery.data &&
+    !quotaQuery.data.unlimited &&
+    (quotaQuery.data.remaining ?? 0) <= 0,
   )
   const backPath = type && TYPE_CATALOG_PATH[type] ? TYPE_CATALOG_PATH[type] : '/dashboard'
 
@@ -667,14 +311,15 @@ export function CatalogDetailPage() {
                         '{{planName}}',
                         (language === 'en' && auth.currentUser?.plan_name_en
                           ? auth.currentUser.plan_name_en
-                          : auth.currentUser?.plan_name) || (t('catalog.resource.discountContextFallbackPlan') as string),
+                          : auth.currentUser?.plan_name) ||
+                          (t('catalog.resource.discountContextFallbackPlan') as string),
                       )
                       .replace('{{percent}}', String(item.discountPercent))}
                   </p>
                 ) : null}
                 {item.isPurchased ? (
                   <Badge className="mt-2 border-emerald-400/30 bg-emerald-400/15 text-emerald-200">
-                    {t('catalog.purchased')}
+                    {item.isPlanIncluded ? t('catalog.includedInPlan') : t('catalog.purchased')}
                   </Badge>
                 ) : null}
               </div>
@@ -698,11 +343,21 @@ export function CatalogDetailPage() {
               {!isFree ? (
                 <Button
                   variant={item.isPurchased ? 'success' : 'primary'}
-                  leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+                  leftIcon={
+                    item.isPurchased ? (
+                      <Check className="h-4 w-4" strokeWidth={2} />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />
+                    )
+                  }
                   disabled={buyMutation.isPending || item.isPurchased}
                   onClick={handleBuyClick}
                 >
-                  {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
+                  {item.isPurchased
+                    ? item.isPlanIncluded
+                      ? t('catalog.includedInPlan')
+                      : t('catalog.purchased')
+                    : t('catalog.buy')}
                 </Button>
               ) : null}
               {item.previewUrl ? (
@@ -727,7 +382,11 @@ export function CatalogDetailPage() {
               ) : null}
               {canViewResource ? (
                 <>
-                  <Button variant="outline" leftIcon={<Code className="h-4 w-4" strokeWidth={1.75} />} onClick={() => setViewerOpen(true)}>
+                  <Button
+                    variant="outline"
+                    leftIcon={<Code className="h-4 w-4" strokeWidth={1.75} />}
+                    onClick={() => setViewerOpen(true)}
+                  >
                     {hasFullAccess ? t('catalog.resource.viewContent') : t('catalog.resource.viewPreview')}
                   </Button>
                   {hasFullAccess ? (
@@ -795,7 +454,11 @@ export function CatalogDetailPage() {
                   ) : null}
                 </>
               ) : null}
-              <ShareButton title={title} text={shortDescription} url={typeof window !== 'undefined' ? window.location.href : ''} />
+              <ShareButton
+                title={title}
+                text={shortDescription}
+                url={typeof window !== 'undefined' ? window.location.href : ''}
+              />
             </div>
 
             {!item.isPurchased ? (
@@ -819,6 +482,14 @@ export function CatalogDetailPage() {
           {catalogType === 'resource' ? <VersionPanel item={item} t={t} language={language} /> : null}
 
           {catalogType === 'resource' ? <GettingStartedPanel text={item.gettingStarted} t={t} /> : null}
+
+          {item.academyCourseKey ? (
+            <AcademyCatalogPanel
+              courseKey={item.academyCourseKey}
+              owned={item.isPurchased || Number(item.price) <= 0}
+              t={t}
+            />
+          ) : null}
 
           <DownloadPackagePanel info={downloadInfoQuery.data} t={t} />
 
@@ -878,7 +549,9 @@ export function CatalogDetailPage() {
               <button
                 type="button"
                 onClick={() => setViewerMaximized((prev) => !prev)}
-                aria-label={(viewerMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
+                aria-label={
+                  (viewerMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string
+                }
                 title={(viewerMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
                 className="flex shrink-0 items-center rounded-md p-1.5 text-ase-text2 transition hover:bg-white/[0.06] hover:text-ase-text"
               >
@@ -952,9 +625,17 @@ export function CatalogDetailPage() {
                   />
                 </Suspense>
               ) : contentQuery.data.kind === 'code' && contentQuery.data.content ? (
-                <CodeViewer path={contentQuery.data.path} content={contentQuery.data.content} maximized={viewerMaximized} />
+                <CodeViewer
+                  path={contentQuery.data.path}
+                  content={contentQuery.data.content}
+                  maximized={viewerMaximized}
+                />
               ) : contentQuery.data.content ? (
-                <MarkdownViewer path={contentQuery.data.path} content={contentQuery.data.content} maximized={viewerMaximized} />
+                <MarkdownViewer
+                  path={contentQuery.data.path}
+                  content={contentQuery.data.content}
+                  maximized={viewerMaximized}
+                />
               ) : (
                 <EmptyState
                   icon={<FileX className="h-5 w-5" strokeWidth={1.75} />}
@@ -980,7 +661,9 @@ export function CatalogDetailPage() {
               <button
                 type="button"
                 onClick={() => setAudiobookMaximized((prev) => !prev)}
-                aria-label={(audiobookMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
+                aria-label={
+                  (audiobookMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string
+                }
                 title={(audiobookMaximized ? t('catalog.resource.restore') : t('catalog.resource.maximize')) as string}
                 className="flex shrink-0 items-center rounded-md p-1.5 text-ase-text2 transition hover:bg-white/[0.06] hover:text-ase-text"
               >
@@ -1014,13 +697,22 @@ export function CatalogDetailPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <BulletList title={t('catalog.benefits')} items={benefits} icon={<ListChecks className="h-4 w-4" strokeWidth={1.75} />} />
-        <BulletList title={t('catalog.requirements')} items={requirements} icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.75} />} />
-        <BulletList title={t('catalog.included')} items={included} icon={<Package className="h-4 w-4" strokeWidth={1.75} />} />
+        <BulletList
+          title={t('catalog.benefits')}
+          items={benefits}
+          icon={<ListChecks className="h-4 w-4" strokeWidth={1.75} />}
+        />
+        <BulletList
+          title={t('catalog.requirements')}
+          items={requirements}
+          icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.75} />}
+        />
+        <BulletList
+          title={t('catalog.included')}
+          items={included}
+          icon={<Package className="h-4 w-4" strokeWidth={1.75} />}
+        />
       </div>
     </div>
   )
 }
-
-
-

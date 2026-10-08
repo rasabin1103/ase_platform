@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -22,6 +24,9 @@ class Notification(Base, IdPkMixin, TimestampMixin):
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
     link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    # Set once this notification has been included in an email (immediate or
+    # digest) so the email sweep never sends it twice.
+    emailed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self) -> str:
         return f"<Notification id={self.id} user_id={self.user_id} type={self.type!r} is_read={self.is_read}>"

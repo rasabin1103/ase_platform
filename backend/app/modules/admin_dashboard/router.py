@@ -50,6 +50,25 @@ from app.modules.notifications.service import NotificationsService
 router = APIRouter(prefix="/api/v1/admin", tags=["admin-dashboard"])
 
 
+def _active_plan_subscriptions_count(db: Session) -> int:
+    """Active/trialing subscriptions, counted over the SAME population the
+    /admin/subscriptions list shows (owner not deleted/suspended, plan and
+    organization still present) so the header counter matches the list."""
+    return int(
+        db.execute(
+            select(func.count())
+            .select_from(Subscription)
+            .join(Organization, Organization.id == Subscription.organization_id)
+            .join(User, User.id == Organization.owner_user_id)
+            .join(Plan, Plan.id == Subscription.plan_id)
+            .where(
+                Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]),
+                User.status.notin_([UserStatus.deleted, UserStatus.suspended]),
+            )
+        ).scalar_one()
+    )
+
+
 @router.get("/stats", response_model=AdminStatsRead, dependencies=[Depends(require_permission("platform.read"))])
 def admin_stats(db: Session = Depends(get_db)):
     catalog_total = int(db.execute(select(func.count()).select_from(CatalogItem)).scalar_one())
@@ -80,13 +99,7 @@ def admin_stats(db: Session = Depends(get_db)):
             select(func.count()).select_from(CatalogPurchase).where(CatalogPurchase.source != "plan_entitlement")
         ).scalar_one()
     )
-    plan_subscriptions_total = int(
-        db.execute(
-            select(func.count())
-            .select_from(Subscription)
-            .where(Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]))
-        ).scalar_one()
-    )
+    plan_subscriptions_total = _active_plan_subscriptions_count(db)
     requests_pending = int(
         db.execute(
             select(func.count()).select_from(AccessRequest).where(AccessRequest.status == AccessRequestStatus.pending)
@@ -498,13 +511,7 @@ def admin_purchases_summary(db: Session = Depends(get_db)):
             select(func.count()).select_from(CatalogPurchase).where(CatalogPurchase.source != "plan_entitlement")
         ).scalar_one()
     )
-    plan_subscriptions_total = int(
-        db.execute(
-            select(func.count())
-            .select_from(Subscription)
-            .where(Subscription.status.in_([SubscriptionStatus.active, SubscriptionStatus.trialing]))
-        ).scalar_one()
-    )
+    plan_subscriptions_total = _active_plan_subscriptions_count(db)
     return AdminPurchasesSummaryRead(
         purchases_total=purchases_total,
         plan_subscriptions_total=plan_subscriptions_total,

@@ -95,6 +95,8 @@ export type CatalogItem = {
   // Admin-written setup/usage instructions — resource type only, null for
   // everything else.
   gettingStarted?: string | null
+  /** ASE Academy simulator course key (course items only). */
+  academyCourseKey?: string | null
   createdAt: string
   updatedAt: string
 }

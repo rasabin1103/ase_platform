@@ -31,7 +31,7 @@ export function CookieNotice() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/95 px-4 py-4 backdrop-blur-md sm:px-6">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/95 px-4 py-4 sm:px-6">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-2.5 text-sm text-ase-text2">
           <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-ase-muted" strokeWidth={1.75} />

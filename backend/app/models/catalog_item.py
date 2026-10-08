@@ -203,6 +203,15 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # other pillar-specific field on this model.
     getting_started: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # --- ASE Academy (course pillar only) -----------------------------------
+    # Links a "course" catalog item to an interactive course-game of the
+    # ASE Academy simulator (frontend/src/features/academy, see
+    # docs/academy/PLAN.md). The value is the simulator's course key, e.g.
+    # "testing-fundamentals". The catalog item stays the commercial wrapper
+    # (price, purchase, plans, ratings); owning it grants access to the
+    # course's paid missions. Null = a regular, non-interactive course.
+    academy_course_key: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",
         back_populates="catalog_item",

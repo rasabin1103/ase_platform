@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { useI18n } from '../../i18n'
 
 export function AdminAnnouncementsPage() {
@@ -44,7 +44,7 @@ export function AdminAnnouncementsPage() {
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-6 shadow-soft">
           <form
             className="space-y-4"
             onSubmit={(e) => {
@@ -95,7 +95,7 @@ export function AdminAnnouncementsPage() {
           </form>
         </Card>
 
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminAnnouncements.aboutTitle')}</div>
           <p className="mt-3 text-sm text-ase-text2">{t('adminAnnouncements.aboutBody')}</p>
           {lastSent && (

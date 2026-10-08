@@ -15,7 +15,7 @@ from app.modules.catalog_showcase.schemas import (
 )
 from app.modules.consumer_catalog.ratings_repository import CatalogItemRatingsRepository
 from app.modules.consumer_catalog.repository import ConsumerCatalogRepository
-from app.modules.consumer_catalog.schemas import ResourceContentRead
+from app.modules.consumer_catalog.schemas import ResourceContentRead, ReviewListResponse, ReviewRead
 from app.modules.consumer_catalog.service import ConsumerCatalogService
 
 # Anonymous visitors only ever see fully published items — unlike the
@@ -133,6 +133,7 @@ class CatalogShowcaseService:
             benefits=item.benefits_json or [],
             requirements=item.requirements_json or [],
             includedItems=item.included_items_json or [],
+            academyCourseKey=item.academy_course_key,
         )
 
     def list_items(
@@ -193,6 +194,48 @@ class CatalogShowcaseService:
         if detail.hasPreview and not ConsumerCatalogService(self.db).has_public_preview(item):
             detail = detail.model_copy(update={"hasPreview": False})
         return detail
+
+    @staticmethod
+    def _public_reviewer_name(display_name: str | None, first: str | None, last: str | None) -> str:
+        """Anonymous visitors see «Nombre I.» — never the full surname or an
+        email-like display name — so a public review can't be used to
+        identify the reviewer beyond what they'd show in a classroom."""
+        given = (first or "").strip() or ((display_name or "").strip().split(" ")[0] if display_name else "")
+        if "@" in given:
+            given = ""
+        initial = f" {(last or '').strip()[0].upper()}." if (last or "").strip() else ""
+        return f"{given}{initial}".strip() or "Alumno ASE"
+
+    def list_reviews(self, item_type: CatalogItemType, slug: str, *, limit: int, offset: int) -> ReviewListResponse | None:
+        """Public, newest-first reviews of a published item (stars + comment),
+        for the anonymous showcase and the academy course page. Same
+        published-only rule as get_item; reviewer names are shortened."""
+        item = self.db.execute(
+            select(CatalogItem).where(
+                CatalogItem.slug == slug,
+                CatalogItem.type == item_type,
+                CatalogItem.status.in_(SHOWCASE_LIST_STATUSES),
+            )
+        ).scalar_one_or_none()
+        if item is None:
+            return None
+        rows = self.ratings.reviews_for_item(catalog_item_id=item.id, limit=limit, offset=offset)
+        avg, count = self.ratings.review_summaries_for_items(catalog_item_ids=[item.id]).get(item.id, (None, 0))
+        return ReviewListResponse(
+            items=[
+                ReviewRead(
+                    userDisplayName=self._public_reviewer_name(display_name, first, last),
+                    rating=row.rating,
+                    comment=row.comment,
+                    createdAt=row.created_at,
+                )
+                for row, display_name, first, last in rows
+            ],
+            averageRating=avg,
+            reviewCount=count,
+            limit=limit,
+            offset=offset,
+        )
 
     def get_preview_content(self, item_type: CatalogItemType, slug: str) -> ResourceContentRead | None:
         """The actual "muestra" file — a book's repo "preview" subfolder, or

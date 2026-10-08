@@ -49,7 +49,7 @@ export function Sidebar({
             the shrinking outer container (desktop) or slide fully off
             (mobile). */}
         <div className="flex h-full w-80 flex-col">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.10),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,0.035),transparent_42%)]" />
+          <div className="pointer-events-none absolute inset-0" />
           <div className="relative shrink-0 border-b border-white/[0.06] px-5 py-6">
             <div className="flex items-center gap-3">
               <span className="inline-flex shrink-0 items-center rounded-2xl border border-ase-brand/25 bg-ase-brand/10 px-2 py-1.5 shadow-[0_0_24px_rgba(34,211,238,0.14)]">
@@ -57,7 +57,7 @@ export function Sidebar({
               </span>
               <div className="min-w-0 leading-tight">
                 <div className="truncate text-[14px] font-bold tracking-tight text-ase-text">Arce Sabin Engineering</div>
-                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300/80">
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300/80">
                   {t('session.enterpriseDashboard')}
                 </div>
               </div>

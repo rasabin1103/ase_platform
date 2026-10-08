@@ -64,8 +64,22 @@ class AccessRequestRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     reviewed_at: datetime | None
+    admin_notes: str | None = None
+    # Quién lo pide (misma organización: el admin de la org necesita saberlo).
+    requested_by_email: str | None = None
+    requested_by_name: str | None = None
+    escalated_at: datetime | None = None
+    escalation_note: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class AccessRequestEscalate(BaseModel):
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class AccessRequestReject(BaseModel):
+    admin_notes: str | None = Field(default=None, max_length=5000)
 
 
 class AccessRequestListResponse(BaseModel):

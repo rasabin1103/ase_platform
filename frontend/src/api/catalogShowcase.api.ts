@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import type { CatalogItemReviewListResponse } from '../types/catalog.types'
 
 // Mirrors backend/app/modules/catalog_showcase/schemas.py — the public,
 // unauthenticated "browse before you sign up" catalog. Deliberately a
@@ -42,6 +43,8 @@ export type CatalogShowcaseItemDetail = CatalogShowcaseItem & {
   benefits: string[]
   requirements: string[]
   includedItems: string[]
+  /** ASE Academy simulator course key — offers the free demo mission. */
+  academyCourseKey?: string | null
 }
 
 export type CatalogShowcaseListResponse = {
@@ -110,4 +113,15 @@ export async function getCatalogShowcasePreviewContent(type: CatalogItemType, sl
  * Google results, or in a campaign. */
 export function catalogShowcaseItemPath(item: Pick<CatalogShowcaseItem, 'type' | 'slug'>): string {
   return `/catalog/item/${item.type}/${item.slug}`
+}
+
+// Opiniones públicas (estrellas + comentario) de un ítem publicado; el nombre
+// del autor llega abreviado («Lucía G.»). Escribir una opinión sigue en
+// consumer-catalog (requiere sesión y acceso al ítem).
+export async function listCatalogShowcaseReviews(type: CatalogItemType, slug: string, params?: { limit?: number; offset?: number }) {
+  const { data } = await apiClient.get<CatalogItemReviewListResponse>(
+    `/catalog-showcase/${type}/${encodeURIComponent(slug)}/reviews`,
+    { params },
+  )
+  return data
 }

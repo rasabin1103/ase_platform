@@ -29,6 +29,7 @@ export function Pagination({ limit, offset, total, onOffsetChange }: Props) {
         <Button
           size="sm"
           variant="secondary"
+          aria-label={t('private.common.previousPage') as string}
           disabled={!canPrev}
           onClick={() => onOffsetChange(Math.max(0, offset - limit))}
         >
@@ -37,6 +38,7 @@ export function Pagination({ limit, offset, total, onOffsetChange }: Props) {
         <Button
           size="sm"
           variant="secondary"
+          aria-label={t('private.common.nextPage') as string}
           disabled={!canNext}
           onClick={() => onOffsetChange(offset + limit)}
         >

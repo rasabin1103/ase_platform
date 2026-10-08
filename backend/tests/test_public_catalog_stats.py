@@ -32,6 +32,9 @@ def test_catalog_stats_public_no_auth():
     assert platform["status"] in {"operational", "degraded"}
     assert isinstance(platform["db_connected"], bool)
 
+    assert isinstance(body["job_postings_active"], int)
+    assert body["job_postings_active"] >= 0
+
     assert isinstance(body["last_updated"], str)
     assert body["last_updated"]
 

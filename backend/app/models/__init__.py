@@ -15,6 +15,7 @@ from app.models.product import Product
 from app.models.plan_product import PlanProduct
 from app.models.course import Course
 from app.models.course_enrollment import CourseEnrollment
+from app.models.academy_run import AcademyRun
 from app.models.invitation import Invitation
 from app.models.audit_log import AuditLog
 from app.models.access_request import AccessRequest
@@ -59,6 +60,7 @@ from app.models.user_preferences_profile import UserPreferencesProfile
 from app.models.loyalty_reward_grant import LoyaltyRewardGrant
 from app.models.job_posting import JobPosting
 from app.models.ai_analysis_usage_event import AiAnalysisUsageEvent
+from app.models.notification_preference import NotificationPreference
 from app.models.job_posting_semantic_analysis import JobPostingSemanticAnalysis
 
 __all__ = [
@@ -86,6 +88,7 @@ __all__ = [
     "CatalogItem",
     "CatalogFavorite",
     "CatalogPurchase",
+    "AcademyRun",
     "CatalogItemRating",
     "CatalogItemImage",
     "Notification",
@@ -107,6 +110,7 @@ __all__ = [
     "JobPosting",
     "JobPostingSemanticAnalysis",
     "AiAnalysisUsageEvent",
+    "NotificationPreference",
     "PricingPillar",
     "PricingDimensionType",
     "PricingDimensionLevel",

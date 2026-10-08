@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -23,6 +25,22 @@ def _validate_absolute_url(value: str | None) -> str | None:
     if not (trimmed.startswith("http://") or trimmed.startswith("https://")):
         raise ValueError("Must be a full URL starting with http:// or https://")
     return trimmed
+
+
+_ACADEMY_COURSE_KEY_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def _normalize_academy_course_key(value: str | None) -> str | None:
+    """Empty means "not linked". Otherwise a kebab-case simulator course key
+    (e.g. "testing-fundamentals") — the simulator's own content registry is
+    the source of truth for which keys exist, so only the format is checked
+    here."""
+    cleaned = (value or "").strip().lower()
+    if not cleaned:
+        return None
+    if not _ACADEMY_COURSE_KEY_RE.match(cleaned):
+        raise ValueError("academy_course_key must be kebab-case (e.g. testing-fundamentals)")
+    return cleaned
 
 
 class DimensionSelectionInput(BaseModel):
@@ -161,6 +179,14 @@ class CatalogItemAdminBase(BaseModel):
     # --- "How to actually use this" — resource-only in the admin UI, stored
     # generically like current_version/changelog above.
     getting_started: str | None = None
+    # --- ASE Academy simulator course key — course-only in the admin UI
+    # (see CatalogItem.academy_course_key).
+    academy_course_key: str | None = Field(default=None, max_length=80)
+
+    @field_validator("academy_course_key")
+    @classmethod
+    def _validate_academy_course_key(cls, value: str | None) -> str | None:
+        return _normalize_academy_course_key(value)
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -218,11 +244,17 @@ class CatalogItemAdminUpdate(BaseModel):
     license_support_included: bool | None = None
     license_refund_policy: str | None = None
     getting_started: str | None = None
+    academy_course_key: str | None = Field(default=None, max_length=80)
 
     @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod
     def _validate_link_fields(cls, value: str | None) -> str | None:
         return _validate_absolute_url(value)
+
+    @field_validator("academy_course_key")
+    @classmethod
+    def _validate_academy_course_key(cls, value: str | None) -> str | None:
+        return _normalize_academy_course_key(value)
 
 
 class CatalogItemImageRead(BaseModel):

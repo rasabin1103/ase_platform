@@ -30,6 +30,10 @@ class InvoiceListResponse(BaseModel):
 
 class CheckoutSessionCreate(BaseModel):
     plan_id: int
+    # In-app path (e.g. "/pricing") to send the user back to if they cancel
+    # on Stripe's page. Optional; anything that isn't a plain same-site path
+    # is ignored by BillingService (see _safe_return_path).
+    return_path: str | None = None
 
 
 class CheckoutSessionResponse(BaseModel):

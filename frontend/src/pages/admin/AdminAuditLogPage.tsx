@@ -11,7 +11,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Pagination } from '../../components/ui/Pagination'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import { downloadCsv } from '../../utils/csv'
@@ -149,13 +149,13 @@ export function AdminAuditLogPage() {
       </Card>
 
       {query.isLoading ? (
-        <Skeleton className="h-64 rounded-[2rem]" />
+        <Skeleton className="h-64 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminAuditLog.loadError')} />
       ) : items.length === 0 ? (
         <EmptyState title={t('adminAuditLog.empty')} description={t('adminAuditLog.emptyHint')} />
       ) : (
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-0 shadow-soft">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-0 shadow-soft">
           <Table className="table-fixed">
             <THead>
               <TR>

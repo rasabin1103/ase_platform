@@ -15,7 +15,7 @@ export function AuthVisualPanel({
 }) {
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute -inset-10 rounded-[44px] bg-gradient-to-tr from-ase-primary/14 via-ase-accent/10 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -inset-10 rounded-[44px] blur-3xl" />
       <div className="relative">
         <Badge variant="info" className="w-fit">
           {badge}
@@ -27,7 +27,7 @@ export function AuthVisualPanel({
 
         <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
           {bullets.map((b) => (
-            <Card key={b} className="rounded-3xl border-white/10 bg-white/[0.03] p-5 backdrop-blur" interactive>
+            <Card key={b} className="rounded-3xl border-white/10 bg-white/[0.03] p-5" interactive>
               <div className="flex items-start gap-3">
                 <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-ase-primary shadow-[0_0_18px_rgba(56,189,248,0.30)]" />
                 <div className="text-sm font-semibold text-ase-text">{b}</div>
@@ -40,4 +40,3 @@ export function AuthVisualPanel({
     </div>
   )
 }
-

@@ -3,81 +3,30 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
-import { createPlan, deletePlan, getTranslationStatus, listPlans, updatePlan } from '../api/plans.api'
-import type { PlanUpdateRequest } from '../types/plan.types'
 import { listAdminCatalog } from '../api/catalogAdmin.api'
+import { createPlan, deletePlan, getTranslationStatus, listPlans, updatePlan } from '../api/plans.api'
+import { ADMIN_HERO_SECTION, ADMIN_HERO_SUBTITLE, ADMIN_HERO_TITLE } from '../components/admin/premium/adminHeroStyles'
+import { AdminPricingLinks } from '../components/admin/premium/AdminPricingLinks'
+import { CatalogItemDiscountPicker } from '../components/admin/premium/CatalogItemDiscountPicker'
+import { CatalogItemPicker } from '../components/admin/premium/CatalogItemPicker'
+import { AdminEyebrow, AdminHeroHalo } from '../components/admin/premium/PremiumHero'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { cn } from '../components/ui/cn'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Input'
-import { Select } from '../components/ui/Select'
-import { Button } from '../components/ui/Button'
-import { Skeleton } from '../components/ui/Skeleton'
-import { Badge } from '../components/ui/Badge'
-import { Table, TBody, TD, THead, TH, TR } from '../components/ui/Table'
 import { Modal } from '../components/ui/Modal'
-import { CatalogItemPicker } from '../components/admin/premium/CatalogItemPicker'
-import { CatalogItemDiscountPicker } from '../components/admin/premium/CatalogItemDiscountPicker'
-import type { BillingCycle, Plan, PlanCatalogItemDiscountInput, PlanStatus } from '../types/plan.types'
-import { useI18n } from '../i18n'
-import { cn } from '../components/ui/cn'
+import { Select } from '../components/ui/Select'
+import { Skeleton } from '../components/ui/Skeleton'
 import { Switch } from '../components/ui/Switch'
+import { Table, TBody, TD, TH, THead, TR } from '../components/ui/Table'
 import { Textarea } from '../components/ui/Textarea'
+import { useI18n } from '../i18n'
+import type { BillingCycle, Plan, PlanCatalogItemDiscountInput, PlanStatus, PlanUpdateRequest } from '../types/plan.types'
+import { PricingCard, StatCard } from './PlansPage.parts'
+import { billingBadge, type CreateValues, type EditValues, fmtMoney, statusBadge } from './PlansPage.utils'
 
-type CreateValues = {
-  code: string
-  name: string
-  short_description?: string | ''
-  description?: string | ''
-  billing_cycle: BillingCycle
-  price?: string | ''
-  currency: string
-  display_order?: string | ''
-  is_recommended: boolean
-  status: PlanStatus
-  cta_label?: string | ''
-  stripe_price_id?: string | ''
-  name_en?: string | ''
-  short_description_en?: string | ''
-  description_en?: string | ''
-  cta_label_en?: string | ''
-  monthly_download_limit?: string | ''
-  monthly_ai_analysis_limit?: string | ''
-  loyalty_bonus_downloads?: string | ''
-  loyalty_bonus_interval_months?: string | ''
-}
-
-type EditValues = {
-  code?: string | ''
-  name?: string | ''
-  short_description?: string | ''
-  description?: string | ''
-  billing_cycle?: BillingCycle
-  price?: string | ''
-  currency?: string | ''
-  display_order?: string | ''
-  is_recommended?: boolean
-  status?: PlanStatus
-  cta_label?: string | ''
-  stripe_price_id?: string | ''
-  name_en?: string | ''
-  short_description_en?: string | ''
-  description_en?: string | ''
-  cta_label_en?: string | ''
-  monthly_download_limit?: string | ''
-  monthly_ai_analysis_limit?: string | ''
-  loyalty_bonus_downloads?: string | ''
-  loyalty_bonus_interval_months?: string | ''
-  clear_monthly_download_limit?: boolean
-  clear_monthly_ai_analysis_limit?: boolean
-  clear_loyalty_bonus?: boolean
-}
-
-function fmtMoney(price: string | null, currency: string) {
-  if (!price) return null
-  const n = Number(price)
-  if (Number.isNaN(n)) return `${price} ${currency}`
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(n)
-}
 
 export function PlansPage() {
   const queryClient = useQueryClient()
@@ -346,18 +295,14 @@ export function PlansPage() {
 
   return (
     <div className="space-y-8 pb-16">
-      <section className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.08] bg-[radial-gradient(circle_at_15%_0%,rgba(245,158,11,0.18),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(34,211,238,0.13),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.02))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] md:p-8">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:38px_38px]" />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+      <section className={ADMIN_HERO_SECTION}>
+        <AdminHeroHalo accent="amber" />
 
         <div className="relative z-[1] flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <Badge variant="warning" className="mb-5 border-amber-300/30 bg-amber-300/10 text-amber-100">
-              {t('plansPage.premium.badge')}
-            </Badge>
-            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-ase-text md:text-5xl">{t('plansPage.title')}</h1>
-            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ase-text2 md:text-base">{t('plansPage.subtitle')}</p>
+            <AdminEyebrow accent="amber" className="mb-4">{t('plansPage.premium.badge')}</AdminEyebrow>
+            <h1 className={ADMIN_HERO_TITLE}>{t('plansPage.title')}</h1>
+            <p className={ADMIN_HERO_SUBTITLE}>{t('plansPage.subtitle')}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-ase-text2">
                 {t('plansPage.premium.context')}
@@ -385,6 +330,8 @@ export function PlansPage() {
         </div>
       </section>
 
+      <AdminPricingLinks current="plans" />
+
       {translationStatusQuery.data?.enabled === false ? (
         <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-5 py-4 text-sm text-amber-100">
           <span className="font-semibold">{t('plansPage.translationWarning.title')}</span>{' '}
@@ -401,7 +348,7 @@ export function PlansPage() {
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {previewPlans.length === 0 ? (
-            <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-8 text-center backdrop-blur-md" interactive>
+            <Card className="rounded-3xl border-white/10 bg-ase-surface/40 p-8 text-center" interactive>
               <div className="text-sm font-semibold text-ase-text">{t('plansPage.empty.title')}</div>
               <div className="mt-1 text-sm text-ase-text2">{t('plansPage.empty.subtitle')}</div>
             </Card>
@@ -412,7 +359,7 @@ export function PlansPage() {
       </section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md lg:col-span-2" interactive>
+        <Card className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/40 p-6 lg:col-span-2" interactive>
           <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_20%_15%,rgba(56,189,248,0.10),transparent_52%)]" />
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -558,8 +505,8 @@ export function PlansPage() {
           </div>
         </Card>
 
-        <div id="plans-create-panel" className={cn(createFocus && 'ring-2 ring-ase-primary/40 rounded-[2rem]')}>
-          <Card className="relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md" interactive>
+        <div id="plans-create-panel" className={cn(createFocus && 'ring-2 ring-ase-primary/40 rounded-3xl')}>
+          <Card className="relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface/40 p-6" interactive>
             <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(circle_at_20%_15%,rgba(34,211,238,0.10),transparent_52%)]" />
             <div className="relative z-[1] text-sm font-semibold text-ase-text">{t('plansPage.create.title')}</div>
             <div className="relative z-[1] mt-1 text-sm text-ase-text2">{t('plansPage.create.subtitle')}</div>
@@ -1120,115 +1067,3 @@ export function PlansPage() {
     </div>
   )
 }
-
-function billingBadge(t: (k: string) => unknown, cycle: BillingCycle) {
-  const label =
-    cycle === 'monthly'
-      ? (t('plansPage.badges.monthly') as string)
-      : cycle === 'yearly'
-        ? (t('plansPage.badges.yearly') as string)
-        : (t('plansPage.badges.oneTime') as string)
-  return (
-    <span className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-ase-text2">
-      {label}
-    </span>
-  )
-}
-
-function statusBadge(t: (k: string) => unknown, status: Plan['status']) {
-  if (status === 'coming_soon') {
-    return <Badge variant="info">{t('plansPage.status.coming_soon') as string}</Badge>
-  }
-  if (status === 'inactive') {
-    return <Badge variant="warning">{t('plansPage.status.inactive') as string}</Badge>
-  }
-  return <Badge variant="success">{t('plansPage.status.active') as string}</Badge>
-}
-
-function PricingCard({ plan }: { plan: Plan }) {
-  const { t } = useI18n()
-  const price = fmtMoney(plan.price, plan.currency)
-  return (
-    <Card
-      interactive
-      className={cn(
-        'relative overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/40 p-6 backdrop-blur-md',
-        plan.is_recommended && 'border-ase-primary/25 shadow-[0_0_0_1px_rgba(56,189,248,0.10),0_18px_70px_rgba(0,0,0,0.55)]',
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100" />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-lg font-extrabold tracking-tight text-ase-text" title={plan.name}>
-            {plan.name}
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            {billingBadge(t, plan.billing_cycle)}
-            {plan.is_recommended ? <Badge variant="info">{t('plansPage.badges.recommended')}</Badge> : null}
-            {statusBadge(t, plan.status)}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-extrabold tracking-tight text-ase-text">{price ?? (t('plansPage.price.custom') as string)}</div>
-          <div className="mt-1 text-xs text-ase-muted">{plan.currency}</div>
-        </div>
-      </div>
-      {plan.short_description || plan.description ? (
-        <div className="mt-4 line-clamp-2 text-sm text-ase-text2" title={plan.short_description ?? plan.description ?? ''}>
-          {plan.short_description ?? plan.description}
-        </div>
-      ) : null}
-      {(plan.included_catalog_items?.length ?? 0) > 0 ? (
-        <ul className="mt-4 space-y-2 text-sm text-ase-text2">
-          {(plan.included_catalog_items ?? []).slice(0, 4).map((ci) => (
-            <li key={ci.id} className="flex items-start gap-2">
-              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-ase-accent/80" />
-              <span className="line-clamp-1" title={ci.title}>
-                {ci.title}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (plan.features?.length ?? 0) > 0 ? (
-        // Legacy fallback — only reached for plans created before the
-        // catalog-item picker existed and never re-saved since.
-        <ul className="mt-4 space-y-2 text-sm text-ase-text2">
-          {(plan.features ?? []).slice(0, 4).map((f) => (
-            <li key={f.id} className="flex items-start gap-2">
-              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-ase-accent/80" />
-              <span className="line-clamp-1" title={f.text}>
-                {f.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <div className="mt-5">
-        <Button className="w-full" variant={plan.is_recommended ? 'primary' : 'secondary'}>
-          {plan.cta_label || (plan.is_recommended ? (t('plansPage.badges.recommended') as string) : plan.name)}
-        </Button>
-      </div>
-    </Card>
-  )
-}
-
-function StatCard({ label, value, icon, horizontal }: { label: string; value: string; icon: string; horizontal?: boolean }) {
-  return (
-    <Card className="relative overflow-hidden rounded-[1.5rem] border-white/[0.08] bg-white/[0.045] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm" interactive>
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-300/80 to-cyan-300/60" />
-      <div className={cn('flex items-start justify-between gap-3', horizontal && 'items-center')}>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-300/10 text-sm text-amber-100">
-          {icon}
-        </span>
-        <div className={cn('min-w-0 flex-1', horizontal ? 'flex items-center justify-between gap-4' : '')}>
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ase-muted">{label}</div>
-            <div className="mt-1 truncate text-xl font-extrabold tracking-tight text-ase-text">{value}</div>
-          </div>
-          <div className="mt-2 h-2 w-2 rounded-full bg-ase-primary shadow-[0_0_18px_rgba(56,189,248,0.35)]" />
-        </div>
-      </div>
-    </Card>
-  )
-}
-

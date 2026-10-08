@@ -2,71 +2,29 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { deleteMyAccount, updateProfile, uploadAvatar, replaceMyLinks } from '../../api/auth.api'
+import { deleteMyAccount, replaceMyLinks, updateProfile, uploadAvatar } from '../../api/auth.api'
 import { cancelSubscription, createBillingPortalSession, resumeSubscription } from '../../api/billing.api'
-import { getMyPlanSummary, type PlanSummary } from '../../api/consumerCatalog.api'
+import { getMyPlanSummary } from '../../api/consumerCatalog.api'
 import { clearProfileLinksDraft, getProfileLinksDraft, setProfileLinksDraft } from '../../auth/auth.store'
-import type { UserLink } from '../../types/auth.types'
-import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
-import { Card } from '../../components/ui/Card'
-import { Input } from '../../components/ui/Input'
-import { Button, ButtonLink } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
-import { Modal } from '../../components/ui/Modal'
-import { Switch } from '../../components/ui/Switch'
 import { AccessRequestModal } from '../../components/access-requests/AccessRequestModal'
+import { ImageUploadField } from '../../components/admin/premium/ImageUploadField'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { InvoiceHistoryCard } from '../../components/billing/InvoiceHistoryCard'
 import { TwoFactorPanel } from '../../components/profile/TwoFactorPanel'
 import { localizedPlanText } from '../../components/public/pricingFromPlans'
+import { Badge } from '../../components/ui/Badge'
+import { Button, ButtonLink } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { Input } from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
+import { Switch } from '../../components/ui/Switch'
 import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
 import { useRbac } from '../../rbac/useRbac'
+import type { UserLink } from '../../types/auth.types'
 import { avatarDisplayPath } from '../../utils/mediaUrls'
-
-type ProfileForm = {
-  first_name: string
-  last_name: string
-  display_name: string
-  phone_e164: string
-}
-
-function fmtDate(iso: string | null | undefined, language: string): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(d)
-}
-
-/** "1 año 3 meses" / "8 meses" style tenure label from an account creation
- * date — kept as a small local helper (language-branched, not a full i18n
- * key set) since it's a single presentational string, not reusable copy. */
-function tenureLabel(createdAt: string | null | undefined, language: string): string | null {
-  if (!createdAt) return null
-  const start = new Date(createdAt)
-  if (Number.isNaN(start.getTime())) return null
-  const now = new Date()
-  let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-  if (now.getDate() < start.getDate()) months -= 1
-  if (months < 0) months = 0
-
-  const years = Math.floor(months / 12)
-  const remMonths = months % 12
-  const isEn = language === 'en'
-
-  if (years === 0) {
-    const n = months < 1 ? 0 : months
-    return isEn ? `${n} month${n === 1 ? '' : 's'}` : `${n} mes${n === 1 ? '' : 'es'}`
-  }
-  const yearPart = isEn ? `${years} year${years === 1 ? '' : 's'}` : `${years} año${years === 1 ? '' : 's'}`
-  if (remMonths === 0) return yearPart
-  const monthPart = isEn ? `${remMonths} month${remMonths === 1 ? '' : 's'}` : `${remMonths} mes${remMonths === 1 ? '' : 'es'}`
-  return `${yearPart} ${monthPart}`
-}
+import { PlanSummaryCard, Row } from './ProfilePage.parts'
+import { fmtDate, tenureLabel, type ProfileForm } from './ProfilePage.utils'
 
 export function ProfilePage() {
   const { t, language } = useI18n()
@@ -101,8 +59,7 @@ export function ProfilePage() {
   const isIndependent = primaryRole === 'independent_user' && !isSuperuser
   const canCreate = Boolean(currentUser?.can_create_content)
   const creatorStatus = currentUser?.creator_status ?? 'none'
-  const showCreatorCta =
-    isIndependent && !canCreate && creatorStatus !== 'pending' && creatorStatus !== 'approved'
+  const showCreatorCta = isIndependent && !canCreate && creatorStatus !== 'pending' && creatorStatus !== 'approved'
 
   const avatarCacheKey = useMemo(
     () => `${currentUser?.updated_at ?? ''}-${avatarRevision}-${currentUser?.has_avatar ? '1' : '0'}`,
@@ -129,8 +86,7 @@ export function ProfilePage() {
     },
     onError: (err: unknown) => {
       const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        t('profilePage.saveError')
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('profilePage.saveError')
       setSaveError(typeof msg === 'string' ? msg : t('profilePage.saveError'))
     },
   })
@@ -287,17 +243,19 @@ export function ProfilePage() {
       />
 
       {showCreatorCta ? (
-        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-4xl">
-              <h2 className="text-lg font-semibold text-ase-text sm:text-xl">
-                {t('requestsPage.creatorCtaTitle')}
-              </h2>
+              <h2 className="text-lg font-semibold text-ase-text sm:text-xl">{t('requestsPage.creatorCtaTitle')}</h2>
               <p className="mt-2 text-sm leading-relaxed text-ase-text2 sm:text-base">
                 {t('requestsPage.creatorCtaDescription')}
               </p>
             </div>
-            <Button type="button" className="shrink-0 self-start lg:self-center" onClick={() => setCreatorModalOpen(true)}>
+            <Button
+              type="button"
+              className="shrink-0 self-start lg:self-center"
+              onClick={() => setCreatorModalOpen(true)}
+            >
               {t('requestsPage.creatorCtaButton')}
             </Button>
           </div>
@@ -305,14 +263,14 @@ export function ProfilePage() {
       ) : null}
 
       {isIndependent && canCreate ? (
-        <Card className="w-full border-cyan-300/20 bg-cyan-300/5 p-6 sm:p-8">
+        <Card className="w-full rounded-3xl border-ase-brand/25 bg-ase-brand/[0.06] p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.createContentSection')}</h2>
           <p className="mt-2 text-sm text-ase-text2">{t('requestsPage.createContentHint')}</p>
         </Card>
       ) : null}
 
       <div className="w-full space-y-6">
-        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.billing.title')}</h2>
           <p className="mt-1 text-sm text-ase-text2">{t('profilePage.billing.subtitle')}</p>
 
@@ -365,7 +323,9 @@ export function ProfilePage() {
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
               {currentUser?.plan_code ? (
                 <Button type="button" onClick={() => billingPortalMut.mutate()} disabled={billingPortalMut.isPending}>
-                  {billingPortalMut.isPending ? t('profilePage.billing.opening') : t('profilePage.billing.manageButton')}
+                  {billingPortalMut.isPending
+                    ? t('profilePage.billing.opening')
+                    : t('profilePage.billing.manageButton')}
                 </Button>
               ) : (
                 <ButtonLink to="/pricing">{t('profilePage.billing.viewPlans')}</ButtonLink>
@@ -407,16 +367,17 @@ export function ProfilePage() {
                 {t('profilePage.billing.cancelModalKeep')}
               </Button>
               <Button variant="danger" disabled={cancelMut.isPending} onClick={() => cancelMut.mutate()}>
-                {cancelMut.isPending ? t('profilePage.billing.cancelling') : t('profilePage.billing.cancelModalConfirm')}
+                {cancelMut.isPending
+                  ? t('profilePage.billing.cancelling')
+                  : t('profilePage.billing.cancelModalConfirm')}
               </Button>
             </div>
           }
         >
           <div className="space-y-2">
             <p className="text-sm text-ase-text">
-              {t('profilePage.billing.cancelModalBodyPrefix')}{' '}
-              {fmtDate(currentUser?.plan_current_period_end, language)}.{' '}
-              {t('profilePage.billing.cancelModalBodySuffix')}
+              {t('profilePage.billing.cancelModalBodyPrefix')} {fmtDate(currentUser?.plan_current_period_end, language)}
+              . {t('profilePage.billing.cancelModalBodySuffix')}
             </p>
             {cancelError ? <p className="text-sm text-ase-error">{cancelError}</p> : null}
           </div>
@@ -424,11 +385,9 @@ export function ProfilePage() {
 
         {currentUser?.plan_code ? <InvoiceHistoryCard /> : null}
 
-        {planSummaryQuery.data?.hasActivePlan ? (
-          <PlanSummaryCard summary={planSummaryQuery.data} t={t} />
-        ) : null}
+        {planSummaryQuery.data?.hasActivePlan ? <PlanSummaryCard summary={planSummaryQuery.data} t={t} /> : null}
 
-        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.newsletter.title')}</h2>
           <p className="mt-1 text-sm text-ase-text2">{t('profilePage.newsletter.subtitle')}</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -438,12 +397,14 @@ export function ProfilePage() {
               disabled={newsletterMut.isPending}
               label={t('profilePage.newsletter.toggleLabel') as string}
             />
-            {newsletterSaved ? <span className="text-sm text-emerald-300">{t('profilePage.newsletter.saved')}</span> : null}
+            {newsletterSaved ? (
+              <span className="text-sm text-emerald-300">{t('profilePage.newsletter.saved')}</span>
+            ) : null}
           </div>
           {newsletterError ? <p className="mt-2 text-sm text-ase-error">{newsletterError}</p> : null}
         </Card>
 
-        <Card className="w-full space-y-6 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full space-y-6 rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
           <ImageUploadField
             label={t('profilePage.photo')}
             hint={t('profilePage.photoHint')}
@@ -453,14 +414,12 @@ export function ProfilePage() {
             onFileSelect={(file) => avatarMut.mutate(file)}
             uploading={avatarMut.isPending}
           />
-          {avatarMut.isError ? (
-            <p className="text-sm text-ase-error">{t('profilePage.uploadError')}</p>
-          ) : null}
+          {avatarMut.isError ? <p className="text-sm text-ase-error">{t('profilePage.uploadError')}</p> : null}
           {avatarSaved ? <p className="text-sm text-cyan-300">{t('profilePage.photoSaved')}</p> : null}
         </Card>
 
         <form className="w-full space-y-6" onSubmit={onSave}>
-          <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
             <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.accountSection')}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="sm:col-span-2 lg:col-span-3">
@@ -487,7 +446,7 @@ export function ProfilePage() {
             </div>
           </Card>
 
-          <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+          <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
             <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.securitySection')}</h2>
             <div className="mt-4 grid gap-6 lg:grid-cols-2">
               <div>
@@ -502,6 +461,7 @@ export function ProfilePage() {
                 <Input
                   {...form.register('phone_e164')}
                   type="tel"
+                  aria-label={t('profilePage.phone') as string}
                   placeholder={t('profilePage.phonePlaceholder')}
                   className="rounded-xl border-white/10 bg-ase-bg2/50"
                 />
@@ -524,7 +484,7 @@ export function ProfilePage() {
           </div>
         </form>
 
-        <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('orgMembership.profileLinks.title')}</h2>
           <p className="mt-1 text-sm text-ase-text2">{t('orgMembership.profileLinks.subtitle')}</p>
 
@@ -541,6 +501,7 @@ export function ProfilePage() {
                       next[i] = { ...next[i], label: e.target.value }
                       setLinks(next)
                     }}
+                    aria-label={t('orgMembership.profileLinks.labelPlaceholder') as string}
                     placeholder={t('orgMembership.profileLinks.labelPlaceholder') as string}
                     className="rounded-xl border-white/10 bg-ase-bg2/50 sm:w-48"
                   />
@@ -551,6 +512,7 @@ export function ProfilePage() {
                       next[i] = { ...next[i], url: e.target.value }
                       setLinks(next)
                     }}
+                    aria-label={t('orgMembership.profileLinks.urlPlaceholder') as string}
                     placeholder={t('orgMembership.profileLinks.urlPlaceholder') as string}
                     className="rounded-xl border-white/10 bg-ase-bg2/50 sm:flex-1"
                   />
@@ -568,11 +530,7 @@ export function ProfilePage() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setLinks([...links, { label: '', url: '' }])}
-            >
+            <Button type="button" variant="secondary" onClick={() => setLinks([...links, { label: '', url: '' }])}>
               {t('orgMembership.profileLinks.addButton')}
             </Button>
             <Button
@@ -580,20 +538,20 @@ export function ProfilePage() {
               disabled={linksMut.isPending}
               onClick={() =>
                 linksMut.mutate(
-                  links
-                    .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
-                    .filter((l) => l.label && l.url),
+                  links.map((l) => ({ label: l.label.trim(), url: l.url.trim() })).filter((l) => l.label && l.url),
                 )
               }
             >
               {t('orgMembership.profileLinks.save')}
             </Button>
-            {linksSaved ? <span className="text-sm text-emerald-300">{t('orgMembership.profileLinks.saved')}</span> : null}
+            {linksSaved ? (
+              <span className="text-sm text-emerald-300">{t('orgMembership.profileLinks.saved')}</span>
+            ) : null}
           </div>
           {linksError ? <p className="mt-2 text-sm text-ase-error">{linksError}</p> : null}
         </Card>
 
-        <Card className="w-full rounded-[2rem] border-ase-error/30 bg-ase-error/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
+        <Card className="w-full rounded-3xl border-ase-error/30 bg-ase-error/[0.04] p-6 sm:p-8">
           <h2 className="text-lg font-semibold text-ase-text">{t('profilePage.dangerZone.title')}</h2>
           <p className="mt-1 max-w-2xl text-sm text-ase-text2">{t('profilePage.dangerZone.subtitle')}</p>
           <Button
@@ -668,85 +626,6 @@ export function ProfilePage() {
         modalTitle={t('requestsPage.creatorModalTitle')}
         modalDescription={t('requestsPage.creatorCtaDescription')}
       />
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
-      <span className="text-sm text-ase-muted">{label}</span>
-      <span className="text-sm font-medium text-ase-text">{value}</span>
-    </div>
-  )
-}
-
-/** "Your plan" summary card — downloads used/remaining this month, the best
- * discount available on items not included in the plan, and a countdown to
- * the next loyalty-bonus month. All figures come straight from
- * GET /consumer-catalog/me/plan-summary (see app.modules.plans.quota) —
- * nothing here is estimated or invented client-side. */
-function PlanSummaryCard({ summary, t }: { summary: PlanSummary; t: (k: string) => unknown }) {
-  const title = String(t('profilePage.planSummary.title')).replace('{{planName}}', summary.planName ?? '')
-  const downloadsValue = summary.unlimitedDownloads
-    ? (t('profilePage.planSummary.unlimitedDownloads') as string)
-    : String(t('profilePage.planSummary.downloadsOf'))
-        .replace('{{used}}', String(summary.downloadsUsed ?? 0))
-        .replace('{{limit}}', String(summary.monthlyDownloadLimit ?? 0))
-  const hasDiscount = summary.discountItemCount > 0 && summary.maxDiscountPercent != null
-  const hasLoyalty = Boolean(summary.loyaltyBonusDownloads && summary.loyaltyBonusIntervalMonths)
-
-  return (
-    <Card className="w-full rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur sm:p-8">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-semibold text-ase-text">{title}</h2>
-        <Badge variant="success">{t('profilePage.planSummary.active') as string}</Badge>
-      </div>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryStat label={t('profilePage.planSummary.monthlyDownloads') as string} value={downloadsValue} />
-        {hasDiscount ? (
-          <SummaryStat
-            label={t('profilePage.planSummary.purchaseDiscount') as string}
-            value={`${summary.maxDiscountPercent}%`}
-            hint={String(t('profilePage.planSummary.discountOnItems')).replace(
-              '{{count}}',
-              String(summary.discountItemCount),
-            )}
-          />
-        ) : null}
-        {hasLoyalty ? (
-          <SummaryStat
-            label={t('profilePage.planSummary.loyaltyBonus') as string}
-            value={String(t('profilePage.planSummary.loyaltyBonusValue'))
-              .replace('{{amount}}', String(summary.loyaltyBonusDownloads))
-              .replace('{{interval}}', String(summary.loyaltyBonusIntervalMonths))}
-          />
-        ) : null}
-        {hasLoyalty && summary.nextRewardInDays != null ? (
-          <SummaryStat
-            label={t('profilePage.planSummary.nextReward') as string}
-            value={
-              summary.nextRewardInDays <= 0
-                ? (t('profilePage.planSummary.nextRewardToday') as string)
-                : String(t('profilePage.planSummary.nextRewardInDays')).replace(
-                    '{{days}}',
-                    String(summary.nextRewardInDays),
-                  )
-            }
-          />
-        ) : null}
-      </div>
-    </Card>
-  )
-}
-
-function SummaryStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-ase-muted">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-ase-text">{value}</div>
-      {hint ? <div className="mt-0.5 text-xs text-ase-text2">{hint}</div> : null}
     </div>
   )
 }

@@ -9,7 +9,7 @@ export const aboutPageEn = {
     badge: 'About ASE',
     title: 'Built by someone who has been in the trenches.',
     subtitle:
-      'Roberto Arce Sabín is a QA Strategy Lead with over 10 years of experience in high-criticality enterprise environments — digital banking (Banco Santander), aeronautics (Iberia) and retail (Inditex). ASE was born from detecting the same pattern over and over: talented teams without the tools, training or frameworks to deliver real quality.',
+      'Roberto Arce Sabín is a QA Strategy Lead with over 10 years of experience in high-criticality enterprise environments — digital banking, aviation, retail and security. ASE was born from detecting the same pattern over and over: talented teams without the tools, training or frameworks to deliver real quality.',
     primaryCta: 'See what ASE includes',
     secondaryCta: 'Talk to Roberto',
     cards: {
@@ -38,8 +38,7 @@ export const aboutPageEn = {
   why: {
     badge: 'Origin',
     title: 'Why does ASE exist?',
-    body:
-      'After more than a decade leading QA strategies at Santander, Iberia, Inditex and Securitas Direct, I detected the same pattern repeating constantly: fragile systems, hard-to-maintain automations, accumulated technical debt and manual processes that limited growth. ASE exists to change that — giving access to the resources, training and tools I would have wanted from the start.',
+    body: 'After more than a decade leading QA strategies in digital banking, aviation, retail and security, I detected the same pattern repeating constantly: fragile systems, hard-to-maintain automations, accumulated technical debt and manual processes that limited growth. ASE exists to change that — giving access to the resources, training and tools I would have wanted from the start.',
     timeline: {
       title: 'Engineering signals',
       items: [
@@ -56,7 +55,7 @@ export const aboutPageEn = {
       m1: {
         value: '−60%',
         label: 'Critical errors in production',
-        sub: 'Banco Santander',
+        sub: 'Digital banking',
       },
       m2: {
         value: '25→90%',
@@ -148,8 +147,7 @@ export const aboutPageEn = {
   },
   closing: {
     title: 'ASE doesn’t aim to build disposable software.',
-    body:
-      'We build platforms companies can still rely on in 5 or 10 years.\n\nBecause real engineering isn’t only about shipping fast.\n\nIt’s about building correctly.',
+    body: 'We build platforms companies can still rely on in 5 or 10 years.\n\nBecause real engineering isn’t only about shipping fast.\n\nIt’s about building correctly.',
     ctas: {
       platform: 'Explore platform',
       talk: 'Talk to ASE',
@@ -162,7 +160,7 @@ export const aboutPageEs = {
     badge: 'Sobre ASE',
     title: 'Construido por alguien que ha estado en las trincheras.',
     subtitle:
-      'Roberto Arce Sabín es QA Strategy Lead con más de 10 años de experiencia en entornos enterprise de alta criticidad — banca digital (Banco Santander), aeronáutico (Iberia) y retail (Inditex). ASE nació de detectar el mismo patrón una y otra vez: equipos con talento pero sin las herramientas, la formación ni los frameworks para entregar con calidad real.',
+      'Roberto Arce Sabín es QA Strategy Lead con más de 10 años de experiencia en entornos enterprise de alta criticidad — banca digital, aeronáutica, retail y seguridad. ASE nació de detectar el mismo patrón una y otra vez: equipos con talento pero sin las herramientas, la formación ni los frameworks para entregar con calidad real.',
     primaryCta: 'Ver qué incluye ASE',
     secondaryCta: 'Hablar con Roberto',
     cards: {
@@ -191,8 +189,7 @@ export const aboutPageEs = {
   why: {
     badge: 'Origen',
     title: '¿Por qué existe ASE?',
-    body:
-      'Después de más de una década liderando estrategias QA en Santander, Iberia, Inditex y Securitas Direct, detecté el mismo patrón repetirse constantemente: sistemas frágiles, automatizaciones difíciles de mantener, deuda técnica acumulada y procesos manuales que limitaban el crecimiento. ASE existe para cambiar eso — dando acceso a los recursos, la formación y las herramientas que yo habría querido tener desde el principio.',
+    body: 'Después de más de una década liderando estrategias QA en banca digital, aeronáutica, retail y seguridad, detecté el mismo patrón repetirse constantemente: sistemas frágiles, automatizaciones difíciles de mantener, deuda técnica acumulada y procesos manuales que limitaban el crecimiento. ASE existe para cambiar eso — dando acceso a los recursos, la formación y las herramientas que yo habría querido tener desde el principio.',
     timeline: {
       title: 'Señales de ingeniería',
       items: [
@@ -209,7 +206,7 @@ export const aboutPageEs = {
       m1: {
         value: '−60%',
         label: 'Errores críticos en producción',
-        sub: 'Banco Santander',
+        sub: 'Banca digital',
       },
       m2: {
         value: '25→90%',
@@ -301,12 +298,10 @@ export const aboutPageEs = {
   },
   closing: {
     title: 'ASE no busca construir software desechable.',
-    body:
-      'Construimos plataformas que las empresas puedan seguir utilizando dentro de 5 o 10 años.\n\nPorque la verdadera ingeniería no consiste solo en entregar rápido.\n\nConsiste en construir correctamente.',
+    body: 'Construimos plataformas que las empresas puedan seguir utilizando dentro de 5 o 10 años.\n\nPorque la verdadera ingeniería no consiste solo en entregar rápido.\n\nConsiste en construir correctamente.',
     ctas: {
       platform: 'Explorar plataforma',
       talk: 'Hablar con ASE',
     },
   },
 } as const
-

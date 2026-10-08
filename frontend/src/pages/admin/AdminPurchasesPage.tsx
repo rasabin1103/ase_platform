@@ -15,12 +15,8 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Pagination } from '../../components/ui/Pagination'
-import {
-  PremiumHero,
-  PremiumInsightsCard,
-  PremiumMetricCard,
-  PremiumOrb,
-} from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumInsightsCard, PremiumMetricCard, PremiumOrb } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { cn } from '../../components/ui/cn'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
@@ -190,7 +186,7 @@ export function AdminPurchasesPage() {
         title={t('adminPurchases.title')}
         subtitle={t('adminPurchases.subtitle')}
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-bg2/45 p-5 backdrop-blur-md">
+          <Card className="rounded-3xl border-white/10 bg-ase-bg2/45 p-5">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">{t('adminPurchases.topUsers')}</div>
             <div className="mt-4 space-y-2">
               {(summary?.top_users ?? []).length === 0 ? (
@@ -227,7 +223,7 @@ export function AdminPurchasesPage() {
           label={t('adminPurchases.totalPlanSubscriptions')}
           value={summary?.plan_subscriptions_total ?? 0}
           icon="📋"
-          accent="from-cyan-300 to-blue-500"
+          accent="from-ase-brand to-blue-500"
         />
         <PremiumMetricCard
           label={t('adminPurchases.totalRevenue')}
@@ -238,7 +234,7 @@ export function AdminPurchasesPage() {
         />
       </div>
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-3 backdrop-blur">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface/55 p-3">
         <div className="flex flex-wrap gap-2">
           {TABS.map((item) => (
             <button
@@ -264,6 +260,8 @@ export function AdminPurchasesPage() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="lg:col-span-2">
                 <Input
+                  type="search"
+                  aria-label={t('adminPurchases.filters.search') as string}
                   placeholder={t('adminPurchases.filters.search')}
                   value={search}
                   onChange={(e) => {
@@ -323,11 +321,11 @@ export function AdminPurchasesPage() {
 
           {isItemsTab ? (
             itemsQuery.isLoading ? (
-              <Skeleton className="h-64 rounded-[2rem]" />
+              <Skeleton className="h-64 rounded-3xl" />
             ) : itemsQuery.isError ? (
               <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
             ) : (
-              <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+              <Card className="divide-y divide-white/10 overflow-hidden rounded-3xl border-white/10 bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)]">
                 <div className="grid grid-cols-[1fr_1fr_90px_100px_150px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
                   <span>{t('adminPurchases.colUser')}</span>
                   <span>{t('adminPurchases.colItem')}</span>
@@ -361,11 +359,11 @@ export function AdminPurchasesPage() {
               </Card>
             )
           ) : plansQuery.isLoading ? (
-            <Skeleton className="h-64 rounded-[2rem]" />
+            <Skeleton className="h-64 rounded-3xl" />
           ) : plansQuery.isError ? (
             <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
           ) : (
-            <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)] backdrop-blur">
+            <Card className="divide-y divide-white/10 overflow-hidden rounded-3xl border-white/10 bg-ase-surface/60 p-0 shadow-[0_24px_90px_rgba(0,0,0,0.36)]">
               <div className="grid grid-cols-[1fr_1fr_110px_90px_110px_130px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
                 <span>{t('adminPurchases.colOrg')}</span>
                 <span>{t('adminPurchases.colOwner')}</span>

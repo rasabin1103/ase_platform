@@ -10,6 +10,8 @@ from app.models.enums import AccessRequestStatus
 from app.models.user import User
 from app.modules.access_requests.schemas import (
     AccessRequestCreate,
+    AccessRequestEscalate,
+    AccessRequestReject,
     AccessRequestListResponse,
     AccessRequestRead,
     AccessRequestUpdate,
@@ -209,6 +211,9 @@ def approve_access_request(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Missing permission")
     if not is_super_admin(db, current_user) and item.organization_id is not None and item.organization_id != org.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    # Las solicitudes de creador dan permisos de plataforma: solo las resuelve super_admin.
+    if is_creator_request_type(item.request_type) and not is_super_admin(db, current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only platform admins can review creator requests")
     return svc.approve(request_id, reviewer_id=current_user.id)
 
 
@@ -216,6 +221,7 @@ def approve_access_request(
 def reject_access_request(
     request_id: int,
     request: Request,
+    payload: AccessRequestReject | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: AccessRequestsService = Depends(get_service),
@@ -237,4 +243,35 @@ def reject_access_request(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Missing permission")
     if not is_super_admin(db, current_user) and item.organization_id is not None and item.organization_id != org.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
-    return svc.reject(request_id, reviewer_id=current_user.id)
+    # Las solicitudes de creador dan permisos de plataforma: solo las resuelve super_admin.
+    if is_creator_request_type(item.request_type) and not is_super_admin(db, current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only platform admins can review creator requests")
+    return svc.reject(request_id, reviewer_id=current_user.id, admin_notes=payload.admin_notes if payload else None)
+
+
+@router.post("/{request_id}/escalate", response_model=AccessRequestRead)
+def escalate_access_request(
+    request_id: int,
+    payload: AccessRequestEscalate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: AccessRequestsService = Depends(get_service),
+):
+    """El owner/admin de la organización pasa una solicitud de su organización
+    al equipo de la plataforma. Requiere poder gestionar usuarios o aprobar
+    solicitudes en esa organización (no basta con ser miembro)."""
+    org = require_tenant_context(request, db, current_user)
+    item = svc.get(request_id)
+    if item.organization_id != org.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    can_escalate = user_has_any_permission(
+        db,
+        user_id=current_user.id,
+        organization_id=org.id,
+        permission_codes=frozenset({"users.update", "requests.approve", "requests.manage"}),
+    )
+    if not can_escalate:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Missing permission")
+    return svc.escalate(request_id, user_id=current_user.id, note=payload.note)
+

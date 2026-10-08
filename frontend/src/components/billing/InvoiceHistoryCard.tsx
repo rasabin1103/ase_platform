@@ -36,7 +36,7 @@ export function InvoiceHistoryCard() {
   const invoices = query.data ?? []
 
   return (
-    <Card className="w-full overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition duration-300 ease-out hover:border-ase-brand/25 sm:p-8">
+    <Card className="w-full overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.34)] transition duration-300 ease-out hover:border-ase-brand/25 sm:p-8">
       <div className="flex items-center gap-3">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
           <Receipt className="h-5 w-5" />

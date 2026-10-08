@@ -5,11 +5,13 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { Pagination } from '../../components/ui/Pagination'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Textarea } from '../../components/ui/Textarea'
-import { PremiumHero, PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumMetricCard } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { useI18n } from '../../i18n'
 
 function statusVariant(status: string): 'warning' | 'success' | 'default' {
@@ -26,10 +28,13 @@ function formatDate(iso: string) {
   }
 }
 
+const PAGE_SIZE = 20
+
 export function AdminSuggestionsPage() {
   const { t } = useI18n()
   const qc = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [offset, setOffset] = useState(0)
   const [editing, setEditing] = useState<Suggestion | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [statusDraft, setStatusDraft] = useState<SuggestionStatus>('pending')
@@ -49,6 +54,8 @@ export function AdminSuggestionsPage() {
   })
 
   const items = query.data?.items ?? []
+  const pageOffset = offset < items.length ? offset : 0
+  const pageItems = items.slice(pageOffset, pageOffset + PAGE_SIZE)
   const pendingCount = items.filter((i) => i.status === 'pending').length
   const resolvedCount = items.filter((i) => i.status === 'resolved').length
 
@@ -87,7 +94,7 @@ export function AdminSuggestionsPage() {
             <EmptyState title={t('adminSuggestions.emptyTitle')} description={t('adminSuggestions.emptyDescription')} />
           ) : (
             <div className="divide-y divide-white/10">
-              {items.map((s) => (
+              {pageItems.map((s) => (
                 <div key={s.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-ase-muted">
@@ -122,6 +129,7 @@ export function AdminSuggestionsPage() {
                   </div>
                 </div>
               ))}
+              <Pagination limit={PAGE_SIZE} offset={pageOffset} total={items.length} onOffsetChange={setOffset} />
             </div>
           )}
         </div>

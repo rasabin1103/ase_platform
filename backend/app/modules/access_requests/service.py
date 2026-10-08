@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,6 +19,13 @@ from app.modules.access_requests.schemas import (
 from app.modules.notifications.service import NotificationsService
 
 logger = logging.getLogger(__name__)
+
+
+def _display_name(user) -> str | None:
+    if user is None:
+        return None
+    full = " ".join(x for x in (user.first_name, user.last_name) if x)
+    return user.display_name or full or None
 
 
 class AccessRequestsService:
@@ -46,6 +54,11 @@ class AccessRequestsService:
             created_at=item.created_at,
             updated_at=item.updated_at,
             reviewed_at=item.reviewed_at,
+            admin_notes=item.admin_notes,
+            requested_by_email=item.requested_by_user.email if item.requested_by_user else None,
+            requested_by_name=_display_name(item.requested_by_user),
+            escalated_at=item.escalated_at,
+            escalation_note=item.escalation_note,
         )
 
     def _scope_to_request_type(self, scope: str) -> AccessRequestType:
@@ -184,11 +197,43 @@ class AccessRequestsService:
         self.db.refresh(item)
         return self._to_read(item)
 
-    def reject(self, request_id: int, *, reviewer_id: int) -> AccessRequestRead:
+    def reject(self, request_id: int, *, reviewer_id: int, admin_notes: str | None = None) -> AccessRequestRead:
         item = self.repo.get(request_id)
         if item is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
         self.repo.reject(item, reviewer_id=reviewer_id)
+        if admin_notes:
+            item.admin_notes = admin_notes
         self.db.commit()
         self.db.refresh(item)
         return self._to_read(item)
+
+    def escalate(self, request_id: int, *, user_id: int, note: str | None) -> AccessRequestRead:
+        """La organización pasa la solicitud al equipo de la plataforma.
+
+        Sigue pendiente; solo queda marcada para que super_admin la vea
+        destacada, y se notifica a los super_admin."""
+        item = self.repo.get(request_id)
+        if item is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+        if item.status != AccessRequestStatus.pending:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Request is not pending")
+        if item.escalated_at is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Request already escalated")
+        item.escalated_at = datetime.now(timezone.utc)
+        item.escalated_by_user_id = user_id
+        item.escalation_note = (note or "").strip() or None
+        self.db.commit()
+        self.db.refresh(item)
+        org_name = item.organization.name if item.organization else None
+        try:
+            NotificationsService(self.db).notify_superadmins(
+                type="access_request_escalated",
+                title=f"Solicitud escalada: {item.title}",
+                body=(f"{org_name}: " if org_name else "") + (item.escalation_note or "Revisión solicitada por la organización."),
+                link="/requests?escalated=1",
+            )
+        except Exception:  # la notificación nunca debe impedir el escalado
+            logger.exception("Could not notify superadmins about escalated request %s", item.id)
+        return self._to_read(item)
+

@@ -1,0 +1,178 @@
+import type { Effect, Scene } from '../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Escenas de la misión 5 del curso 2 (El plan). */
+export const m05Scenes: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: 'Plan de pruebas de la release 1.0',
+    body: 'Hoy a las 15:00 tengo comité con dirección para fijar la fecha de la release 1.0 de Empresas. Necesito tu plan de pruebas y una estimación que se pueda defender. Tienes el planificador en la app «Plan».\n\nRaúl',
+  },
+  {
+    id: 'mail_elena',
+    channel: 'email',
+    from: 'elena',
+    at: 0,
+    subject: 'Ojo con la firma electrónica',
+    body: 'Me acaba de escribir el proveedor de firma electrónica: su API nos llegará dos semanas más tarde de lo previsto. 😬 Y no te olvides de que lo que más preocupa a los clientes son las tarjetas y las facturas.\n\nElena',
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 30,
+    body: 'Para el plan tienes la plantilla y la guía de estimación en la wiki. Un truco: un plan sirve si alguien puede decidir con él. Criterios medibles, riesgos bien clasificados y una estimación con sus números.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'test_plan' }],
+  },
+  {
+    id: 'delphi',
+    channel: 'meeting',
+    from: 'laura',
+    with: ['tomas', 'sofia'],
+    at: 120,
+    subject: '11:00 · Estimación en equipo (Wideband Delphi)',
+    body: '**Laura:** Primera ronda a ciegas del esfuerzo de pruebas de la release, en persona-días: **Tomás 10 · Sofía 26 · Laura 19 · tú 20**. Mucha dispersión. ¿Cómo seguimos?',
+    choices: [
+      {
+        id: 'explain',
+        text: 'Que expliquen los extremos: Tomás, ¿por qué 10? Sofía, ¿por qué 26? Y luego otra ronda a ciegas.',
+        cost: 20,
+        reply: 'Yo no había contado la regresión ni el rendimiento… En la segunda ronda pongo 18. — Sofía: y yo había contado dos veces la firma; pongo 21. Convergemos en torno a 20.',
+        replyFrom: 'tomas',
+        effects: [
+          { kind: 'flag', key: 'delphi.ok' },
+          { kind: 'score', key: 'communication', add: 1 },
+          { kind: 'score', key: 'rigor', add: 1 },
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'good', text: 'Aplicaste Wideband Delphi: explicar los extremos y repetir la ronda hasta converger.' },
+        ],
+      },
+      {
+        id: 'average',
+        text: 'Hacemos la media y listo: 18,75.',
+        cost: 5,
+        reply: 'Rápido… pero nadie sabe por qué Tomás y Sofía estaban tan lejos.',
+        replyFrom: 'laura',
+        effects: [
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'bad', text: 'Promediaste la primera ronda sin discutir las diferencias.' },
+        ],
+      },
+      {
+        id: 'senior',
+        text: 'Nos quedamos con la de Tomás, que es el senior.',
+        cost: 5,
+        reply: 'Ehh… vale.',
+        replyFrom: 'sofia',
+        effects: [
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'bad', text: 'Te quedaste con la estimación del senior: la más baja y sin discutir.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'laura_plan_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'plan.submitted' },
+        { kind: 'flag', key: 'est.ok' },
+        { kind: 'flag', key: 'plan.exit' },
+        { kind: 'flag', key: 'plan.risks' },
+        { kind: 'flag', key: 'prio.ok' },
+      ],
+    },
+    body: 'He visto el plan: criterios de salida medibles, riesgos bien separados, prioridad por riesgo y una estimación con ratio y tres puntos. Raúl va a tener con qué defenderlo.',
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'risk', add: 1 },
+      { kind: 'unlock', conceptId: 'test_plan' },
+      { kind: 'note', tone: 'good', text: 'Entregaste un plan con criterios medibles y una estimación justificada.' },
+    ],
+  },
+  {
+    id: 'committee',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'laura'],
+    at: 360,
+    subject: '15:00 · Comité de la release 1.0',
+    body: '**Raúl:** Dirección quiere salir antes. Me piden que las pruebas se hagan en **la mitad** del tiempo que estimas. ¿Podemos?',
+    choices: [
+      {
+        id: 'negotiate',
+        text: 'Con la mitad de tiempo no podemos probar lo mismo. Propongo probar a fondo lo de riesgo alto (tarjetas, facturas y firma cuando llegue) y pasar a la siguiente release lo de riesgo bajo, o que dirección acepte por escrito el riesgo restante. Los números de la estimación están en el plan.',
+        requires: { kind: 'all', of: [{ kind: 'flag', key: 'plan.submitted' }, { kind: 'flag', key: 'est.ok' }] },
+        cost: 15,
+        reply: 'Esto lo puedo llevar a dirección: alcance según riesgo y decisión explícita. Aprobado así.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'est.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'communication', add: 1 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'good', text: 'Defendiste la estimación negociando el alcance según el riesgo, no el esfuerzo.' },
+          PREVENT,
+        ],
+      },
+      {
+        id: 'accept',
+        text: 'Vale, lo hacemos en la mitad.',
+        cost: 5,
+        reply: 'Perfecto. Les digo que sí.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'bad', text: 'Aceptaste la mitad del tiempo sin cambiar el alcance ni el riesgo asumido.' },
+          PREVENT,
+        ],
+      },
+      {
+        id: 'refuse',
+        text: 'Imposible. Necesitamos todo el tiempo o no firmo nada.',
+        cost: 5,
+        reply: 'Así no puedo ir a dirección. Necesito opciones, no un no.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'communication', add: -2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'bad', text: 'Te negaste sin ofrecer alternativas de alcance o de riesgo.' },
+          PREVENT,
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    at: 480,
+    subject: '17:00 · Café con Laura',
+    body: '**Laura:** ¿Qué te llevas de tu primer plan?',
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: 'Que el plan es para decidir: alcance claro, criterios medibles, riesgos de producto y de proyecto bien separados, una estimación con método y la prioridad marcada por el riesgo. Y que cuando aprietan el tiempo, se negocia el alcance, no la calidad.',
+        reply: 'Así es. Y ahora toca medir si el plan se cumple.',
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'Que los planes son papeleo para dirección.',
+        reply: 'Mira en el debrief qué pasa en los sprints cuando falta cada pieza del plan.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'Te quedaste con el plan como trámite, no como herramienta.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

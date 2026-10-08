@@ -1,11 +1,16 @@
-import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Suspense } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { RouteLoadingFallback } from '../components/layout/RouteLoadingFallback'
 import { useRbac } from '../rbac/useRbac'
 import { useI18n } from '../i18n'
+import { Library } from 'lucide-react'
+import { AdminTabs } from '../components/admin/premium/AdminTabs'
+import { PremiumHero } from '../components/admin/premium/PremiumHero'
 import {
   AdminDashboardPage,
   CatalogListPage,
   IndependentDashboardPage,
+  MyPurchasesPage,
   OrganizationDashboardPage,
 } from './lazyPages'
 
@@ -66,22 +71,21 @@ export function CatalogResourcesPage() {
   )
 }
 
+/** Favoritos y Mis compras viven ahora como pestañas de Mi biblioteca; las
+ * rutas antiguas redirigen para no romper enlaces guardados. */
 export function FavoritesPage() {
-  return (
-    <CatalogListPage
-      mode="favorites"
-      titleKey="catalog.pages.favorites.title"
-      subtitleKey="catalog.pages.favorites.subtitle"
-      catalogBasePath="/favorites"
-    />
-  )
+  return <Navigate to="/my-library?tab=favorites" replace />
 }
 
-type LibraryTabKey = 'all' | 'product' | 'course' | 'book' | 'resource'
+export function PurchasesRedirect() {
+  return <Navigate to="/my-library?tab=purchases" replace />
+}
+
+type LibraryTabKey = 'all' | 'product' | 'course' | 'book' | 'resource' | 'favorites' | 'purchases'
 
 const LIBRARY_TABS: Array<{
   key: LibraryTabKey
-  mode: 'purchases' | 'myProducts' | 'myCourses' | 'myBooks' | 'myResources'
+  mode: 'purchases' | 'myProducts' | 'myCourses' | 'myBooks' | 'myResources' | 'favorites' | null
   labelKey: string
 }> = [
   { key: 'all', mode: 'purchases', labelKey: 'catalog.pages.myLibrary.tabs.all' },
@@ -89,44 +93,55 @@ const LIBRARY_TABS: Array<{
   { key: 'course', mode: 'myCourses', labelKey: 'catalog.groupLabels.course' },
   { key: 'book', mode: 'myBooks', labelKey: 'catalog.groupLabels.book' },
   { key: 'resource', mode: 'myResources', labelKey: 'catalog.groupLabels.resource' },
+  { key: 'favorites', mode: 'favorites', labelKey: 'private.nav.favorites' },
+  // Registro de transacciones (fecha, importe, factura): su propio componente.
+  { key: 'purchases', mode: null, labelKey: 'private.nav.myPurchases' },
 ]
 
-/** Consolidates what used to be four separate sidebar entries (Mis
- * productos / Mis cursos / Mis libros / Mis recursos) into one "Mi
- * biblioteca" page with an internal tab bar — same underlying data
- * (CatalogListPage with purchased_only modes), just switched locally
- * instead of via four different routes. "Mis compras" (MyPurchasesPage,
- * in pages/independent, lazy-loaded via lazyPages.tsx) stays a separate
- * page on purpose — that one's about the transaction record (date, price
- * paid, invoice...), this one's about the content you own. */
+const LIBRARY_SUBTITLE = {
+  es: 'Todo lo que tienes, lo que has guardado y tus compras, en un solo sitio.',
+  en: 'Everything you own, what you saved and your purchases, in one place.',
+} as const
+
+/** «Mi biblioteca»: contenido propio por tipo, favoritos y compras como
+ * pestañas de una sola página. La pestaña activa vive en `?tab=` para que
+ * se pueda enlazar y sobreviva al volver atrás desde una ficha. */
 export function MyLibraryPage() {
-  const { t } = useI18n()
-  const [activeTab, setActiveTab] = useState<LibraryTabKey>('all')
-  const tab = LIBRARY_TABS.find((tb) => tb.key === activeTab) ?? LIBRARY_TABS[0]
+  const { t, language } = useI18n()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = LIBRARY_TABS.find((tb) => tb.key === searchParams.get('tab')) ?? LIBRARY_TABS[0]
+  const changeTab = (key: LibraryTabKey) => {
+    // Al cambiar de pestaña se limpian los filtros de la anterior.
+    setSearchParams(key === 'all' ? {} : { tab: key }, { replace: true })
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ase-text">{t('catalog.pages.myLibrary.title')}</h1>
-        <p className="mt-1 text-sm text-ase-muted">{t('catalog.pages.myLibrary.subtitle')}</p>
-      </div>
-      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
-        {LIBRARY_TABS.map((tb) => (
-          <button
-            key={tb.key}
-            type="button"
-            onClick={() => setActiveTab(tb.key)}
-            className={
-              activeTab === tb.key
-                ? 'rounded-xl border border-ase-brand/40 bg-ase-brand/15 px-3.5 py-2 text-sm font-semibold text-ase-brand transition'
-                : 'rounded-xl border border-white/10 bg-ase-surface px-3.5 py-2 text-sm font-semibold text-ase-text2 transition hover:border-white/20'
-            }
-          >
-            {t(tb.labelKey)}
-          </button>
-        ))}
-      </div>
-      <CatalogListPage key={tab.key} mode={tab.mode} hideHeader catalogBasePath="/my-library" />
+      <PremiumHero
+        compact
+        accent="violet"
+        badge={language === 'en' ? 'Your library' : 'Tu biblioteca'}
+        title={t('catalog.pages.myLibrary.title') as string}
+        subtitle={language === 'en' ? LIBRARY_SUBTITLE.en : LIBRARY_SUBTITLE.es}
+        sidePanel={
+          <span className="hidden h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-violet-300 lg:grid">
+            <Library className="h-6 w-6" strokeWidth={1.6} aria-hidden />
+          </span>
+        }
+      />
+      <AdminTabs
+        label={t('catalog.pages.myLibrary.title') as string}
+        tabs={LIBRARY_TABS.map((tb) => ({ key: tb.key, label: t(tb.labelKey) as string }))}
+        active={tab.key}
+        onChange={changeTab}
+      />
+      <Suspense fallback={<RouteLoadingFallback />}>
+        {tab.mode ? (
+          <CatalogListPage key={tab.key} mode={tab.mode} hideHeader catalogBasePath="/my-library" />
+        ) : (
+          <MyPurchasesPage hideHeader />
+        )}
+      </Suspense>
     </div>
   )
 }

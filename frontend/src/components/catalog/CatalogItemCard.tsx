@@ -5,7 +5,7 @@ import { Card } from '../ui/Card'
 import { AuthenticatedImage } from '../ui/AuthenticatedImage'
 import { cn } from '../ui/cn'
 import { catalogImageAspectClass } from './catalogCardShape'
-import { RatingWidget } from './RatingWidget'
+import { AcademyCourseProgress } from '../../features/academy/AcademyCourseProgress'
 import { RatingSummary } from './RatingSummary'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
@@ -42,7 +42,6 @@ function formatPrice(price: string | number, currency: string, freeLabel: string
 
 export function CatalogItemCard({
   item,
-  catalogBasePath,
   onToggleFavorite,
   onPurchase,
   favoritePending,
@@ -59,7 +58,7 @@ export function CatalogItemCard({
   const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden p-0" interactive>
+    <Card className="group flex h-full flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface/80 p-0 hover:border-ase-brand/40" interactive>
       <div className={cn('relative overflow-hidden bg-ase-bg2', imageAspectClass ?? catalogImageAspectClass(item.type))}>
         <AuthenticatedImage
           src={item.imageUrl}
@@ -76,7 +75,7 @@ export function CatalogItemCard({
             <div className="pointer-events-none absolute inset-y-0 left-2.5 w-px bg-white/20" />
           </>
         ) : null}
-        <span className="absolute left-3 top-3 rounded-lg border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-semibold text-ase-text">
+        <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-ase-text">
           {t(typeLabelKey(item.type))}
         </span>
         <button
@@ -94,14 +93,15 @@ export function CatalogItemCard({
           <Heart className="h-4 w-4" strokeWidth={1.75} fill={item.isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-2.5 p-4">
+      <div className="flex flex-1 flex-col gap-2.5 p-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-300/80">{item.category}</p>
-          <h3 className="mt-1 text-base font-bold text-ase-text line-clamp-2">{title}</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">{item.category}</p>
+          <h3 className="mt-1 font-display text-lg font-semibold leading-snug text-ase-text line-clamp-2">{title}</h3>
           <p className="mt-1.5 text-sm text-ase-muted line-clamp-2">{shortDescription}</p>
           <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
         </div>
-        <p className="text-lg font-bold text-ase-text">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-display text-xl font-semibold text-ase-text">
           {item.discountedPrice != null ? (
             <span className="flex items-baseline gap-1.5">
               <span className="text-sm font-normal text-ase-text-muted line-through">
@@ -113,6 +113,13 @@ export function CatalogItemCard({
             formatPrice(item.price, item.currency, t('catalog.free'))
           )}
         </p>
+        {item.isPurchased ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-200">
+            <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+            {item.isPlanIncluded ? t('catalog.includedInPlan') : t('catalog.purchased')}
+          </span>
+        ) : null}
+        </div>
         {item.discountedPrice != null && item.discountPercent != null ? (
           <p className="-mt-1 text-[11px] font-medium text-ase-brand">
             {String(t('catalog.resource.discountContext'))
@@ -125,8 +132,10 @@ export function CatalogItemCard({
               .replace('{{percent}}', String(item.discountPercent))}
           </p>
         ) : null}
-        <RatingWidget item={item} compact />
-        <div className="mt-auto flex flex-wrap items-center gap-2">
+        {item.type === 'course' && item.academyCourseKey && (item.isPurchased || isFree) ? (
+          <AcademyCourseProgress courseKey={item.academyCourseKey} language={language} />
+        ) : null}
+        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
           <ButtonLink to={detailPath} size="sm" variant="primary">
             {t('catalog.viewDetail')}
           </ButtonLink>
@@ -135,19 +144,19 @@ export function CatalogItemCard({
               {t('catalog.preview')}
             </ButtonLink>
           ) : null}
-          {!isFree ? (
+          {!isFree && !item.isPurchased ? (
             <Button
               size="sm"
-              variant={item.isPurchased ? 'success' : 'ghost'}
-              leftIcon={item.isPurchased ? <Check className="h-4 w-4" strokeWidth={2} /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
-              disabled={purchasePending || item.isPurchased}
+              variant="ghost"
+              leftIcon={<ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+              disabled={purchasePending}
               onClick={() => onPurchase(item.slug)}
             >
-              {item.isPurchased ? t('catalog.purchased') : t('catalog.buy')}
+              {t('catalog.buy')}
             </Button>
           ) : null}
         </div>
-        <Link to={catalogBasePath} className="sr-only">
+        <Link to={detailPath} className="sr-only">
           {title}
         </Link>
       </div>

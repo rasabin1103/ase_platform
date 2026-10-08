@@ -153,6 +153,10 @@ class CatalogItemRead(BaseModel):
     # Admin-written setup/usage instructions — resource type only (see
     # CatalogItem.getting_started), null for every other item.
     gettingStarted: str | None = None
+    # ASE Academy simulator course key (course items only) — when set, the
+    # detail page offers "Jugar el curso"; access to paid missions follows
+    # isPurchased / free price like every other entitlement.
+    academyCourseKey: str | None = None
     createdAt: datetime
     updatedAt: datetime
 

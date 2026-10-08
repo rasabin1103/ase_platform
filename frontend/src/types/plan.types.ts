@@ -20,6 +20,7 @@ export type PlanCatalogItem = {
   catalog_item_id: number
   display_order: number
   title: string
+  title_en?: string | null
   slug: string
   type: string
   short_description: string

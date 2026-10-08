@@ -18,7 +18,7 @@ export function TagFilterBar({ tags, selected, onToggle, onClear, label, clearLa
   if (tags.length === 0) return null
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 backdrop-blur-md">
+    <div className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-white/10 bg-ase-surface/70 px-3.5 py-2.5">
       <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ase-muted">
         <TagsIcon className="h-3.5 w-3.5" />
         {label}
@@ -35,7 +35,7 @@ export function TagFilterBar({ tags, selected, onToggle, onClear, label, clearLa
               className={cn(
                 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all',
                 active
-                  ? 'border-cyan-300/50 bg-gradient-to-r from-cyan-400/25 to-blue-500/20 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.18),0_4px_16px_rgba(34,211,238,0.15)]'
+                  ? 'border-ase-brand/50 bg-ase-brand/20 text-ase-text ring-1 ring-ase-brand/30'
                   : 'border-white/10 bg-white/[0.03] text-ase-text2 hover:border-white/20 hover:bg-white/[0.06] hover:text-ase-text',
               )}
             >

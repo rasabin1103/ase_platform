@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.models.enums import CatalogItemType
 from app.modules.catalog_showcase.schemas import CatalogShowcaseItemDetail, CatalogShowcaseListResponse
 from app.modules.catalog_showcase.service import CatalogShowcaseService
-from app.modules.consumer_catalog.schemas import ResourceContentRead
+from app.modules.consumer_catalog.schemas import ResourceContentRead, ReviewListResponse
 
 # No auth dependency anywhere in this router, deliberately — this is the
 # public "browse before you sign up" surface (see CatalogShowcaseService's
@@ -90,3 +90,20 @@ def read_catalog_showcase_preview_content(
     if content is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     return content
+
+
+# Public reviews (stars + comment) of a published item — what the showcase
+# detail page and the academy course page show to anyone, logged in or not.
+# Writing a review stays in consumer_catalog (authenticated, ownership-gated).
+@router.get("/{item_type}/{slug}/reviews", response_model=ReviewListResponse)
+def list_catalog_showcase_reviews(
+    item_type: CatalogItemType,
+    slug: str,
+    limit: int = Query(20, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    svc: CatalogShowcaseService = Depends(get_service),
+):
+    reviews = svc.list_reviews(item_type, slug, limit=limit, offset=offset)
+    if reviews is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    return reviews

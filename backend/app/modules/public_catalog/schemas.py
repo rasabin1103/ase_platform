@@ -27,6 +27,8 @@ class CatalogStatsResponse(BaseModel):
     plans: CatalogPlans
     platform: PlatformStatus
     members_count: int = 0
+    # Ofertas de empleo publicadas (contador público de la home y «Qué incluye»).
+    job_postings_active: int = 0
     last_updated: str
 
 

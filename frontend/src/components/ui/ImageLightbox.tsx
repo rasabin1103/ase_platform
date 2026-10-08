@@ -91,7 +91,7 @@ export function ImageLightbox({ src, alt = '', onClose }: Props) {
   return createPortal(
     <div
       ref={dialogRef}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
