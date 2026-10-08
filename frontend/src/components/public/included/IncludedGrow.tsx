@@ -7,6 +7,7 @@ import { Reveal, SectionHeading } from '../home/Reveal'
 import type { Mark } from '../../../i18n/includedPage.locale'
 import { ExampleNote, FeatureSection, VisualFrame } from './IncludedShared'
 import { useIncludedCopy } from './useIncludedCopy'
+import { useJobsEntry } from '../useJobsEntry'
 
 /* ─────────────────────────── Empleo ─────────────────────────── */
 
@@ -15,6 +16,7 @@ const SCALE_COLORS = ['bg-rose-400', 'bg-amber-400', 'bg-sky-400', 'bg-emerald-4
 export function IncludedJobs() {
   const c = useIncludedCopy().jobs
   const { jobPostings } = useLiveStats()
+  const jobsEntry = useJobsEntry()
   const score = 82
   const r = 34
   const len = 2 * Math.PI * r
@@ -141,6 +143,9 @@ export function IncludedJobs() {
           </li>
         ))}
       </ul>
+      <ButtonLink to={jobsEntry.to} className="mt-8">
+        {jobsEntry.label}
+      </ButtonLink>
     </FeatureSection>
   )
 }

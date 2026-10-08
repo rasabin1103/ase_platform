@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
 import { z } from 'zod'
 import { login, verifyLoginTwoFactor } from '../api/auth.api'
@@ -29,13 +29,19 @@ export function LoginPage() {
   const auth = useAuth()
   const [searchParams] = useSearchParams()
   const justRegistered = searchParams.get('registered') === '1'
+  // Vuelve a donde quería ir el usuario (?next= o la ruta protegida que le
+  // trajo aquí); solo rutas internas, nunca una URL externa.
+  const location = useLocation()
+  const fromState = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from
+  const rawNext = searchParams.get('next') ?? (fromState?.pathname ? `${fromState.pathname}${fromState.search ?? ''}` : null)
+  const afterLogin = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/dashboard'
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
   const [otpCode, setOtpCode] = useState('')
 
   useEffect(() => {
     const token = getAccessToken()
-    if (token) navigate('/dashboard', { replace: true })
-  }, [navigate])
+    if (token) navigate(afterLogin, { replace: true })
+  }, [navigate, afterLogin])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -50,7 +56,7 @@ export function LoginPage() {
         return
       }
       await auth.login({ access_token: data.access_token, refresh_token: data.refresh_token })
-      navigate('/dashboard', { replace: true })
+      navigate(afterLogin, { replace: true })
     },
   })
 
@@ -58,7 +64,7 @@ export function LoginPage() {
     mutationFn: () => verifyLoginTwoFactor(challengeToken as string, otpCode),
     onSuccess: async (data) => {
       await auth.login({ access_token: data.access_token, refresh_token: data.refresh_token })
-      navigate('/dashboard', { replace: true })
+      navigate(afterLogin, { replace: true })
     },
   })
 

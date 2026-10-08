@@ -23,6 +23,8 @@ import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { TagFilterBar } from '../../components/ui/TagFilterBar'
+import { JobFactsGrid, JobHighlights } from '../../components/jobPostings/JobDescriptionView'
+import { formatJobTitle, parseJobDescription } from '../../utils/jobDescription'
 import { CompatibilityAnalysis, CompatibilityPeekBadge, InterviewTipsPeek } from '../../components/jobPostings/CompatibilityAnalysis'
 import { useAiQuota, useAnalysisBlocked } from '../../components/jobPostings/useAiQuota'
 import { useI18n } from '../../i18n'
@@ -92,29 +94,32 @@ function JobPostingCard({
   const { t, language } = useI18n()
   const { blocked: analysisBlocked, analyzed } = useAnalysisBlocked(posting.id, hasCv)
   const salarySuffix = t(`jobPostingsPage.salary.${posting.salary_type}`) as string
-  const title = localizedCatalogText(language, posting.title, posting.title_en)
+  const title = formatJobTitle(localizedCatalogText(language, posting.title, posting.title_en))
   const description = localizedCatalogText(language, posting.description, posting.description_en)
+  const parsed = useMemo(() => parseJobDescription(description), [description])
 
   return (
-    <Card className="flex flex-col gap-4 rounded-3xl border-white/10 bg-ase-surface/80 p-5">
+    <Card className="flex flex-col gap-4 rounded-3xl border-white/10 bg-ase-surface/80 p-5 hover:border-ase-brand/40">
       <div className="flex gap-4">
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
           {posting.image_url ? (
             <AuthenticatedImage src={posting.image_url} alt="" className="h-full w-full" fit="cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl text-ase-muted">◇</div>
+            <div className="flex h-full w-full items-center justify-center text-sky-300">
+              <Briefcase className="h-6 w-6" strokeWidth={1.6} aria-hidden />
+            </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h2 className="text-base font-bold text-ase-text">
-              <Link to={`/job-postings/${posting.id}`} className="hover:text-ase-brand hover:underline">
+            <h2 className="font-display text-lg font-semibold leading-snug text-ase-text">
+              <Link to={`/job-postings/${posting.id}`} className="hover:text-sky-300">
                 {title}
               </Link>
             </h2>
             <CompatibilityPeekBadge postingId={posting.id} hasCv={hasCv} className="shrink-0" />
           </div>
-          <p className="mt-0.5 text-sm font-semibold text-ase-brand">{formatSalary(posting, salarySuffix)}</p>
+          <p className="mt-1 text-sm font-semibold text-sky-300">{formatSalary(posting, salarySuffix)}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge variant="info">{t(`adminJobPostings.contractType.${posting.contract_type}`)}</Badge>
             <Badge variant="default">{t(`adminJobPostings.workMode.${posting.work_mode}`)}</Badge>
@@ -123,9 +128,19 @@ function JobPostingCard({
           </div>
         </div>
       </div>
-      <p className="line-clamp-4 text-sm leading-relaxed text-ase-text2">{description}</p>
+      <JobHighlights items={parsed.highlights} />
+      <JobFactsGrid
+        facts={parsed.facts}
+        max={4}
+        hideMissing
+        missingLabel={t('jobPostingsPage.notSpecified') as string}
+        className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3.5"
+      />
+      {parsed.summary ? (
+        <p className="line-clamp-2 text-sm leading-relaxed text-ase-text2">{parsed.summary}</p>
+      ) : null}
       <InterviewTipsPeek postingId={posting.id} hasCv={hasCv} />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
         <ButtonLink
           to={`/job-postings/${posting.id}`}
           variant="secondary"
