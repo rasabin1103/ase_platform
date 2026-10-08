@@ -153,6 +153,7 @@ export const jobPostingsPageEn = {
   },
   applyCta: 'Apply',
   viewDetails: 'View details',
+  notSpecified: 'Not specified',
   salary: { gross_yearly: '/year gross', hourly: '/hour' },
   cv: {
     title: 'CV compatibility analysis',
@@ -201,6 +202,7 @@ export const jobPostingsPageEn = {
   },
   detail: {
     backToList: '← Back to job postings',
+    keyFacts: 'Key facts',
     loadError: 'Could not load this job posting.',
     notFound: 'Job posting not found.',
     publishedOn: 'Published {date}',
@@ -224,6 +226,7 @@ export const jobPostingsPageEs = {
   },
   applyCta: 'Aplicar',
   viewDetails: 'Ver detalles',
+  notSpecified: 'Sin especificar',
   salary: { gross_yearly: '/año bruto', hourly: '/hora' },
   cv: {
     title: 'Análisis de compatibilidad de CV',
@@ -270,6 +273,7 @@ export const jobPostingsPageEs = {
   },
   detail: {
     backToList: '← Volver a ofertas laborales',
+    keyFacts: 'Datos clave',
     loadError: 'No se pudo cargar esta oferta laboral.',
     notFound: 'Oferta laboral no encontrada.',
     publishedOn: 'Publicada el {date}',

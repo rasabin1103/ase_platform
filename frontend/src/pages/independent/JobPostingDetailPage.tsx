@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { JobDescriptionView, JobHighlights } from '../../components/jobPostings/JobDescriptionView'
+import { formatJobTitle, parseJobDescription } from '../../utils/jobDescription'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Sparkles } from 'lucide-react'
+import { ExternalLink, Sparkles, Briefcase } from 'lucide-react'
 import {
   getJobPosting,
   getMyCvProfile,
@@ -91,8 +93,9 @@ export function JobPostingDetailPage() {
   }
 
   const salarySuffix = t(`jobPostingsPage.salary.${posting.salary_type}`) as string
-  const title = localizedCatalogText(language, posting.title, posting.title_en)
+  const title = formatJobTitle(localizedCatalogText(language, posting.title, posting.title_en))
   const description = localizedCatalogText(language, posting.description, posting.description_en)
+  const parsed = parseJobDescription(description)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-16">
@@ -100,21 +103,23 @@ export function JobPostingDetailPage() {
         {t('jobPostingsPage.detail.backToList')}
       </Link>
 
-      <Card className="flex flex-col gap-6 p-6">
+      <Card className="flex flex-col gap-6 rounded-3xl border-white/10 bg-ase-surface/80 p-6 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row">
           <div className="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] sm:h-40 sm:w-40">
             {posting.image_url ? (
               <AuthenticatedImage src={posting.image_url} alt="" className="h-full w-full" fit="cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-4xl text-ase-muted">◇</div>
+              <div className="flex h-full w-full items-center justify-center text-sky-300">
+                <Briefcase className="h-10 w-10" strokeWidth={1.4} aria-hidden />
+              </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <h1 className="text-xl font-bold text-ase-text sm:text-2xl">{title}</h1>
+              <h1 className="font-display text-2xl font-semibold leading-tight text-ase-text sm:text-3xl">{title}</h1>
               <CompatibilityPeekBadge postingId={posting.id} hasCv={hasCv} className="shrink-0" />
             </div>
-            <p className="mt-1 text-base font-semibold text-ase-brand">{formatSalary(posting, salarySuffix)}</p>
+            <p className="mt-1 text-base font-semibold text-sky-300">{formatSalary(posting, salarySuffix)}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <Badge variant="info">{t(`adminJobPostings.contractType.${posting.contract_type}`)}</Badge>
               <Badge variant="default">{t(`adminJobPostings.workMode.${posting.work_mode}`)}</Badge>
@@ -124,14 +129,19 @@ export function JobPostingDetailPage() {
             {posting.published_at ? (
               <p className="mt-3 text-xs text-ase-muted">
                 {tpl(t('jobPostingsPage.detail.publishedOn'), {
-                  date: new Date(posting.published_at).toLocaleDateString(),
+                  date: new Date(posting.published_at).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { dateStyle: 'long' }),
                 })}
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-ase-text2">{description}</div>
+        <JobHighlights items={parsed.highlights} />
+        <JobDescriptionView
+          parsed={parsed}
+          missingLabel={t('jobPostingsPage.notSpecified') as string}
+          factsTitle={t('jobPostingsPage.detail.keyFacts') as string}
+        />
 
         <ButtonAnchor
           href={posting.link_url}

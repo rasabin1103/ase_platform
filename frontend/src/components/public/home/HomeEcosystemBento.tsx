@@ -14,10 +14,12 @@ import { Link } from 'react-router-dom'
 import { cn } from '../../ui/cn'
 import { Reveal, SectionHeading } from './Reveal'
 import { useHomeCopy } from './useHomeCopy'
+import { useJobsEntry } from '../useJobsEntry'
 
 export function HomeEcosystemBento() {
   const e = useHomeCopy().ecosystem
   const t = e.tiles
+  const jobs = useJobsEntry()
   return (
     <section className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:py-32">
       <SectionHeading eyebrow={e.eyebrow} title={e.title} subtitle={e.subtitle} />
@@ -80,13 +82,21 @@ export function HomeEcosystemBento() {
         </Tile>
 
         <Tile
-          to="/academy"
+          to={jobs.to}
           className="md:col-span-2"
           icon={<Briefcase />}
           title={t.jobs.title}
           desc={t.jobs.desc}
           accent="cyan"
-        />
+        >
+          <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-sky-300">
+            {jobs.label}
+            <ArrowUpRight
+              className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </span>
+        </Tile>
         <Tile
           to="/services"
           className="md:col-span-2"
