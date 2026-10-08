@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Check, Clock, MapPin, Send, Target } from 'lucide-react'
 import { Button, ButtonAnchor } from '../../components/ui/Button'
@@ -21,9 +22,21 @@ type ContactValues = {
 const LABEL = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ase-muted'
 
 export function ContactPage() {
-  const [values, setValues] = useState<ContactValues>({ name: '', email: '', company: '', message: '' })
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const { t, language } = useI18n()
+  // ?topic=<título> (p. ej. desde una ficha sin muestra) deja el mensaje empezado.
+  const [searchParams] = useSearchParams()
+  const topic = searchParams.get('topic')
+  const [values, setValues] = useState<ContactValues>(() => ({
+    name: '',
+    email: '',
+    company: '',
+    message: topic
+      ? language === 'en'
+        ? `Hi, I have a question about «${topic}»: `
+        : `Hola, tengo una duda sobre «${topic}»: `
+      : '',
+  }))
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const c = (language === 'en' ? pagesV2En : pagesV2Es).contact
   usePageTitle(t('pages.contact.title') as string, t('pages.contact.body') as string)
 
@@ -104,7 +117,7 @@ export function ContactPage() {
                     required
                     value={values.email}
                     onChange={(e) => setValues((v) => ({ ...v, email: String(e.target.value ?? '') }))}
-                    placeholder="name@company.com"
+                    placeholder={t('auth.fields.emailPlaceholder')}
                   />
                 </div>
                 <div className="sm:col-span-2">

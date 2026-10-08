@@ -15,13 +15,13 @@ export const includedPageEs = {
     titleHighlight: 'Todo el ecosistema',
     titleAfter: 'de la calidad del software.',
     subtitle:
-      'Formación que se juega, recursos listos para tu proyecto, empleo con análisis honesto de encaje y consultoría senior. Todo conectado, todo en tu plan.',
+      'Formación que se juega, recursos listos para tu proyecto, empleo con análisis honesto de encaje y consultoría senior. Todo conectado; qué desbloquea cada plan lo ves en la comparativa de Planes.',
     primaryCta: 'Ver planes',
     secondaryCta: 'Probar ASE Academy',
-    cardTitle: 'Tu suscripción ASE',
-    cardSubtitle: 'Acceso inmediato tras el pago',
-    included: 'Incluido',
-    enterprise: 'Enterprise',
+    cardTitle: 'El ecosistema ASE',
+    cardSubtitle: 'Qué trae cada plan: en la comparativa de Planes',
+    included: 'Disponible',
+    enterprise: '{{plan:top}}',
   },
   nav: {
     label: 'Secciones',
@@ -40,12 +40,12 @@ export const includedPageEs = {
     eyebrow: 'Catálogo técnico',
     title: 'Un catálogo curado, no una estantería infinita',
     subtitle:
-      'Cursos, libros, productos y recursos seleccionados por su utilidad real en proyectos de calidad. Con vista previa gratuita, reseñas de quien ya lo usó y descarga en el momento.',
+      'Cursos, libros, productos y recursos seleccionados por su utilidad real en proyectos de calidad. Con reseñas de quien ya lo usó, descarga en el momento y muestra gratuita en los títulos marcados con «Vista previa».',
     chartTitle: 'Composición del catálogo',
     chartLive: 'En directo',
     total: 'títulos publicados',
     features: [
-      { title: 'Vista previa gratuita', text: 'Lee una muestra antes de decidir.' },
+      { title: 'Muestra gratuita', text: 'En los títulos marcados con «Vista previa», lee una parte antes de decidir.' },
       { title: 'Reseñas con estrellas', text: 'Opiniones reales en cada producto.' },
       { title: 'Acceso inmediato', text: 'Disponible en tu biblioteca al pagar.' },
     ],
@@ -173,7 +173,7 @@ export const includedPageEs = {
     eyebrow: 'Consultoría QA senior',
     title: 'Cuando necesitas a alguien que ya lo haya hecho antes',
     subtitle:
-      'Acceso directo a consultoría senior para empresas con plan Enterprise: estrategia de calidad, arquitectura de automatización y plataformas, con más de 10 años en entornos críticos.',
+      'Acceso directo a consultoría senior para empresas con el plan {{plan:top}}: estrategia de calidad, arquitectura de automatización y plataformas, con más de 10 años en entornos críticos.',
     pillars: [
       { title: 'Ingeniería de plataformas', text: 'Arquitecturas multiusuario, roles, suscripciones y gobierno.' },
       { title: 'Automatización QA', text: 'Ecosistemas de API y UI con informes y puertas de calidad en CI/CD.' },
@@ -181,7 +181,7 @@ export const includedPageEs = {
     ],
     phasesTitle: 'Cómo trabajamos',
     phases: ['Diseñar', 'Construir', 'Verificar', 'Operar'],
-    badge: 'Plan Enterprise',
+    badge: 'Plan {{plan:top}}',
     cta: 'Hablar con ASE',
   },
   compare: {
@@ -203,8 +203,8 @@ export const includedPageEs = {
     ] as { label: string; ase: Mark; video: Mark; loose: Mark }[],
   },
   final: {
-    title: 'Todo esto, desde el primer día.',
-    subtitle: 'Elige tu plan o empieza jugando gratis la primera misión de ASE Academy.',
+    title: 'Empieza hoy y amplía cuando lo necesites.',
+    subtitle: 'Compara qué incluye cada plan o empieza jugando gratis la primera misión de ASE Academy.',
     primary: 'Ver planes',
     secondary: 'Jugar gratis',
     tertiary: 'Hablar con ASE',
@@ -225,13 +225,13 @@ export const includedPageEn: typeof includedPageEs = {
     titleHighlight: 'The whole ecosystem',
     titleAfter: 'of software quality.',
     subtitle:
-      'Training you play, resources ready for your project, jobs with an honest fit analysis and senior consulting. All connected, all in your plan.',
+      'Training you play, resources ready for your project, jobs with an honest fit analysis and senior consulting. All connected; what each plan unlocks is in the Plans comparison.',
     primaryCta: 'See plans',
     secondaryCta: 'Try ASE Academy',
-    cardTitle: 'Your ASE subscription',
-    cardSubtitle: 'Instant access after payment',
-    included: 'Included',
-    enterprise: 'Enterprise',
+    cardTitle: 'The ASE ecosystem',
+    cardSubtitle: 'What each plan includes: see the Plans comparison',
+    included: 'Available',
+    enterprise: '{{plan:top}}',
   },
   nav: {
     label: 'Sections',
@@ -250,12 +250,12 @@ export const includedPageEn: typeof includedPageEs = {
     eyebrow: 'Technical catalog',
     title: 'A curated catalog, not an endless shelf',
     subtitle:
-      'Courses, books, products and resources picked for their real usefulness on quality projects. With free previews, reviews from people who used them and instant download.',
+      'Courses, books, products and resources picked for their real usefulness on quality projects. With reviews from people who used them, instant download and a free sample on titles marked «Preview».',
     chartTitle: 'Catalog breakdown',
     chartLive: 'Live',
     total: 'published titles',
     features: [
-      { title: 'Free preview', text: 'Read a sample before you decide.' },
+      { title: 'Free sample', text: 'On titles marked «Preview», read part of it before you decide.' },
       { title: 'Star reviews', text: 'Real opinions on every product.' },
       { title: 'Instant access', text: 'In your library the moment you pay.' },
     ],
@@ -383,7 +383,7 @@ export const includedPageEn: typeof includedPageEs = {
     eyebrow: 'Senior QA consulting',
     title: "When you need someone who's done it before",
     subtitle:
-      'Direct access to senior consulting for companies on the Enterprise plan: quality strategy, automation and platform architecture, with 10+ years in critical environments.',
+      'Direct access to senior consulting for companies on the {{plan:top}} plan: quality strategy, automation and platform architecture, with 10+ years in critical environments.',
     pillars: [
       { title: 'Platform engineering', text: 'Multi-tenant architectures, roles, subscriptions and governance.' },
       { title: 'QA automation', text: 'API and UI ecosystems with reporting and quality gates in CI/CD.' },
@@ -391,7 +391,7 @@ export const includedPageEn: typeof includedPageEs = {
     ],
     phasesTitle: 'How we work',
     phases: ['Design', 'Build', 'Verify', 'Operate'],
-    badge: 'Enterprise plan',
+    badge: '{{plan:top}} plan',
     cta: 'Talk to ASE',
   },
   compare: {
@@ -413,8 +413,8 @@ export const includedPageEn: typeof includedPageEs = {
     ],
   },
   final: {
-    title: 'All of this, from day one.',
-    subtitle: 'Pick your plan or start by playing the first ASE Academy mission for free.',
+    title: 'Start today and add more when you need it.',
+    subtitle: 'Compare what each plan includes or start by playing the first ASE Academy mission for free.',
     primary: 'See plans',
     secondary: 'Play free',
     tertiary: 'Talk to ASE',

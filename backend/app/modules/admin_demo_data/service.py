@@ -20,10 +20,11 @@ from app.modules.consumer_catalog.purchases_repository import CatalogPurchasesRe
 # so they're trivially identifiable (and excludable) anywhere in the admin
 # panel or in a data export.
 DEMO_PASSWORD = "DemoASE-2026!"
-DEMO_PAID_ACCOUNTS: tuple[tuple[str, str, str], ...] = (
-    # (email, display_name, plan_code)
-    ("demo.pro@arcesabinengineering.com", "Demo Usuario Pro", "pro_monthly"),
-    ("demo.business@arcesabinengineering.com", "Demo Usuario Business", "business_monthly"),
+DEMO_PAID_ACCOUNTS: tuple[tuple[str, str], ...] = (
+    # (email, plan_code) — el nombre visible sale del plan de la base de datos
+    # («Demo <nombre del plan>»), así nunca muestra un plan que no existe.
+    ("demo.pro@arcesabinengineering.com", "pro_monthly"),
+    ("demo.business@arcesabinengineering.com", "business_monthly"),
 )
 # Independent users with no subscription at all — lets the super admin log
 # in and see the private area exactly as a free/unconverted signup does,
@@ -66,12 +67,12 @@ def _get_or_create_demo_user(db: Session, *, email: str, display_name: str) -> t
     return user, already_existed
 
 
-def _seed_demo_paid_account(db: Session, *, email: str, display_name: str, plan_code: str) -> DemoAccountRead | None:
+def _seed_demo_paid_account(db: Session, *, email: str, plan_code: str) -> DemoAccountRead | None:
     plan = db.execute(select(Plan).where(Plan.code == plan_code)).scalar_one_or_none()
     if plan is None:
         return None
 
-    user, already_existed = _get_or_create_demo_user(db, email=email, display_name=display_name)
+    user, already_existed = _get_or_create_demo_user(db, email=email, display_name=f"Demo {plan.name}")
     member = ensure_personal_workspace(db, user_id=user.id)
     db.commit()
 
@@ -135,13 +136,13 @@ def seed_demo_users(db: Session) -> SeedDemoUsersResponse:
     subscription (ensure_personal_workspace, the same entitlement-grant
     logic the Stripe webhook uses) so what the super admin sees when
     logging in as a demo account is representative of the real thing.
-    Covers both paid accounts (Pro/Business, DEMO_PAID_ACCOUNTS) and plain
+    Covers both paid accounts (DEMO_PAID_ACCOUNTS) and plain
     independent accounts with no plan at all (DEMO_FREE_ACCOUNTS), so the
     super admin can preview both the paying and the free/upsell experience."""
     accounts: list[DemoAccountRead] = []
 
-    for email, display_name, plan_code in DEMO_PAID_ACCOUNTS:
-        account = _seed_demo_paid_account(db, email=email, display_name=display_name, plan_code=plan_code)
+    for email, plan_code in DEMO_PAID_ACCOUNTS:
+        account = _seed_demo_paid_account(db, email=email, plan_code=plan_code)
         if account is not None:
             accounts.append(account)
 

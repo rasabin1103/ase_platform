@@ -10,7 +10,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { TurnstileWidget } from '../components/auth/TurnstileWidget'
 import { COUNTRIES } from '../data/countries'
 import { useI18n } from '../i18n'
@@ -78,7 +78,7 @@ export function RegisterPage() {
           badge={t('auth.register.badge')}
           title={t('auth.register.title')}
           body={t('auth.register.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">
@@ -125,7 +125,7 @@ export function RegisterPage() {
                   id="register-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="name@company.com"
+                  placeholder={t('auth.fields.emailPlaceholder')}
                   {...form.register('email')}
                 />
                 {form.formState.errors.email && (

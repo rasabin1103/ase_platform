@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { confirmEmailVerification } from '../api/auth.api'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
 
 type VerifyStatus = 'pending' | 'success' | 'error'
@@ -36,7 +36,7 @@ export function VerifyEmailPage() {
           badge={t('auth.verifyEmail.badge')}
           title={t('auth.verifyEmail.title')}
           body={t('auth.verifyEmail.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

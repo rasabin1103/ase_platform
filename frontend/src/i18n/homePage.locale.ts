@@ -50,7 +50,7 @@ export const homePageEs = {
     tiles: {
       catalog: {
         title: 'Catálogo técnico',
-        desc: 'Cursos, libros, scripts, frameworks y plantillas listos para usar, con vista previa gratuita y reseñas reales.',
+        desc: 'Cursos, libros, scripts, frameworks y plantillas listos para usar, con reseñas reales y muestra gratuita en los títulos que la tienen.',
         chips: ['Cursos', 'Libros', 'Scripts', 'Plantillas'],
         cta: 'Explorar el catálogo',
       },
@@ -107,7 +107,7 @@ export const homePageEs = {
   catalog: {
     eyebrow: 'Catálogo',
     title: 'Lo más valorado del catálogo',
-    subtitle: 'Recursos técnicos con vista previa, reseñas y descarga inmediata.',
+    subtitle: 'Recursos técnicos con reseñas, descarga inmediata y muestra gratuita cuando está disponible.',
     free: 'Gratis',
     cta: 'Ver todo el catálogo',
     reviews: 'reseñas',
@@ -151,7 +151,7 @@ export const homePageEs = {
     eyebrow: 'Cómo funciona',
     title: 'Empieza en minutos',
     items: [
-      { title: 'Elige tu plan', text: 'Gratis para empezar; Pro, Business o Enterprise cuando lo necesites.' },
+      { title: 'Elige tu plan', text: 'Empieza con {{plan:free}} y pasa a {{plan:others}} cuando lo necesites.' },
       { title: 'Accede a todo al momento', text: 'Catálogo, Academy, empleo y comunidad desde el primer día.' },
       { title: 'Crece con la plataforma', text: 'Tu antigüedad sube de nivel y desbloquea recompensas.' },
     ],
@@ -211,7 +211,7 @@ export const homePageEn: typeof homePageEs = {
     tiles: {
       catalog: {
         title: 'Technical catalog',
-        desc: 'Courses, books, scripts, frameworks and ready-to-use templates, with free previews and real reviews.',
+        desc: 'Courses, books, scripts, frameworks and ready-to-use templates, with real reviews and a free sample on titles that have one.',
         chips: ['Courses', 'Books', 'Scripts', 'Templates'],
         cta: 'Browse the catalog',
       },
@@ -271,7 +271,7 @@ export const homePageEn: typeof homePageEs = {
   catalog: {
     eyebrow: 'Catalog',
     title: 'Top rated in the catalog',
-    subtitle: 'Technical resources with previews, reviews and instant download.',
+    subtitle: 'Technical resources with reviews, instant download and a free sample when available.',
     free: 'Free',
     cta: 'See the whole catalog',
     reviews: 'reviews',
@@ -311,7 +311,7 @@ export const homePageEn: typeof homePageEs = {
     eyebrow: 'How it works',
     title: 'Get started in minutes',
     items: [
-      { title: 'Pick your plan', text: 'Free to start; Pro, Business or Enterprise when you need them.' },
+      { title: 'Pick your plan', text: 'Start with {{plan:free}} and move up to {{plan:others}} when you need it.' },
       { title: 'Access everything instantly', text: 'Catalog, Academy, jobs and community from day one.' },
       { title: 'Grow with the platform', text: 'Your tenure levels up and unlocks rewards.' },
     ],

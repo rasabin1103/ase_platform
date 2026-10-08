@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input'
 import axios from 'axios'
 import { API_BASE_URL } from '../api/client'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
 import { useAuth } from '../hooks/useAuth'
 
@@ -70,7 +70,7 @@ export function LoginPage() {
             badge={t('auth.login.badge')}
             title={t('auth.login.title')}
             body={t('auth.login.body')}
-            bullets={t<string[]>('auth.bullets')}
+            bullets={t<AuthBenefit[]>('auth.bullets')}
           />
           <div className="flex items-center justify-center lg:justify-end">
             <AuthCard>
@@ -142,7 +142,7 @@ export function LoginPage() {
           badge={t('auth.login.badge')}
           title={t('auth.login.title')}
           body={t('auth.login.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">
@@ -165,7 +165,7 @@ export function LoginPage() {
             <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
               <div>
                 <label htmlFor="login-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.email') as string}</label>
-                <Input id="login-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.fields.emailPlaceholder')} {...form.register('email')} />
                 {form.formState.errors.email && (
                   <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                 )}

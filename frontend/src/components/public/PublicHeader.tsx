@@ -115,7 +115,7 @@ export function PublicHeader() {
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/60 navfit:hidden"
-            aria-label="Open menu"
+            aria-label={language === 'en' ? 'Open menu' : 'Abrir menú'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >

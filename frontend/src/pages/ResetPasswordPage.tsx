@@ -8,7 +8,7 @@ import { confirmPasswordReset } from '../api/auth.api'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
 import { passwordSchema } from '../utils/passwordPolicy'
 
@@ -52,7 +52,7 @@ export function ResetPasswordPage() {
           badge={t('auth.resetPassword.badge')}
           title={t('auth.resetPassword.title')}
           body={t('auth.resetPassword.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

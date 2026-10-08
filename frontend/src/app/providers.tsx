@@ -5,6 +5,7 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { reportError } from '../components/ui/errorNotifications'
 import { CriticalErrorModal } from '../components/ui/CriticalErrorModal'
 import { ToastViewport } from '../components/ui/ToastViewport'
+import { PlanNamesSync } from '../components/layout/PlanNamesSync'
 
 // A query/mutation can opt out of this global surfacing by passing
 // `meta: { suppressGlobalError: true }` in its useQuery/useMutation options
@@ -52,6 +53,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
+        <PlanNamesSync />
         <AuthProvider>{children}</AuthProvider>
       </I18nProvider>
       <ToastViewport />

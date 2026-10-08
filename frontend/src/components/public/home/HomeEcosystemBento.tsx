@@ -80,7 +80,7 @@ export function HomeEcosystemBento() {
         </Tile>
 
         <Tile
-          to="/platform"
+          to="/academy"
           className="md:col-span-2"
           icon={<Briefcase />}
           title={t.jobs.title}

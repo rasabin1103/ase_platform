@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { FileX } from 'lucide-react'
 import type { CatalogItemType } from '../../api/catalogShowcase.api'
 import { getCatalogShowcasePreviewContent } from '../../api/catalogShowcase.api'
+import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { Skeleton } from '../ui/Skeleton'
 import { EmptyState } from '../ui/EmptyState'
@@ -48,6 +49,13 @@ export function CatalogShowcasePreviewModal({
       onClose={onClose}
       title={`${t('publicCatalogShowcase.previewModal.title')} · ${title}`}
       className="max-w-4xl"
+      footer={
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            {t('publicCatalogShowcase.previewModal.close')}
+          </Button>
+        </div>
+      }
     >
       {query.isLoading ? (
         <Skeleton className="h-64 w-full rounded-lg" />

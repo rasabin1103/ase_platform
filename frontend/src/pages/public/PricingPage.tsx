@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom'
 import { PageHero } from '../../components/public/home/PageHero'
 import { Reveal, SectionHeading } from '../../components/public/home/Reveal'
 import { PricingSection } from '../../components/public/PricingSection'
+import { PlanComparisonTable } from '../../components/public/pricing/PlanComparisonTable'
 import { PurchaseVsSubscriptionFaq } from '../../components/public/PurchaseVsSubscriptionFaq'
 import { SubscriptionPolicyFaq } from '../../components/public/SubscriptionPolicyFaq'
 import { ButtonLink } from '../../components/ui/Button'
 import { useI18n } from '../../i18n'
 import { pagesV2En, pagesV2Es } from '../../i18n/pagesV2.locale'
+import { usePlanFilledCopy } from '../../hooks/usePlanNames'
 import { usePageTitle } from '../../hooks/usePageTitle'
 
 const INCLUDED_ICONS = [Library, Gamepad2, BookOpen, Briefcase, MessagesSquare, Award]
 
 export function PricingPage() {
   const { t, language } = useI18n()
-  const c = (language === 'en' ? pagesV2En : pagesV2Es).pricing
+  const c = usePlanFilledCopy((language === 'en' ? pagesV2En : pagesV2Es).pricing)
   usePageTitle(t('pricing.title') as string, t('pricing.subtitle') as string)
 
   return (
@@ -37,6 +39,8 @@ export function PricingPage() {
       </PageHero>
 
       <PricingSection hideIntro />
+
+      <PlanComparisonTable />
 
       {/* Todos los planes incluyen */}
       <section className="py-16">

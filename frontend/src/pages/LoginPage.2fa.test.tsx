@@ -26,7 +26,7 @@ function renderLoginPage() {
 
 async function submitCredentials(container: HTMLElement) {
   const user = userEvent.setup()
-  const emailInput = screen.getByPlaceholderText('name@company.com')
+  const emailInput = screen.getByPlaceholderText('tu@email.com')
   const passwordInput = container.querySelector('input[type="password"]') as HTMLInputElement
   const submitButton = container.querySelector('button[type="submit"]') as HTMLButtonElement
 
@@ -54,7 +54,7 @@ describe('LoginPage two-factor flow', () => {
     // reaching the challenge screen — only on actually submitting a code.
     expect(authApi.verifyLoginTwoFactor).not.toHaveBeenCalled()
     // The original login form (email input) is gone, replaced by the challenge screen.
-    expect(screen.queryByPlaceholderText('name@company.com')).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('tu@email.com')).not.toBeInTheDocument()
   })
 
   it('submits the entered code with the challenge token from the login response', async () => {

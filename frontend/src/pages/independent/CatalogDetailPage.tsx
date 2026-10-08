@@ -564,6 +564,19 @@ export function CatalogDetailPage() {
             </div>
           }
           closeLabel={t('catalog.resource.close')}
+          footer={
+            <div className="flex justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setViewerOpen(false)
+                  setViewerMaximized(false)
+                }}
+              >
+                {t('catalog.resource.close')}
+              </Button>
+            </div>
+          }
           className={viewerMaximized ? 'h-[92vh] w-[96vw] max-w-none' : 'max-w-6xl'}
           // Modal already renders its own maximize toggle by default — this
           // title has its own (next to the file path, wired to

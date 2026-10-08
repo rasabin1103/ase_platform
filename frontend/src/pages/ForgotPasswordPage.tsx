@@ -7,7 +7,7 @@ import { requestPasswordReset } from '../api/auth.api'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
 
 const schema = z.object({ email: z.string().email() })
@@ -29,7 +29,7 @@ export function ForgotPasswordPage() {
           badge={t('auth.forgotPassword.badge')}
           title={t('auth.forgotPassword.title')}
           body={t('auth.forgotPassword.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">
@@ -55,7 +55,7 @@ export function ForgotPasswordPage() {
                 <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
                   <div>
                     <label htmlFor="forgot-password-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.email') as string}</label>
-                    <Input id="forgot-password-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                    <Input id="forgot-password-email" type="email" autoComplete="email" placeholder={t('auth.fields.emailPlaceholder')} {...form.register('email')} />
                     {form.formState.errors.email && (
                       <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
                     )}

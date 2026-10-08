@@ -1,4 +1,5 @@
 import { ArrowRight, Check, Lock, User, X } from 'lucide-react'
+import { useI18n } from '../../../../i18n'
 import { useState } from 'react'
 import { cn } from '../../../ui/cn'
 import { Reveal, SectionHeading } from '../../home/Reveal'
@@ -241,21 +242,25 @@ export function PlatformRbac() {
 
 export function PlatformBilling() {
   const c = usePlatformCopy().billing
+  // Escalera con los planes reales de la base de datos (todos, en su orden).
+  const { planNames } = useI18n()
+  const ladder = planNames?.all.length ? planNames.all : c.plans
+  const lastIdx = ladder.length - 1
 
   const visual = (
     <VisualFrame title={c.ladderTitle}>
       {/* Escalera de planes */}
       <div className="flex h-48 items-end gap-3">
-        {c.plans.map((p, i) => (
-          <div key={p} className="flex flex-1 flex-col items-center gap-2">
+        {ladder.map((p, i) => (
+          <div key={p} className="flex min-w-0 flex-1 flex-col items-center gap-2">
             <div
               className={cn(
-                'flex w-full items-start justify-center rounded-t-xl border border-white/10 pt-3 transition',
-                i === 3 ? 'ase-gradient-brand border-transparent' : 'bg-white/[0.04]',
+                'flex w-full items-start justify-center rounded-t-xl border border-white/10 px-1 pt-3 transition',
+                i === lastIdx ? 'ase-gradient-brand border-transparent' : 'bg-white/[0.04]',
               )}
-              style={{ height: `${60 + i * 36}px` }}
+              style={{ height: `${60 + Math.round((i * 108) / Math.max(lastIdx, 1))}px` }}
             >
-              <span className={cn('text-xs font-bold', i === 3 ? 'text-white' : 'text-ase-text2')}>{p}</span>
+              <span className={cn('truncate text-xs font-bold', i === lastIdx ? 'text-white' : 'text-ase-text2')}>{p}</span>
             </div>
           </div>
         ))}

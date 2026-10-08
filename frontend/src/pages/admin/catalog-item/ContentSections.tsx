@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input'
 import { Select } from '../../../components/ui/Select'
 import { Switch } from '../../../components/ui/Switch'
 import { ACADEMY_COURSES } from '../../../features/academy/content/courseList'
+import { courseSyllabus, syllabusMarkdown, upsertSyllabus } from '../../../features/academy/syllabus'
 import { useI18n } from '../../../i18n'
 import { Field, SubGroup } from './FormBits'
 import {
@@ -65,16 +66,19 @@ export function ContentFields({ s }: SectionProps) {
 
   if (type === 'course') {
     return (
-      <Field label={t('adminCatalog.academyCourse.label')} hint={t('adminCatalog.academyCourse.hint')} wide>
-        <Select {...form.register('academy_course_key', { setValueAs: (v) => (v === '' || v == null ? null : v) })}>
-          <option value="">{t('adminCatalog.academyCourse.none')}</option>
-          {ACADEMY_COURSES.map((c) => (
-            <option key={c.key} value={c.key}>
-              {c.title} · {c.key}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <>
+        <Field label={t('adminCatalog.academyCourse.label')} hint={t('adminCatalog.academyCourse.hint')} wide>
+          <Select {...form.register('academy_course_key', { setValueAs: (v) => (v === '' || v == null ? null : v) })}>
+            <option value="">{t('adminCatalog.academyCourse.none')}</option>
+            {ACADEMY_COURSES.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.title} · {c.key}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <AcademySyllabusHelper s={s} />
+      </>
     )
   }
 
@@ -334,5 +338,45 @@ export function LicenseFields({ s }: SectionProps) {
         />
       </Field>
     </>
+  )
+}
+
+/**
+ * Estado real de las misiones del curso de Academy vinculado y botón para
+ * volcar el temario actualizado en la descripción larga (sustituye el bloque
+ * anterior si ya existía), de modo que la ficha nunca anuncie como «próximas»
+ * misiones que ya están disponibles.
+ */
+function AcademySyllabusHelper({ s }: SectionProps) {
+  const { form } = s
+  const key = useWatch({ control: form.control, name: 'academy_course_key' })
+  if (!key) return null
+  const missions = courseSyllabus(key)
+  const available = missions.filter((m) => m.available).length
+  const insert = () => {
+    const current = form.getValues('long_description') ?? ''
+    form.setValue('long_description', upsertSyllabus(current, syllabusMarkdown(key, 'es')), { shouldDirty: true })
+  }
+  return (
+    <SubGroup
+      title={`Misiones del curso · ${available} de ${missions.length} disponibles`}
+      hint="La ficha pública ya muestra este temario automáticamente. Si la descripción larga menciona misiones o temas «próximos», inserta el temario actualizado y revisa el texto antes de guardar."
+    >
+      <ol className="grid gap-1.5 text-xs sm:grid-cols-2">
+        {missions.map((m, i) => (
+          <li key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+            <span className="truncate text-ase-text2">
+              {i + 1}. {m.title}
+            </span>
+            <span className={m.available ? 'text-emerald-300' : 'text-amber-200'}>
+              {m.available ? 'Disponible' : 'Próximamente'}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <Button type="button" size="sm" variant="secondary" onClick={insert}>
+        Insertar temario actualizado en la descripción
+      </Button>
+    </SubGroup>
   )
 }
