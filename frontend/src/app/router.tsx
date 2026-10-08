@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { WorkspaceContextGate } from '../auth/WorkspaceContextGate'
@@ -7,6 +8,7 @@ import { RequirePermission } from '../rbac/RequirePermission'
 import { AppLayout } from '../components/layout/AppLayout'
 import { PublicLayout } from '../components/public/PublicLayout'
 import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
+import { RouteLoadingFallback } from '../components/layout/RouteLoadingFallback'
 // Every leaf page is React.lazy()'d in lazyPages.tsx so the initial bundle
 // only ships the app shell (layouts, guards, router) plus whichever page
 // the user actually requested — the route tree used to load as a single
@@ -15,6 +17,9 @@ import { AuthPublicLayout } from '../components/public/AuthPublicLayout'
 // `router` export below breaks Fast Refresh.
 import {
   AboutPage,
+  AcademyCoursePage,
+  AcademyHomePage,
+  AcademyPlayerPage,
   AdminAnnouncementsPage,
   AdminAuditLogPage,
   AdminBookingPage,
@@ -38,7 +43,6 @@ import {
   JobPostingDetailPage,
   JobPostingsPage,
   LoginPage,
-  MyPurchasesPage,
   NewsletterUnsubscribePage,
   NotFoundPage,
   OnboardingPage,
@@ -58,7 +62,7 @@ import {
   RequestsPage,
   ResetPasswordPage,
   SelectOrganizationPage,
-  ServicesAdminPage,
+  AdminServicesPage,
   ServicesPage,
   StoryPage,
   TermsPage,
@@ -66,6 +70,7 @@ import {
   BookingPage,
   UsersPage,
   VerifyEmailPage,
+  NotificationsPage,
 } from './lazyPages'
 // Small role/param-dispatch wrappers around lazy pages — see routeHelpers.tsx
 // for why these live in their own module too.
@@ -75,6 +80,7 @@ import {
   CatalogProductsPage,
   CatalogResourcesPage,
   FavoritesPage,
+  PurchasesRedirect,
   MyBooksPage,
   MyCoursesPage,
   MyLibraryPage,
@@ -101,7 +107,19 @@ export const router = createBrowserRouter([
       { path: '/blog/:slug', element: <BlogPostPage /> },
       { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
       { path: '/terms-of-service', element: <TermsPage /> },
+      { path: '/academy', element: <AcademyHomePage /> },
+      { path: '/academy/:courseKey', element: <AcademyCoursePage /> },
     ],
+  },
+  // ASE Academy: el reproductor ocupa toda la pantalla (escritorio simulado),
+  // así que va fuera de los layouts y necesita su propio Suspense.
+  {
+    path: '/academy/:courseKey/:missionId',
+    element: (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <AcademyPlayerPage />
+      </Suspense>
+    ),
   },
   {
     element: <AuthPublicLayout />,
@@ -137,7 +155,7 @@ export const router = createBrowserRouter([
               { path: '/catalog/resources', element: <CatalogResourcesPage /> },
               { path: '/catalog/:type/:slug', element: <CatalogDetailPage /> },
               { path: '/favorites', element: <FavoritesPage /> },
-              { path: '/my-purchases', element: <MyPurchasesPage /> },
+              { path: '/my-purchases', element: <PurchasesRedirect /> },
               { path: '/preferencias', element: <PreferencesSurveyPage /> },
               { path: '/my-library', element: <MyLibraryPage /> },
               { path: '/my-products', element: <MyProductsPage /> },
@@ -152,6 +170,8 @@ export const router = createBrowserRouter([
           // Self-service — every authenticated role manages its own
           // profile, so this stays ungated beyond being logged in.
           { path: '/profile', element: <ProfilePage /> },
+          // Notifications inbox + settings: any authenticated role.
+          { path: '/notifications', element: <NotificationsPage /> },
           // Job postings: browsable by any authenticated user regardless of
           // role (independent, org_owner/org_admin, or super_admin) — same
           // "ungated beyond login" treatment as /profile. Management lives
@@ -198,7 +218,7 @@ export const router = createBrowserRouter([
           },
           {
             element: <RequirePermission anyOf={['products.manage']} />,
-            children: [{ path: '/admin/services', element: <ServicesAdminPage /> }],
+            children: [{ path: '/admin/services', element: <AdminServicesPage /> }],
           },
           {
             element: <RequirePermission anyOf={['billing.manage']} />,

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { PremiumHero } from '../components/admin/premium/PremiumHero'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
@@ -165,19 +166,16 @@ export function OnboardingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Badge variant="info" className="w-fit">
-          {t('onboardingPage.badge')}
-        </Badge>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-ase-text">
-          {String(t('onboardingPage.welcomeTitle')).replace('{{name}}', display)}
-        </h1>
-        <p className="mt-1 text-sm text-ase-text2">{t('onboardingPage.welcomeBody')}
-        </p>
-      </div>
+      <PremiumHero
+        compact
+        accent="cyan"
+        badge={t('onboardingPage.badge') as string}
+        title={String(t('onboardingPage.welcomeTitle')).replace('{{name}}', display)}
+        subtitle={t('onboardingPage.welcomeBody') as string}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-6 lg:col-span-2" interactive>
+        <Card className="rounded-3xl border-white/10 bg-ase-surface/80 p-6 lg:col-span-2" interactive>
           <div className="text-sm font-semibold text-ase-text">{t('onboardingPage.create.title')}</div>
           <div className="mt-1 text-sm text-ase-text2">{t('onboardingPage.create.subtitle')}</div>
 
@@ -232,7 +230,7 @@ export function OnboardingPage() {
         </Card>
 
         <div className="space-y-4">
-          <Card className="p-6" interactive>
+          <Card className="rounded-3xl border-white/10 bg-ase-surface/80 p-6" interactive>
             <div className="text-sm font-semibold text-ase-text">{t('onboardingPage.individual.title')}</div>
             <div className="mt-1 text-sm text-ase-text2">{t('onboardingPage.individual.subtitle')}</div>
             <div className="mt-4">
@@ -269,7 +267,7 @@ export function OnboardingPage() {
             </div>
           </Card>
 
-          <Card className="p-6" interactive>
+          <Card className="rounded-3xl border-white/10 bg-ase-surface/80 p-6" interactive>
             <div className="text-sm font-semibold text-ase-text">{t('orgMembership.onboarding.invitesTitle')}</div>
             <div className="mt-1 text-sm text-ase-text2">{t('orgMembership.onboarding.invitesSubtitle')}</div>
             <div className="mt-4 space-y-3">
@@ -309,7 +307,7 @@ export function OnboardingPage() {
         </div>
       </div>
 
-      <Card className="p-6" interactive>
+      <Card className="rounded-3xl border-white/10 bg-ase-surface/80 p-6" interactive>
         <Badge variant="info" className="w-fit">
           {t('orgMembership.onboarding.joinBadge')}
         </Badge>

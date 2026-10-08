@@ -154,12 +154,28 @@ export default {
           '0%, 100%': { opacity: '0.55' },
           '50%': { opacity: '1' },
         },
+        homeFloat: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        flowDot: {
+          '0%': { left: '0%', opacity: '0' },
+          '10%, 90%': { opacity: '1' },
+          '100%': { left: '100%', opacity: '0' },
+        },
+        homeDrift: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '50%': { transform: 'translate(30px, -20px) scale(1.08)' },
+        },
       },
       animation: {
         'cap-glow': 'capGlow 4.5s ease-in-out infinite',
         'cap-float': 'capFloat 6s ease-in-out infinite',
         'fade-in-up': 'fadeInUp 0.6s ease-out both',
         'glow-pulse': 'glowPulse 2.8s ease-in-out infinite',
+        'home-float': 'homeFloat 7s ease-in-out infinite',
+        'flow-dot': 'flowDot 5s linear infinite',
+        'home-drift': 'homeDrift 18s ease-in-out infinite',
       },
     },
   },

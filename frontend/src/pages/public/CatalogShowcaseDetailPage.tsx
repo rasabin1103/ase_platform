@@ -20,6 +20,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { usePageTitle } from '../../hooks/usePageTitle'
 import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
+import { AcademyCatalogPanel } from '../../features/academy/AcademyCatalogPanel'
+import { PublicReviewList } from '../../components/catalog/PublicReviewList'
 
 function formatPrice(price: string, currency: string, freeLabel: string) {
   const n = Number(price)
@@ -221,6 +223,10 @@ export function CatalogShowcaseDetailPage() {
       </div>
 
       <div className="mt-10 space-y-4">
+        {item.academyCourseKey ? (
+          <AcademyCatalogPanel courseKey={item.academyCourseKey} owned={Number(item.price) <= 0} t={t} />
+        ) : null}
+
         <Card className="p-5">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ase-brand/25 bg-ase-brand/10 text-ase-brand">
@@ -250,6 +256,7 @@ export function CatalogShowcaseDetailPage() {
           items={item.includedItems}
           icon={<ListChecks className="h-4 w-4" strokeWidth={1.75} />}
         />
+        <PublicReviewList type={itemType} slug={item.slug} title={t('catalog.review.title')} language={language} />
       </div>
 
       <CatalogShowcasePreviewModal

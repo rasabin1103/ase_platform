@@ -69,3 +69,6 @@ class CatalogShowcaseItemDetail(CatalogShowcaseItemRead):
     benefits: list[str] = []
     requirements: list[str] = []
     includedItems: list[str] = []
+    # ASE Academy simulator course key — lets the public page offer the
+    # free demo mission before signing up.
+    academyCourseKey: str | None = None

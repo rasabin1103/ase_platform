@@ -27,7 +27,9 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { Badge } from '../../components/ui/Badge'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
-import { MiniMetric, PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { MiniMetric } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
+import { AdminTabs } from '../../components/admin/premium/AdminTabs'
 import { useI18n } from '../../i18n'
 import { cn } from '../../components/ui/cn'
 import { AdminCatalogItemModal } from './AdminCatalogItemModal'
@@ -217,7 +219,7 @@ function AdminCatalogItemsPanel() {
         </Button>
       </div>
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-5 backdrop-blur">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface/55 p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {TABS.map((item) => (
@@ -228,7 +230,7 @@ function AdminCatalogItemsPanel() {
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
                   tab === item.key
-                    ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
+                    ? 'border-ase-brand/40 bg-ase-brand/15 text-sky-100'
                     : 'border-white/10 bg-white/[0.03] text-ase-muted hover:text-ase-text',
                 )}
               >
@@ -239,6 +241,8 @@ function AdminCatalogItemsPanel() {
           <div className="flex flex-wrap items-center gap-3">
             <Input
               className="h-11 min-w-[200px] rounded-xl border-white/10 bg-ase-bg2/50"
+              type="search"
+              aria-label={t('adminCatalog.searchPlaceholder') as string}
               placeholder={t('adminCatalog.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -281,7 +285,7 @@ function AdminCatalogItemsPanel() {
       />
 
       {query.isLoading ? (
-        <Skeleton className="h-56 rounded-[2rem]" />
+        <Skeleton className="h-56 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.loadError')} />
       ) : items.length === 0 ? (
@@ -300,7 +304,7 @@ function AdminCatalogItemsPanel() {
           ))}
         </div>
       ) : (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-0">
+        <Card className="divide-y divide-white/10 overflow-hidden rounded-3xl border-white/10 bg-ase-surface/60 p-0">
           <div className="grid grid-cols-[72px_1fr_90px_100px_100px_140px] gap-2 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase text-ase-muted">
             <span />
             <span>{t('adminCatalog.colTitle')}</span>
@@ -403,15 +407,21 @@ const VALID_SECTIONS: SectionKey[] = ['items', 'categories', 'pricing']
 
 export function AdminCatalogPage() {
   const { t } = useI18n()
-  const [searchParams] = useSearchParams()
-  // Lets other screens deep-link straight into a tab — e.g. the "Manage
-  // categories" shortcut inside the item creation form links to
-  // `?section=categories` instead of dropping the admin on the Items tab
-  // and making them click again.
-  const initialSection = searchParams.get('section') as SectionKey | null
-  const [section, setSection] = useState<SectionKey>(
-    initialSection && VALID_SECTIONS.includes(initialSection) ? initialSection : 'items',
-  )
+  // La sección vive en la URL (?section=…): otras pantallas pueden enlazar
+  // directamente a una pestaña y se conserva al recargar.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const raw = searchParams.get('section') as SectionKey | null
+  const section: SectionKey = raw && VALID_SECTIONS.includes(raw) ? raw : 'items'
+  const setSection = (key: SectionKey) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (key === 'items') next.delete('section')
+        else next.set('section', key)
+        return next
+      },
+      { replace: true },
+    )
 
   return (
     <div className="space-y-8 pb-16">
@@ -422,25 +432,12 @@ export function AdminCatalogPage() {
         subtitle={t('adminCatalog.subtitle')}
       />
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-3 backdrop-blur">
-        <div className="flex flex-wrap gap-2">
-          {SECTIONS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setSection(item.key)}
-              className={cn(
-                'rounded-full border px-4 py-1.5 text-xs font-semibold transition',
-                section === item.key
-                  ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
-                  : 'border-white/10 bg-white/[0.03] text-ase-muted hover:text-ase-text',
-              )}
-            >
-              {t(item.labelKey)}
-            </button>
-          ))}
-        </div>
-      </Card>
+      <AdminTabs
+        label={t('adminCatalog.title')}
+        tabs={SECTIONS.map((x) => ({ key: x.key, label: t(x.labelKey) }))}
+        active={section}
+        onChange={setSection}
+      />
 
       {section === 'items' && <AdminCatalogItemsPanel />}
       {section === 'categories' && <AdminCatalogCategoriesPanel />}
@@ -463,7 +460,7 @@ function CatalogPremiumCard({
   onStats: () => void
 }) {
   return (
-    <Card className="group overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-300/20">
+    <Card className="group overflow-hidden rounded-3xl border-white/10 bg-ase-surface/60 shadow-[0_24px_80px_rgba(0,0,0,0.34)] transition hover:-translate-y-1 hover:border-ase-brand/20">
       <div className="relative h-40 overflow-hidden border-b border-white/[0.06]">
         <AuthenticatedImage src={item.image_url} className="h-full w-full" />
         <div className="absolute right-3 top-3">

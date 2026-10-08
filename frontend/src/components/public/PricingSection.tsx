@@ -25,11 +25,7 @@ type Billing = 'monthly' | 'yearly'
 
 type TierTone = 'basic' | 'pro' | 'robust' | 'premium'
 
-function planMarketingDescription(
-  t: (key: string) => unknown,
-  plan: Plan,
-  language: 'en' | 'es',
-): string {
+function planMarketingDescription(t: (key: string) => unknown, plan: Plan, language: 'en' | 'es'): string {
   // Whatever the admin actually typed for this plan always wins — the
   // generic per-tier paragraphs below are only a fallback for plans that
   // were never given a custom description, so editing a plan's description
@@ -65,10 +61,7 @@ function planCardBenefits(plan: Plan, t: (key: string) => unknown): PlanCardBene
   if (hasIncludedItems) {
     const text =
       plan.monthly_download_limit != null
-        ? String(t('pricing.cardBenefits.downloadsLimit')).replace(
-            '{{limit}}',
-            String(plan.monthly_download_limit),
-          )
+        ? String(t('pricing.cardBenefits.downloadsLimit')).replace('{{limit}}', String(plan.monthly_download_limit))
         : (t('pricing.cardBenefits.downloadsUnlimited') as string)
     benefits.push({ icon: 'downloads', text })
   }
@@ -117,7 +110,7 @@ function cardTone(plan: Plan): TierTone {
   return 'basic'
 }
 
-export function PricingSection({ compact }: { compact?: boolean }) {
+export function PricingSection({ compact, hideIntro }: { compact?: boolean; hideIntro?: boolean }) {
   const { t, language } = useI18n()
   const auth = useAuth()
   const navigate = useNavigate()
@@ -161,10 +154,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
 
   const plans = useMemo(() => {
     if (!plansQuery.data) return []
-    return catalogPlansForBilling(
-      plansQuery.data,
-      billing,
-    )
+    return catalogPlansForBilling(plansQuery.data, billing)
   }, [plansQuery.data, billing])
 
   const gridColsClass =
@@ -207,37 +197,49 @@ export function PricingSection({ compact }: { compact?: boolean }) {
       : null
 
   return (
-    <section className={cn('relative overflow-hidden border-t border-white/5', compact ? 'py-0' : '')}>
+    <section className={cn('relative isolate overflow-hidden', !hideIntro && 'border-t border-white/5')}>
       {/* Same glow language as the admin application map — a faint brand
        * radial behind the pricing grid, the section most likely to close a
        * deal, so it carries the premium finish too. */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-60"
-        style={{
-          backgroundImage: 'radial-gradient(circle_at_50%_0%,rgba(232,179,104,0.10),transparent_50%)',
-        }}
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[26rem] w-[60rem] -translate-x-1/2 rounded-full bg-ase-brand/10 blur-[140px]"
       />
       {plansJsonLd ? <JsonLd data={plansJsonLd} /> : null}
-      <div className={cn('mx-auto w-full max-w-[1440px] px-6 sm:px-8', compact ? 'py-16' : 'py-28')}>
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Eyebrow>{t('pricing.badge')}</Eyebrow>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">
-              {t('pricing.title')}
-            </h2>
-            <p className="mt-5 max-w-3xl text-base leading-relaxed text-ase-text2 sm:text-lg">
-              {t('pricing.subtitle')}
-            </p>
-          </div>
+      <div
+        className={cn(
+          'mx-auto w-full max-w-[1400px] px-5 sm:px-8',
+          hideIntro ? 'pb-10 pt-2' : compact ? 'py-20 lg:py-24' : 'py-28',
+        )}
+      >
+        <div
+          className={cn(
+            'flex flex-col gap-8',
+            hideIntro ? 'items-center' : 'lg:flex-row lg:items-end lg:justify-between',
+          )}
+        >
+          {!hideIntro && (
+            <div>
+              <Eyebrow>{t('pricing.badge')}</Eyebrow>
+              <h2 className="mt-5 font-display text-3xl font-semibold leading-tight text-ase-text sm:text-4xl lg:text-5xl">
+                {t('pricing.title')}
+              </h2>
+              <p className="mt-5 max-w-3xl text-base leading-relaxed text-ase-text2 sm:text-lg">
+                {t('pricing.subtitle')}
+              </p>
+            </div>
+          )}
 
-          <div className="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2 sm:w-auto">
+          <div className="inline-flex w-full items-center justify-between gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1.5 sm:w-auto">
             <button
               type="button"
               onClick={() => setBilling('monthly')}
               disabled={plansQuery.isLoading}
               className={cn(
-                'flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition sm:flex-none',
-                billing === 'monthly' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
+                'flex-1 rounded-full px-5 py-2 text-sm font-semibold transition sm:flex-none',
+                billing === 'monthly'
+                  ? 'bg-ase-brand/20 text-ase-text ring-1 ring-ase-brand/40'
+                  : 'text-ase-text2 hover:text-ase-text',
                 plansQuery.isLoading && 'pointer-events-none opacity-60',
               )}
             >
@@ -248,8 +250,10 @@ export function PricingSection({ compact }: { compact?: boolean }) {
               onClick={() => setBilling('yearly')}
               disabled={plansQuery.isLoading}
               className={cn(
-                'flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition sm:flex-none',
-                billing === 'yearly' ? 'bg-white/[0.06] text-ase-text' : 'text-ase-text2 hover:text-ase-text',
+                'flex-1 rounded-full px-5 py-2 text-sm font-semibold transition sm:flex-none',
+                billing === 'yearly'
+                  ? 'bg-ase-brand/20 text-ase-text ring-1 ring-ase-brand/40'
+                  : 'text-ase-text2 hover:text-ase-text',
                 plansQuery.isLoading && 'pointer-events-none opacity-60',
               )}
             >
@@ -336,7 +340,8 @@ export function PricingSection({ compact }: { compact?: boolean }) {
               const cardBenefits = planCardBenefits(plan, t)
               const description = planMarketingDescription(t, plan, language)
               const planName = localizedPlanText(language, plan.name, plan.name_en)
-              const cta = localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
+              const cta =
+                localizedPlanText(language, plan.cta_label, plan.cta_label_en) || (t('pricing.plans.pro.cta') as string)
               const planTier = tierFromPlanCode(plan.code)
               const isComingSoon = plan.status === 'coming_soon'
               const isCurrentPlan =
@@ -377,15 +382,16 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                     // shifts where the price or button land — every card in the grid
                     // reads at the same height for the same section, regardless of
                     // how short or long that plan's own copy is.
-                    'relative flex animate-fade-in-up flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-7 shadow-soft transition duration-300 ease-out hover:-translate-y-1',
-                    tone === 'pro' && 'border-ase-gold/35 hover:shadow-glow-gold',
+                    'relative flex animate-fade-in-up flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface/90 p-7 shadow-soft transition duration-300 ease-out hover:-translate-y-1',
+                    tone === 'pro' &&
+                      'border-ase-gold/45 bg-ase-gold/[0.04] shadow-[0_0_70px_-28px_rgba(232,179,104,0.7)] ring-1 ring-ase-gold/25 hover:shadow-glow-gold',
                     tone === 'premium' && 'border-white/15 hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]',
                     tone !== 'pro' && tone !== 'premium' && 'hover:border-ase-brand/35 hover:shadow-glow-cyan',
                   )}
                 >
                   <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
-                      <div className="text-2xl font-extrabold tracking-tight text-ase-text">{planName}</div>
+                      <div className="font-display text-2xl font-semibold text-ase-text">{planName}</div>
                       {isCurrentPlan ? (
                         <div className="mt-2 inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">
                           {t('pricing.currentPlanBadge')}
@@ -410,7 +416,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                   </div>
 
                   <div className="mt-6 flex min-h-[52px] items-end gap-2">
-                    <div className="text-4xl font-extrabold tracking-tight text-ase-text">{priceLabel}</div>
+                    <div className="font-display text-5xl font-semibold tracking-tight text-ase-text">{priceLabel}</div>
                     {suffix ? <div className="pb-1 text-sm text-ase-text2">{suffix}</div> : null}
                   </div>
 
@@ -435,12 +441,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
 
                   <div className="mt-6">
                     {isCurrentPlan ? (
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => navigate('/profile')}
-                      >
+                      <Button size="lg" variant="outline" className="w-full" onClick={() => navigate('/profile')}>
                         {t('pricing.currentPlanCta')}
                       </Button>
                     ) : isComingSoon ? (
@@ -459,7 +460,9 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                           changePlanMutation.mutate(plan.id)
                         }}
                       >
-                        {isChangingToThisPlan ? (t('pricing.changePlanLoading') as string) : (t('pricing.changePlanCta') as string)}
+                        {isChangingToThisPlan
+                          ? (t('pricing.changePlanLoading') as string)
+                          : (t('pricing.changePlanCta') as string)}
                       </Button>
                     ) : canCheckout ? (
                       <Button
@@ -505,6 +508,7 @@ export function PricingSection({ compact }: { compact?: boolean }) {
                             items={group.items}
                             defaultOpen={groupIndex === 0}
                             t={t}
+                            language={language}
                           />
                         ),
                       )}
@@ -517,8 +521,8 @@ export function PricingSection({ compact }: { compact?: boolean }) {
         ) : null}
 
         {!compact && !plansQuery.isLoading && !plansQuery.isError && plans.length > 0 ? (
-          <div className="mt-16 rounded-3xl border border-white/10 bg-black/60 px-6 py-10 sm:px-10">
-            <h3 className="text-xl font-extrabold tracking-tight text-ase-text sm:text-2xl">
+          <div className="mt-16 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.04] px-6 py-10 sm:px-10">
+            <h3 className="font-display text-2xl font-semibold text-ase-text sm:text-3xl">
               {t('pricing.guarantee.title')}
             </h3>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ase-text2 sm:text-base">
@@ -556,7 +560,9 @@ function PlanIncludedGroup({
   items,
   defaultOpen,
   t,
+  language,
 }: {
+  language: 'en' | 'es'
   type: CatalogGroupType
   items: PlanCatalogItem[]
   defaultOpen: boolean
@@ -588,7 +594,7 @@ function PlanIncludedGroup({
           {items.map((item) => (
             <li key={item.id} className="flex gap-2.5 text-sm text-ase-text2">
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
-              <span>{item.title}</span>
+              <span>{localizedPlanText(language, item.title, item.title_en)}</span>
             </li>
           ))}
         </ul>

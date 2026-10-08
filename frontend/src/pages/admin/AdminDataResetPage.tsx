@@ -363,7 +363,7 @@ export function AdminDataResetPanel() {
         </div>
       )}
 
-      <Card className="rounded-[2rem] border-ase-error/30 bg-ase-error/[0.04] p-6">
+      <Card className="rounded-3xl border-ase-error/30 bg-ase-error/[0.04] p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0 text-ase-error" strokeWidth={1.75} />
@@ -385,7 +385,7 @@ export function AdminDataResetPanel() {
       </Card>
 
       {query.isLoading ? (
-        <Skeleton className="h-64 rounded-[2rem]" />
+        <Skeleton className="h-64 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminDataReset.loadError')} />
       ) : (
@@ -393,7 +393,7 @@ export function AdminDataResetPanel() {
           {domains.map((domain) => {
             const isExpanded = expandedKey === domain.key
             return (
-              <Card key={domain.key} className="rounded-2xl border-white/[0.08] bg-ase-surface p-5">
+              <Card key={domain.key} className="rounded-2xl border-white/10 bg-ase-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-ase-text">{domain.label}</div>

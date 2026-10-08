@@ -120,13 +120,13 @@ export function AdminErrorLogsPanel() {
       </Card>
 
       {query.isLoading ? (
-        <Skeleton className="h-64 rounded-[2rem]" />
+        <Skeleton className="h-64 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminErrorLogs.loadError')} />
       ) : items.length === 0 ? (
         <EmptyState title={t('adminErrorLogs.empty')} description={t('adminErrorLogs.emptyHint')} />
       ) : (
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-0 shadow-soft">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-0 shadow-soft">
           <Table className="table-fixed">
             <THead>
               <TR>

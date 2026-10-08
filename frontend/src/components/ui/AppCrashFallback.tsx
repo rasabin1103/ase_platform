@@ -37,7 +37,7 @@ export function AppCrashFallback() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-ase-bg px-6 py-16">
-      <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/60 p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface/60 p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-60"
           style={{ backgroundImage: 'radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.12),transparent_55%)' }}

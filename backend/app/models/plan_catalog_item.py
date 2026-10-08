@@ -47,6 +47,10 @@ class PlanCatalogItem(Base, IdPkMixin):
         return self.catalog_item.title
 
     @property
+    def title_en(self) -> str | None:
+        return self.catalog_item.title_en
+
+    @property
     def slug(self) -> str:
         return self.catalog_item.slug
 

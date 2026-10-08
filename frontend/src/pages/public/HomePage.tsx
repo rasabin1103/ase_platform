@@ -1,10 +1,10 @@
-import { HeroSection } from '../../components/public/HeroSection'
-import { ServicesSection } from '../../components/public/ServicesSection'
-import { PlatformModulesMap } from '../../components/public/PlatformModulesMap'
-import { ProcessTimeline } from '../../components/public/ProcessTimeline'
-import { WhyPillarsSection } from '../../components/public/WhyPillarsSection'
 import { PricingSection } from '../../components/public/PricingSection'
-import { CTASection } from '../../components/public/CTASection'
+import { HomeHero } from '../../components/public/home/HomeHero'
+import { HomeStatsBand } from '../../components/public/home/HomeStatsBand'
+import { HomeEcosystemBento } from '../../components/public/home/HomeEcosystemBento'
+import { HomeAcademySpotlight } from '../../components/public/home/HomeAcademySpotlight'
+import { HomeCatalogStrip } from '../../components/public/home/HomeCatalogStrip'
+import { HomeAudiences, HomeFinalCta, HomeSteps } from '../../components/public/home/HomeAudiences'
 import { JsonLd, SITE_URL } from '../../components/seo/JsonLd'
 
 // Organization schema — describes the business behind the site to search
@@ -28,22 +28,23 @@ const organizationJsonLd = {
 
 export function HomePage() {
   return (
-    <div>
+    <div className="overflow-x-clip">
       <JsonLd data={organizationJsonLd} />
-      <HeroSection />
+      <HomeHero />
+      <HomeStatsBand />
+      <HomeEcosystemBento />
       <div className="bg-ase-bg2/40">
-        <ServicesSection />
+        <HomeAcademySpotlight />
       </div>
-      <PlatformModulesMap />
+      <HomeCatalogStrip />
       <div className="bg-ase-bg2/40">
-        <ProcessTimeline />
+        <HomeAudiences />
       </div>
-      <WhyPillarsSection />
+      <HomeSteps />
       <div className="bg-ase-bg2/40">
         <PricingSection compact />
       </div>
-      <CTASection />
+      <HomeFinalCta />
     </div>
   )
 }
-

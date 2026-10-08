@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, Download, ExternalLink, LifeBuoy, ReceiptText } from 'lucide-react'
 import {
@@ -8,6 +9,7 @@ import {
   type MyPurchase,
 } from '../../api/consumerCatalog.api'
 import { createSuggestion } from '../../api/suggestions.api'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { Badge } from '../../components/ui/Badge'
 import { Button, ButtonLink } from '../../components/ui/Button'
@@ -49,8 +51,9 @@ function paymentStatusTone(status: string | null): 'success' | 'warning' | 'erro
  * item summary the library already shows, plus a lazily-fetched "más
  * información" panel with the purchase's own facts: date, price paid,
  * discount, method, invoice, payment status, and acquired version. */
-export function MyPurchasesPage() {
+export function MyPurchasesPage({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { t, language } = useI18n()
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null)
   const [pendingDownloadSlug, setPendingDownloadSlug] = useState<string | null>(null)
@@ -80,21 +83,46 @@ export function MyPurchasesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ase-text">{t('catalog.pages.purchases.title')}</h1>
-        <p className="mt-1 text-sm text-ase-muted">{t('catalog.pages.purchases.subtitle')}</p>
-      </div>
+      {hideHeader ? null : (
+      <PremiumHero
+        compact
+        accent="violet"
+        badge={language === 'en' ? 'Your library' : 'Tu biblioteca'}
+        title={t('catalog.pages.purchases.title') as string}
+        subtitle={t('catalog.pages.purchases.subtitle') as string}
+        sidePanel={
+          query.data ? (
+            <div className="flex items-center gap-4 lg:justify-end">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-violet-300">
+                <ReceiptText className="h-6 w-6" strokeWidth={1.6} aria-hidden />
+              </span>
+              <div>
+                <p className="font-display text-3xl font-semibold tabular-nums text-ase-text">{purchases.length}</p>
+                <p className="text-xs text-ase-muted">{language === 'en' ? 'acquisitions' : 'adquisiciones'}</p>
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
+      )}
 
       {query.isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-28 w-full rounded-xl" />
+            <Skeleton key={n} className="h-28 w-full rounded-3xl" />
           ))}
         </div>
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('catalog.myPurchases.loadError')} />
       ) : purchases.length === 0 ? (
-        <EmptyState title={t('catalog.myPurchases.empty')} description={t('catalog.myPurchases.emptyHint')} />
+        <EmptyState
+          title={t('catalog.myPurchases.empty')}
+          description={t('catalog.myPurchases.emptyHint')}
+          actionLabel={t('catalog.exploreCatalog') as string}
+          onAction={() => navigate('/catalog/products')}
+          secondaryActionLabel={language === 'en' ? 'See plans' : 'Ver planes'}
+          onSecondaryAction={() => navigate('/pricing')}
+        />
       ) : (
         <div className="space-y-4">
           {purchases.map((purchase) => {
@@ -104,14 +132,14 @@ export function MyPurchasesPage() {
             const detail = isExpanded ? detailQuery.data : undefined
 
             return (
-              <Card key={item.slug} className="overflow-hidden p-0">
+              <Card key={item.slug} className="overflow-hidden rounded-3xl border-white/10 bg-ase-surface/80 p-0">
                 <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-ase-bg2">
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-ase-bg2">
                     <AuthenticatedImage src={item.imageUrl} alt="" fit="cover" className="h-full w-full" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-bold text-ase-text">{title}</h3>
+                      <h3 className="min-w-0 break-words font-display text-lg font-semibold text-ase-text">{title}</h3>
                       <Badge>{t(`catalog.groupLabels.${item.type}`)}</Badge>
                       <Badge variant="info">{t(`catalog.myPurchases.source.${purchase.source}`) || purchase.source}</Badge>
                     </div>
@@ -137,7 +165,7 @@ export function MyPurchasesPage() {
                       </div>
                     ) : null}
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
                     <ButtonLink to={`/catalog/${item.type}/${item.slug}`} size="sm" variant="primary">
                       {t('catalog.myPurchases.access')}
                     </ButtonLink>

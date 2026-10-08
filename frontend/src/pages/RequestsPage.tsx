@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   listAdminAccessRequests,
   listMyAccessRequests,
@@ -8,6 +10,7 @@ import {
   type MeAccessRequest,
 } from '../api/access_requests.api'
 import { AccessRequestModal } from '../components/access-requests/AccessRequestModal'
+import { OrgRequestsPanel } from '../components/requests/OrgRequestsPanel'
 import { SuggestionBox } from '../components/requests/SuggestionBox'
 import { AuthenticatedImage } from '../components/ui/AuthenticatedImage'
 import { Card } from '../components/ui/Card'
@@ -17,7 +20,7 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { Textarea } from '../components/ui/Textarea'
-import { PremiumHero } from '../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../components/admin/premium/PremiumHero'
 import { useI18n } from '../i18n'
 import { useRbac } from '../rbac/useRbac'
 import { useAuth } from '../hooks/useAuth'
@@ -39,23 +42,52 @@ function formatDate(iso: string) {
   }
 }
 
+const ESCALATION_COPY = {
+  es: {
+    onlyEscalated: 'Solo escaladas',
+    all: 'Todas',
+    escalated: 'Escalada por su organización',
+    note: 'Nota',
+  },
+  en: {
+    onlyEscalated: 'Escalated only',
+    all: 'All',
+    escalated: 'Escalated by their organization',
+    note: 'Note',
+  },
+} as const
+
 export function RequestsPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const ec = language === 'en' ? ESCALATION_COPY.en : ESCALATION_COPY.es
+  const [searchParams, setSearchParams] = useSearchParams()
+  const onlyEscalated = searchParams.get('escalated') === '1'
   const { isSuperuser, primaryRole, can, hasPermission } = useRbac()
   const { currentUser, loadCurrentUser } = useAuth()
   const qc = useQueryClient()
   const isAdminReviewer = isSuperuser || primaryRole === 'super_admin'
+  // Owner/admin de una organización: gestiona las solicitudes de sus miembros.
+  const isOrgManager =
+    !isAdminReviewer && (hasPermission('users.update') || hasPermission('requests.approve'))
 
   const [creatorModalOpen, setCreatorModalOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<AdminAccessRequest | null>(null)
   const [rejectNotes, setRejectNotes] = useState('')
 
-  const queryKey = isAdminReviewer ? ['admin-access-requests'] : ['my-access-requests']
+  const queryKey = isAdminReviewer ? ['admin-access-requests', onlyEscalated] : ['my-access-requests']
   const query = useQuery({
     queryKey,
     queryFn: () =>
-      isAdminReviewer ? listAdminAccessRequests({ limit: 100 }) : listMyAccessRequests({ limit: 50 }),
+      isAdminReviewer
+        ? listAdminAccessRequests({ limit: 100, escalated: onlyEscalated || undefined })
+        : listMyAccessRequests({ limit: 50 }),
   })
+  const setOnlyEscalated = (v: boolean) => {
+    const next = new URLSearchParams(searchParams)
+    if (v) next.set('escalated', '1')
+    else next.delete('escalated')
+    setSearchParams(next, { replace: true })
+  }
 
   const reviewMutation = useMutation({
     mutationFn: ({ id, status, admin_notes }: { id: number; status: 'approved' | 'rejected'; admin_notes?: string }) =>
@@ -114,10 +146,36 @@ export function RequestsPage() {
         }
       />
 
+      {isOrgManager ? <OrgRequestsPanel canApprove={hasPermission('requests.approve')} /> : null}
+
       {!isAdminReviewer ? <SuggestionBox /> : null}
 
+      {isAdminReviewer ? (
+        <div role="tablist" className="flex w-fit gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+          {[
+            { v: false, l: ec.all },
+            { v: true, l: ec.onlyEscalated },
+          ].map((o) => (
+            <button
+              key={String(o.v)}
+              type="button"
+              role="tab"
+              aria-selected={onlyEscalated === o.v}
+              onClick={() => setOnlyEscalated(o.v)}
+              className={
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ' +
+                (onlyEscalated === o.v ? 'bg-ase-brand/20 text-ase-text' : 'text-ase-muted hover:text-ase-text')
+              }
+            >
+              {o.v ? <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /> : null}
+              {o.l}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {!isAdminReviewer && canCreate ? (
-        <Card className="border-cyan-300/20 bg-cyan-300/5 p-6">
+        <Card className="border-ase-brand/20 bg-ase-brand/5 p-6">
           <h2 className="text-lg font-semibold text-ase-text">{t('requestsPage.createContentSection')}</h2>
           <p className="mt-2 text-sm text-ase-text2">{t('requestsPage.createContentHint')}</p>
         </Card>
@@ -154,7 +212,7 @@ export function RequestsPage() {
           }
         />
       ) : isAdminReviewer ? (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 backdrop-blur">
+        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/10 bg-ase-surface/80">
           {(items as AdminAccessRequest[]).map((item) => (
             <AdminRequestRow
               key={item.uuid}
@@ -169,12 +227,13 @@ export function RequestsPage() {
               requestTypeLabel={requestTypeLabel(item.request_type)}
               targetTypeLabel={targetTypeLabel(item.target_type)}
               statusLabel={statusLabel(item.status)}
+              escalationCopy={ec}
               t={t}
             />
           ))}
         </Card>
       ) : (
-        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/[0.08] bg-ase-surface/60 backdrop-blur">
+        <Card className="divide-y divide-white/10 overflow-hidden rounded-[2rem] border-white/10 bg-ase-surface/80">
           {(items as MeAccessRequest[]).map((item) => (
             <UserRequestRow
               key={item.uuid}
@@ -294,9 +353,11 @@ function AdminRequestRow({
   requestTypeLabel,
   targetTypeLabel,
   statusLabel,
+  escalationCopy,
   t,
 }: {
   item: AdminAccessRequest
+  escalationCopy: { escalated: string; note: string }
   canReview: boolean
   onApprove: () => void
   onReject: () => void
@@ -336,7 +397,24 @@ function AdminRequestRow({
             ) : null}
           </p>
           {item.message ? <p className="mt-2 text-sm text-ase-text2">{item.message}</p> : null}
-          <p className="mt-1 text-xs text-ase-muted">{formatDate(item.created_at)}</p>
+          <p className="mt-1 text-xs text-ase-muted">
+            {item.organization_name ? `${item.organization_name} · ` : ''}
+            {formatDate(item.created_at)}
+          </p>
+          {item.escalated_at ? (
+            <div className="mt-3 rounded-2xl border border-violet-400/30 bg-violet-400/[0.08] px-3.5 py-2.5">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-200">
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                {escalationCopy.escalated} · {formatDate(item.escalated_at)}
+              </p>
+              {item.escalation_note ? (
+                <p className="mt-1 text-sm text-ase-text2">
+                  <span className="text-ase-muted">{escalationCopy.note}: </span>
+                  {item.escalation_note}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="flex flex-col items-end gap-2">

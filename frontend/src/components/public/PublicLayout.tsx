@@ -8,7 +8,7 @@ import { PublicFooter } from './PublicFooter'
 
 export function PublicLayout() {
   return (
-    <div className="relative flex min-h-full flex-col overflow-x-hidden bg-ase-bg text-ase-text">
+    <div className="relative flex min-h-full flex-col overflow-x-clip bg-ase-bg text-ase-text">
       <SkipLink />
       <ScrollToTop />
       <div className="pointer-events-none absolute inset-0">
@@ -39,4 +39,3 @@ export function PublicLayout() {
     </div>
   )
 }
-

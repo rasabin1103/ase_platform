@@ -73,7 +73,7 @@ export function NotificationBell() {
         ) : null}
       </button>
       {open ? (
-        <div className="absolute right-0 top-11 z-50 w-80 rounded-2xl border border-white/10 bg-ase-bg2 p-2 shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
+        <div className="fixed inset-x-3 top-[4.25rem] z-30 rounded-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80 border border-white/10 bg-ase-bg2 p-2 shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
           <div className="flex items-center justify-between px-2 py-1.5">
             <span className="text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('notifications.title')}</span>
             {unread > 0 ? (
@@ -118,6 +118,16 @@ export function NotificationBell() {
               ))
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false)
+              navigate('/notifications')
+            }}
+            className="mt-1 block w-full rounded-xl px-2.5 py-2 text-center text-xs font-semibold text-ase-primary transition hover:bg-white/[0.04]"
+          >
+            {t('notifications.viewAll')}
+          </button>
         </div>
       ) : null}
     </div>

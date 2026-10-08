@@ -33,6 +33,17 @@ export const CatalogShowcaseDetailPage = lazy(() =>
   import('../pages/public/CatalogShowcaseDetailPage').then((m) => ({ default: m.CatalogShowcaseDetailPage })),
 )
 
+// --- ASE Academy (cursos-juego, ver docs/academy/PLAN.md) ---
+export const AcademyHomePage = lazy(() =>
+  import('../features/academy/pages/AcademyHomePage').then((m) => ({ default: m.AcademyHomePage })),
+)
+export const AcademyCoursePage = lazy(() =>
+  import('../features/academy/pages/AcademyCoursePage').then((m) => ({ default: m.AcademyCoursePage })),
+)
+export const AcademyPlayerPage = lazy(() =>
+  import('../features/academy/pages/AcademyPlayerPage').then((m) => ({ default: m.AcademyPlayerPage })),
+)
+
 // --- Auth (login/register/password) ---
 export const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 export const RegisterPage = lazy(() => import('../pages/RegisterPage').then((m) => ({ default: m.RegisterPage })))
@@ -62,6 +73,9 @@ export const MyPurchasesPage = lazy(() =>
 )
 export const PreferencesSurveyPage = lazy(() =>
   import('../pages/independent/PreferencesSurveyPage').then((m) => ({ default: m.PreferencesSurveyPage })),
+)
+export const NotificationsPage = lazy(() =>
+  import('../pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
 )
 export const ProfilePage = lazy(() => import('../pages/independent/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 export const RedeemCodePage = lazy(() =>
@@ -127,8 +141,8 @@ export const AdminAnnouncementsPage = lazy(() =>
 export const AdminSystemPage = lazy(() =>
   import('../pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })),
 )
-export const ServicesAdminPage = lazy(() =>
-  import('../pages/admin/ServicesAdminPage').then((m) => ({ default: m.ServicesAdminPage })),
+export const AdminServicesPage = lazy(() =>
+  import('../pages/admin/AdminServicesPage').then((m) => ({ default: m.AdminServicesPage })),
 )
 export const AdminSuggestionsPage = lazy(() =>
   import('../pages/admin/AdminSuggestionsPage').then((m) => ({ default: m.AdminSuggestionsPage })),

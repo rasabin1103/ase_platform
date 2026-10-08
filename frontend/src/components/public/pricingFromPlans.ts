@@ -15,8 +15,7 @@ function isCatalogGroupType(value: string): value is CatalogGroupType {
 }
 
 export type PlanFeatureGroup =
-  | { kind: 'byType'; type: CatalogGroupType; items: PlanCatalogItem[] }
-  | { kind: 'flat'; items: string[] }
+  { kind: 'byType'; type: CatalogGroupType; items: PlanCatalogItem[] } | { kind: 'flat'; items: string[] }
 
 /** Picks the English mirror of a plan text field when the UI is in English
  * and a translation actually exists, falling back to the Spanish source

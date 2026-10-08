@@ -6,7 +6,7 @@ import { Card } from '../../components/ui/Card'
 import { ButtonAnchor } from '../../components/ui/Button'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { resolveMediaUrl } from '../../utils/mediaUrls'
 import { useI18n } from '../../i18n'
 

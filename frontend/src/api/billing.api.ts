@@ -7,8 +7,16 @@ type CheckoutSessionResponse = {
 /** Creates a Stripe Checkout session for the given plan and returns the URL
  * to redirect the browser to. Requires auth — the backend resolves the
  * caller's own workspace/organization from the access token. */
-export async function createCheckoutSession(planId: number): Promise<string> {
-  const { data } = await apiClient.post<CheckoutSessionResponse>('/billing/checkout-session', { plan_id: planId })
+export async function createCheckoutSession(
+  planId: number,
+  // Where Stripe's "back" link should return the user if they cancel —
+  // defaults to the page they started from so they never land somewhere else.
+  returnPath: string = window.location.pathname,
+): Promise<string> {
+  const { data } = await apiClient.post<CheckoutSessionResponse>('/billing/checkout-session', {
+    plan_id: planId,
+    return_path: returnPath,
+  })
   return data.checkout_url
 }
 

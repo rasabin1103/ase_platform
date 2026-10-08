@@ -75,6 +75,9 @@ class AdminAccessRequestRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     requester: RequesterSummary
+    organization_name: str | None = None
+    escalated_at: datetime | None = None
+    escalation_note: str | None = None
 
 
 class AdminAccessRequestListResponse(BaseModel):

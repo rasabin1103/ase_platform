@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { register } from '../api/auth.api'
 import { getAccessToken } from '../auth/auth.store'
@@ -35,6 +35,9 @@ function buildSchema(t: (key: string) => unknown) {
 type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
 export function RegisterPage() {
+  // Prefill desde el boletín del pie (?email=…).
+  const [searchParams] = useSearchParams()
+  const prefillEmail = searchParams.get('email') ?? ''
   const navigate = useNavigate()
   const { t, language } = useI18n()
   const auth = useAuth()
@@ -47,7 +50,14 @@ export function RegisterPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(buildSchema(t)),
-    defaultValues: { email: '', plain_password: '', first_name: '', last_name: '', display_name: '', country: '' },
+    defaultValues: {
+      email: prefillEmail,
+      plain_password: '',
+      first_name: '',
+      last_name: '',
+      display_name: '',
+      country: '',
+    },
   })
 
   const mutation = useMutation({
@@ -96,23 +106,49 @@ export function RegisterPage() {
               )}
             >
               <div>
-                <label htmlFor="register-display-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.displayName') as string}</label>
-                <Input id="register-display-name" autoComplete="nickname" placeholder="Roberto Arce" {...form.register('display_name')} />
+                <label htmlFor="register-display-name" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('auth.fields.displayName') as string}
+                </label>
+                <Input
+                  id="register-display-name"
+                  autoComplete="nickname"
+                  placeholder="Roberto Arce"
+                  {...form.register('display_name')}
+                />
               </div>
 
               <div>
-                <label htmlFor="register-email" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.email') as string}</label>
-                <Input id="register-email" type="email" autoComplete="email" placeholder="name@company.com" {...form.register('email')} />
+                <label htmlFor="register-email" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('auth.fields.email') as string}
+                </label>
+                <Input
+                  id="register-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@company.com"
+                  {...form.register('email')}
+                />
                 {form.formState.errors.email && (
-                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.email.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">
+                    {form.formState.errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="register-password" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.password') as string}</label>
-                <Input id="register-password" type="password" autoComplete="new-password" {...form.register('plain_password')} />
+                <label htmlFor="register-password" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('auth.fields.password') as string}
+                </label>
+                <Input
+                  id="register-password"
+                  type="password"
+                  autoComplete="new-password"
+                  {...form.register('plain_password')}
+                />
                 {form.formState.errors.plain_password ? (
-                  <p role="alert" className="mt-1 text-sm text-ase-error">{form.formState.errors.plain_password.message}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">
+                    {form.formState.errors.plain_password.message}
+                  </p>
                 ) : (
                   <p className="mt-1 text-xs text-ase-muted">{t('password.hint') as string}</p>
                 )}
@@ -120,17 +156,23 @@ export function RegisterPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="register-first-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.firstName') as string}</label>
+                  <label htmlFor="register-first-name" className="mb-1 block text-xs font-medium text-ase-muted">
+                    {t('auth.fields.firstName') as string}
+                  </label>
                   <Input id="register-first-name" autoComplete="given-name" {...form.register('first_name')} />
                 </div>
                 <div>
-                  <label htmlFor="register-last-name" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.fields.lastName') as string}</label>
+                  <label htmlFor="register-last-name" className="mb-1 block text-xs font-medium text-ase-muted">
+                    {t('auth.fields.lastName') as string}
+                  </label>
                   <Input id="register-last-name" autoComplete="family-name" {...form.register('last_name')} />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="register-country" className="mb-1 block text-xs font-medium text-ase-muted">{t('auth.register.country')}</label>
+                <label htmlFor="register-country" className="mb-1 block text-xs font-medium text-ase-muted">
+                  {t('auth.register.country')}
+                </label>
                 <Select id="register-country" autoComplete="country" {...form.register('country')}>
                   <option value="">{t('auth.register.countryPlaceholder')}</option>
                   {COUNTRIES.map((c) => (
@@ -140,12 +182,17 @@ export function RegisterPage() {
                   ))}
                 </Select>
                 {form.formState.errors.country && (
-                  <p role="alert" className="mt-1 text-sm text-ase-error">{t('auth.register.countryRequired')}</p>
+                  <p role="alert" className="mt-1 text-sm text-ase-error">
+                    {t('auth.register.countryRequired')}
+                  </p>
                 )}
               </div>
 
               {mutation.isError && (
-                <div role="alert" className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error"
+                >
                   {t('auth.register.genericError')}
                 </div>
               )}
@@ -167,7 +214,10 @@ export function RegisterPage() {
                   </Link>
                 </p>
                 <p>
-                  <Link to="/" className="text-ase-text2 hover:text-ase-text underline decoration-white/10 hover:decoration-white/30">
+                  <Link
+                    to="/"
+                    className="text-ase-text2 hover:text-ase-text underline decoration-white/10 hover:decoration-white/30"
+                  >
                     {t('auth.backHome')}
                   </Link>
                 </p>
@@ -179,4 +229,3 @@ export function RegisterPage() {
     </div>
   )
 }
-

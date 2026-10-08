@@ -91,6 +91,9 @@ def _to_admin_read(item: AccessRequest) -> AdminAccessRequestRead:
         created_at=item.created_at,
         updated_at=item.updated_at,
         requester=_requester_summary(requester),
+        organization_name=item.organization.name if item.organization else None,
+        escalated_at=item.escalated_at,
+        escalation_note=item.escalation_note,
     )
 
 
@@ -191,8 +194,9 @@ class MvpAccessRequestsService:
         limit: int,
         offset: int,
         status_filter: AccessRequestStatus | None = None,
+        escalated: bool | None = None,
     ) -> AdminAccessRequestListResponse:
-        items, total = self.repo.list_all(limit=limit, offset=offset, status=status_filter)
+        items, total = self.repo.list_all(limit=limit, offset=offset, status=status_filter, escalated=escalated)
         return AdminAccessRequestListResponse(
             items=[_to_admin_read(i) for i in items],
             limit=limit,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Eye, FileText, Sparkles, X } from 'lucide-react'
+import { Briefcase, ExternalLink, Eye, FileText, Search, Sparkles, X } from 'lucide-react'
 import {
   deleteMyCv,
   getMyCvProfile,
@@ -13,6 +13,7 @@ import {
   type JobPosting,
 } from '../../api/jobPostings.api'
 import type { JobContractType, JobScheduleType, JobWorkMode } from '../../api/jobPostingsAdmin.api'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { Badge } from '../../components/ui/Badge'
 import { Button, ButtonAnchor, ButtonLink } from '../../components/ui/Button'
@@ -95,7 +96,7 @@ function JobPostingCard({
   const description = localizedCatalogText(language, posting.description, posting.description_en)
 
   return (
-    <Card className="flex flex-col gap-4 p-5">
+    <Card className="flex flex-col gap-4 rounded-3xl border-white/10 bg-ase-surface/80 p-5">
       <div className="flex gap-4">
         <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
           {posting.image_url ? (
@@ -192,7 +193,7 @@ function CvUploadSection() {
   const profile = cvQuery.data
 
   return (
-    <Card className="flex flex-col gap-3 p-5">
+    <Card className="flex flex-col gap-3 rounded-3xl border-white/10 bg-ase-surface/80 p-5 hover:border-ase-brand/40" interactive>
       <div className="flex items-start gap-3">
         <FileText className="mt-0.5 h-5 w-5 shrink-0 text-ase-brand" strokeWidth={1.75} />
         <div className="min-w-0 flex-1">
@@ -249,7 +250,7 @@ function CvUploadSection() {
 }
 
 export function JobPostingsPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [contractType, setContractType] = useState<JobContractType | ''>('')
@@ -289,30 +290,57 @@ export function JobPostingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ase-text">{t('jobPostingsPage.title')}</h1>
-        <p className="mt-1 text-sm text-ase-muted">{t('jobPostingsPage.subtitle')}</p>
-      </div>
+      <PremiumHero
+        compact
+        accent="emerald"
+        badge={language === 'en' ? 'Career' : 'Carrera'}
+        title={t('jobPostingsPage.title') as string}
+        subtitle={t('jobPostingsPage.subtitle') as string}
+        sidePanel={
+          query.data ? (
+            <div className="flex items-center gap-4 lg:justify-end">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-emerald-300">
+                <Briefcase className="h-6 w-6" strokeWidth={1.6} aria-hidden />
+              </span>
+              <div>
+                <p className="font-display text-3xl font-semibold tabular-nums text-ase-text">{query.data.total}</p>
+                <p className="text-xs text-ase-muted">{language === 'en' ? 'open positions' : 'ofertas activas'}</p>
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
 
       <CvUploadSection />
-      {hasCv ? <p className="text-sm text-ase-muted">{t('jobPostingsPage.cv.sortedNotice')}</p> : null}
-      {hasCv && aiQuota && aiQuota.remaining !== null ? (
-        <p className="text-sm text-ase-muted">
-          {String(t('jobPostingsPage.cv.quotaRemaining'))
-            .replace('{remaining}', String(aiQuota.remaining))
-            .replace('{limit}', String(aiQuota.limit ?? 0))}
-        </p>
+      {hasCv ? (
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            {t('jobPostingsPage.cv.sortedNotice')}
+          </span>
+          {aiQuota && aiQuota.remaining !== null ? (
+            <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-ase-text2">
+              {String(t('jobPostingsPage.cv.quotaRemaining'))
+                .replace('{remaining}', String(aiQuota.remaining))
+                .replace('{limit}', String(aiQuota.limit ?? 0))}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('jobPostingsPage.searchPlaceholder')}
-          className="w-full max-w-md rounded-xl border border-white/10 bg-ase-surface px-4 py-2.5 text-sm text-ase-text outline-none transition focus-visible:border-ase-brand/50 focus-visible:ring-2 focus-visible:ring-ase-brand/30"
-        />
-        <Select className="w-auto min-w-[160px]" value={contractType} onChange={(e) => setContractType(e.target.value as JobContractType | '')}>
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-ase-surface/70 p-2">
+        <label className="relative min-w-0 basis-full sm:min-w-[220px] sm:flex-1 sm:basis-auto">
+          <span className="sr-only">{t('jobPostingsPage.searchPlaceholder')}</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ase-muted" aria-hidden />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('jobPostingsPage.searchPlaceholder')}
+            className="w-full rounded-xl border border-white/10 bg-ase-bg2/60 py-2.5 pl-10 pr-4 text-sm text-ase-text outline-none transition placeholder:text-ase-muted focus-visible:border-ase-brand/50 focus-visible:ring-2 focus-visible:ring-ase-brand/30"
+          />
+        </label>
+        <Select className="w-auto min-w-[150px] flex-1 sm:flex-none" value={contractType} onChange={(e) => setContractType(e.target.value as JobContractType | '')}>
           <option value="">{t('jobPostingsPage.filters.contractType')} — {t('jobPostingsPage.filters.all')}</option>
           {(['permanent', 'temporary', 'freelance', 'internship'] as JobContractType[]).map((v) => (
             <option key={v} value={v}>
@@ -320,7 +348,7 @@ export function JobPostingsPage() {
             </option>
           ))}
         </Select>
-        <Select className="w-auto min-w-[160px]" value={workMode} onChange={(e) => setWorkMode(e.target.value as JobWorkMode | '')}>
+        <Select className="w-auto min-w-[150px] flex-1 sm:flex-none" value={workMode} onChange={(e) => setWorkMode(e.target.value as JobWorkMode | '')}>
           <option value="">{t('jobPostingsPage.filters.workMode')} — {t('jobPostingsPage.filters.all')}</option>
           {(['remote', 'hybrid', 'onsite'] as JobWorkMode[]).map((v) => (
             <option key={v} value={v}>
@@ -328,7 +356,7 @@ export function JobPostingsPage() {
             </option>
           ))}
         </Select>
-        <Select className="w-auto min-w-[160px]" value={scheduleType} onChange={(e) => setScheduleType(e.target.value as JobScheduleType | '')}>
+        <Select className="w-auto min-w-[150px] flex-1 sm:flex-none" value={scheduleType} onChange={(e) => setScheduleType(e.target.value as JobScheduleType | '')}>
           <option value="">{t('jobPostingsPage.filters.scheduleType')} — {t('jobPostingsPage.filters.all')}</option>
           {(['full_time', 'part_time'] as JobScheduleType[]).map((v) => (
             <option key={v} value={v}>
@@ -346,8 +374,9 @@ export function JobPostingsPage() {
               setWorkMode('')
               setScheduleType('')
             }}
-            className="rounded-xl border border-white/10 bg-ase-surface px-3 py-2.5 text-sm font-semibold text-ase-text2 transition hover:border-white/20"
+            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-ase-muted transition hover:bg-white/[0.04] hover:text-ase-text"
           >
+            <X className="h-4 w-4" aria-hidden />
             {t('jobPostingsPage.filters.clear')}
           </button>
         ) : null}
@@ -365,13 +394,24 @@ export function JobPostingsPage() {
       {query.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-56 w-full rounded-xl" />
+            <Skeleton key={n} className="h-56 w-full rounded-3xl" />
           ))}
         </div>
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('jobPostingsPage.loadError')} />
       ) : items.length === 0 ? (
-        <EmptyState title={t('jobPostingsPage.empty')} description={t('jobPostingsPage.emptyHint')} />
+        hasActiveFilters ? (
+          <EmptyState title={t('jobPostingsPage.empty')} description={t('jobPostingsPage.emptyHint')} />
+        ) : (
+          <EmptyState
+            title={language === 'en' ? 'No job postings right now' : 'Ahora mismo no hay ofertas publicadas'}
+            description={
+              language === 'en'
+                ? 'New QA openings appear here as soon as they are published. Upload your CV so they are ranked for you.'
+                : 'Las nuevas ofertas de QA aparecen aquí en cuanto se publican. Sube tu CV para que te las ordenemos.'
+            }
+          />
+        )
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((posting) => (

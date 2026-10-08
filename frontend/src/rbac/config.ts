@@ -13,7 +13,6 @@ import {
   Download,
   Gift,
   GraduationCap,
-  Heart,
   History,
   KeyRound,
   LayoutDashboard,
@@ -24,7 +23,6 @@ import {
   Receipt,
   Activity,
   Newspaper,
-  ShoppingBag,
   Briefcase,
   Users,
   Wrench,
@@ -61,19 +59,25 @@ export const INDEPENDENT_NAV_GROUPS: NavGroupDef[] = [
   {
     labelKey: 'private.nav.groups.library',
     items: [
-      { to: '/favorites', labelKey: 'private.nav.favorites', icon: Heart },
-      { to: '/my-purchases', labelKey: 'private.nav.myPurchases', icon: ShoppingBag },
       // Consolidates what used to be four separate entries (Mis productos /
       // Mis cursos / Mis libros / Mis recursos) into one page with tabs —
       // see MyLibraryPage in app/routeHelpers.tsx. The old /my-products
       // etc. routes still work (nothing links to them from the nav
       // anymore) so nothing that bookmarked one of them breaks.
       { to: '/my-library', labelKey: 'private.nav.myLibrary', icon: Library },
+    ],
+  },
+  {
+    labelKey: 'private.nav.groups.tools',
+    items: [
       { to: '/test-execution', labelKey: 'private.nav.testExecution', icon: Activity },
       { to: '/booking', labelKey: 'private.nav.booking', icon: CalendarClock },
       { to: '/redeem-code', labelKey: 'private.nav.redeemCode', icon: KeyRound },
-      { to: '/job-postings', labelKey: 'private.nav.jobPostings', icon: Briefcase },
     ],
+  },
+  {
+    labelKey: 'private.nav.groups.career',
+    items: [{ to: '/job-postings', labelKey: 'private.nav.jobPostings', icon: Briefcase }],
   },
   {
     labelKey: 'private.nav.groups.account',
@@ -91,23 +95,38 @@ export const SUPER_ADMIN_NAV_GROUPS: NavGroupDef[] = [
     items: [{ to: '/dashboard', labelKey: 'private.nav.dashboard', icon: LayoutDashboard }],
   },
   {
-    labelKey: 'private.nav.groups.admin',
+    labelKey: 'private.nav.groups.content',
     items: [
       { to: '/admin/catalog', labelKey: 'private.nav.catalogManage', icon: Boxes, anyPermission: ['catalog.manage'] },
       { to: '/admin/blog', labelKey: 'private.nav.blogManage', icon: Newspaper, anyPermission: ['catalog.manage'] },
       { to: '/admin/job-postings', labelKey: 'private.nav.jobPostingsManage', icon: Briefcase, anyPermission: ['catalog.manage'] },
-      { to: '/users', labelKey: 'private.nav.users', icon: Users, anyPermission: ['users.read'] },
-      { to: '/admin/purchases', labelKey: 'private.nav.purchasesAdmin', icon: Receipt, anyPermission: ['purchases.read_all'] },
-      { to: '/requests', labelKey: 'private.nav.requestsReview', icon: ClipboardCheck, anyPermission: ['requests.read'] },
-      { to: '/admin/organizations', labelKey: 'private.nav.organizations', icon: Building2, anyPermission: ['organizations.read'] },
-      { to: '/admin/services', labelKey: 'private.nav.services', icon: Wrench, anyPermission: ['products.manage'] },
-      { to: '/admin/plans', labelKey: 'private.nav.plans', icon: CreditCard, anyPermission: ['billing.manage'] },
-      { to: '/admin/suggestions', labelKey: 'private.nav.suggestions', icon: MessageSquare, anyPermission: ['suggestions.manage'] },
-      { to: '/admin/audit-log', labelKey: 'private.nav.auditLog', icon: History, anyPermission: ['audit.read'] },
-      { to: '/admin/book-redemptions', labelKey: 'private.nav.bookRedemptions', icon: Gift, anyPermission: ['catalog.manage'] },
       { to: '/admin/announcements', labelKey: 'private.nav.announcements', icon: Megaphone, anyPermission: ['platform.read'] },
-      { to: '/admin/system', labelKey: 'private.nav.system', icon: Activity, anyPermission: ['platform.read'] },
+    ],
+  },
+  {
+    labelKey: 'private.nav.groups.commerce',
+    items: [
+      { to: '/admin/purchases', labelKey: 'private.nav.purchasesAdmin', icon: Receipt, anyPermission: ['purchases.read_all'] },
+      { to: '/admin/plans', labelKey: 'private.nav.plans', icon: CreditCard, anyPermission: ['billing.manage'] },
+      { to: '/admin/services', labelKey: 'private.nav.services', icon: Wrench, anyPermission: ['products.manage'] },
+      { to: '/admin/book-redemptions', labelKey: 'private.nav.bookRedemptions', icon: Gift, anyPermission: ['catalog.manage'] },
       { to: '/admin/booking', labelKey: 'private.nav.bookingAdmin', icon: CalendarClock, anyPermission: ['catalog.manage'] },
+    ],
+  },
+  {
+    labelKey: 'private.nav.groups.people',
+    items: [
+      { to: '/users', labelKey: 'private.nav.users', icon: Users, anyPermission: ['users.read'] },
+      { to: '/admin/organizations', labelKey: 'private.nav.organizations', icon: Building2, anyPermission: ['organizations.read'] },
+      { to: '/requests', labelKey: 'private.nav.requestsReview', icon: ClipboardCheck, anyPermission: ['requests.read'] },
+      { to: '/admin/suggestions', labelKey: 'private.nav.suggestions', icon: MessageSquare, anyPermission: ['suggestions.manage'] },
+    ],
+  },
+  {
+    labelKey: 'private.nav.groups.platform',
+    items: [
+      { to: '/admin/system', labelKey: 'private.nav.system', icon: Activity, anyPermission: ['platform.read'] },
+      { to: '/admin/audit-log', labelKey: 'private.nav.auditLog', icon: History, anyPermission: ['audit.read'] },
     ],
   },
   {

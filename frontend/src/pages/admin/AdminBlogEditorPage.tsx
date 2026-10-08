@@ -77,7 +77,7 @@ export function AdminBlogEditorPage() {
   })
 
   if (isEditing && postQuery.isLoading) {
-    return <Skeleton className="h-96 rounded-[2rem]" />
+    return <Skeleton className="h-96 rounded-3xl" />
   }
 
   if (isEditing && postQuery.isError) {
@@ -158,7 +158,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
           <Link to="/admin/blog" className="text-xs text-ase-muted hover:text-ase-text">
             {t('adminBlog.backToList')}
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-ase-text">
+          <h1 className="mt-3 font-display text-3xl font-semibold text-ase-text">
             {isEditing ? t('adminBlog.editTitle') : t('adminBlog.newTitle')}
           </h1>
         </div>
@@ -186,7 +186,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
           }
         })}
       >
-        <Card className="space-y-4 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-4 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminBlog.fields.title')}</span>
             <Input
@@ -249,7 +249,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
           </label>
         </Card>
 
-        <Card className="space-y-4 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-4 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <ImageUploadField
             label={t('adminBlog.fields.coverImage') as string}
             previewSrc={hasStoredImage ? `/api/v1/admin/blog/${postId}/image` : initial?.cover_image_url}
@@ -277,7 +277,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
           </label>
         </Card>
 
-        <Card className="space-y-3 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-3 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <span className="block text-xs text-ase-muted">{t('adminBlog.fields.content')}</span>
           <RichTextEditor
             initialContent={contentHtml}
@@ -286,7 +286,7 @@ function AdminBlogEditorForm({ postId, initial }: { postId?: number; initial: Bl
           />
         </Card>
 
-        <Card className="space-y-4 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-4 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <span className="block text-xs font-semibold uppercase tracking-wide text-ase-muted">{t('adminBlog.seoSection')}</span>
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminBlog.fields.metaTitle')}</span>

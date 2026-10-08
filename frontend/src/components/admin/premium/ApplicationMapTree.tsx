@@ -14,8 +14,8 @@ function initials(name: string) {
 
 const ORG_TYPE_ACCENT: Record<string, { ring: string; badge: string; glow: string }> = {
   business: {
-    ring: 'border-cyan-300/30 hover:border-cyan-300/50',
-    badge: 'bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-200/25',
+    ring: 'border-ase-brand/30 hover:border-ase-brand/50',
+    badge: 'bg-ase-brand/15 text-sky-100 ring-1 ring-ase-brand/25',
     glow: 'hover:shadow-[0_0_28px_rgba(34,211,238,0.16)]',
   },
   enterprise: {
@@ -75,7 +75,7 @@ export function ApplicationMapTree({
   if (isLoading) {
     return (
       <div className="mt-6">
-        <Skeleton className="h-96 rounded-[2rem]" />
+        <Skeleton className="h-96 rounded-3xl" />
       </div>
     )
   }
@@ -97,7 +97,7 @@ export function ApplicationMapTree({
   const individualUsers = data?.individual_users ?? []
 
   return (
-    <div className="relative mt-6 overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.14),transparent_46%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] p-6 shadow-[0_26px_90px_rgba(0,0,0,0.35)]">
+    <div className="relative mt-6 overflow-hidden rounded-3xl border border-white/10 p-6 shadow-[0_26px_90px_rgba(0,0,0,0.35)]">
       <div className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:34px_34px]" />
 
       <div className="amt-tree relative overflow-x-auto pb-4">
@@ -129,20 +129,20 @@ export function ApplicationMapTree({
         <ul>
           <li>
             <div className="amt-node relative inline-flex flex-col items-center gap-2">
-              <div className="amt-glow-ring pointer-events-none absolute inset-0 -z-10 rounded-full bg-cyan-400/25 blur-2xl" />
-              <div className="grid h-16 w-16 place-items-center rounded-2xl border border-cyan-200/40 bg-ase-bg2/90 text-sm font-extrabold tracking-wide text-cyan-100 shadow-[0_0_44px_rgba(34,211,238,0.35)]">
+              <div className="amt-glow-ring pointer-events-none absolute inset-0 -z-10 rounded-full bg-ase-brand/25 blur-2xl" />
+              <div className="grid h-16 w-16 place-items-center rounded-2xl border border-ase-brand/40 bg-ase-bg2/90 text-sm font-extrabold tracking-wide text-sky-100 shadow-[0_0_44px_rgba(34,211,238,0.35)]">
                 ASE
               </div>
-              <div className="rounded-full border border-cyan-200/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              <div className="rounded-full border border-ase-brand/25 bg-ase-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-100">
                 {t('adminDashboard.applicationMap.rootLabel')}
               </div>
             </div>
 
             <ul>
               <li>
-                <div className="amt-node inline-flex flex-col items-center gap-2 rounded-2xl border border-cyan-300/25 bg-ase-surface px-5 py-3.5 shadow-soft transition hover:border-cyan-300/40">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-400/15 ring-1 ring-cyan-200/25">
-                    <Building2 className="h-4 w-4 text-cyan-200" />
+                <div className="amt-node inline-flex flex-col items-center gap-2 rounded-2xl border border-ase-brand/25 bg-ase-surface px-5 py-3.5 shadow-soft transition hover:border-ase-brand/40">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-ase-brand/15 ring-1 ring-ase-brand/25">
+                    <Building2 className="h-4 w-4 text-sky-200" />
                   </div>
                   <div className="text-sm font-semibold text-ase-text">{t('adminDashboard.applicationMap.organizations')}</div>
                   <Badge variant="default">

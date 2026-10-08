@@ -57,7 +57,7 @@ function ToolbarButton({
       className={cn(
         'inline-flex h-8 w-8 items-center justify-center rounded-lg border text-ase-text2 transition disabled:cursor-not-allowed disabled:opacity-40',
         active
-          ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
+          ? 'border-ase-brand/40 bg-ase-brand/15 text-sky-100'
           : 'border-transparent hover:border-white/10 hover:bg-white/[0.06] hover:text-ase-text',
       )}
     >
@@ -85,10 +85,10 @@ export function RichTextEditor({ initialContent, onChange, placeholder, classNam
           '[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-ase-text',
           '[&_h3]:mt-3 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-ase-text',
           '[&_p]:mb-3 [&_p]:leading-relaxed [&_p]:text-ase-text2',
-          '[&_a]:text-cyan-300 [&_a]:underline [&_a]:decoration-cyan-300/40',
+          '[&_a]:text-sky-300 [&_a]:underline [&_a]:decoration-sky-300/40',
           '[&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-6',
           '[&_li]:mb-1 [&_li]:text-ase-text2',
-          '[&_blockquote]:border-l-2 [&_blockquote]:border-cyan-300/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-ase-muted',
+          '[&_blockquote]:border-l-2 [&_blockquote]:border-ase-brand/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-ase-muted',
           '[&_code]:rounded [&_code]:bg-white/[0.08] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
           '[&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-black/30 [&_pre]:p-3',
           '[&_pre_code]:bg-transparent [&_pre_code]:px-0 [&_pre_code]:py-0',

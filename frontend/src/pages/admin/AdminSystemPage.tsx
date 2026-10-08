@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { Card } from '../../components/ui/Card'
-import { cn } from '../../components/ui/cn'
-import { PremiumHero } from '../../components/admin/premium/PremiumAdminUi'
+import { useSearchParams } from 'react-router-dom'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
+import { AdminTabs } from '../../components/admin/premium/AdminTabs'
 import { useI18n } from '../../i18n'
 import { AdminSystemStatusPanel } from './AdminSystemStatusPage'
 import { AdminErrorLogsPanel } from './AdminErrorLogsPage'
@@ -17,9 +16,24 @@ const TABS: { key: TabKey; labelKey: string }[] = [
   { key: 'demo', labelKey: 'adminSystem.tabs.demo' },
 ]
 
+const isTab = (v: string | null): v is TabKey => TABS.some((x) => x.key === v)
+
 export function AdminSystemPage() {
   const { t } = useI18n()
-  const [tab, setTab] = useState<TabKey>('status')
+  // La pestaña vive en la URL (?tab=errors) para poder enlazarla y conservarla al recargar.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const raw = searchParams.get('tab')
+  const tab: TabKey = isTab(raw) ? raw : 'status'
+  const setTab = (key: TabKey) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (key === 'status') next.delete('tab')
+        else next.set('tab', key)
+        return next
+      },
+      { replace: true },
+    )
 
   return (
     <div className="space-y-8 pb-16">
@@ -30,25 +44,12 @@ export function AdminSystemPage() {
         subtitle={t('adminSystem.subtitle')}
       />
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface/55 p-3 backdrop-blur">
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setTab(item.key)}
-              className={cn(
-                'rounded-full border px-4 py-1.5 text-xs font-semibold transition',
-                tab === item.key
-                  ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
-                  : 'border-white/10 bg-white/[0.03] text-ase-muted hover:text-ase-text',
-              )}
-            >
-              {t(item.labelKey)}
-            </button>
-          ))}
-        </div>
-      </Card>
+      <AdminTabs
+        label={t('adminSystem.title')}
+        tabs={TABS.map((x) => ({ key: x.key, label: t(x.labelKey) }))}
+        active={tab}
+        onChange={setTab}
+      />
 
       {tab === 'status' && <AdminSystemStatusPanel onViewErrors={() => setTab('errors')} />}
       {tab === 'errors' && <AdminErrorLogsPanel />}

@@ -17,3 +17,4 @@ These are not exhaustive design docs — see [../DEPLOYMENT.md](../DEPLOYMENT.md
 | [0009](0009-frontend-route-level-code-splitting.md) | Frontend code-splitting at the route level, three Suspense boundaries |
 | [0010](0010-backend-test-isolation-strategy.md) | Backend tests require a disposable `TEST_DATABASE_URL` and truncate rather than rollback |
 | [0011](0011-in-process-scheduler.md) | In-process APScheduler for the daily sweep instead of an external job queue |
+| [0012](0012-academy-simulation-game-inside-platform.md) | ASE Academy course-game is a data-driven 2D feature inside the platform, not a 3D game or separate app |

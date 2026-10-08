@@ -42,7 +42,7 @@ export function OrganizationDashboardPage() {
   return (
     <div className="space-y-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-6 sm:p-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_0%,rgba(56,189,248,0.12),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0" />
         <div className="relative z-[1] max-w-3xl">
           <div className="mb-5">
             <WelcomeBanner variant="lead" />

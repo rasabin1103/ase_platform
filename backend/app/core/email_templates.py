@@ -690,3 +690,41 @@ def newsletter_email(
         f"{explore_url}\n\n{unsub_label}: {unsubscribe_url}"
     )
     return html, text
+
+
+def notifications_email(
+    items: list[tuple[str, str | None]], *, extra_count: int, notifications_url: str, is_digest: bool, language: str = "es",
+) -> tuple[str, str, str]:
+    """Returns (subject, html, text) for the notification email: one message
+    listing the new notifications (title + optional body). `is_digest` only
+    changes the wording (a periodic summary vs. "you have news")."""
+    import html as _html
+
+    lang = _lang(language)
+    n = len(items) + extra_count
+    if lang == "en":
+        subject = "Your notification summary" if is_digest else f"You have {n} new notification{'s' if n != 1 else ''}"
+        title = subject
+        footnote = "You receive this because of your notification settings. You can change them any time."
+        action_label = "Open notifications"
+        more = f"…and {extra_count} more" if extra_count else ""
+    else:
+        subject = "Tu resumen de notificaciones" if is_digest else ("Tienes 1 notificación nueva" if n == 1 else f"Tienes {n} notificaciones nuevas")
+        title = subject
+        footnote = "Recibes este correo por tu configuración de notificaciones. Puedes cambiarla cuando quieras."
+        action_label = "Abrir notificaciones"
+        more = f"…y {extra_count} más" if extra_count else ""
+    rows = "".join(
+        f'<p style="margin:0 0 12px;"><strong>{_html.escape(t)}</strong>'
+        + (f"<br>{_html.escape(b)}" if b else "")
+        + "</p>"
+        for t, b in items
+    )
+    if more:
+        rows += f'<p style="margin:0;opacity:.7;">{_html.escape(more)}</p>'
+    html = _render(title=title, body=rows, action_url=notifications_url, action_label=action_label, footnote=footnote, language=lang)
+    text_lines = [f"- {t}" + (f": {b}" if b else "") for t, b in items]
+    if more:
+        text_lines.append(more)
+    text = f"{title}\n\n" + "\n".join(text_lines) + f"\n\n{notifications_url}\n\n{footnote}"
+    return subject, html, text

@@ -105,6 +105,15 @@ body,
     background-image: linear-gradient(135deg, #2f5ce0, #6a4ae0);
   }
 
+  /* Home hero only: the single highlighted phrase of the H1. Light stops
+     (sky-300 → brand → violet-300) keep it well above 4.5:1 on ase-bg. */
+  .ase-text-gradient {
+    background-image: linear-gradient(90deg, #7dd3fc, #8fb0ff 45%, #c4b5fd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   /* Replace default Tailwind shadow presets with our custom soft shadow */
   .shadow-sm,
   .shadow,

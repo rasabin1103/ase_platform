@@ -15,7 +15,7 @@ export function Switch({ checked, onCheckedChange, label, className, ...props }:
       aria-checked={checked}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        'inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text2 backdrop-blur',
+        'inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-ase-text2',
         'transition hover:bg-white/[0.05] hover:border-white/15',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ase-primary/50',
         className,

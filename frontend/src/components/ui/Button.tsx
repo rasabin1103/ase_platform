@@ -9,6 +9,15 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   rightIcon?: ReactNode
 }
 
+/** Texto plano: se trunca con elipsis. Contenido mixto (icono + texto) se
+ * alinea en fila; sin esto, el SVG (display:block por el preflight) se
+ * colocaba encima del texto. */
+function childSpanClass(children: ReactNode) {
+  return typeof children === 'string' || typeof children === 'number'
+    ? 'min-w-0 truncate'
+    : 'inline-flex min-w-0 items-center gap-2 truncate'
+}
+
 export function Button({
   className,
   variant = 'primary',
@@ -22,7 +31,7 @@ export function Button({
   return (
     <button type={type} className={buttonClassName(variant, size, className)} {...props}>
       {leftIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{leftIcon}</span> : null}
-      <span className="min-w-0 truncate">{children}</span>
+      <span className={childSpanClass(children)}>{children}</span>
       {rightIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{rightIcon}</span> : null}
     </button>
   )
@@ -54,7 +63,7 @@ export function ButtonLink({
   return (
     <Link className={buttonClassName(variant, size, className)} {...props}>
       {leftIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{leftIcon}</span> : null}
-      <span className="min-w-0 truncate">{children}</span>
+      <span className={childSpanClass(children)}>{children}</span>
       {rightIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{rightIcon}</span> : null}
     </Link>
   )
@@ -82,7 +91,7 @@ export function ButtonAnchor({
   return (
     <a className={buttonClassName(variant, size, className)} {...props}>
       {leftIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{leftIcon}</span> : null}
-      <span className="min-w-0 truncate">{children}</span>
+      <span className={childSpanClass(children)}>{children}</span>
       {rightIcon ? <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">{rightIcon}</span> : null}
     </a>
   )

@@ -512,6 +512,7 @@ class ConsumerCatalogService:
             licenseSupportIncluded=item.license_support_included,
             licenseRefundPolicy=item.license_refund_policy,
             gettingStarted=item.getting_started,
+            academyCourseKey=item.academy_course_key,
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )

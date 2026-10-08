@@ -27,7 +27,7 @@ export function SidebarNavGroups({ groups, onNavigate }: Props) {
                   cn(
                     linkBase,
                     isActive
-                      ? 'border-cyan-300/20 bg-cyan-300/10 text-ase-text shadow-[0_0_28px_rgba(34,211,238,0.10)]'
+                      ? 'border-ase-brand/40 bg-ase-brand/15 text-ase-text shadow-[0_0_28px_rgba(76,125,255,0.18)]'
                       : 'border-transparent text-ase-text2 hover:border-white/10 hover:bg-white/[0.045] hover:text-ase-text',
                   )
                 }
@@ -38,7 +38,7 @@ export function SidebarNavGroups({ groups, onNavigate }: Props) {
                       className={cn(
                         'grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition',
                         isActive
-                          ? 'border-cyan-300/25 bg-cyan-300/10 text-cyan-200'
+                          ? 'border-ase-brand/40 bg-ase-brand/20 text-sky-200'
                           : 'border-white/10 bg-white/[0.04] text-ase-text2 group-hover:text-ase-text',
                       )}
                     >

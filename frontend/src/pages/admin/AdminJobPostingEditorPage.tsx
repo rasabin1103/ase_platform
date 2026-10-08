@@ -76,7 +76,7 @@ export function AdminJobPostingEditorPage() {
   })
 
   if (isEditing && postingQuery.isLoading) {
-    return <Skeleton className="h-96 rounded-[2rem]" />
+    return <Skeleton className="h-96 rounded-3xl" />
   }
 
   if (isEditing && postingQuery.isError) {
@@ -148,7 +148,7 @@ function AdminJobPostingEditorForm({ postingId, initial }: { postingId?: number;
           <Link to="/admin/job-postings" className="text-xs text-ase-muted hover:text-ase-text">
             {t('adminJobPostings.backToList')}
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-ase-text">
+          <h1 className="mt-3 font-display text-3xl font-semibold text-ase-text">
             {isEditing ? t('adminJobPostings.editTitle') : t('adminJobPostings.newTitle')}
           </h1>
         </div>
@@ -193,7 +193,7 @@ function AdminJobPostingEditorForm({ postingId, initial }: { postingId?: number;
           }
         })}
       >
-        <Card className="space-y-4 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-4 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <label className="block">
             <span className="mb-1 block text-xs text-ase-muted">{t('adminJobPostings.fields.title')}</span>
             <Input {...form.register('title', { required: t('adminJobPostings.validation.required') as string })} />
@@ -317,7 +317,7 @@ function AdminJobPostingEditorForm({ postingId, initial }: { postingId?: number;
           </div>
         </Card>
 
-        <Card className="space-y-4 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-6 backdrop-blur">
+        <Card className="space-y-4 rounded-3xl border-white/10 bg-ase-surface/60 p-6">
           <ImageUploadField
             label={t('adminJobPostings.fields.image') as string}
             previewSrc={hasStoredImage ? `/api/v1/admin/job-postings/${postingId}/image` : undefined}

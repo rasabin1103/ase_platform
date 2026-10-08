@@ -10,19 +10,10 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { Table, TBody, TD, THead, TH, TR } from '../../components/ui/Table'
 import { ApplicationMapTree } from '../../components/admin/premium/ApplicationMapTree'
-import {
-  InsightBar,
-  PremiumBreakdownCard,
-  PremiumChartCard,
-  PremiumComparisonStat,
-  PremiumHero,
-  PremiumInsightsCard,
-  PremiumMetricCard,
-  PremiumOrb,
-  PremiumSplitStat,
-  PremiumTrendCompareChart,
-} from '../../components/admin/premium/PremiumAdminUi'
+import { InsightBar, PremiumBreakdownCard, PremiumChartCard, PremiumComparisonStat, PremiumInsightsCard, PremiumMetricCard, PremiumOrb, PremiumSplitStat, PremiumTrendCompareChart } from '../../components/admin/premium/PremiumAdminUi'
+import { PremiumHero } from '../../components/admin/premium/PremiumHero'
 import { WelcomeBanner } from '../../components/dashboard/WelcomeBanner'
+import { AdminPendingQueue } from '../../components/admin/premium/AdminPendingQueue'
 import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -177,7 +168,7 @@ export function AdminDashboardPage() {
           </>
         }
         sidePanel={
-          <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft">
+          <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ase-muted">
               {t('adminDashboard.pulse.title')}
             </div>
@@ -189,6 +180,8 @@ export function AdminDashboardPage() {
           </Card>
         }
       />
+
+      <AdminPendingQueue />
 
       {statsQuery.isLoading ? (
         <Skeleton className="h-28 w-full rounded-2xl" />
@@ -287,7 +280,7 @@ export function AdminDashboardPage() {
       ) : null}
 
       {testStatsRows.length > 0 || testStatsQuery.isLoading || testStatsQuery.isError ? (
-        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
+        <Card className="rounded-3xl border-white/10 bg-ase-surface p-6 shadow-soft">
           <h2 className="text-lg font-semibold text-ase-text">{t('adminDashboard.sections.testExecutions.title')}</h2>
           <p className="mb-4 max-w-2xl text-sm text-ase-text2">{t('adminDashboard.sections.testExecutions.subtitle')}</p>
           {testStatsQuery.isLoading ? (
@@ -337,7 +330,7 @@ export function AdminDashboardPage() {
             persists instead of self-correcting. */}
         <div className="min-w-0 grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
           {analyticsQuery.isLoading ? (
-            <Skeleton className="h-64 rounded-[2rem] lg:col-span-2" />
+            <Skeleton className="h-64 rounded-3xl lg:col-span-2" />
           ) : analyticsQuery.isError ? (
             <div className="lg:col-span-2">
               <EmptyState
@@ -417,7 +410,7 @@ export function AdminDashboardPage() {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-cyan-300/20"
+                    className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-ase-brand/20"
                   >
                     <span className="text-base">{link.icon}</span>
                     <span className="text-sm font-medium text-ase-text">{t(link.labelKey)}</span>
@@ -431,7 +424,7 @@ export function AdminDashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         {analyticsQuery.isLoading ? (
-          <Skeleton className="h-72 rounded-[2rem] xl:col-span-4" />
+          <Skeleton className="h-72 rounded-3xl xl:col-span-4" />
         ) : analyticsQuery.isError ? (
           <div className="xl:col-span-4">
             <EmptyState
@@ -491,7 +484,7 @@ export function AdminDashboardPage() {
         )}
       </div>
 
-      <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-5 shadow-soft md:p-6">
+      <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge variant="info" className="mb-2">

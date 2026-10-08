@@ -74,7 +74,7 @@ export function AdminCatalogCategoriesPanel() {
       </div>
 
       {query.isLoading ? (
-        <Skeleton className="h-56 rounded-[2rem]" />
+        <Skeleton className="h-56 rounded-3xl" />
       ) : query.isError ? (
         <EmptyState title={t('private.common.couldNotLoad')} description={t('adminCatalogCategories.loadError')} />
       ) : categories.length === 0 ? (
@@ -82,7 +82,7 @@ export function AdminCatalogCategoriesPanel() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {categories.map((cat) => (
-            <Card key={cat.id} className="space-y-3 rounded-[2rem] border-white/[0.08] bg-ase-surface/60 p-5 backdrop-blur">
+            <Card key={cat.id} className="space-y-3 rounded-3xl border-white/10 bg-ase-surface/60 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-ase-text">{cat.name}</h3>

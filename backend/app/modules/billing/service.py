@@ -118,6 +118,24 @@ class BillingError(Exception):
     into an HTTP 400."""
 
 
+def _safe_return_path(path: str | None, default: str = "/pricing") -> str:
+    """Only a plain same-site path ("/pricing", "/dashboard") is accepted as
+    the post-cancel destination — anything else (absolute URLs, protocol-
+    relative "//host", backslashes, query/fragment) falls back to the pricing
+    page, so this can never be turned into an open redirect."""
+    if (
+        not path
+        or not path.startswith("/")
+        or path.startswith("//")
+        or "\\" in path
+        or "?" in path
+        or "#" in path
+        or len(path) > 200
+    ):
+        return default
+    return path
+
+
 class BillingService:
     def __init__(self, db: Session):
         self.db = db
@@ -146,7 +164,7 @@ class BillingService:
         self.db.flush()
         return customer.id
 
-    def create_checkout_session(self, *, current_user: User, plan_id: int) -> str:
+    def create_checkout_session(self, *, current_user: User, plan_id: int, return_path: str | None = None) -> str:
         _require_stripe_configured()
 
         # Backfill for any account that predates ensure_personal_workspace
@@ -176,7 +194,7 @@ class BillingService:
             customer=customer_id,
             line_items=[{"price": plan.stripe_price_id, "quantity": 1}],
             success_url=f"{settings.FRONTEND_URL}/dashboard?checkout=success",
-            cancel_url=f"{settings.FRONTEND_URL}/admin/plans?checkout=cancelled",
+            cancel_url=f"{settings.FRONTEND_URL}{_safe_return_path(return_path)}?checkout=cancelled",
             client_reference_id=str(org.id),
             metadata={"organization_id": str(org.id), "plan_id": str(plan.id)},
             subscription_data={"metadata": {"organization_id": str(org.id), "plan_id": str(plan.id)}},

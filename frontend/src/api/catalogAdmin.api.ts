@@ -94,6 +94,9 @@ export type CatalogItemAdmin = {
   // Admin-written setup/usage instructions — resource pillar only in the
   // admin form, present generically on every item.
   getting_started?: string | null
+  // ASE Academy simulator course key (course items only) — links this
+  // catalog item to an interactive course of features/academy.
+  academy_course_key?: string | null
   created_at: string
   updated_at: string
 }
@@ -149,6 +152,9 @@ export type CatalogItemAdminPayload = {
   license_support_included?: boolean
   license_refund_policy?: string | null
   getting_started?: string | null
+  // ASE Academy simulator course key (course items only) — links this
+  // catalog item to an interactive course of features/academy.
+  academy_course_key?: string | null
 }
 
 // `type` stays fixed once created (changing the underlying kind of a

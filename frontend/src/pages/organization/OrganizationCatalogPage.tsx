@@ -100,6 +100,8 @@ export function OrganizationCatalogPage() {
               <Skeleton key={n} className="h-40 w-full rounded-xl" />
             ))}
           </div>
+        ) : associatedQuery.isError ? (
+          <EmptyState title={t('private.common.couldNotLoad') as string} description={t('catalog.loadError') as string} />
         ) : associatedItems.length === 0 ? (
           <EmptyState
             title={t('organizationWorkspace.catalog.emptyTitle')}
@@ -160,6 +162,8 @@ export function OrganizationCatalogPage() {
               <Skeleton key={n} className="h-40 w-full rounded-xl" />
             ))}
           </div>
+        ) : fullCatalogQuery.isError ? (
+          <EmptyState title={t('private.common.couldNotLoad') as string} description={t('catalog.loadError') as string} />
         ) : browseItems.length === 0 ? (
           <EmptyState title={t('catalog.empty') as string} description={t('catalog.emptyHint') as string} />
         ) : (

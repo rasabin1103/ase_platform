@@ -132,7 +132,7 @@ export function OrganizationMembersPage() {
   return (
     <div className="space-y-8 pb-16">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-ase-surface p-6 sm:p-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_0%,rgba(56,189,248,0.12),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0" />
         <div className="relative z-[1] max-w-3xl">
           <Eyebrow>{t('orgMembership.admin.heroBadge')}</Eyebrow>
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-ase-text sm:text-4xl">

@@ -70,8 +70,8 @@ export function PricingEngineSection({
       : null
 
   return (
-    <div className="space-y-3 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] p-4 sm:col-span-2">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-cyan-200">
+    <div className="space-y-3 rounded-xl border border-ase-brand/15 bg-ase-brand/[0.04] p-4 sm:col-span-2">
+      <span className="block text-xs font-semibold uppercase tracking-wide text-sky-200">
         {t('pricingEngine.sectionTitle')}
       </span>
 

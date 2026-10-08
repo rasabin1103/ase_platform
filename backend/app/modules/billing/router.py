@@ -33,7 +33,9 @@ def create_checkout_session(
     svc: BillingService = Depends(get_service),
 ):
     try:
-        checkout_url = svc.create_checkout_session(current_user=current_user, plan_id=payload.plan_id)
+        checkout_url = svc.create_checkout_session(
+            current_user=current_user, plan_id=payload.plan_id, return_path=payload.return_path,
+        )
     except BillingError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return CheckoutSessionResponse(checkout_url=checkout_url)

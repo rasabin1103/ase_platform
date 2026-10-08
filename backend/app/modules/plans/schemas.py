@@ -42,6 +42,7 @@ class PlanCatalogItemRead(BaseModel):
     catalog_item_id: int
     display_order: int
     title: str
+    title_en: str | None = None
     slug: str
     type: CatalogItemType
     short_description: str
