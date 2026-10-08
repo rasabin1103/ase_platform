@@ -73,8 +73,8 @@ export const organizationWorkspaceEn = {
     sentLegend: 'Sent by org',
     consumedLegend: 'Owned in total',
     roleLabels: {
-      org_owner: 'Org Owner',
-      org_admin: 'Org Admin',
+      org_owner: 'Owner',
+      org_admin: 'Admin',
       member: 'Member',
     },
   },
@@ -171,8 +171,8 @@ export const organizationWorkspaceEs = {
     sentLegend: 'Enviado por la org',
     consumedLegend: 'Total en cuenta',
     roleLabels: {
-      org_owner: 'Org Owner',
-      org_admin: 'Org Admin',
+      org_owner: 'Propietario',
+      org_admin: 'Administrador',
       member: 'Miembro',
     },
   },

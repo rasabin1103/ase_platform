@@ -29,7 +29,7 @@ describe('LoginPage', () => {
     const { container } = renderLoginPage()
     const user = userEvent.setup()
 
-    const emailInput = screen.getByPlaceholderText('name@company.com')
+    const emailInput = screen.getByPlaceholderText('tu@email.com')
     const passwordInput = container.querySelector('input[type="password"]') as HTMLInputElement
     const submitButton = container.querySelector('button[type="submit"]') as HTMLButtonElement
 
@@ -45,7 +45,7 @@ describe('LoginPage', () => {
     const { container } = renderLoginPage()
     const user = userEvent.setup()
 
-    const emailInput = screen.getByPlaceholderText('name@company.com')
+    const emailInput = screen.getByPlaceholderText('tu@email.com')
     const passwordInput = container.querySelector('input[type="password"]') as HTMLInputElement
     const submitButton = container.querySelector('button[type="submit"]') as HTMLButtonElement
 

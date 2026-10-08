@@ -179,7 +179,7 @@ export const organizationsPageEs = {
     primaryType: { label: 'Tipo principal' },
   },
   platformView: {
-    badge: 'Platform Admin View',
+    badge: 'Vista de administración',
     title: 'Vista de plataforma',
     subtitle: 'Como super administrador puedes ver y gestionar todas las organizaciones.',
   },
@@ -213,7 +213,7 @@ export const organizationsPageEs = {
   superAdmin: {
     title: 'Organizaciones de plataforma',
     subtitle: 'Supervisa, administra y gobierna todos los tenants de la plataforma ASE desde una vista global.',
-    badge: 'Platform Admin View',
+    badge: 'Vista de administración',
     context: 'Sesión como administrador de plataforma',
     metrics: {
       total: { label: 'Total organizaciones', hint: 'Todos los tenants de la plataforma' },

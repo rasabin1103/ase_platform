@@ -160,7 +160,7 @@ export const aboutPageEs = {
     badge: 'Sobre ASE',
     title: 'Construido por alguien que ha estado en las trincheras.',
     subtitle:
-      'Roberto Arce Sabín es QA Strategy Lead con más de 10 años de experiencia en entornos enterprise de alta criticidad — banca digital, aeronáutica, retail y seguridad. ASE nació de detectar el mismo patrón una y otra vez: equipos con talento pero sin las herramientas, la formación ni los frameworks para entregar con calidad real.',
+      'Roberto Arce Sabín es QA Strategy Lead con más de 10 años de experiencia en empresas donde un fallo cuesta caro — banca digital, aeronáutica, retail y seguridad. ASE nació de detectar el mismo patrón una y otra vez: equipos con talento pero sin las herramientas, la formación ni los frameworks para entregar con calidad real.',
     primaryCta: 'Ver qué incluye ASE',
     secondaryCta: 'Hablar con Roberto',
     cards: {
@@ -182,7 +182,7 @@ export const aboutPageEs = {
       scale: {
         icon: '⬡',
         title: 'Escalabilidad',
-        description: 'Fundamentos multi-tenant y workflows pensados para operadores.',
+        description: 'Una base pensada para que varios equipos trabajen juntos sin pisarse.',
       },
     },
   },
@@ -196,7 +196,7 @@ export const aboutPageEs = {
         { title: 'Fragilidad', desc: 'Sistemas que se rompen con el cambio y carecen de fronteras claras.' },
         { title: 'Deuda de automatización', desc: 'Pipelines inestables, ownership difuso y mantenimiento costoso.' },
         { title: 'Operación manual', desc: 'Workflows sin medir que penalizan silenciosamente al equipo.' },
-        { title: 'Brecha de gobernanza', desc: 'RBAC, fronteras de tenant y auditoría añadidos demasiado tarde.' },
+        { title: 'Control que llega tarde', desc: 'Quién puede hacer qué, y quién hizo qué, se piensa cuando ya hay problemas.' },
       ],
     },
   },
@@ -231,7 +231,7 @@ export const aboutPageEs = {
       vision: {
         icon: '◆',
         title: 'Visión',
-        body: 'Convertirnos en un referente europeo en ingeniería de plataformas, automatización inteligente y arquitectura SaaS empresarial.',
+        body: 'Convertirnos en un referente europeo en ingeniería de plataformas, automatización inteligente y plataformas digitales para empresas.',
       },
       philosophy: {
         icon: '▣',
@@ -277,10 +277,10 @@ export const aboutPageEs = {
     badge: 'Diferenciales',
     title: 'Lo que diferencia a ASE',
     items: [
-      'Mentalidad de ingeniería enterprise',
+      'Experiencia real en grandes empresas',
       'Especialización profunda en automatización QA',
-      'Arquitectura SaaS moderna',
-      'Fundamentos de plataforma multi-tenant',
+      'Plataformas modernas y fáciles de mantener',
+      'Pensado para equipos, no solo para personas',
       'Integración de IA con guardrails',
       'Sistemas escalables y claridad operativa',
       'Cultura técnica basada en estándares reales',
@@ -291,8 +291,8 @@ export const aboutPageEs = {
     title: 'Un timeline breve',
     items: [
       { year: '2024', body: 'Nace ASE como iniciativa de ingeniería independiente.' },
-      { year: '2025', body: 'Desarrollo de frameworks y automatización enterprise.' },
-      { year: '2026', body: 'Construcción de la plataforma SaaS modular ASE.' },
+      { year: '2025', body: 'Frameworks y automatización de pruebas para grandes empresas.' },
+      { year: '2026', body: 'Nace la plataforma ASE: catálogo, Academy, empleo y equipos en un solo sitio.' },
       { year: 'Futuro', body: 'Ecosistema completo de automatización, formación y herramientas empresariales.' },
     ],
   },

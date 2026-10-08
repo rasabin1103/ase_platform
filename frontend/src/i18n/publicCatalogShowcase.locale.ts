@@ -21,7 +21,7 @@ export const publicCatalogShowcaseEn = {
     clearTags: 'Clear',
   },
   type: {
-    product: 'SaaS Product',
+    product: 'Product',
     course: 'Course',
     book: 'Book',
     resource: 'Resource',
@@ -44,6 +44,9 @@ export const publicCatalogShowcaseEn = {
       description: 'This item may have been unpublished or the link is incorrect.',
     },
     preview: 'View free preview',
+    noPreviewTitle: 'No public sample for this title',
+    noPreviewText: 'Check below what it includes and its reviews. Questions before buying? Write to us and we will tell you exactly what you get.',
+    noPreviewCta: 'Ask about this title',
     aboutTitle: 'About this item',
     ctaBuy: 'Buy now',
     ctaSignup: 'Sign up to buy',
@@ -51,6 +54,7 @@ export const publicCatalogShowcaseEn = {
   },
   previewModal: {
     title: 'Free preview',
+    close: 'Close preview',
     notAvailable: 'No preview available',
     notAvailableHint: 'The author hasn’t uploaded a free sample for this item yet.',
   },
@@ -79,7 +83,7 @@ export const publicCatalogShowcaseEs = {
     clearTags: 'Limpiar',
   },
   type: {
-    product: 'Producto SaaS',
+    product: 'Producto',
     course: 'Curso',
     book: 'Libro',
     resource: 'Recurso',
@@ -102,6 +106,9 @@ export const publicCatalogShowcaseEs = {
       description: 'Puede que se haya despublicado o que el enlace sea incorrecto.',
     },
     preview: 'Ver vista previa gratuita',
+    noPreviewTitle: 'Este título no tiene muestra pública',
+    noPreviewText: 'Abajo tienes qué incluye y sus reseñas. ¿Dudas antes de comprar? Escríbenos y te contamos exactamente qué recibes.',
+    noPreviewCta: 'Preguntar por este título',
     aboutTitle: 'Sobre este ítem',
     ctaBuy: 'Comprar ahora',
     ctaSignup: 'Regístrate para comprar',
@@ -109,6 +116,7 @@ export const publicCatalogShowcaseEs = {
   },
   previewModal: {
     title: 'Vista previa gratuita',
+    close: 'Cerrar vista previa',
     notAvailable: 'No hay vista previa disponible',
     notAvailableHint: 'El autor todavía no ha subido una muestra gratuita para este ítem.',
   },

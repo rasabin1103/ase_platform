@@ -11,7 +11,7 @@ export const onboardingPageEn = {
   yourAccount: 'your account',
   welcomeTitle: 'Welcome, {{name}}',
   welcomeBody:
-    "You don't have an organization yet. Create one to start, create an individual workspace, join an existing organization, or accept an invite.",
+    "You don't have an organization yet. Create one to start, create your personal space, join an existing organization, or accept an invite.",
   create: {
     title: 'Create organization',
     subtitle: 'Primary path for teams and businesses.',
@@ -20,32 +20,32 @@ export const onboardingPageEn = {
     error: 'Could not create organization. Check slug duplicates/permissions.',
   },
   individual: {
-    title: 'Individual workspace',
+    title: 'Personal space',
     subtitle: 'Quick setup for solo work.',
-    submit: 'Create individual workspace',
+    submit: 'Create my personal space',
     submitting: 'Creating…',
-    error: 'Could not create the workspace. Please try again.',
+    error: 'Could not create your space. Please try again.',
   },
 }
 
 export const onboardingPageEs = {
-  badge: 'Onboarding',
+  badge: 'Primeros pasos',
   yourAccount: 'tu cuenta',
   welcomeTitle: 'Bienvenido/a, {{name}}',
   welcomeBody:
-    'Todavía no tienes una organización. Crea una para empezar, crea un workspace individual, únete a una organización existente o acepta una invitación.',
+    'Todavía no tienes una organización. Crea una para empezar, crea tu espacio personal, únete a una organización existente o acepta una invitación.',
   create: {
     title: 'Crear organización',
     subtitle: 'Vía principal para equipos y empresas.',
     submit: 'Crear organización',
     submitting: 'Creando…',
-    error: 'No se pudo crear la organización. Revisa duplicados de identificador o permisos.',
+    error: 'No se pudo crear la organización. Puede que ese identificador ya esté en uso: prueba con otro.',
   },
   individual: {
-    title: 'Workspace individual',
-    subtitle: 'Configuración rápida para trabajo en solitario.',
-    submit: 'Crear workspace individual',
+    title: 'Espacio personal',
+    subtitle: 'Para usar ASE por tu cuenta, sin equipo.',
+    submit: 'Crear mi espacio personal',
     submitting: 'Creando…',
-    error: 'No se pudo crear el workspace. Inténtalo de nuevo.',
+    error: 'No se pudo crear tu espacio. Inténtalo de nuevo.',
   },
 }

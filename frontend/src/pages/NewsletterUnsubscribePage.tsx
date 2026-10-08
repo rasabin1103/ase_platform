@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { confirmNewsletterUnsubscribe } from '../api/newsletter.api'
 import { AuthCard } from '../components/public/AuthCard'
-import { AuthVisualPanel } from '../components/public/AuthVisualPanel'
+import { AuthVisualPanel, type AuthBenefit } from '../components/public/AuthVisualPanel'
 import { useI18n } from '../i18n'
 
 type UnsubscribeStatus = 'pending' | 'success' | 'error'
@@ -33,7 +33,7 @@ export function NewsletterUnsubscribePage() {
           badge={t('auth.newsletterUnsubscribe.badge')}
           title={t('auth.newsletterUnsubscribe.title')}
           body={t('auth.newsletterUnsubscribe.body')}
-          bullets={t<string[]>('auth.bullets')}
+          bullets={t<AuthBenefit[]>('auth.bullets')}
         />
 
         <div className="flex items-center justify-center lg:justify-end">

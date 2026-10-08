@@ -163,7 +163,20 @@ export function CatalogShowcaseDetailPage() {
             >
               {t('publicCatalogShowcase.detail.preview')}
             </Button>
-          ) : null}
+          ) : (
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-sm font-semibold text-ase-text">{t('publicCatalogShowcase.detail.noPreviewTitle')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ase-text2">
+                {t('publicCatalogShowcase.detail.noPreviewText')}
+              </p>
+              <Link
+                to={`/contact?topic=${encodeURIComponent(title)}`}
+                className="mt-2 inline-flex text-xs font-semibold text-sky-300 hover:text-sky-200"
+              >
+                {t('publicCatalogShowcase.detail.noPreviewCta')}
+              </Link>
+            </div>
+          )}
         </div>
 
         <div>

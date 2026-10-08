@@ -58,7 +58,7 @@ export function WorkspaceContextGate() {
   return (
     <EmptyState
       title="No se pudo cargar tu espacio de trabajo"
-      description="Comprueba que el backend esté en marcha e inténtalo de nuevo."
+      description="Puede ser un problema de conexión momentáneo. Recarga la página o inténtalo de nuevo en unos minutos."
     />
   )
 }

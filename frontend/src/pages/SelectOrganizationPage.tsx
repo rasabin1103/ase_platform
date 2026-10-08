@@ -38,7 +38,7 @@ export function SelectOrganizationPage() {
           <Skeleton className="h-28 w-full rounded-2xl" />
         </div>
       ) : orgsQuery.isError ? (
-        <EmptyState title="No se pudieron cargar organizaciones" description="Revisa backend, token y CORS." />
+        <EmptyState title="No se pudieron cargar organizaciones" description="Puede ser un problema de conexión momentáneo. Recarga la página o inténtalo de nuevo en unos minutos." />
       ) : orgs.length === 0 ? (
         <EmptyState
           title="No tienes organizaciones"

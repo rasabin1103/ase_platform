@@ -1,7 +1,8 @@
-import { Maximize2, Minimize2 } from 'lucide-react'
+import { Maximize2, Minimize2, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type PropsWithChildren, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from './cn'
+import { useOptionalI18n } from '../../i18n'
 import { Button } from './Button'
 
 type Props = PropsWithChildren & {
@@ -37,10 +38,12 @@ export function Modal({
   footer,
   children,
   className,
-  closeLabel = 'Close',
+  closeLabel,
   allowFullscreen = true,
   hideHeaderClose = false,
 }: Props) {
+  const i18n = useOptionalI18n()
+  const closeText = closeLabel ?? (i18n?.language === 'en' ? 'Close' : 'Cerrar')
   // Resets every time the modal closes rather than persisting across opens —
   // a maximized state carrying over to the next unrelated item feels like a
   // bug, not a preference worth remembering.
@@ -137,7 +140,9 @@ export function Modal({
               // otherwise both end up in the class list with no reliable
               // winner (this file's `cn` is a plain string join, not
               // tailwind-merge, so there's no de-duplication to lean on).
-              : cn('max-h-[90vh] w-full max-w-lg rounded-2xl', className),
+              : // Sin tailwind-merge: si el llamador fija su propio ancho (max-w-*),
+                // no se añade el max-w-lg por defecto, que si no ganaría siempre.
+                cn('max-h-[90vh] w-full rounded-2xl', /(^|\s)(\w+:)?max-w-/.test(className ?? '') ? null : 'max-w-lg', className),
           )}
         >
           {(title ?? null) && (
@@ -166,8 +171,13 @@ export function Modal({
                   </Button>
                 ) : null}
                 {!hideHeaderClose ? (
-                  <Button variant="ghost" className="h-9 px-3" onClick={onClose}>
-                    {closeLabel}
+                  <Button
+                    variant="outline"
+                    className="h-9 px-3"
+                    onClick={onClose}
+                    leftIcon={<X className="h-4 w-4" strokeWidth={2} aria-hidden />}
+                  >
+                    {closeText}
                   </Button>
                 ) : null}
               </div>

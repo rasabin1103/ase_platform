@@ -85,14 +85,14 @@ function formatDate(iso: string | null | undefined, language: string) {
 }
 
 export function IndependentDashboardPage() {
-  const { t, language } = useI18n()
+  const { t, language, planNames } = useI18n()
   const c = language === 'en' ? COPY.en : COPY.es
   const { currentUser } = useAuth()
   const canCreate = Boolean(currentUser?.can_create_content)
   const hasPlan = Boolean(currentUser?.plan_code)
   const planName = hasPlan
     ? localizedPlanText(language, currentUser?.plan_name, currentUser?.plan_name_en)
-    : c.freePlan
+    : (planNames?.free ?? c.freePlan)
   const renewal = formatDate(currentUser?.plan_ends_at ?? currentUser?.plan_current_period_end, language)
 
   return (

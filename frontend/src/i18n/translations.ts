@@ -1,7 +1,4 @@
 /** Public `/services` copy (EN + ES). Merged as root key `servicesPage`. */
-import { servicesPageEn, servicesPageEs } from './servicesPage.locale'
-/** Public `/platform` copy (EN + ES). Merged as root key `platformPage`. */
-import { platformPageEn, platformPageEs } from './platformPage.locale'
 /** Public `/about` copy (EN + ES). Merged as root key `aboutPage`. */
 import { aboutPageEn, aboutPageEs } from './aboutPage.locale'
 /** Private `/organizations` copy (EN + ES). Merged as root key `organizationsPage`. */
@@ -140,8 +137,6 @@ export const translations = {
       },
       logout: 'Sign out',
     },
-    servicesPage: servicesPageEn,
-    platformPage: platformPageEn,
     aboutPage: aboutPageEn,
     organizationsPage: organizationsPageEn,
     organizationWorkspace: organizationWorkspaceEn,
@@ -370,8 +365,8 @@ export const translations = {
     },
     pricing: {
       badge: 'Plans and pricing',
-      title: 'Choose your plan. Access the entire ASE ecosystem.',
-      subtitle: 'One price. Courses, templates, tools, resources and consulting — no surprises.',
+      title: 'Choose your plan. Pay only for what you need.',
+      subtitle: 'Each plan shows the content it includes, its monthly downloads and the services it adds — no surprises.',
       starterPara:
         'Independent QA professionals, juniors and freelancers who want to grow with quality resources.',
       professionalPara:
@@ -482,64 +477,10 @@ export const translations = {
           },
         },
       },
-      plans: {
-        free: {
-          name: 'Free',
-          desc: 'For individuals exploring automation, QA resources and platform basics.',
-          features: [
-            'Personal workspace',
-            'Access to free resources',
-            'Basic platform preview',
-            'Community learning content',
-            'Limited product access',
-          ],
-          cta: 'Start free',
-        },
-        pro: {
-          name: 'Pro',
-          badge: 'Recommended',
-          desc:
-            'For professionals and small teams that need frameworks, automation utilities and structured technical assets.',
-          features: [
-            'Everything in Free',
-            'QA framework access',
-            'Technical templates',
-            'Product tools',
-            'Training content',
-            'Priority updates',
-          ],
-          cta: 'Start Pro',
-        },
-        business: {
-          name: 'Business',
-          desc:
-            'For companies that need users, roles, subscriptions, internal tools and automation workflows.',
-          features: [
-            'Multi-user organization',
-            'Roles and permissions',
-            'Product access control',
-            'Business dashboards',
-            'Audit logs',
-            'Automation workflows',
-            'Support channel',
-          ],
-          cta: 'Talk to us',
-        },
-        enterprise: {
-          name: 'Enterprise',
-          desc:
-            'For organizations that need custom platforms, integrations, architecture, QA automation and dedicated engineering support.',
-          features: [
-            'Custom SaaS platform',
-            'Dedicated architecture support',
-            'Private workflows',
-            'Enterprise integrations',
-            'Custom automation',
-            'Security and governance',
-            'Technical advisory',
-          ],
-          cta: 'Contact sales',
-        },
+plans: {
+        // Los nombres, precios y ventajas de cada plan vienen de la base de datos
+        // (catálogo público de planes); aquí solo quedan textos genéricos de respaldo.
+        pro: { cta: 'Get started', badge: 'Recommended' },
       },
     },
     finalCta: {
@@ -647,10 +588,10 @@ export const translations = {
         badge: "LET'S TALK",
         title: 'Have a quality challenge? Tell us about it.',
         body:
-          "Whether you want to explore the platform, have questions about an Enterprise plan, or need QA consulting for your team — we're here. We reply within 24 hours on business days.",
+          "Whether you want to explore the platform, have questions about the {{plan:top}} plan, or need QA consulting for your team — we're here. We reply within 24 hours on business days.",
         trust1: 'Reply within 24h',
         trust2: 'No commitment',
-        trust3: 'For Enterprise plans, consulting included',
+        trust3: 'Consulting included in the {{plan:top}} plan',
         footerText:
           'You can also reach us directly at contact@arcesabinengineering.com or connect on LinkedIn with Roberto Arce Sabín.',
         sendTitle: 'Send a message',
@@ -672,7 +613,7 @@ export const translations = {
         details: 'Details',
         location: 'Location',
         focus: 'Focus',
-        focusBody: 'RBAC, multi-tenant platforms, premium UX, operational tooling',
+        focusBody: 'Quality strategy, test automation, platforms for teams and training',
         response: 'Response time',
         responseBody: 'Under 24 hours (business days)',
         subject: 'ASE — Contact request',
@@ -692,20 +633,26 @@ export const translations = {
     auth: {
       backHome: 'Back to Home',
       backToLogin: 'Back to login',
-      bullets: ['Secure authentication', 'Organization context', 'RBAC permissions', 'SaaS operations'],
+      bullets: [
+        { title: 'Your library, in one place', text: 'What you buy or your plan includes, ready to use or download.' },
+        { title: 'Learn by playing', text: 'ASE Academy missions with your progress saved.' },
+        { title: 'Jobs that fit you', text: 'QA job postings ranked against your CV.' },
+        { title: 'A protected account', text: 'Two-step verification and secure payment with Stripe.' },
+      ],
       fields: {
         email: 'Email',
+        emailPlaceholder: 'you@email.com',
         password: 'Password',
         displayName: 'Display name',
         firstName: 'First name',
         lastName: 'Last name',
       },
       login: {
-        badge: 'Client Workspace',
-        title: 'Access your engineering workspace',
-        body: 'Manage organizations, users, roles, subscriptions and products from one secure platform.',
+        badge: 'Your ASE account',
+        title: 'Pick up where you left off',
+        body: 'Your library, your Academy missions, your purchases and job postings ranked against your CV — all in one place.',
         formTitle: 'Login',
-        formSubtitle: 'Use your account to access the dashboard.',
+        formSubtitle: 'Sign in with your email and password.',
         loading: 'Signing in…',
         submit: 'Login',
         noAccount: 'New here?',
@@ -720,7 +667,7 @@ export const translations = {
         lockedError: 'Too many failed attempts. Account temporarily locked — try again in {{minutes}} min.',
         lockedErrorGeneric: 'Too many failed attempts. Account temporarily locked — try again later.',
         invalidCredentials: 'Invalid credentials.',
-        connectionError: 'Could not connect to the backend (CORS / API down). VITE_API_URL={{url}}',
+        connectionError: 'We could not reach the server. Check your connection and try again in a few minutes.',
         httpError: 'Login error (HTTP {{status}}).',
         genericError: 'Login error.',
         registeredBannerTitle: 'Account created',
@@ -728,10 +675,10 @@ export const translations = {
       },
       register: {
         badge: 'Start here',
-        title: 'Start building your ASE workspace',
-        body: 'Create your account and begin shaping your organization, products and automation systems.',
+        title: 'Create your free ASE account',
+        body: 'Play the first mission of every Academy course, browse the catalog and get job postings ranked against your CV. Upgrade your plan only when you need it.',
         formTitle: 'Create account',
-        formSubtitle: 'Use a work email if possible.',
+        formSubtitle: 'It takes less than a minute.',
         loading: 'Creating…',
         submit: 'Create account',
         haveAccount: 'Already have an account?',
@@ -739,7 +686,7 @@ export const translations = {
         country: 'Country',
         countryPlaceholder: 'Select your country',
         countryRequired: 'Please select your country',
-        genericError: 'Could not register. Check the backend.',
+        genericError: 'We could not create your account. Please try again in a few minutes.',
       },
       forgotPassword: {
         badge: 'Account recovery',
@@ -1190,8 +1137,6 @@ export const translations = {
       },
       logout: 'Cerrar sesión',
     },
-    servicesPage: servicesPageEs,
-    platformPage: platformPageEs,
     aboutPage: aboutPageEs,
     organizationsPage: organizationsPageEs,
     organizationWorkspace: organizationWorkspaceEs,
@@ -1419,8 +1364,8 @@ export const translations = {
     },
     pricing: {
       badge: 'Planes y precios',
-      title: 'Elige tu plan. Accede a todo el ecosistema ASE.',
-      subtitle: 'Un solo precio. Cursos, plantillas, herramientas, recursos y consultoría — sin sorpresas.',
+      title: 'Elige tu plan. Paga solo por lo que necesitas.',
+      subtitle: 'Cada plan muestra qué contenido incluye, cuántas descargas tiene al mes y qué servicios añade — sin sorpresas.',
       starterPara:
         'Profesionales QA independientes, juniors y freelancers que quieren crecer con recursos de calidad.',
       professionalPara:
@@ -1531,64 +1476,10 @@ export const translations = {
           },
         },
       },
-      plans: {
-        free: {
-          name: 'Gratis',
-          desc: 'Para personas explorando automatización, recursos QA y fundamentos de plataforma.',
-          features: [
-            'Workspace personal',
-            'Acceso a recursos gratuitos',
-            'Preview básico de plataforma',
-            'Contenido de aprendizaje comunitario',
-            'Acceso limitado a productos',
-          ],
-          cta: 'Empezar gratis',
-        },
-        pro: {
-          name: 'Pro',
-          badge: 'Recomendado',
-          desc:
-            'Para profesionales y pequeños equipos que necesitan frameworks, utilidades de automatización y assets técnicos estructurados.',
-          features: [
-            'Todo lo de Gratis',
-            'Acceso a framework QA',
-            'Plantillas técnicas',
-            'Herramientas de producto',
-            'Contenido de formación',
-            'Actualizaciones prioritarias',
-          ],
-          cta: 'Empezar Pro',
-        },
-        business: {
-          name: 'Empresa',
-          desc:
-            'Para compañías que necesitan usuarios, roles, suscripciones, herramientas internas y flujos de automatización.',
-          features: [
-            'Organización multiusuario',
-            'Roles y permisos',
-            'Control de acceso a productos',
-            'Dashboards de negocio',
-            'Logs de auditoría',
-            'Workflows de automatización',
-            'Canal de soporte',
-          ],
-          cta: 'Hablemos',
-        },
-        enterprise: {
-          name: 'Enterprise',
-          desc:
-            'Para organizaciones que necesitan plataformas a medida, integraciones, arquitectura, automatización QA y soporte dedicado.',
-          features: [
-            'Plataforma SaaS a medida',
-            'Soporte de arquitectura dedicado',
-            'Workflows privados',
-            'Integraciones enterprise',
-            'Automatización a medida',
-            'Seguridad y gobernanza',
-            'Asesoría técnica',
-          ],
-          cta: 'Contactar ventas',
-        },
+plans: {
+        // Los nombres, precios y ventajas de cada plan vienen de la base de datos
+        // (catálogo público de planes); aquí solo quedan textos genéricos de respaldo.
+        pro: { cta: 'Empezar', badge: 'Recomendado' },
       },
     },
     finalCta: {
@@ -1636,7 +1527,7 @@ export const translations = {
         home: 'Inicio',
         about: 'Sobre ASE',
         story: 'Historia',
-        platformOverview: 'Overview',
+        platformOverview: 'Visión general',
         clientLogin: 'Acceso clientes',
         servicesWhat: 'Qué construimos',
         platformModules: 'Módulos',
@@ -1696,10 +1587,10 @@ export const translations = {
         badge: 'HABLEMOS',
         title: '¿Tienes un reto de calidad? Cuéntanos.',
         body:
-          'Ya sea que quieras explorar la plataforma, tienes preguntas sobre un plan Enterprise, o necesitas consultoría QA para tu equipo — estamos aquí. Te respondemos en menos de 24 horas en días laborables.',
+          'Ya sea que quieras explorar la plataforma, tienes preguntas sobre el plan {{plan:top}}, o necesitas consultoría QA para tu equipo — estamos aquí. Te respondemos en menos de 24 horas en días laborables.',
         trust1: 'Respuesta en menos de 24h',
         trust2: 'Sin compromiso',
-        trust3: 'Para planes Enterprise, consultoría incluida',
+        trust3: 'Consultoría incluida en el plan {{plan:top}}',
         footerText:
           'También puedes escribirnos directamente a contact@arcesabinengineering.com o conectar en LinkedIn con Roberto Arce Sabín.',
         sendTitle: 'Enviar mensaje',
@@ -1721,7 +1612,7 @@ export const translations = {
         details: 'Detalles',
         location: 'Ubicación',
         focus: 'Enfoque',
-        focusBody: 'RBAC, plataformas multi-tenant, UX premium, tooling operativo',
+        focusBody: 'Estrategia de calidad, automatización de pruebas, plataformas para equipos y formación',
         response: 'Tiempo de respuesta',
         responseBody: 'Menos de 24 horas (días laborables)',
         subject: 'ASE — Solicitud de contacto',
@@ -1741,20 +1632,26 @@ export const translations = {
     auth: {
       backHome: 'Volver al inicio',
       backToLogin: 'Volver a acceder',
-      bullets: ['Autenticación segura', 'Contexto de organización', 'Permisos RBAC', 'Operaciones SaaS'],
+      bullets: [
+        { title: 'Tu biblioteca, en un solo sitio', text: 'Lo que compras o incluye tu plan, listo para usar o descargar.' },
+        { title: 'Aprende jugando', text: 'Misiones de ASE Academy con tu progreso guardado.' },
+        { title: 'Empleo a tu medida', text: 'Ofertas de QA ordenadas según tu CV.' },
+        { title: 'Tu cuenta, protegida', text: 'Verificación en dos pasos y pago seguro con Stripe.' },
+      ],
       fields: {
         email: 'Email',
+        emailPlaceholder: 'tu@email.com',
         password: 'Contraseña',
         displayName: 'Nombre visible',
         firstName: 'Nombre',
         lastName: 'Apellidos',
       },
       login: {
-        badge: 'Workspace cliente',
-        title: 'Accede a tu workspace de ingeniería',
-        body: 'Gestiona organizaciones, usuarios, roles, suscripciones y productos desde una plataforma segura.',
+        badge: 'Tu cuenta ASE',
+        title: 'Sigue donde lo dejaste',
+        body: 'Tu biblioteca, tus misiones de Academy, tus compras y las ofertas de empleo ordenadas según tu CV, en un solo sitio.',
         formTitle: 'Acceder',
-        formSubtitle: 'Usa tu cuenta para entrar al panel.',
+        formSubtitle: 'Entra con tu email y tu contraseña.',
         loading: 'Entrando…',
         submit: 'Acceder',
         noAccount: '¿Aún no tienes cuenta?',
@@ -1769,7 +1666,7 @@ export const translations = {
         lockedError: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo en {{minutes}} min.',
         lockedErrorGeneric: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo más tarde.',
         invalidCredentials: 'Credenciales inválidas.',
-        connectionError: 'No se pudo conectar con el backend (CORS / API caída). VITE_API_URL={{url}}',
+        connectionError: 'No hemos podido conectar con el servidor. Revisa tu conexión e inténtalo de nuevo en unos minutos.',
         httpError: 'Error al iniciar sesión (HTTP {{status}}).',
         genericError: 'Error al iniciar sesión.',
         registeredBannerTitle: 'Cuenta creada',
@@ -1777,10 +1674,10 @@ export const translations = {
       },
       register: {
         badge: 'Empieza aquí',
-        title: 'Empieza a construir tu workspace ASE',
-        body: 'Crea tu cuenta y empieza a definir tu organización, productos y sistemas de automatización.',
+        title: 'Crea tu cuenta gratuita de ASE',
+        body: 'Juega la primera misión de cada curso de Academy, explora el catálogo y recibe ofertas de empleo ordenadas según tu CV. Sube de plan solo cuando lo necesites.',
         formTitle: 'Crear cuenta',
-        formSubtitle: 'Si es posible, usa un email corporativo.',
+        formSubtitle: 'Te llevará menos de un minuto.',
         loading: 'Creando…',
         submit: 'Crear cuenta',
         haveAccount: '¿Ya tienes cuenta?',
@@ -1788,7 +1685,7 @@ export const translations = {
         country: 'País',
         countryPlaceholder: 'Selecciona tu país',
         countryRequired: 'Selecciona tu país',
-        genericError: 'Error al registrarse. Revisa el backend.',
+        genericError: 'No hemos podido crear la cuenta. Inténtalo de nuevo en unos minutos.',
       },
       forgotPassword: {
         badge: 'Recuperar cuenta',
@@ -2027,7 +1924,7 @@ export const translations = {
     },
     session: {
       loggedIn: 'Conectado',
-      dashboard: 'Dashboard',
+      dashboard: 'Panel',
       logout: 'Salir',
       publicSite: 'Sitio público',
       collapseSidebar: 'Ocultar menú',
@@ -2047,7 +1944,7 @@ export const translations = {
       placeholder: '¿Qué te gustaría solicitar o recomendar?',
       targetLabel: 'Enviar a',
       targetPlatform: 'Plataforma ASE (super admin)',
-      targetOrganization: 'Mi organización (owner/admin)',
+      targetOrganization: 'Mi organización (propietarios y administradores)',
       send: 'Enviar',
       sending: 'Enviando…',
       sent: 'Enviado — gracias por el feedback.',
@@ -2075,7 +1972,7 @@ export const translations = {
     },
     private: {
       nav: {
-        dashboard: 'Dashboard',
+        dashboard: 'Panel',
         organizations: 'Organizaciones',
         services: 'Servicios',
         suggestions: 'Sugerencias',

@@ -230,7 +230,7 @@ export const usersPageEs = {
       status: 'Estado',
     },
     placeholders: {
-      email: 'name@company.com',
+      email: 'nombre@empresa.com',
       temporaryPassword: 'Mínimo 8 caracteres',
       firstName: 'Roberto',
       lastName: 'Arce',

@@ -31,7 +31,7 @@ type WelcomeBannerProps = {
  * the same mechanism ProfilePage uses, so it stays in sync across logins. */
 export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const { currentUser } = useAuth()
-  const { t, language } = useI18n()
+  const { t, language, planNames } = useI18n()
   const { isConsumerMode } = useRbac()
 
   const name = currentUser?.display_name || currentUser?.email || ''
@@ -52,7 +52,7 @@ export function WelcomeBanner({ variant = 'stacked' }: WelcomeBannerProps) {
   const planLabel = hasActivePlan
     ? localizedPlanText(language, currentUser?.plan_name, currentUser?.plan_name_en)
     : isConsumerMode
-      ? String(t('dashboardWelcome.freePlan'))
+      ? (planNames?.free ?? String(t('dashboardWelcome.freePlan')))
       : null
   const planBadge = planLabel ? (
     <Badge variant={hasActivePlan ? 'info' : 'default'} className="shrink-0 uppercase tracking-wide">

@@ -1,6 +1,8 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Language } from './translations'
 import { translations } from './translations'
+import type { Plan } from '../types/plan.types'
+import { derivePlanNames, fillPlanNames, type PlanNames } from '../utils/planNames'
 
 const STORAGE_KEY = 'ase_language'
 const DEFAULT_LANGUAGE: Language = 'es'
@@ -13,6 +15,12 @@ export type I18nContextValue = {
    * type instead of `any`, while the overwhelming majority of call sites
    * (plain UI strings) keep working unchanged via the `string` default. */
   t: <T = string>(key: string) => T
+  /** Nombres de los planes de la base de datos (null mientras cargan). */
+  planNames: PlanNames | null
+  /** Rellena los marcadores {{plan:…}} de un texto con los planes reales. */
+  fillPlans: (text: string) => string
+  /** Lo usa PlanNamesSync para publicar el catálogo de planes. */
+  setPlans: (plans: Plan[] | null) => void
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null)
@@ -68,20 +76,34 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, [language])
 
+  // Los nombres de planes de los textos vienen de la base de datos (ver
+  // utils/planNames y PlanNamesSync): las traducciones solo llevan marcadores.
+  const [plans, setPlans] = useState<Plan[] | null>(null)
+  const planNames = useMemo(() => derivePlanNames(plans ?? undefined, language), [plans, language])
+  const fillPlans = useCallback((text: string) => fillPlanNames(text, planNames, language), [planNames, language])
+
   const t = useCallback(
     <T = string,>(key: string): T => {
       const dict = translations[language]
       const hit = getValueByPath(dict, key)
-      if (hit !== undefined) return hit as T
-      const fallback = getValueByPath(translations[DEFAULT_LANGUAGE], key)
-      return (fallback !== undefined ? fallback : key) as T
+      const found = hit !== undefined ? hit : getValueByPath(translations[DEFAULT_LANGUAGE], key)
+      if (found === undefined) return key as T
+      return (typeof found === 'string' ? fillPlans(found) : found) as T
     },
-    [language],
+    [language, fillPlans],
   )
 
-  const value = useMemo<I18nContextValue>(() => ({ language, setLanguage, t }), [language, setLanguage, t])
+  const value = useMemo<I18nContextValue>(
+    () => ({ language, setLanguage, t, planNames, fillPlans, setPlans }),
+    [language, setLanguage, t, planNames, fillPlans],
+  )
 
   return createElement(I18nContext.Provider, { value }, children)
+}
+
+/** Igual que useI18n pero sin lanzar fuera del proveedor (componentes base como Modal). */
+export function useOptionalI18n(): I18nContextValue | null {
+  return useContext(I18nContext)
 }
 
 export function useI18n(): I18nContextValue {

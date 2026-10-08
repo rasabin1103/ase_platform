@@ -3,23 +3,23 @@
 export const pagesV2Es = {
   pricing: {
     eyebrow: 'Planes',
-    titleBefore: 'Un plan para cada etapa.',
-    titleHighlight: 'Todo el ecosistema',
-    titleAfter: 'dentro.',
+    titleBefore: 'Un plan para cada etapa,',
+    titleHighlight: 'sin letra pequeña',
+    titleAfter: '.',
     subtitle:
-      'Empieza gratis y sube cuando lo necesites. Catálogo, ASE Academy, empleo con análisis de encaje y comunidad desde el primer día.',
+      'Empieza con {{plan:free}} y sube cuando lo necesites. Más abajo tienes, plan a plan, qué contenido incluye, cuánto puedes descargar al mes, qué pagas aparte y qué servicios añade.',
     trust: [
       'Sin permanencia',
       'Pago seguro con Stripe',
       'Cambia de plan cuando quieras',
       'Primera misión de Academy gratis',
     ],
-    includedTitle: 'Todos los planes incluyen',
+    includedTitle: 'En todos los planes, también en {{plan:free}}',
     included: [
-      'Catálogo técnico',
-      'ASE Academy',
-      'Libros en 4 formatos',
-      'Empleo y análisis de encaje',
+      'Catálogo con reseñas, muestras y compra individual',
+      'Primera misión de cada curso de ASE Academy',
+      'Libros en 4 formatos, a la venta',
+      'Ofertas de empleo y análisis con IA según cupo',
       'Comunidad y blog',
       'Programa de fidelidad',
     ],
@@ -38,7 +38,7 @@ export const pagesV2Es = {
     titleHighlight: 'entregar con calidad',
     titleAfter: '.',
     subtitle:
-      'Cursos, libros, productos y recursos con precio a la vista, vista previa gratuita y reseñas reales. Explora sin registrarte.',
+      'Cursos, libros, productos y recursos con precio a la vista y reseñas reales. Los que tienen muestra gratuita llevan el botón «Vista previa». Explora sin registrarte.',
     all: 'Todo',
     titles: 'títulos',
     searchLabel: 'Buscar en el catálogo',
@@ -98,18 +98,18 @@ export const pagesV2Es = {
 export const pagesV2En: typeof pagesV2Es = {
   pricing: {
     eyebrow: 'Plans',
-    titleBefore: 'A plan for every stage.',
-    titleHighlight: 'The whole ecosystem',
-    titleAfter: 'inside.',
+    titleBefore: 'A plan for every stage,',
+    titleHighlight: 'no fine print',
+    titleAfter: '.',
     subtitle:
-      'Start free and upgrade when you need to. Catalog, ASE Academy, jobs with fit analysis and community from day one.',
+      'Start with {{plan:free}} and upgrade when you need to. Below, plan by plan: the content it includes, how much you can download each month, what you pay for separately and which services it adds.',
     trust: ['No lock-in', 'Secure payment with Stripe', 'Change plan anytime', 'First Academy mission free'],
-    includedTitle: 'Every plan includes',
+    includedTitle: 'In every plan, {{plan:free}} included',
     included: [
-      'Technical catalog',
-      'ASE Academy',
-      'Books in 4 formats',
-      'Jobs and fit analysis',
+      'Catalog with reviews, samples and individual purchase',
+      'First mission of every ASE Academy course',
+      'Books in 4 formats, for sale',
+      'Job postings and AI analysis within your allowance',
       'Community and blog',
       'Loyalty program',
     ],
@@ -128,7 +128,7 @@ export const pagesV2En: typeof pagesV2Es = {
     titleHighlight: 'ship with quality',
     titleAfter: '.',
     subtitle:
-      'Courses, books, products and resources with visible prices, free previews and real reviews. Browse without signing up.',
+      'Courses, books, products and resources with visible prices and real reviews. Titles with a free sample show a «Preview» button. Browse without signing up.',
     all: 'All',
     titles: 'titles',
     searchLabel: 'Search the catalog',
