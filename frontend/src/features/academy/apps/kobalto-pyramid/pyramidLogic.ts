@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 
 /**
  * App de la misión 6: planificador de pruebas de KOB-190 «Dividir un gasto».
@@ -16,6 +17,19 @@ export const LEVEL_LABEL: Record<Level, string> = {
   e2e: 'E2E (interfaz)',
   manual: 'Manual / exploratoria',
   perf: 'Rendimiento',
+}
+
+export const LEVEL_LABEL_EN: Record<Level, string> = {
+  unit: 'Unit',
+  api: 'API / integration',
+  e2e: 'E2E (UI)',
+  manual: 'Manual / exploratory',
+  perf: 'Performance',
+}
+
+/** Etiquetas de nivel en el idioma pedido. */
+export function levelLabelFor(lang: AcademyLang = 'es'): Record<Level, string> {
+  return lang === 'en' ? LEVEL_LABEL_EN : LEVEL_LABEL
 }
 
 /** Minutos de la jornada para escribirla (o ejecutarla, si es manual). */
@@ -117,6 +131,81 @@ export const CHECKS: Check[] = [
   { id: 'C16', title: 'Accesibilidad con lector de pantalla', ideal: ['manual'] },
 ]
 
+type CheckText = { title: string; actual?: Record<string, string>; blind?: Partial<Record<Level, string>> }
+
+/** Textos en inglés de cada comprobación (mismos ids, niveles y bugs que CHECKS). */
+const CHECKS_EN: Record<string, CheckText> = {
+  C01: {
+    title: 'Even split: €10.00 among 3 (the leftover cent goes to the payer)',
+    actual: { P1: '€3.33 × 3 = €9.99 is split: one cent is lost', P1b: 'the leftover cent is assigned to the last friend, not the payer' },
+  },
+  C02: { title: 'Custom amounts that do not add up to the total → error' },
+  C03: { title: 'Participant limits: 1 and 20 friends' },
+  C04: { title: 'Amount validation: 0, negative and more than 2 decimals' },
+  C05: {
+    title: 'Automatic reminder after 3 days if unpaid',
+    actual: { P5: 'with the simulated clock, the reminder is sent every day from day 1' },
+    blind: { e2e: 'you cannot wait 3 days in an E2E test: the test only checks that the split is created', manual: 'you cannot wait 3 days: only the reminder text is checked' },
+  },
+  C06: { title: 'POST /splits creates a request for each friend' },
+  C07: {
+    title: "A user cannot cancel another user's split (authorization)",
+    actual: { P2: "DELETE /splits/{id} with another user's token returns 200 and cancels the split" },
+    blind: {
+      e2e: 'the app does not show the "Cancel" button on other users\' splits: the test passes',
+      manual: 'the app does not show the "Cancel" button on other users\' splits',
+      unit: 'the permission check lives in the API, not in the calculation module',
+    },
+  },
+  C08: {
+    title: "The list only returns the user's own splits (privacy)",
+    actual: { P2b: "GET /splits?userId=other returns another user's splits" },
+    blind: {
+      e2e: "the app always requests the logged-in user's splits: the test passes",
+      manual: "the app always requests the logged-in user's splits",
+      unit: 'the security filter lives in the API',
+    },
+  },
+  C09: {
+    title: 'App ↔ API contract: the amount travels in cents',
+    actual: { P3: 'the app sends 10.5 (euros) and the API reads it as 10.5 cents' },
+    blind: { unit: 'with mocks on both sides, each side meets its own idea of the contract: passes' },
+  },
+  C10: { title: 'Invite a friend who is not a customer (payment link)' },
+  C11: {
+    title: 'End-to-end flow: split a transaction from the app and see it under "Pending"',
+    actual: { P3: '"Pending" shows €0.11 instead of €10.50' },
+  },
+  C12: { title: 'The "Split" button appears in the transaction details' },
+  C13: { title: 'Copy and design of the split screen' },
+  C14: { title: 'Usability: is it clear who owes how much to whom?' },
+  C15: {
+    title: 'Performance: create a split with 20 friends in under 2 s',
+    actual: { P4: 'with 20 friends it takes 8.4 s (one query per friend)' },
+    blind: {
+      e2e: 'the E2E test uses 3 test friends: 0.9 s, passes',
+      api: 'the functional test uses 3 friends: 0.6 s, passes',
+      unit: 'the calculation module does not touch the database: passes',
+      manual: 'with 3 friends it is fast',
+    },
+  },
+  C16: { title: 'Accessibility with a screen reader' },
+}
+
+/** Comprobaciones en el idioma pedido (mismos ids, niveles y bugs). */
+export function checksFor(lang: AcademyLang = 'es'): Check[] {
+  if (lang !== 'en') return CHECKS
+  return CHECKS.map((c) => {
+    const t = CHECKS_EN[c.id]
+    return {
+      ...c,
+      title: t.title,
+      detects: c.detects && { ...c.detects, actual: { ...c.detects.actual, ...t.actual } },
+      blind: c.blind && { ...c.blind, ...t.blind },
+    }
+  })
+}
+
 export interface PlanEntry {
   level: Level
   result: 'pass' | 'fail'
@@ -140,22 +229,33 @@ function live(build: PlanBuild): (b: string) => boolean {
 }
 
 /** Escribe (o ejecuta, si es manual) una comprobación en un nivel. */
-export function implement(state: PlanState, checkId: string, level: Level, buildNo: number, build: PlanBuild = {}): { state: PlanState; event: AppEvent } {
-  const c = CHECKS.find((x) => x.id === checkId)
+export function implement(
+  state: PlanState,
+  checkId: string,
+  level: Level,
+  buildNo: number,
+  build: PlanBuild = {},
+  lang: AcademyLang = 'es',
+): { state: PlanState; event: AppEvent } {
+  const en = lang === 'en'
+  const c = checksFor(lang).find((x) => x.id === checkId)
   if (!c) throw new Error(`Comprobación ${checkId} no encontrada`)
   const has = live(build)
   const bug = c.detects && c.detects.levels.includes(level) ? c.detects.bugs.find(has) : undefined
   const already = state.entries[c.id]
   const cost = already && already.level === level ? Math.ceil(EFFORT[level] / 4) : EFFORT[level]
-  const verb = level === 'manual' ? 'Ejecutada' : already && already.level === level ? 'Relanzada' : 'Escrita'
-  const note = !bug ? (c.blind?.[level] ?? 'pasa') : ''
+  const verb = level === 'manual' ? (en ? 'Executed' : 'Ejecutada') : already && already.level === level ? (en ? 'Rerun' : 'Relanzada') : en ? 'Written' : 'Escrita'
+  const note = !bug ? (c.blind?.[level] ?? (en ? 'passes' : 'pasa')) : ''
+  const label = levelLabelFor(lang)[level]
   return {
     state: { ...state, entries: { ...state.entries, [c.id]: { level, result: bug ? 'fail' : 'pass', build: buildNo } } },
     event: {
       app: 'kobalto-pyramid',
       action: level,
-      summary: bug ? `[${LEVEL_LABEL[level]}] ${c.id} ${c.title} → FALLA: ${c.detects!.actual[bug]}` : `[${LEVEL_LABEL[level]}] ${c.id} ${c.title} → PASA (${note})`,
-      technical: `${verb} ${c.id} como ${level} · ${cost} min · ${bug ? 'FAILED' : 'PASSED'}`,
+      summary: bug
+        ? `[${label}] ${c.id} ${c.title} → ${en ? 'FAILS' : 'FALLA'}: ${c.detects!.actual[bug]}`
+        : `[${label}] ${c.id} ${c.title} → ${en ? 'PASSES' : 'PASA'} (${note})`,
+      technical: `${verb} ${c.id} ${en ? 'as' : 'como'} ${level} · ${cost} min · ${bug ? 'FAILED' : 'PASSED'}`,
       status: bug ? 'error' : 'ok',
       bugs: bug ? [bug] : [],
       cost,
@@ -190,8 +290,15 @@ const SHAPE_LABEL: Record<PlanMetrics['shape'], string> = {
   thin: 'demasiado escasa',
 }
 
+const SHAPE_LABEL_EN: Record<PlanMetrics['shape'], string> = {
+  pyramid: 'pyramid',
+  ice_cream: 'ice cream cone (inverted pyramid)',
+  hourglass: 'hourglass',
+  thin: 'too sparse',
+}
+
 /** Enviar el plan a revisión: activa flags que leen las escenas de la misión. */
-export function submitPlan(state: PlanState): { state: PlanState; event: AppEvent } {
+export function submitPlan(state: PlanState, lang: AcademyLang = 'es'): { state: PlanState; event: AppEvent } {
   const m = metrics(state)
   const flags = ['plan.submitted', `plan.shape.${m.shape}`]
   const perf = state.entries.C15?.level === 'perf'
@@ -210,7 +317,10 @@ export function submitPlan(state: PlanState): { state: PlanState; event: AppEven
     event: {
       app: 'kobalto-pyramid',
       action: 'submit',
-      summary: `Plan enviado a revisión: ${m.counts.unit} unitarias, ${m.counts.api} de API, ${m.counts.e2e} E2E, ${m.counts.manual} manuales, ${m.counts.perf} de rendimiento · forma: ${SHAPE_LABEL[m.shape]} · CI ${m.ciMinutes} min · ${m.flakyRate} % de ejecuciones con fallo intermitente`,
+      summary:
+        lang === 'en'
+          ? `Plan submitted for review: ${m.counts.unit} unit, ${m.counts.api} API, ${m.counts.e2e} E2E, ${m.counts.manual} manual, ${m.counts.perf} performance · shape: ${SHAPE_LABEL_EN[m.shape]} · CI ${m.ciMinutes} min · ${m.flakyRate}% of runs with a flaky failure`
+          : `Plan enviado a revisión: ${m.counts.unit} unitarias, ${m.counts.api} de API, ${m.counts.e2e} E2E, ${m.counts.manual} manuales, ${m.counts.perf} de rendimiento · forma: ${SHAPE_LABEL[m.shape]} · CI ${m.ciMinutes} min · ${m.flakyRate} % de ejecuciones con fallo intermitente`,
       technical: `plan.submit shape=${m.shape} ci=${m.ciMinutes}min flaky=${m.flakyRate}%`,
       status: 'ok',
       bugs: [],

@@ -262,6 +262,8 @@ from app.modules.pricing_admin.router import router as pricing_admin_router
 from app.modules.user_preferences.router import router as user_preferences_router
 from app.modules.job_postings.router import admin_router as job_postings_admin_router
 from app.modules.job_postings.router import router as job_postings_router
+from app.modules.academy.exam_router import router as academy_exam_router
+from app.modules.seo.router import router as seo_router
 from app.modules.academy.router import router as academy_router
 
 
@@ -305,6 +307,8 @@ def create_app() -> FastAPI:
     app.include_router(job_postings_admin_router)
     app.include_router(job_postings_router)
     app.include_router(academy_router)
+    app.include_router(academy_exam_router)
+    app.include_router(seo_router)
 
     # Public pricing catalog must work in MVP mode (GET /plans/catalog is unauthenticated).
     app.include_router(plans_router)

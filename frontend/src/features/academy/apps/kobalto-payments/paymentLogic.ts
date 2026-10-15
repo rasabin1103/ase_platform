@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 import { formatEur } from '../kobalto/transferLogic'
 
 /**
@@ -37,6 +38,102 @@ export const ACTION_LABEL: Record<PayAction, string> = {
 }
 
 export const PLAN_LABEL: Record<Plan, string> = { standard: 'Estándar', pro: 'Pro' }
+
+const STATE_LABELS: Record<AcademyLang, Record<PayState, string>> = {
+  es: STATE_LABEL,
+  en: {
+    pending: 'Pending',
+    authorized: 'Authorized',
+    declined: 'Declined',
+    cancelled: 'Voided',
+    settled: 'Settled',
+    partially_refunded: 'Partially refunded',
+    refunded: 'Refunded',
+    disputed: 'Disputed',
+  },
+}
+const ACTION_LABELS: Record<AcademyLang, Record<PayAction, string>> = {
+  es: ACTION_LABEL,
+  en: {
+    authorize: 'Authorize',
+    decline: 'Decline',
+    cancel: 'Void',
+    settle: 'Settle',
+    refund: 'Refund',
+    dispute: 'Open dispute',
+    win: 'Dispute won',
+    lose: 'Dispute lost',
+  },
+}
+const PLAN_LABELS: Record<AcademyLang, Record<Plan, string>> = { es: PLAN_LABEL, en: { standard: 'Standard', pro: 'Pro' } }
+
+/** Etiquetas de estado en el idioma de la misión. */
+export function stateLabelFor(lang: AcademyLang = 'es'): Record<PayState, string> {
+  return STATE_LABELS[lang]
+}
+/** Etiquetas de acción en el idioma de la misión. */
+export function actionLabelFor(lang: AcademyLang = 'es'): Record<PayAction, string> {
+  return ACTION_LABELS[lang]
+}
+/** Etiquetas de plan en el idioma de la misión. */
+export function planLabelFor(lang: AcademyLang = 'es'): Record<Plan, string> {
+  return PLAN_LABELS[lang]
+}
+
+/** Textos de la API de cobros y de los eventos. */
+const MESSAGES = {
+  es: {
+    created: (amount: string) => `Cobro creado · ${amount}`,
+    refundedNote: (amount: string) => ` (devuelto ${amount})`,
+    invalidSeedAmount: 'Importe del cobro no válido',
+    invalidAge: 'Antigüedad no válida (0–365 días)',
+    testMerchantPro: 'Comercio de prueba Pro',
+    testMerchant: 'Comercio de prueba',
+    seedError: (err: string) => `Generador: ${err}`,
+    seedOk: (ref: string, state: string) => `${ref} creado en ${state}`,
+    seedSummary: (ref: string, plan: string, amount: string, days: number, state: string, refunded: string) =>
+      `Generador: ${ref} (${plan}, ${amount}, hace ${days} días) creado en «${state}»${refunded ? ` con ${refunded} devueltos` : ''}`,
+    notAllowed: (from: string, action: string) => `Transición no permitida: ${from} → ${action}`,
+    invalidRefund: 'Importe no válido: mayor que 0 y con 2 decimales como máximo',
+    overRefund: (remaining: string) => `El importe supera lo pendiente de devolver (${remaining})`,
+    refundHistory: (amount: string, fee: string, state: string) => `Devolución de ${amount} · comisión ${fee} → ${state}`,
+    chargeback: (amount: string) => `Contracargo de ${amount}`,
+    empty: '(vacío)',
+    amountSuffix: (raw: string) => ` ${raw} €`,
+    fee: (fee: string) => ` · comisión ${fee}`,
+    okSummary: (ref: string, from: string, plan: string, days: number, verb: string, code: number, state: string, refunded: string, amount: string, fee: string) =>
+      `${ref} (${from}, ${plan}, hace ${days} días) · ${verb} → ${code} ${state} · devuelto ${refunded} de ${amount}${fee}`,
+    notFound: (id: number) => `Cobro ${id} no encontrado`,
+  },
+  en: {
+    created: (amount: string) => `Payment created · ${amount}`,
+    refundedNote: (amount: string) => ` (refunded ${amount})`,
+    invalidSeedAmount: 'Invalid payment amount',
+    invalidAge: 'Invalid age (0–365 days)',
+    testMerchantPro: 'Test merchant Pro',
+    testMerchant: 'Test merchant',
+    seedError: (err: string) => `Generator: ${err}`,
+    seedOk: (ref: string, state: string) => `${ref} created as ${state}`,
+    seedSummary: (ref: string, plan: string, amount: string, days: number, state: string, refunded: string) =>
+      `Generator: ${ref} (${plan}, ${amount}, ${days} days ago) created as “${state}”${refunded ? ` with ${refunded} refunded` : ''}`,
+    notAllowed: (from: string, action: string) => `Transition not allowed: ${from} → ${action}`,
+    invalidRefund: 'Invalid amount: greater than 0 and at most 2 decimal places',
+    overRefund: (remaining: string) => `The amount exceeds what is left to refund (${remaining})`,
+    refundHistory: (amount: string, fee: string, state: string) => `Refund of ${amount} · fee ${fee} → ${state}`,
+    chargeback: (amount: string) => `Chargeback of ${amount}`,
+    empty: '(empty)',
+    amountSuffix: (raw: string) => ` €${raw}`,
+    fee: (fee: string) => ` · fee ${fee}`,
+    okSummary: (ref: string, from: string, plan: string, days: number, verb: string, code: number, state: string, refunded: string, amount: string, fee: string) =>
+      `${ref} (${from}, ${plan}, ${days} days ago) · ${verb} → ${code} ${state} · refunded ${refunded} of ${amount}${fee}`,
+    notFound: (id: number) => `Payment ${id} not found`,
+  },
+}
+
+/** Mensajes de la consola de cobros en el idioma indicado. */
+export function paymentMessages(lang: AcademyLang = 'es') {
+  return MESSAGES[lang]
+}
 
 /** Transiciones válidas según el ciclo de vida (wiki). La devolución depende además del importe. */
 export const TRANSITIONS: Record<PayState, Partial<Record<PayAction, PayState>>> = {
@@ -122,30 +219,55 @@ export function parseAmount(raw: string): number {
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN
 }
 
-const MERCHANTS: { name: string; plan: Plan }[] = [
-  { name: 'Café Lumbre', plan: 'standard' },
-  { name: 'Ferretería Montes', plan: 'pro' },
-  { name: 'Óptica Rivera', plan: 'standard' },
-  { name: 'Bicis Norte', plan: 'pro' },
-]
+const MERCHANTS: Record<AcademyLang, { name: string; plan: Plan }[]> = {
+  es: [
+    { name: 'Café Lumbre', plan: 'standard' },
+    { name: 'Ferretería Montes', plan: 'pro' },
+    { name: 'Óptica Rivera', plan: 'standard' },
+    { name: 'Bicis Norte', plan: 'pro' },
+  ],
+  en: [
+    { name: 'Lumbre Café', plan: 'standard' },
+    { name: 'Montes Hardware', plan: 'pro' },
+    { name: 'Rivera Optics', plan: 'standard' },
+    { name: 'Norte Bikes', plan: 'pro' },
+  ],
+}
 
-function base(id: number, merchant: string, plan: Plan, amount: number, daysAgo: number, state: PayState, refunded = 0, test = false): Payment {
+function base(
+  id: number,
+  merchant: string,
+  plan: Plan,
+  amount: number,
+  daysAgo: number,
+  state: PayState,
+  refunded = 0,
+  test = false,
+  lang: AcademyLang = 'es',
+): Payment {
+  const M = MESSAGES[lang]
   const p: Payment = { id, ref: `KP-${1000 + id}`, merchant, plan, amount, refunded, daysAgo, state, fees: 0, history: [], test }
   if (state === 'disputed') p.prevState = refunded > 0 ? 'partially_refunded' : 'settled'
-  p.history = [{ label: `Cobro creado · ${formatEur(amount)}` }]
-  if (state !== 'pending') p.history.push({ label: `→ ${STATE_LABEL[state]}${refunded ? ` (devuelto ${formatEur(refunded)})` : ''}` })
+  p.history = [{ label: M.created(formatEur(amount, lang)) }]
+  if (state !== 'pending') p.history.push({ label: `→ ${STATE_LABELS[lang][state]}${refunded ? M.refundedNote(formatEur(refunded, lang)) : ''}` })
   return p
 }
 
-export const INITIAL_PAYMENTS: PaymentsState = {
-  payments: [
-    base(1, MERCHANTS[0].name, 'standard', 24.5, 3, 'settled'),
-    base(2, MERCHANTS[1].name, 'pro', 189.9, 0, 'authorized'),
-    base(3, MERCHANTS[2].name, 'standard', 120, 12, 'partially_refunded', 40),
-    base(4, MERCHANTS[3].name, 'pro', 450, 20, 'disputed'),
-  ],
-  nextId: 5,
+/** Cobros iniciales de la consola (mismos datos; textos en el idioma indicado). */
+export function initialPayments(lang: AcademyLang = 'es'): PaymentsState {
+  const m = MERCHANTS[lang]
+  return {
+    payments: [
+      base(1, m[0].name, 'standard', 24.5, 3, 'settled', 0, false, lang),
+      base(2, m[1].name, 'pro', 189.9, 0, 'authorized', 0, false, lang),
+      base(3, m[2].name, 'standard', 120, 12, 'partially_refunded', 40, false, lang),
+      base(4, m[3].name, 'pro', 450, 20, 'disputed', 0, false, lang),
+    ],
+    nextId: 5,
+  }
 }
+
+export const INITIAL_PAYMENTS: PaymentsState = initialPayments('es')
 
 export interface SeedInput {
   plan: Plan
@@ -155,35 +277,42 @@ export interface SeedInput {
 }
 
 /** Generador de datos de prueba de staging: crea un cobro directamente en el estado pedido. */
-export function seedPayment(id: number, input: SeedInput): Payment | { error: string } {
+export function seedPayment(id: number, input: SeedInput, lang: AcademyLang = 'es'): Payment | { error: string } {
+  const M = MESSAGES[lang]
   const amount = parseAmount(input.amount)
   const days = Number(input.days)
-  if (Number.isNaN(amount) || amount <= 0) return { error: 'Importe del cobro no válido' }
-  if (!Number.isInteger(days) || days < 0 || days > 365) return { error: 'Antigüedad no válida (0–365 días)' }
+  if (Number.isNaN(amount) || amount <= 0) return { error: M.invalidSeedAmount }
+  if (!Number.isInteger(days) || days < 0 || days > 365) return { error: M.invalidAge }
   const refunded = input.state === 'partially_refunded' ? round2(Math.min(30, amount / 2)) : input.state === 'refunded' ? amount : 0
-  return base(id, input.plan === 'pro' ? 'Comercio de prueba Pro' : 'Comercio de prueba', input.plan, round2(amount), days, input.state, refunded, true)
+  return base(id, input.plan === 'pro' ? M.testMerchantPro : M.testMerchant, input.plan, round2(amount), days, input.state, refunded, true, lang)
 }
 
-export function createTestPayment(state: PaymentsState, input: SeedInput): { ok: boolean; message: string; state: PaymentsState; event: AppEvent; id?: number } {
-  const p = seedPayment(state.nextId, input)
+export function createTestPayment(
+  state: PaymentsState,
+  input: SeedInput,
+  lang: AcademyLang = 'es',
+): { ok: boolean; message: string; state: PaymentsState; event: AppEvent; id?: number } {
+  const M = MESSAGES[lang]
+  const S = STATE_LABELS[lang]
+  const p = seedPayment(state.nextId, input, lang)
   if ('error' in p) {
     return {
       ok: false,
       message: p.error,
       state,
-      event: { app: 'kobalto-payments', action: 'seed', summary: `Generador: ${p.error}`, technical: `POST /test-data/payments → 422 {"error":"${p.error}"}`, status: 'error', bugs: [] },
+      event: { app: 'kobalto-payments', action: 'seed', summary: M.seedError(p.error), technical: `POST /test-data/payments → 422 {"error":"${p.error}"}`, status: 'error', bugs: [] },
     }
   }
   const next = { payments: [p, ...state.payments], nextId: state.nextId + 1 }
   return {
     ok: true,
-    message: `${p.ref} creado en ${STATE_LABEL[p.state]}`,
+    message: M.seedOk(p.ref, S[p.state]),
     state: next,
     id: p.id,
     event: {
       app: 'kobalto-payments',
       action: 'seed',
-      summary: `Generador: ${p.ref} (${PLAN_LABEL[p.plan]}, ${formatEur(p.amount)}, hace ${p.daysAgo} días) creado en «${STATE_LABEL[p.state]}»${p.refunded ? ` con ${formatEur(p.refunded)} devueltos` : ''}`,
+      summary: M.seedSummary(p.ref, PLAN_LABELS[lang][p.plan], formatEur(p.amount, lang), p.daysAgo, S[p.state], p.refunded ? formatEur(p.refunded, lang) : ''),
       technical: `POST /test-data/payments {"plan":"${p.plan}","amount":${p.amount},"daysAgo":${p.daysAgo},"state":"${p.state}"} → 201 {"ref":"${p.ref}"}`,
       status: 'ok',
       bugs: [],
@@ -224,30 +353,33 @@ function allowed(from: PayState, action: PayAction, has: (b: string) => boolean)
   return TRANSITIONS[from][action]
 }
 
-function apply(p: Payment, action: PayAction, amountRaw: string, has: (b: string) => boolean): Outcome {
+function apply(p: Payment, action: PayAction, amountRaw: string, has: (b: string) => boolean, lang: AcademyLang = 'es'): Outcome {
+  const M = MESSAGES[lang]
+  const S = STATE_LABELS[lang]
+  const A = ACTION_LABELS[lang]
   const to = allowed(p.state, action, has)
   if (!to) {
-    return { ok: false, code: 409, error: `Transición no permitida: ${STATE_LABEL[p.state]} → ${ACTION_LABEL[action]}`, payment: p }
+    return { ok: false, code: 409, error: M.notAllowed(S[p.state], A[action]), payment: p }
   }
   const next: Payment = { ...p, history: [...p.history] }
   if (action === 'refund') {
     const amt = parseAmount(amountRaw)
     if (Number.isNaN(amt) || amt <= 0 || round2(amt) !== amt) {
-      return { ok: false, code: 422, error: 'Importe no válido: mayor que 0 y con 2 decimales como máximo', payment: p }
+      return { ok: false, code: 422, error: M.invalidRefund, payment: p }
     }
     const remaining = round2(p.amount - p.refunded)
     let limitOk = amt <= remaining
     if (has(PAY_BUGS.cumulativeOverRefund)) limitOk = amt <= p.amount
     else if (has(PAY_BUGS.exactRemainingRejected)) limitOk = amt < remaining
     if (!limitOk) {
-      return { ok: false, code: 422, error: `El importe supera lo pendiente de devolver (${formatEur(remaining)})`, payment: p }
+      return { ok: false, code: 422, error: M.overRefund(formatEur(remaining, lang)), payment: p }
     }
     const fee = refundFee(p, amt, has)
     next.refunded = round2(p.refunded + amt)
     const full = has(PAY_BUGS.exactRefundStaysPartial) ? next.refunded > p.amount : next.refunded >= p.amount
     next.state = full ? 'refunded' : 'partially_refunded'
     next.fees = round2(p.fees + fee)
-    next.history.push({ label: `Devolución de ${formatEur(amt)} · comisión ${formatEur(fee)} → ${STATE_LABEL[next.state]}` })
+    next.history.push({ label: M.refundHistory(formatEur(amt, lang), formatEur(fee, lang), S[next.state]) })
     return { ok: true, code: 201, payment: next, fee }
   }
   if (action === 'dispute') next.prevState = p.state
@@ -256,13 +388,13 @@ function apply(p: Payment, action: PayAction, amountRaw: string, has: (b: string
     next.prevState = undefined
   } else if (action === 'lose') {
     next.state = 'refunded'
-    next.history.push({ label: `Contracargo de ${formatEur(round2(p.amount - p.refunded))}` })
+    next.history.push({ label: M.chargeback(formatEur(round2(p.amount - p.refunded), lang)) })
     next.refunded = p.amount
     next.prevState = undefined
   } else {
     next.state = to
   }
-  next.history.push({ label: `${ACTION_LABEL[action]} → ${STATE_LABEL[next.state]}` })
+  next.history.push({ label: `${A[action]} → ${S[next.state]}` })
   return { ok: true, code: 200, payment: next }
 }
 
@@ -281,13 +413,15 @@ export interface ActResult {
 }
 
 /** Ejecuta una acción sobre un cobro (sin tocar la lista). */
-export function actOn(p: Payment, action: PayAction, amountRaw: string, build: PayBuild = {}): ActResult {
+export function actOn(p: Payment, action: PayAction, amountRaw: string, build: PayBuild = {}, lang: AcademyLang = 'es'): ActResult {
+  const M = MESSAGES[lang]
+  const S = STATE_LABELS[lang]
   const active = new Set(build.active ?? PAY_BUG_SLOTS.map((s) => s.options[0]))
   const fixed = new Set(build.fixed ?? [])
   const regressions = (build.regressions ?? []).filter((r) => !fixed.has(r))
   const live = [...[...active].filter((b) => !fixed.has(b)), ...regressions]
   const liveSet = new Set(live)
-  const actual = apply(p, action, amountRaw, (b) => liveSet.has(b))
+  const actual = apply(p, action, amountRaw, (b) => liveSet.has(b), lang)
   const spec = apply(p, action, amountRaw, () => false)
   const bugs: string[] = []
   if (signature(actual) !== signature(spec)) {
@@ -296,9 +430,9 @@ export function actOn(p: Payment, action: PayAction, amountRaw: string, build: P
       if (signature(only) !== signature(spec)) bugs.push(b)
     }
   }
-  const amt = action === 'refund' ? ` ${amountRaw.trim() || '(vacío)'} €` : ''
-  const from = STATE_LABEL[p.state]
-  const verb = `${ACTION_LABEL[action]}${amt}`
+  const amt = action === 'refund' ? M.amountSuffix(amountRaw.trim() || M.empty) : ''
+  const from = S[p.state]
+  const verb = `${ACTION_LABELS[lang][action]}${amt}`
   const endpoint = action === 'refund' ? `POST /api/v1/ops/payments/${p.ref}/refunds {"amount":"${amountRaw.trim()}"}` : `POST /api/v1/ops/payments/${p.ref}/${action}`
   if (!actual.ok) {
     return {
@@ -317,17 +451,17 @@ export function actOn(p: Payment, action: PayAction, amountRaw: string, build: P
     }
   }
   const q = actual.payment
-  const feeTxt = actual.fee !== undefined ? ` · comisión ${formatEur(actual.fee)}` : ''
+  const feeTxt = actual.fee !== undefined ? M.fee(formatEur(actual.fee, lang)) : ''
   return {
     ok: true,
-    message: `${actual.code} · ${STATE_LABEL[q.state]}${feeTxt}`,
+    message: `${actual.code} · ${S[q.state]}${feeTxt}`,
     payment: q,
     fee: actual.fee,
     bugs,
     event: {
       app: 'kobalto-payments',
       action,
-      summary: `${p.ref} (${from}, ${PLAN_LABEL[p.plan]}, hace ${p.daysAgo} días) · ${verb} → ${actual.code} ${STATE_LABEL[q.state]} · devuelto ${formatEur(q.refunded)} de ${formatEur(q.amount)}${feeTxt}`,
+      summary: M.okSummary(p.ref, from, PLAN_LABELS[lang][p.plan], p.daysAgo, verb, actual.code, S[q.state], formatEur(q.refunded, lang), formatEur(q.amount, lang), feeTxt),
       technical: `${endpoint} → ${actual.code} {"state":"${q.state}","refunded":${q.refunded}${actual.fee !== undefined ? `,"fee":${actual.fee}` : ''}}`,
       status: 'ok',
       bugs,
@@ -336,10 +470,17 @@ export function actOn(p: Payment, action: PayAction, amountRaw: string, build: P
 }
 
 /** Ejecuta una acción sobre un cobro de la lista. */
-export function act(state: PaymentsState, id: number, action: PayAction, amountRaw: string, build: PayBuild = {}): ActResult & { state: PaymentsState } {
+export function act(
+  state: PaymentsState,
+  id: number,
+  action: PayAction,
+  amountRaw: string,
+  build: PayBuild = {},
+  lang: AcademyLang = 'es',
+): ActResult & { state: PaymentsState } {
   const p = state.payments.find((x) => x.id === id)
-  if (!p) throw new Error(`Cobro ${id} no encontrado`)
-  const r = actOn(p, action, amountRaw, build)
+  if (!p) throw new Error(MESSAGES[lang].notFound(id))
+  const r = actOn(p, action, amountRaw, build, lang)
   const next = r.ok ? { ...state, payments: state.payments.map((x) => (x.id === id ? r.payment : x)) } : state
   return { ...r, state: next }
 }

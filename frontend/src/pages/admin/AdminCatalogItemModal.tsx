@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { CatalogItemAdmin } from '../../api/catalogAdmin.api'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
@@ -67,15 +67,48 @@ export function AdminCatalogItemModal({
     license: <LicenseFields s={s} />,
   }
 
-  const jumpTo = (id: SectionId) =>
+  // Sección visible (scrollspy): resalta el índice mientras se recorre el formulario.
+  const [active, setActive] = useState<SectionId>(SECTION_IDS[0])
+  const activeIndex = SECTION_IDS.indexOf(active)
+  useEffect(() => {
+    if (!open || typeof IntersectionObserver === 'undefined') return
+    const visible = new Map<SectionId, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = SECTION_IDS.find((x) => sectionDomId(x) === entry.target.id)
+          if (!id) continue
+          if (entry.isIntersecting) visible.set(id, entry.boundingClientRect.top)
+          else visible.delete(id)
+        }
+        const first = SECTION_IDS.find((x) => visible.has(x))
+        if (first) setActive(first)
+      },
+      { rootMargin: '-15% 0px -60% 0px' },
+    )
+    const timer = window.setTimeout(() => {
+      for (const id of SECTION_IDS) {
+        const el = document.getElementById(sectionDomId(id))
+        if (el) observer.observe(el)
+      }
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      observer.disconnect()
+    }
+  }, [open])
+
+  const jumpTo = (id: SectionId) => {
+    setActive(id)
     document.getElementById(sectionDomId(id))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={isEdit ? t('adminCatalog.formEdit') : t('adminCatalog.formCreate')}
-      className="sm:max-w-3xl"
+      className="sm:max-w-3xl lg:max-w-5xl"
       allowFullscreen
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -91,26 +124,96 @@ export function AdminCatalogItemModal({
         </div>
       }
     >
-      <nav
-        aria-label={copy.jump}
-        className="sticky -top-5 z-10 -mx-6 -mt-5 mb-5 flex gap-1.5 overflow-x-auto border-b border-white/10 bg-ase-surface px-6 py-3"
-      >
-        {SECTION_IDS.map((id, i) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => jumpTo(id)}
-            className={cn(
-              'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition',
-              sectionsWithErrors.has(id)
-                ? 'border-ase-error/40 bg-ase-error/10 text-ase-error'
-                : 'border-white/10 text-ase-text2 hover:border-ase-brand/40 hover:text-ase-text',
-            )}
-          >
-            {i + 1}. {copy[id].title}
-          </button>
-        ))}
-      </nav>
+      {/* Móvil: barra de progreso por secciones + selector (sin scroll horizontal). */}
+      <div className="sticky -top-5 z-10 -mx-6 -mt-5 mb-5 border-b border-white/10 bg-ase-surface/95 px-6 py-3 lg:hidden">
+        <div className="flex items-center gap-3">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ase-brand/15 text-xs font-bold text-sky-300 ring-1 ring-ase-brand/30">
+            {activeIndex + 1}
+          </span>
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">{copy.jump}</span>
+            <select
+              value={active}
+              onChange={(e) => jumpTo(e.target.value as SectionId)}
+              className="w-full truncate rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm font-medium text-ase-text"
+            >
+              {SECTION_IDS.map((id, i) => (
+                <option key={id} value={id}>
+                  {i + 1}. {copy[id].title}
+                  {sectionsWithErrors.has(id) ? ' ⚠' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="shrink-0 text-xs tabular-nums text-ase-muted">
+            {activeIndex + 1}/{SECTION_IDS.length}
+          </span>
+        </div>
+        <div className="mt-2.5 grid gap-1" style={{ gridTemplateColumns: `repeat(${SECTION_IDS.length}, minmax(0, 1fr))` }} aria-hidden>
+          {SECTION_IDS.map((id, i) => (
+            <span
+              key={id}
+              className={cn(
+                'h-1 rounded-full',
+                sectionsWithErrors.has(id) ? 'bg-ase-error/70' : i <= activeIndex ? 'bg-ase-brand' : 'bg-white/10',
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-8">
+        {/* Escritorio: índice lateral fijo con la sección activa resaltada. */}
+        <nav aria-label={copy.jump} className="hidden lg:block">
+          <div className="sticky top-0">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ase-muted">{copy.jump}</p>
+            <ol className="relative space-y-1 before:absolute before:bottom-3 before:left-[0.95rem] before:top-3 before:w-px before:bg-white/10">
+              {SECTION_IDS.map((id, i) => {
+                const isActive = id === active
+                const hasError = sectionsWithErrors.has(id)
+                return (
+                  <li key={id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => jumpTo(id)}
+                      aria-current={isActive ? 'step' : undefined}
+                      className={cn(
+                        'group flex w-full items-start gap-3 rounded-xl px-1.5 py-2 text-left transition',
+                        isActive ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'relative grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ring-1 transition',
+                          hasError
+                            ? 'bg-ase-error/15 text-ase-error ring-ase-error/50'
+                            : isActive
+                              ? 'bg-ase-brand text-white ring-ase-brand'
+                              : i < activeIndex
+                                ? 'bg-ase-brand/15 text-sky-300 ring-ase-brand/30'
+                                : 'bg-ase-surface text-ase-muted ring-white/15',
+                        )}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0">
+                        <span
+                          className={cn(
+                            'block text-sm font-medium leading-tight',
+                            hasError ? 'text-ase-error' : isActive ? 'text-ase-text' : 'text-ase-text2 group-hover:text-ase-text',
+                          )}
+                        >
+                          {copy[id].title}
+                        </span>
+                        {isActive ? <span className="mt-0.5 block text-[11px] leading-snug text-ase-muted">{copy[id].hint}</span> : null}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        </nav>
 
       <form id={FORM_ID} className="space-y-6" onSubmit={s.handleSubmit}>
         {s.serverError ? (
@@ -143,6 +246,7 @@ export function AdminCatalogItemModal({
           </FormSection>
         ))}
       </form>
+      </div>
     </Modal>
   )
 }

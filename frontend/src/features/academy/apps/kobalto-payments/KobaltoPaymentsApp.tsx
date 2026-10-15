@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import type { RunState } from '../../engine/types'
 import type { ToolProps } from '../../tools/types'
+import { missionLang, type AcademyLang } from '../../i18n'
 import { formatEur } from '../kobalto/transferLogic'
 import {
-  ACTION_LABEL,
-  INITIAL_PAYMENTS,
-  PLAN_LABEL,
-  STATE_LABEL,
   act,
+  actionLabelFor,
   createTestPayment,
+  initialPayments,
+  planLabelFor,
+  stateLabelFor,
   type PayAction,
   type PayState,
   type PaymentsState,
@@ -30,13 +31,79 @@ const STATE_CLS: Record<PayState, string> = {
 const ACTIONS: PayAction[] = ['authorize', 'decline', 'settle', 'cancel', 'dispute', 'win', 'lose']
 const SEED_STATES: PayState[] = ['pending', 'authorized', 'declined', 'cancelled', 'settled', 'partially_refunded', 'refunded', 'disputed']
 
+const UI = {
+  es: {
+    path: 'cobros',
+    console: 'pay · operaciones',
+    user: 'Usuario: qa.junior · rol Operaciones',
+    payments: 'Cobros',
+    generator: 'Generador de datos de prueba',
+    generatorHint: 'Solo staging: crea un cobro directamente en el estado que necesites.',
+    initialState: 'Estado inicial',
+    plan: 'Plan del comercio',
+    amount: 'Importe (€)',
+    age: 'Antigüedad del cobro (días)',
+    create: 'Crear cobro de prueba',
+    planPrefix: 'Plan',
+    chargedAgo: (d: number) => `cobrado hace ${d} días`,
+    testData: ' · dato de prueba',
+    amountK: 'Importe',
+    refunded: 'Devuelto',
+    pending: 'Pendiente',
+    fees: 'Comisiones',
+    actions: 'Acciones',
+    refundAmount: 'Importe a devolver (€)',
+    refundPh: 'Ej.: 25,00',
+    refund: 'Devolver',
+    then: (v: string) => `Después: devolver ${v} €`,
+    history: 'Historial',
+    empty: 'No hay cobros.',
+  },
+  en: {
+    path: 'payments',
+    console: 'pay · operations',
+    user: 'User: qa.junior · Operations role',
+    payments: 'Payments',
+    generator: 'Test data generator',
+    generatorHint: 'Staging only: create a payment directly in the state you need.',
+    initialState: 'Initial state',
+    plan: 'Merchant plan',
+    amount: 'Amount (€)',
+    age: 'Payment age (days)',
+    create: 'Create test payment',
+    planPrefix: 'Plan',
+    chargedAgo: (d: number) => `charged ${d} days ago`,
+    testData: ' · test data',
+    amountK: 'Amount',
+    refunded: 'Refunded',
+    pending: 'Outstanding',
+    fees: 'Fees',
+    actions: 'Actions',
+    refundAmount: 'Amount to refund (€)',
+    refundPh: 'E.g. 25.00',
+    refund: 'Refund',
+    then: (v: string) => `Next: refund €${v}`,
+    history: 'History',
+    empty: 'No payments.',
+  },
+}
+
+const UI_TYPED: Record<AcademyLang, (typeof UI)['es']> = UI
+
 /** Consola de operaciones de cobros con tarjeta en staging (KOB-170). */
 export function KobaltoPaymentsApp({
+  mission,
   dispatch,
   state,
   initialForm,
 }: ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }) {
-  const app = (state.appState['kobalto-payments'] as PaymentsState | undefined) ?? INITIAL_PAYMENTS
+  const lang = missionLang(mission)
+  const t = UI_TYPED[lang]
+  const STATE_LABEL = stateLabelFor(lang)
+  const ACTION_LABEL = actionLabelFor(lang)
+  const PLAN_LABEL = planLabelFor(lang)
+  const eur = (n: number) => formatEur(n, lang)
+  const app = (state.appState['kobalto-payments'] as PaymentsState | undefined) ?? initialPayments(lang)
   const build = { active: state.activeBugs, fixed: state.fixedBugs, regressions: state.activeRegressions }
   const pre = initialForm ?? {}
   const [seed, setSeed] = useState<SeedInput>(() => ({
@@ -55,7 +122,7 @@ export function KobaltoPaymentsApp({
 
   const create = (e: React.FormEvent) => {
     e.preventDefault()
-    const r = createTestPayment(app, seed)
+    const r = createTestPayment(app, seed, lang)
     dispatch({ type: 'app', event: { ...r.event, state: r.state } })
     setResult({ ok: r.ok, message: r.message })
     if (r.id) setSelectedId(r.id)
@@ -63,7 +130,7 @@ export function KobaltoPaymentsApp({
 
   const run = (action: PayAction) => {
     if (!selected) return
-    const r = act(app, selected.id, action, action === 'refund' ? refund : '', build)
+    const r = act(app, selected.id, action, action === 'refund' ? refund : '', build, lang)
     dispatch({ type: 'app', event: { ...r.event, state: r.state } })
     setResult({ ok: r.ok, message: r.message })
     if (action === 'refund' && refund2) {
@@ -84,20 +151,20 @@ export function KobaltoPaymentsApp({
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>⚠ STAGING · https://ops.staging.kobalto.example/cobros</span>
+        <span>⚠ STAGING · https://ops.staging.kobalto.example/{t.path}</span>
         <span>build 4.0.0-rc{1 + state.build}</span>
       </div>
       <header className="flex items-center justify-between bg-slate-800 px-5 py-3 text-white">
         <span className="text-lg font-bold tracking-tight">
-          kobalto <span className="font-normal text-slate-300">pay · operaciones</span>
+          kobalto <span className="font-normal text-slate-300">{t.console}</span>
         </span>
-        <span className="text-sm text-slate-300">Usuario: qa.junior · rol Operaciones</span>
+        <span className="text-sm text-slate-300">{t.user}</span>
       </header>
 
       <div className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-[17rem_1fr]">
         <div className="space-y-4">
           <section className="rounded-2xl bg-white p-4 shadow-sm">
-            <h3 className="mb-2 font-sans text-sm font-semibold text-slate-900">Cobros</h3>
+            <h3 className="mb-2 font-sans text-sm font-semibold text-slate-900">{t.payments}</h3>
             <ul className="max-h-[22rem] space-y-1.5 overflow-y-auto">
               {app.payments.map((p) => (
                 <li key={p.id}>
@@ -114,7 +181,7 @@ export function KobaltoPaymentsApp({
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STATE_CLS[p.state]}`}>{STATE_LABEL[p.state]}</span>
                     </span>
                     <span className="mt-0.5 block text-slate-500">
-                      {p.merchant} · {formatEur(p.amount)}
+                      {p.merchant} · {eur(p.amount)}
                     </span>
                   </button>
                 </li>
@@ -123,11 +190,11 @@ export function KobaltoPaymentsApp({
           </section>
 
           <section className="rounded-2xl border border-dashed border-amber-400 bg-amber-50 p-4">
-            <h3 className="font-sans text-sm font-semibold text-amber-900">Generador de datos de prueba</h3>
-            <p className="mb-3 text-xs text-amber-800">Solo staging: crea un cobro directamente en el estado que necesites.</p>
+            <h3 className="font-sans text-sm font-semibold text-amber-900">{t.generator}</h3>
+            <p className="mb-3 text-xs text-amber-800">{t.generatorHint}</p>
             <form className="grid grid-cols-2 gap-2 text-xs" onSubmit={create}>
               <label className="col-span-2 block">
-                <span className="mb-0.5 block text-slate-600">Estado inicial</span>
+                <span className="mb-0.5 block text-slate-600">{t.initialState}</span>
                 <select className={inputCls} value={seed.state} onChange={(e) => setSeed((s) => ({ ...s, state: e.target.value as PayState }))}>
                   {SEED_STATES.map((s) => (
                     <option key={s} value={s}>
@@ -137,22 +204,22 @@ export function KobaltoPaymentsApp({
                 </select>
               </label>
               <label className="block">
-                <span className="mb-0.5 block text-slate-600">Plan del comercio</span>
+                <span className="mb-0.5 block text-slate-600">{t.plan}</span>
                 <select className={inputCls} value={seed.plan} onChange={(e) => setSeed((s) => ({ ...s, plan: e.target.value as Plan }))}>
-                  <option value="standard">Estándar</option>
-                  <option value="pro">Pro</option>
+                  <option value="standard">{PLAN_LABEL.standard}</option>
+                  <option value="pro">{PLAN_LABEL.pro}</option>
                 </select>
               </label>
               <label className="block">
-                <span className="mb-0.5 block text-slate-600">Importe (€)</span>
+                <span className="mb-0.5 block text-slate-600">{t.amount}</span>
                 <input className={inputCls} value={seed.amount} onChange={(e) => setSeed((s) => ({ ...s, amount: e.target.value }))} inputMode="decimal" />
               </label>
               <label className="col-span-2 block">
-                <span className="mb-0.5 block text-slate-600">Antigüedad del cobro (días)</span>
+                <span className="mb-0.5 block text-slate-600">{t.age}</span>
                 <input className={inputCls} value={seed.days} onChange={(e) => setSeed((s) => ({ ...s, days: e.target.value }))} inputMode="numeric" />
               </label>
               <button type="submit" className="col-span-2 rounded-lg bg-amber-600 py-2 text-sm font-semibold text-white hover:bg-amber-700">
-                Crear cobro de prueba
+                {t.create}
               </button>
             </form>
           </section>
@@ -173,7 +240,8 @@ export function KobaltoPaymentsApp({
                     {selected.ref} · {selected.merchant}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Plan {PLAN_LABEL[selected.plan]} · cobrado hace {selected.daysAgo} días{selected.test ? ' · dato de prueba' : ''}
+                    {t.planPrefix} {PLAN_LABEL[selected.plan]} · {t.chargedAgo(selected.daysAgo)}
+                    {selected.test ? t.testData : ''}
                   </p>
                 </div>
                 <span className={`rounded-md px-2.5 py-1 text-sm font-semibold ${STATE_CLS[selected.state]}`}>{STATE_LABEL[selected.state]}</span>
@@ -181,10 +249,10 @@ export function KobaltoPaymentsApp({
 
               <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {[
-                  ['Importe', formatEur(selected.amount)],
-                  ['Devuelto', formatEur(selected.refunded)],
-                  ['Pendiente', formatEur(Math.max(0, Math.round((selected.amount - selected.refunded) * 100) / 100))],
-                  ['Comisiones', formatEur(selected.fees)],
+                  [t.amountK, eur(selected.amount)],
+                  [t.refunded, eur(selected.refunded)],
+                  [t.pending, eur(Math.max(0, Math.round((selected.amount - selected.refunded) * 100) / 100))],
+                  [t.fees, eur(selected.fees)],
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-lg bg-slate-50 p-2.5">
                     <dt className="text-xs text-slate-500">{k}</dt>
@@ -193,7 +261,7 @@ export function KobaltoPaymentsApp({
                 ))}
               </dl>
 
-              <h3 className="mb-2 mt-5 font-sans text-sm font-semibold text-slate-900">Acciones</h3>
+              <h3 className="mb-2 mt-5 font-sans text-sm font-semibold text-slate-900">{t.actions}</h3>
               <div className="flex flex-wrap gap-2">
                 {ACTIONS.map((a) => (
                   <button key={a} type="button" className={btn(a)} onClick={() => run(a)}>
@@ -209,16 +277,16 @@ export function KobaltoPaymentsApp({
                 }}
               >
                 <label className="block text-sm">
-                  <span className="mb-1 block text-xs text-slate-600">Importe a devolver (€)</span>
-                  <input className={inputCls} value={refund} onChange={(e) => setRefund(e.target.value)} placeholder="Ej.: 25,00" inputMode="decimal" />
+                  <span className="mb-1 block text-xs text-slate-600">{t.refundAmount}</span>
+                  <input className={inputCls} value={refund} onChange={(e) => setRefund(e.target.value)} placeholder={t.refundPh} inputMode="decimal" />
                 </label>
                 <button type="submit" className={btn('refund')}>
-                  Devolver
+                  {t.refund}
                 </button>
-                {refund2 && <span className="text-xs text-slate-500">Después: devolver {refund2} €</span>}
+                {refund2 && <span className="text-xs text-slate-500">{t.then(refund2)}</span>}
               </form>
 
-              <h3 className="mb-2 mt-5 font-sans text-sm font-semibold text-slate-900">Historial</h3>
+              <h3 className="mb-2 mt-5 font-sans text-sm font-semibold text-slate-900">{t.history}</h3>
               <ol className="space-y-1 border-l-2 border-slate-200 pl-3 text-xs text-slate-600">
                 {selected.history.map((h, i) => (
                   <li key={i}>{h.label}</li>
@@ -226,7 +294,7 @@ export function KobaltoPaymentsApp({
               </ol>
             </>
           ) : (
-            <p className="text-sm text-slate-500">No hay cobros.</p>
+            <p className="text-sm text-slate-500">{t.empty}</p>
           )}
         </section>
       </div>

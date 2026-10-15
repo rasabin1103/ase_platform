@@ -378,6 +378,8 @@ export interface Mission {
     preventedLabel: string
     appearedLabel: string
   }
+  /** Idioma del contenido (por defecto, español). Ver features/academy/i18n.ts. */
+  lang?: 'es' | 'en'
 }
 
 export interface CourseDef {

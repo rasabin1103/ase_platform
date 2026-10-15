@@ -386,6 +386,56 @@ def booking_cancelled_email(
     return html, text
 
 
+def academy_certificate_email(
+    certificate_url: str,
+    *,
+    holder_name: str,
+    course_title: str,
+    score: int,
+    total: int,
+    code: str,
+    language: str = "es",
+) -> tuple[str, str]:
+    """Returns (html, text) sent when an ASE Academy completion certificate
+    is issued. The PDF goes attached; the button opens the public,
+    verifiable certificate page. User-supplied values are HTML-escaped."""
+    from html import escape
+
+    lang = _lang(language)
+    name, course = escape(holder_name), escape(course_title)
+    if lang == "en":
+        title = f"Congratulations, {name}! Your certificate is ready"
+        body = (
+            f"You have completed every mission of <strong>{course}</strong> and passed its final exam with "
+            f"<strong>{score}/{total}</strong>. Your ASE Academy certificate (code <strong>{escape(code)}</strong>) "
+            "is attached as a PDF, and anyone can verify it online."
+        )
+        action_label = "View my certificate"
+        footnote = "Share the link on your CV or LinkedIn. This is an ASE Academy certificate, not an official ISTQB® certification."
+        text_body = (
+            f"Congratulations, {holder_name}!\n\nYou have completed every mission of {course_title} and passed its final exam "
+            f"with {score}/{total}. Your certificate (code {code}) is attached as a PDF."
+        )
+    else:
+        title = f"¡Enhorabuena, {name}! Tu certificado ya está listo"
+        body = (
+            f"Has completado todas las misiones de <strong>{course}</strong> y has aprobado su examen final con "
+            f"<strong>{score}/{total}</strong>. Te adjuntamos en PDF tu certificado de ASE Academy (código "
+            f"<strong>{escape(code)}</strong>), que cualquiera puede verificar en línea."
+        )
+        action_label = "Ver mi certificado"
+        footnote = "Comparte el enlace en tu CV o en LinkedIn. Es un certificado de ASE Academy, no una certificación oficial de ISTQB®."
+        text_body = (
+            f"¡Enhorabuena, {holder_name}!\n\nHas completado todas las misiones de {course_title} y has aprobado su examen final "
+            f"con {score}/{total}. Te adjuntamos tu certificado (código {code}) en PDF."
+        )
+    html = _render(
+        title=title, body=body, action_url=certificate_url, action_label=action_label, footnote=footnote, language=lang
+    )
+    text = f"{text_body}\n\n{certificate_url}\n\n{footnote}"
+    return html, text
+
+
 # --- Weekly newsletter ----------------------------------------------------
 # The one email in this system that's a genuine recurring broadcast rather
 # than a one-off transactional notice — see app/core/newsletter.py for the

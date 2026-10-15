@@ -44,7 +44,7 @@ Viernes. Hay comité de dirección a las 15:00 para fijar la release 1.0 de Empr
 El debrief usa `Mission.prevention` («Tu plan», 10 reglas, incluido `delphi.ok`).
 
 ## Pendiente (idea del PLAN)
-La continuidad con la M6 (si no se defendió la estimación, el sprint se desborda) queda para cuando exista la M6.
+La continuidad con la M6 es narrativa: la M6 arranca a mitad del sprint con la ejecución por detrás del plan, y el control (repriorizar y renegociar el alcance) retoma la negociación del comité.
 
 ## Verificación
 - `engine/c2m05.test.ts` (3 tests):

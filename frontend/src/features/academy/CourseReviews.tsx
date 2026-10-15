@@ -124,7 +124,7 @@ export function CourseReviews({ access }: { access: AcademyCourseAccess }) {
           {data && data.reviewCount > 0 ? (
             <p className="mt-1 flex items-center gap-2 text-body-sm text-ase-text2">
               <StaticStars rating={data.averageRating ?? 0} />
-              <span className="font-semibold text-ase-text">{(data.averageRating ?? 0).toLocaleString(language === 'en' ? 'en-GB' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+              <span className="font-semibold text-ase-text">{(data.averageRating ?? 0).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
               <span className="text-ase-muted">
                 · {data.reviewCount === 1 ? t(`${K}countOne`) : t(`${K}count`).replace('{{count}}', String(data.reviewCount))}
               </span>
@@ -141,7 +141,7 @@ export function CourseReviews({ access }: { access: AcademyCourseAccess }) {
             <div className="flex flex-wrap items-center gap-3 text-body-sm">
               <span className="text-ase-text2">{t(`${K}yours`)}</span>
               <StaticStars rating={myReview.rating} />
-              {myReview.comment && <span className="text-ase-text2">«{myReview.comment}»</span>}
+              {myReview.comment && <span className="text-ase-text2">{language === 'en' ? `“${myReview.comment}”` : `«${myReview.comment}»`}</span>}
               <button type="button" onClick={() => setEditing(true)} className="text-ase-brand hover:underline">
                 {t(`${K}edit`)}
               </button>
@@ -165,7 +165,7 @@ export function CourseReviews({ access }: { access: AcademyCourseAccess }) {
                 <StaticStars rating={r.rating} />
               </div>
               {r.comment && <p className="text-body-sm text-ase-text2">{r.comment}</p>}
-              <p className="mt-1 text-caption text-ase-muted">{new Date(r.createdAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="mt-1 text-caption text-ase-muted">{new Date(r.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </li>
           ))}
         </ul>

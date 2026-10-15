@@ -11,14 +11,28 @@ import { m00Equipo } from './courses/qa-profesional/m00-equipo'
 import { m03Cobertura } from './courses/qa-profesional/m03-cobertura'
 import { m04Exploratoria } from './courses/qa-profesional/m04-exploratoria'
 import { m05Plan } from './courses/qa-profesional/m05-plan'
+import { m06Metricas } from './courses/qa-profesional/m06-metricas'
+import { m07Configuracion } from './courses/qa-profesional/m07-configuracion'
+import { m08Herramientas } from './courses/qa-profesional/m08-herramientas'
 import { m01Inspeccion } from './courses/qa-profesional/m01-inspeccion'
 import { m02Gherkin } from './courses/qa-profesional/m02-gherkin'
 
-export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, getCourse, isFreeMission } from './courseList'
+import { MISSIONS_EN as TF_EN } from './courses/testing-fundamentals/en'
+import { MISSIONS_EN as QAP_EN } from './courses/qa-profesional/en'
+
+export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses, getCourse, isFreeMission } from './courseList'
 
 /** Misiones jugables. Añadir una misión = importarla aquí. */
-const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan]
+const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas]
 
-export function getMission(courseKey: string, missionId: string): Mission | undefined {
-  return MISSIONS.find((m) => m.courseKey === courseKey && m.id === missionId)
+/** Traducciones al inglés (misma estructura e ids). */
+export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN]
+
+/** Todas las misiones en español (para tests de paridad). */
+export const MISSIONS_ES: Mission[] = MISSIONS
+
+/** Misión en el idioma pedido; si aún no está traducida, la española. */
+export function getMission(courseKey: string, missionId: string, lang: 'es' | 'en' = 'es'): Mission | undefined {
+  const match = (m: Mission) => m.courseKey === courseKey && m.id === missionId
+  return (lang === 'en' ? MISSIONS_EN.find(match) : undefined) ?? MISSIONS.find(match)
 }

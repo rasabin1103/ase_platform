@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 
 /**
  * App bajo prueba de la misión 5: gestor de pruebas (TestHub) con la
@@ -154,6 +155,106 @@ export const CASES: RegressionCase[] = [
 
 export const TOTAL_MINUTES = CASES.reduce((n, c) => n + c.minutes, 0)
 
+export const AREAS_EN = [
+  'Login and session',
+  'Transfers',
+  'Loans',
+  'Cards',
+  'Scheduled transfers',
+  'Payments (Kobalto Pay)',
+  'Transactions and notifications',
+  'Onboarding and accessibility',
+] as const
+
+type CaseText = Pick<RegressionCase, 'title' | 'steps' | 'expected' | 'detects'>
+
+/** Textos en inglés de cada caso (mismos ids, minutos y bugs que CASES). */
+const CASES_EN: Record<string, CaseText> = {
+  'TC-01': { title: 'Password login (iOS)', steps: ['Open the app on an iPhone', 'Log in with username and password'], expected: 'Lands on the account overview' },
+  'TC-02': {
+    title: 'Fingerprint login (Android 15)',
+    steps: ['Open the app on a Pixel 8 with a registered fingerprint', 'Log in with the fingerprint'],
+    expected: 'Lands on the account overview without asking for the password',
+    detects: { R2: 'after the fingerprint, "Authentication error (-1)" appears and it asks for the password again' },
+  },
+  'TC-03': { title: 'Face ID login (iOS)', steps: ['Open the app on an iPhone', 'Log in with Face ID'], expected: 'Lands on the account overview' },
+  'TC-04': {
+    title: 'Session expires after 5 min of inactivity',
+    steps: ['Log in to the app', 'Leave it open for 5 minutes without touching it', 'Tap "Transfer"'],
+    expected: 'Asks for authentication again',
+    detects: { R2b: 'after 5 minutes it is still logged in and allows a transfer without re-authenticating' },
+  },
+  'TC-05': {
+    title: '€50 instant transfer (€0.25 fee)',
+    steps: ['Transfer €50 to an account at another bank', 'Choose "Instant"'],
+    expected: 'Arrives in seconds and a €0.25 fee is charged',
+    detects: { R1: 'a €0.50 fee is charged (double)' },
+  },
+  'TC-06': {
+    title: '€1,000 instant transfer (limit)',
+    steps: ['Transfer €1,000 to another bank', 'Choose "Instant"'],
+    expected: 'Sent as instant with a €0.25 fee',
+    detects: { R1: 'a €0.50 fee is charged (double)' },
+  },
+  'TC-07': {
+    title: '€1,500 instant transfer (over the limit)',
+    steps: ['Transfer €1,500 to another bank', 'Choose "Instant"'],
+    expected: 'Warns that it exceeds €1,000 and offers to send it as a standard transfer',
+    detects: { R1b: 'no warning: it is sent as a standard transfer (arrives Monday) while showing "Instant transfer sent"' },
+  },
+  'TC-08': {
+    title: 'Standard SEPA transfer (no fee)',
+    steps: ['Transfer €50 to another bank', 'Choose "Standard"'],
+    expected: 'Sent with no fee',
+    detects: { 'R-R1': 'a €0.25 fee is charged on a standard transfer' },
+  },
+  'TC-09': { title: '€9,900 quote (6.95% nominal rate)', steps: ['Simulate €9,900 over 60 months'], expected: '6.95% nominal rate' },
+  'TC-10': {
+    title: '€10,000 quote (new 5.75% nominal rate)',
+    steps: ['Simulate €10,000 over 60 months'],
+    expected: '5.75% nominal rate (new 5.1 tier)',
+    detects: { R3: 'shows a 6.95% nominal rate: the new tier only applies above €10,000' },
+  },
+  'TC-11': {
+    title: 'Examples validated by Risk (5.1 table)',
+    steps: ['Simulate the 5 examples from the Risk team\'s 5.1 table'],
+    expected: 'Installments match to the cent',
+    detects: { R3: 'the €10,000 example comes out at a 6.95% nominal rate and the installment does not match' },
+  },
+  'TC-12': { title: 'Freeze and pay on Android', steps: ['Freeze the card on a Pixel 8', 'Pay €20 at the test merchant'], expected: 'Purchase declined' },
+  'TC-13': {
+    title: 'Unfreeze and pay on Android',
+    steps: ['With the card frozen, unfreeze it on a Pixel 8', 'Pay €20 at the test merchant'],
+    expected: 'Purchase approved',
+    detects: { R4: 'the app shows "Active" but the purchase is declined with "card frozen"' },
+  },
+  'TC-14': { title: 'Monthly limit "1,000" with the app in English', steps: ['App in English', 'Save limit "1,000"'], expected: '€1,000 limit' },
+  'TC-15': {
+    title: 'Monthly transfer scheduled on the 31st',
+    steps: ['Schedule a monthly transfer on the 31st', 'View the upcoming runs'],
+    expected: 'In short months it runs on the last day (November 30)',
+    detects: { R5: 'November is missing: it jumps from October 31 to December 31' },
+  },
+  'TC-16': { title: 'Cancel only the next run of a series', steps: ['Cancel the next run of a weekly transfer'], expected: 'The series stays active' },
+  'TC-17': { title: 'Refund a voided payment', steps: ['Create a voided payment', 'Refund €20'], expected: '409 and the payment does not change' },
+  'TC-18': { title: 'Successive refunds up to the total', steps: ['Refund €60 and then €40 of €100'], expected: 'Ends up "Refunded"' },
+  'TC-19': { title: 'Export September transactions', steps: ['Export from September 1 to 30'], expected: 'Includes the transaction on the 30th' },
+  'TC-20': { title: 'Incoming transfer notification', steps: ['Receive €10 from another account'], expected: 'The push notification arrives' },
+  'TC-21': { title: 'Copy of the new onboarding', steps: ['Review the 5 onboarding screens'], expected: 'No typos and the approved copy' },
+  'TC-22': { title: 'Basic accessibility of the home screen', steps: ['Navigate with a screen reader'], expected: 'Every button has a label' },
+}
+
+/** Áreas de regresión en el idioma pedido. */
+export function areasFor(lang: AcademyLang = 'es'): readonly string[] {
+  return lang === 'en' ? AREAS_EN : AREAS
+}
+
+/** Casos de regresión en el idioma pedido (mismos ids, minutos y bugs). */
+export function casesFor(lang: AcademyLang = 'es'): RegressionCase[] {
+  if (lang !== 'en') return CASES
+  return CASES.map((c) => ({ ...c, ...CASES_EN[c.id], area: AREAS_EN[AREAS.indexOf(c.area as (typeof AREAS)[number])] }))
+}
+
 export interface ReleaseState {
   results: Record<string, { result: 'pass' | 'fail'; build: number; actual?: string }>
   ciReruns: number
@@ -174,8 +275,14 @@ function live(build: ReleaseBuild): (b: string) => boolean {
 }
 
 /** Ejecuta un caso de regresión en el build actual. */
-export function runCase(state: ReleaseState, caseId: string, buildNo: number, build: ReleaseBuild = {}): { state: ReleaseState; event: AppEvent; failed: boolean } {
-  const c = CASES.find((x) => x.id === caseId)
+export function runCase(
+  state: ReleaseState,
+  caseId: string,
+  buildNo: number,
+  build: ReleaseBuild = {},
+  lang: AcademyLang = 'es',
+): { state: ReleaseState; event: AppEvent; failed: boolean } {
+  const c = casesFor(lang).find((x) => x.id === caseId)
   if (!c) throw new Error(`Caso ${caseId} no encontrado`)
   const has = live(build)
   const bug = Object.keys(c.detects ?? {}).find(has)
@@ -187,7 +294,9 @@ export function runCase(state: ReleaseState, caseId: string, buildNo: number, bu
     event: {
       app: 'kobalto-release',
       action: 'run',
-      summary: bug ? `${c.id} ${c.title} → FALLA: ${c.detects![bug]}` : `${c.id} ${c.title} → PASA (${c.expected.toLowerCase()})`,
+      summary: bug
+        ? `${c.id} ${c.title} → ${lang === 'en' ? 'FAILS' : 'FALLA'}: ${c.detects![bug]}`
+        : `${c.id} ${c.title} → ${lang === 'en' ? 'PASSES' : 'PASA'} (${c.expected.toLowerCase()})`,
       technical: `TestHub · ${c.id} · build ${label} · ${bug ? 'FAILED' : 'PASSED'} · ${c.minutes} min`,
       status: bug ? 'error' : 'ok',
       bugs: bug ? [bug] : [],
@@ -197,13 +306,16 @@ export function runCase(state: ReleaseState, caseId: string, buildNo: number, bu
 }
 
 /** Relanza el test automático que falla en CI: es inestable (flaky), no un bug. */
-export function rerunCi(state: ReleaseState): { state: ReleaseState; event: AppEvent } {
+export function rerunCi(state: ReleaseState, lang: AcademyLang = 'es'): { state: ReleaseState; event: AppEvent } {
   return {
     state: { ...state, ciReruns: state.ciReruns + 1 },
     event: {
       app: 'kobalto-release',
       action: 'ci_rerun',
-      summary: 'CI · relanzado test_export_csv_timeout → PASA (3 de los últimos 10 builds falló y pasó al relanzar: test inestable)',
+      summary:
+        lang === 'en'
+          ? 'CI · reran test_export_csv_timeout → PASSES (in 3 of the last 10 builds it failed and passed on rerun: flaky test)'
+          : 'CI · relanzado test_export_csv_timeout → PASA (3 de los últimos 10 builds falló y pasó al relanzar: test inestable)',
       technical: 'CI job #4182 · test_export_csv_timeout · PASSED (retry 1) · history: 3/10 flaky',
       status: 'ok',
       bugs: [],

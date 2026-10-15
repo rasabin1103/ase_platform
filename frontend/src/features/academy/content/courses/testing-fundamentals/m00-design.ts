@@ -31,7 +31,7 @@ export function parseAmount(raw: string): ParsedAmount {
 
 function parseSequence(raw: string): ParsedAmount[] {
   return raw
-    .split(/[+;]|\s+y\s+/)
+    .split(/[+;]|\s+y\s+|\s+and\s+/)
     .map((p) => p.trim())
     .filter(Boolean)
     .map(parseAmount)
@@ -256,12 +256,12 @@ export const m00Design: TestDesignModel = {
 
 /** «141 caracteres» → longitud 141; cualquier otro texto, su longitud. */
 function conceptLength(input: string): number {
-  const m = input.trim().match(/^(\d{1,4})\s*(caracteres|chars?|c)$/i)
+  const m = input.trim().match(/^(\d{1,4})\s*(caracteres|characters?|chars?|c)$/i)
   return m ? Number(m[1]) : input.length
 }
 
 function conceptText(input: string): string {
-  const m = input.trim().match(/^(\d{1,4})\s*(caracteres|chars?|c)$/i)
+  const m = input.trim().match(/^(\d{1,4})\s*(caracteres|characters?|chars?|c)$/i)
   return m ? 'x'.repeat(Number(m[1])) : input
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { INITIAL_SCHEDULE, SCHEDULE_BUGS as B, cancel, executions, schedule, type ScheduleForm } from './scheduleLogic'
+import { INITIAL_SCHEDULE, SCHEDULE_BUGS as B, cancel, executions, formatDate, schedule, type ScheduleForm } from './scheduleLogic'
 
 const form = (over: Partial<ScheduleForm> = {}): ScheduleForm => ({
   iban: 'ES3091010001120200012345',
@@ -63,5 +63,22 @@ describe('transferencias programadas', () => {
 
   it('fin de semana: se ejecuta el lunes siguiente', () => {
     expect(executions({ date: '2026-10-17', frequency: 'once', endDate: '' }, false)).toEqual(['2026-10-19'])
+  })
+})
+
+describe('idioma inglés', () => {
+  it('mismos resultados y bugs; mensajes en inglés', () => {
+    const f = form({ date: '2026-10-31', frequency: 'monthly' })
+    const es = schedule(INITIAL_SCHEDULE, f, { active: [B.monthlySkips] })
+    const en = schedule(INITIAL_SCHEDULE, f, { active: [B.monthlySkips] }, 'en')
+    expect(en.state).toEqual(es.state)
+    expect(en.event.bugs).toEqual(es.event.bugs)
+    expect(en.message).toBe('Transfer scheduled')
+    expect(en.event.summary).toMatch(/^Scheduled €650\.00 to Casero/)
+    expect(schedule(INITIAL_SCHEDULE, form({ date: '2026-10-06' }), { active: none }, 'en').message).toBe('The date must be tomorrow or later')
+    const c = cancel(es.state, 1, 'next', { active: [B.cancelWholeSeries] }, 'en')
+    expect(c.event.bugs).toEqual([B.cancelWholeSeries])
+    expect(c.event.summary).toContain('without asking')
+    expect(formatDate('2026-10-06', 'en')).toContain('Oct')
   })
 })

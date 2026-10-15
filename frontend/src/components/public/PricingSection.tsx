@@ -11,6 +11,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 import { JsonLd, SITE_URL } from '../seo/JsonLd'
+import { BRAND_IMAGES, SELLER, digitalOfferDetails, priceValidUntil } from '../seo/merchant'
 import { ChevronDown, Download, Percent, Award, Sparkles } from 'lucide-react'
 import {
   catalogPlansForBilling,
@@ -166,33 +167,44 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
           ? 'lg:grid-cols-3'
           : 'lg:grid-cols-4'
 
-  // Public, crawlable pricing (this section only ever renders on Home/Plans,
-  // neither of which is behind auth or blocked in robots.txt) — a good
-  // candidate for Product/Offer structured data, unlike the catalog detail
-  // pages which sit behind login and are disallowed for crawling.
+  // Public, crawlable pricing (Home and /pricing): Product/Offer structured data.
+  // Solo los planes de pago: Google exige un precio mayor que cero en las
+  // fichas de comerciante. Imagen, envío digital y política de devoluciones
+  // van incluidos para que Search Console no marque errores (ver merchant.ts).
+  const paidPlans = plans.filter((plan) => Number(plan.price ?? 0) > 0)
   const plansJsonLd =
-    plans.length > 0
+    paidPlans.length > 0
       ? {
           '@context': 'https://schema.org',
           '@type': 'ItemList',
-          itemListElement: plans.map((plan, index) => ({
-            '@type': 'ListItem',
-            position: index + 1,
-            item: {
-              '@type': 'Product',
-              name: localizedPlanText(language, plan.name, plan.name_en),
-              description: planMarketingDescription(t, plan, language) || undefined,
-              brand: { '@type': 'Brand', name: 'Arce Sabin Engineering' },
-              offers: {
-                '@type': 'Offer',
-                url: `${SITE_URL}/plans`,
-                priceCurrency: plan.currency || 'EUR',
-                price: plan.price ?? '0',
-                availability:
-                  plan.status === 'coming_soon' ? 'https://schema.org/PreOrder' : 'https://schema.org/InStock',
+          itemListElement: paidPlans.map((plan, index) => {
+            const currency = plan.currency || 'EUR'
+            const name = localizedPlanText(language, plan.name, plan.name_en)
+            return {
+              '@type': 'ListItem',
+              position: index + 1,
+              item: {
+                '@type': 'Product',
+                name,
+                description: planMarketingDescription(t, plan, language) || name,
+                image: BRAND_IMAGES,
+                sku: `plan-${plan.id}`,
+                brand: { '@type': 'Brand', name: 'Arce Sabin Engineering' },
+                offers: {
+                  '@type': 'Offer',
+                  url: `${SITE_URL}/pricing`,
+                  priceCurrency: currency,
+                  price: Number(plan.price).toFixed(2),
+                  priceValidUntil: priceValidUntil(),
+                  itemCondition: 'https://schema.org/NewCondition',
+                  availability:
+                    plan.status === 'coming_soon' ? 'https://schema.org/PreOrder' : 'https://schema.org/InStock',
+                  seller: SELLER,
+                  ...digitalOfferDetails(currency),
+                },
               },
-            },
-          })),
+            }
+          }),
         }
       : null
 

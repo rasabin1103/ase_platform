@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://aseplatform-production.up.railway.app/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://aseplatform-production.up.railway.app/robots.txt"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://aseplatform-production.up.railway.app/api/:path*"
+    },
+    {
       "source": "/blog/:slug",
       "has": [
         {
@@ -11,6 +23,9 @@
       ],
       "destination": "https://aseplatform-production.up.railway.app/api/v1/public/blog/:slug/preview"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -43,6 +43,12 @@ export const AcademyCoursePage = lazy(() =>
 export const AcademyPlayerPage = lazy(() =>
   import('../features/academy/pages/AcademyPlayerPage').then((m) => ({ default: m.AcademyPlayerPage })),
 )
+export const AcademyExamPage = lazy(() =>
+  import('../features/academy/pages/AcademyExamPage').then((m) => ({ default: m.AcademyExamPage })),
+)
+export const AcademyCertificatePage = lazy(() =>
+  import('../features/academy/pages/AcademyCertificatePage').then((m) => ({ default: m.AcademyCertificatePage })),
+)
 
 // --- Auth (login/register/password) ---
 export const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })))

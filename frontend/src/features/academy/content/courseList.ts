@@ -1,6 +1,8 @@
 import type { CourseDef } from '../engine/types'
 import { testingFundamentalsCourse } from './courses/testing-fundamentals/course'
 import { qaProfesionalCourse } from './courses/qa-profesional/course'
+import { testingFundamentalsCourseEn } from './courses/testing-fundamentals/en/course'
+import { qaProfesionalCourseEn } from './courses/qa-profesional/en/course'
 
 /**
  * Lista ligera de cursos del simulador (sin el contenido de las misiones).
@@ -11,6 +13,11 @@ import { qaProfesionalCourse } from './courses/qa-profesional/course'
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
 export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse]
+export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn]
+
+export function academyCourses(lang: 'es' | 'en' = 'es'): CourseDef[] {
+  return lang === 'en' ? ACADEMY_COURSES_EN : ACADEMY_COURSES
+}
 
 export const LEVEL_LABEL: Record<CourseDef['level'], string> = {
   beginner: 'Principiante',
@@ -19,8 +26,16 @@ export const LEVEL_LABEL: Record<CourseDef['level'], string> = {
   expert: 'Gestión',
 }
 
-export function getCourse(key: string): CourseDef | undefined {
-  return ACADEMY_COURSES.find((c) => c.key === key)
+export const LEVEL_LABEL_EN: Record<CourseDef['level'], string> = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+  expert: 'Management',
+}
+
+/** Curso por clave; en inglés si existe la traducción. */
+export function getCourse(key: string, lang: 'es' | 'en' = 'es'): CourseDef | undefined {
+  return academyCourses(lang).find((c) => c.key === key) ?? ACADEMY_COURSES.find((c) => c.key === key)
 }
 
 /** La primera misión de cada curso es siempre la demo gratuita. */

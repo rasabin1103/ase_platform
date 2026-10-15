@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import type { AppEvent, RunState } from '../../engine/types'
+import { missionLang, tr } from '../../i18n'
 import type { ToolProps } from '../../tools/types'
 import {
-  CASES,
   DEV_EFFORT,
   HIST_RATIO,
   INITIAL_PLAN,
-  QUADRANT_LABEL,
-  QUAD_ITEMS,
-  RISKS,
-  SECTIONS,
   THREE_POINT,
   askLaura,
+  casesFor,
   edit,
+  quadItemsFor,
+  quadrantLabelFor,
+  riskLabel,
+  risksFor,
+  sectionsFor,
   submit,
   type PlanState,
   type Quadrant,
@@ -23,16 +25,23 @@ type Send = (r: { state: PlanState; event: AppEvent }) => void
 type Props = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
 type Tab = 'plan' | 'risks' | 'estimate' | 'prio' | 'quad'
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'plan', label: 'Plan' },
-  { id: 'risks', label: 'Riesgos' },
-  { id: 'estimate', label: 'Estimación' },
-  { id: 'prio', label: 'Priorización' },
-  { id: 'quad', label: 'Cuadrantes' },
+const TABS: { id: Tab; es: string; en: string }[] = [
+  { id: 'plan', es: 'Plan', en: 'Plan' },
+  { id: 'risks', es: 'Riesgos', en: 'Risks' },
+  { id: 'estimate', es: 'Estimación', en: 'Estimation' },
+  { id: 'prio', es: 'Priorización', en: 'Prioritization' },
+  { id: 'quad', es: 'Cuadrantes', en: 'Quadrants' },
 ]
 
 /** Planificador de pruebas de la release de Kobalto Empresas. */
-export function KobaltoPlanApp({ dispatch, state }: Props) {
+export function KobaltoPlanApp({ dispatch, state, mission }: Props) {
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
+  const SECTIONS = sectionsFor(lang)
+  const RISKS = risksFor(lang)
+  const CASES = casesFor(lang)
+  const QUAD_ITEMS = quadItemsFor(lang)
+  const QUADRANT_LABEL = quadrantLabelFor(lang)
   const app = (state.appState['kobalto-plan'] as PlanState | undefined) ?? INITIAL_PLAN
   const [tab, setTab] = useState<Tab>('plan')
   const send: Send = (r) => dispatch({ type: 'app', event: { ...r.event, state: r.state } })
@@ -42,14 +51,14 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>Plan de pruebas · Release Kobalto Empresas 1.0</span>
-        <span>comité: 15:00</span>
+        <span>{t('Plan de pruebas · Release Kobalto Empresas 1.0', 'Test plan · Kobalto Business 1.0 release')}</span>
+        <span>{t('comité: 15:00', 'committee: 3:00 PM')}</span>
       </div>
       <div className="mx-auto max-w-5xl space-y-4 p-5">
-        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label="Secciones del planificador">
-          {TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={`rounded-full px-4 py-1.5 font-medium ${tab === t.id ? 'bg-indigo-700 text-white' : 'bg-white text-slate-600'}`}>
-              {t.label}
+        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label={t('Secciones del planificador', 'Planner sections')}>
+          {TABS.map((x) => (
+            <button key={x.id} type="button" role="tab" aria-selected={tab === x.id} onClick={() => setTab(x.id)} className={`rounded-full px-4 py-1.5 font-medium ${tab === x.id ? 'bg-indigo-700 text-white' : 'bg-white text-slate-600'}`}>
+              {lang === 'en' ? x.en : x.es}
             </button>
           ))}
         </div>
@@ -74,16 +83,16 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
 
         {tab === 'risks' && (
           <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="font-sans text-base font-semibold text-slate-900">Riesgos de la release</h3>
-            <p className="mt-1 text-sm text-slate-600">¿Afecta a la calidad de lo que entregamos (producto) o a cómo lo hacemos: plazos, personas, proveedores, entornos (proyecto)?</p>
+            <h3 className="font-sans text-base font-semibold text-slate-900">{t('Riesgos de la release', 'Release risks')}</h3>
+            <p className="mt-1 text-sm text-slate-600">{t('¿Afecta a la calidad de lo que entregamos (producto) o a cómo lo hacemos: plazos, personas, proveedores, entornos (proyecto)?', 'Does it affect the quality of what we deliver (product), or how we do it: deadlines, people, suppliers, environments (project)?')}</p>
             <ul className="mt-3 divide-y divide-slate-100">
               {RISKS.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
                   <span className="flex-1">{r.text}</span>
-                  <select aria-label={`Tipo de riesgo ${r.id}`} disabled={locked} value={app.risks[r.id] ?? ''} onChange={(e) => patch({ risks: { ...app.risks, [r.id]: e.target.value as RiskKind | '' } }, `Riesgo ${r.id} clasificado.`)} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
-                    <option value="">Elige…</option>
-                    <option value="product">Riesgo de producto</option>
-                    <option value="project">Riesgo de proyecto</option>
+                  <select aria-label={t(`Tipo de riesgo ${r.id}`, `Risk type ${r.id}`)} disabled={locked} value={app.risks[r.id] ?? ''} onChange={(e) => patch({ risks: { ...app.risks, [r.id]: e.target.value as RiskKind | '' } }, t(`Riesgo ${r.id} clasificado.`, `Risk ${r.id} classified.`))} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
+                    <option value="">{t('Elige…', 'Choose…')}</option>
+                    <option value="product">{t('Riesgo de producto', 'Product risk')}</option>
+                    <option value="project">{t('Riesgo de proyecto', 'Project risk')}</option>
                   </select>
                 </li>
               ))}
@@ -94,41 +103,47 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
         {tab === 'estimate' && (
           <section className="grid gap-4 md:grid-cols-2">
             <article className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="font-sans text-base font-semibold text-slate-900">Por ratio histórico</h3>
+              <h3 className="font-sans text-base font-semibold text-slate-900">{t('Por ratio histórico', 'Ratio-based (historical)')}</h3>
               <p className="mt-1 text-sm text-slate-600">
-                En las tres últimas releases, el esfuerzo de pruebas fue el {Math.round(HIST_RATIO * 100)} % del de desarrollo. Desarrollo estima {DEV_EFFORT} persona-días.
+                {t(
+                  `En las tres últimas releases, el esfuerzo de pruebas fue el ${Math.round(HIST_RATIO * 100)} % del de desarrollo. Desarrollo estima ${DEV_EFFORT} persona-días.`,
+                  `In the last three releases, test effort was ${Math.round(HIST_RATIO * 100)}% of development effort. Development estimates ${DEV_EFFORT} person-days.`,
+                )}
               </p>
-              <NumField label="Estimación por ratio (persona-días)" value={app.ratio} locked={locked} onCommit={(v) => patch({ ratio: v }, 'Estimación por ratio.')} />
+              <NumField label={t('Estimación por ratio (persona-días)', 'Ratio-based estimate (person-days)')} value={app.ratio} locked={locked} onCommit={(v) => patch({ ratio: v }, t('Estimación por ratio.', 'Ratio-based estimate.'))} />
             </article>
             <article className="rounded-2xl bg-white p-5 shadow-sm">
-              <h3 className="font-sans text-base font-semibold text-slate-900">Tres puntos</h3>
+              <h3 className="font-sans text-base font-semibold text-slate-900">{t('Tres puntos', 'Three-point')}</h3>
               <p className="mt-1 text-sm text-slate-600">
-                Optimista a = {THREE_POINT.a}, más probable m = {THREE_POINT.m}, pesimista b = {THREE_POINT.b} persona-días. E = (a + 4m + b) ÷ 6 y desviación estándar = (b − a) ÷ 6.
+                {t(
+                  `Optimista a = ${THREE_POINT.a}, más probable m = ${THREE_POINT.m}, pesimista b = ${THREE_POINT.b} persona-días. E = (a + 4m + b) ÷ 6 y desviación estándar = (b − a) ÷ 6.`,
+                  `Optimistic a = ${THREE_POINT.a}, most likely m = ${THREE_POINT.m}, pessimistic b = ${THREE_POINT.b} person-days. E = (a + 4m + b) ÷ 6 and standard deviation = (b − a) ÷ 6.`,
+                )}
               </p>
-              <NumField label="Estimación E (persona-días)" value={app.threeE} locked={locked} onCommit={(v) => patch({ threeE: v }, 'Estimación de tres puntos.')} />
-              <NumField label="Desviación estándar" value={app.threeSD} locked={locked} onCommit={(v) => patch({ threeSD: v }, 'Desviación de tres puntos.')} />
+              <NumField label={t('Estimación E (persona-días)', 'Estimate E (person-days)')} value={app.threeE} locked={locked} onCommit={(v) => patch({ threeE: v }, t('Estimación de tres puntos.', 'Three-point estimate.'))} />
+              <NumField label={t('Desviación estándar', 'Standard deviation')} value={app.threeSD} locked={locked} onCommit={(v) => patch({ threeSD: v }, t('Desviación de tres puntos.', 'Three-point standard deviation.'))} />
             </article>
           </section>
         )}
 
         {tab === 'prio' && (
           <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="font-sans text-base font-semibold text-slate-900">Orden de ejecución</h3>
-            <p className="mt-1 text-sm text-slate-600">Primero lo de más riesgo, pero respetando las dependencias.</p>
+            <h3 className="font-sans text-base font-semibold text-slate-900">{t('Orden de ejecución', 'Execution order')}</h3>
+            <p className="mt-1 text-sm text-slate-600">{t('Primero lo de más riesgo, pero respetando las dependencias.', 'Highest risk first, but respecting dependencies.')}</p>
             <table className="mt-3 w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="py-2">Orden</th>
-                  <th className="py-2">Caso</th>
-                  <th className="py-2">Riesgo</th>
-                  <th className="py-2">Depende de</th>
+                  <th className="py-2">{t('Orden', 'Order')}</th>
+                  <th className="py-2">{t('Caso', 'Case')}</th>
+                  <th className="py-2">{t('Riesgo', 'Risk')}</th>
+                  <th className="py-2">{t('Depende de', 'Depends on')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {CASES.map((c) => (
                   <tr key={c.id}>
                     <td className="py-2">
-                      <select aria-label={`Orden de ${c.label}`} disabled={locked} value={app.order[c.id] ?? ''} onChange={(e) => patch({ order: { ...app.order, [c.id]: e.target.value ? Number(e.target.value) : null } }, `Orden de ${c.id}.`)} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
+                      <select aria-label={t(`Orden de ${c.label}`, `Order of ${c.label}`)} disabled={locked} value={app.order[c.id] ?? ''} onChange={(e) => patch({ order: { ...app.order, [c.id]: e.target.value ? Number(e.target.value) : null } }, t(`Orden de ${c.id}.`, `Order of ${c.id}.`))} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
                         <option value="">—</option>
                         {CASES.map((_, i) => (
                           <option key={i} value={i + 1}>
@@ -138,7 +153,7 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
                       </select>
                     </td>
                     <td className="py-2 font-medium">{c.label}</td>
-                    <td className="py-2">{c.risk}</td>
+                    <td className="py-2">{riskLabel(c.risk, lang)}</td>
                     <td className="py-2 text-slate-500">{c.dependsOn ? CASES.find((x) => x.id === c.dependsOn)!.label : '—'}</td>
                   </tr>
                 ))}
@@ -149,14 +164,14 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
 
         {tab === 'quad' && (
           <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="font-sans text-base font-semibold text-slate-900">Cuadrantes de testing</h3>
-            <p className="mt-1 text-sm text-slate-600">¿Están orientadas a tecnología o a negocio? ¿Apoyan al equipo mientras desarrolla o critican el producto terminado?</p>
+            <h3 className="font-sans text-base font-semibold text-slate-900">{t('Cuadrantes de testing', 'Testing quadrants')}</h3>
+            <p className="mt-1 text-sm text-slate-600">{t('¿Están orientadas a tecnología o a negocio? ¿Apoyan al equipo mientras desarrolla o critican el producto terminado?', 'Are they technology facing or business facing? Do they support the team during development, or critique the finished product?')}</p>
             <ul className="mt-3 divide-y divide-slate-100">
               {QUAD_ITEMS.map((i) => (
                 <li key={i.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
                   <span className="flex-1">{i.label}</span>
-                  <select aria-label={`Cuadrante de ${i.label}`} disabled={locked} value={app.quadrants[i.id] ?? ''} onChange={(e) => patch({ quadrants: { ...app.quadrants, [i.id]: e.target.value as Quadrant | '' } }, `Cuadrante de ${i.id}.`)} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
-                    <option value="">Elige…</option>
+                  <select aria-label={t(`Cuadrante de ${i.label}`, `Quadrant for ${i.label}`)} disabled={locked} value={app.quadrants[i.id] ?? ''} onChange={(e) => patch({ quadrants: { ...app.quadrants, [i.id]: e.target.value as Quadrant | '' } }, t(`Cuadrante de ${i.id}.`, `Quadrant for ${i.id}.`))} className="rounded-lg border border-slate-300 bg-white px-2 py-1">
+                    <option value="">{t('Elige…', 'Choose…')}</option>
                     {(Object.keys(QUADRANT_LABEL) as Quadrant[]).map((q) => (
                       <option key={q} value={q}>
                         {QUADRANT_LABEL[q]}
@@ -171,7 +186,7 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
 
         {app.feedback && !app.submitted && (
           <section className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900">
-            <h4 className="font-sans font-semibold text-violet-900">Revisión de Laura</h4>
+            <h4 className="font-sans font-semibold text-violet-900">{t('Revisión de Laura', "Laura's review")}</h4>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               {app.feedback.map((f, i) => (
                 <li key={i}>{f}</li>
@@ -181,14 +196,14 @@ export function KobaltoPlanApp({ dispatch, state }: Props) {
         )}
 
         {app.submitted ? (
-          <p className="text-sm font-medium text-emerald-700">✓ Plan enviado a Raúl para el comité de las 15:00.</p>
+          <p className="text-sm font-medium text-emerald-700">{t('✓ Plan enviado a Raúl para el comité de las 15:00.', '✓ Plan sent to Raúl for the 3:00 PM committee.')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={locked} onClick={() => send(askLaura(app))} className="rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-800 hover:bg-violet-50 disabled:opacity-40">
-              Pedir a Laura que revise · 10 min
+            <button type="button" disabled={locked} onClick={() => send(askLaura(app, lang))} className="rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-800 hover:bg-violet-50 disabled:opacity-40">
+              {t('Pedir a Laura que revise · 10 min', 'Ask Laura to review · 10 min')}
             </button>
-            <button type="button" disabled={locked} onClick={() => send(submit(app))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 disabled:opacity-40">
-              Enviar el plan a Raúl · 15 min
+            <button type="button" disabled={locked} onClick={() => send(submit(app, lang))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 disabled:opacity-40">
+              {t('Enviar el plan a Raúl · 15 min', 'Send the plan to Raúl · 15 min')}
             </button>
           </div>
         )}

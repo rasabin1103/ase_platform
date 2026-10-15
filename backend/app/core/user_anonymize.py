@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.models.academy_exam import AcademyCertificate
 from app.models.user import User
 from app.models.user_link import UserLink
 
@@ -34,3 +35,6 @@ def anonymize_user_pii(db: Session, user: User) -> None:
     user.avatar_data = None
     user.avatar_mime = None
     db.execute(delete(UserLink).where(UserLink.user_id == user.id))
+    # Los certificados de ASE Academy llevan el nombre del titular y son
+    # verificables públicamente: se eliminan junto con los datos personales.
+    db.execute(delete(AcademyCertificate).where(AcademyCertificate.user_id == user.id))

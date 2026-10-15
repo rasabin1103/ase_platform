@@ -1,4 +1,5 @@
 import type { DesignCase, Mission, RunState, TestDesignModel } from './types'
+import { missionLang, tr } from '../i18n'
 
 /**
  * Cobertura del diseño de pruebas: qué particiones cubren los casos del
@@ -91,30 +92,48 @@ export function designCoverage(mission: Mission, state: RunState): DesignCoverag
 export function reviewMessage(mission: Mission, state: RunState, reviewNumber: number): string {
   const cov = designCoverage(mission, state)
   if (!cov) return ''
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
   if (cov.cases.length === 0) {
-    return 'Todavía no veo ningún caso en tu diseño. Empieza por el importe: ¿qué grupos de valores debería tratar igual el sistema?'
+    return t(
+      'Todavía no veo ningún caso en tu diseño. Empieza por el importe: ¿qué grupos de valores debería tratar igual el sistema?',
+      "I don't see any cases in your design yet. Start with the amount: which groups of values should the system treat the same way?",
+    )
   }
-  const lines: string[] = [`He revisado tu diseño (${cov.cases.length} casos). Cubres ${cov.coreCovered} de ${cov.coreTotal} particiones clave.`]
+  const lines: string[] = [
+    t(
+      `He revisado tu diseño (${cov.cases.length} casos). Cubres ${cov.coreCovered} de ${cov.coreTotal} particiones clave.`,
+      `I've reviewed your design (${cov.cases.length} cases). You cover ${cov.coreCovered} of ${cov.coreTotal} key partitions.`,
+    ),
+  ]
   for (const area of cov.areas) {
     if (area.missing.length === 0) {
-      lines.push(`- **${area.label}**: completo 👌`)
+      lines.push(t(`- **${area.label}**: completo 👌`, `- **${area.label}**: complete 👌`))
       continue
     }
     const detail =
       reviewNumber <= 1
         ? Array.from(new Set(area.missing.map((m) => m.hint))).join(' ')
-        : `te falta: ${area.missing.map((m) => m.label).join(', ')}.`
+        : t(`te falta: ${area.missing.map((m) => m.label).join(', ')}.`, `missing: ${area.missing.map((m) => m.label).join(', ')}.`)
     lines.push(`- **${area.label}** (${area.coreCovered}/${area.coreTotal}): ${detail}`)
   }
   const wrong = cov.cases.filter((c) => c.expectedWrong)
   for (const w of wrong.slice(0, 3)) {
     lines.push(
       w.missingRules
-        ? `- Caso #${w.case.id} («${w.case.input}»): no puedes saber el resultado esperado sin la regla exacta. ¿Se lo has preguntado a Marta?`
-        : `- Caso #${w.case.id} («${w.case.input}»): revisa el resultado esperado según los criterios.`,
+        ? t(
+            `- Caso #${w.case.id} («${w.case.input}»): no puedes saber el resultado esperado sin la regla exacta. ¿Se lo has preguntado a Marta?`,
+            `- Case #${w.case.id} (“${w.case.input}”): you can't know the expected result without the exact rule. Have you asked Marta?`,
+          )
+        : t(
+            `- Caso #${w.case.id} («${w.case.input}»): revisa el resultado esperado según los criterios.`,
+            `- Case #${w.case.id} (“${w.case.input}”): check the expected result against the acceptance criteria.`,
+          ),
     )
   }
-  if (reviewNumber <= 1 && cov.ratio < 1) lines.push('Cuando lo completes, pídeme otra revisión y te digo exactamente qué falta.')
+  if (reviewNumber <= 1 && cov.ratio < 1) {
+    lines.push(t('Cuando lo completes, pídeme otra revisión y te digo exactamente qué falta.', "Once you've completed it, ask me for another review and I'll tell you exactly what's missing."))
+  }
   return lines.join('\n')
 }
 

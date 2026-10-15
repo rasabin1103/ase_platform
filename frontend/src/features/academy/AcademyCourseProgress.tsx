@@ -15,7 +15,7 @@ const COPY = {
  */
 export function AcademyCourseProgress({ courseKey, language }: { courseKey: string; language: string }) {
   const c = language === 'en' ? COPY.en : COPY.es
-  const course = getCourse(courseKey)
+  const course = getCourse(courseKey, language === 'en' ? 'en' : 'es')
   const runs = useQuery({
     queryKey: ['academy-runs', courseKey],
     queryFn: () => listAcademyRuns(courseKey),

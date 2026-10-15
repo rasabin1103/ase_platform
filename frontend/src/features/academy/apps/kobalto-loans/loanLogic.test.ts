@@ -65,3 +65,18 @@ describe('simulador de préstamos', () => {
     expect(r.event.bugs).toContain(B.totalMismatch)
   })
 })
+
+describe('idioma inglés', () => {
+  it('misma cotización y bugs; textos en inglés', () => {
+    const f = form({ amount: '15000', term: '36', income: '1200' })
+    const es = simulate(f, { active: none })
+    const en = simulate(f, { active: none }, 'en')
+    expect(en.quote).toEqual({ ...es.quote, reason: 'Not pre-approved: the installment exceeds 35% of your income' })
+    expect(en.event.bugs).toEqual(es.event.bugs)
+    expect(en.event.summary).toContain('APR 5.95%')
+    const err = simulate(form({ age: '17' }), { active: [B.age70Rejected] }, 'en')
+    expect(err.error).toBe('Invalid age: 18 to 70 years')
+    expect(simulate(form({ age: '17' }), { active: [B.age17] }, 'en').event.bugs).toEqual([B.age17])
+    expect(specQuote(form({ age: 'x' }), 'en').error).toBe('Check your details: all fields must be numbers')
+  })
+})

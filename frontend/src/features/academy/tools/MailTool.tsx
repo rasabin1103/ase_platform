@@ -3,11 +3,18 @@ import { clockLabel } from '../engine/engine'
 import { Avatar, RichText } from '../ui'
 import { npcOf } from '../uiHelpers'
 import type { ToolProps } from './types'
+import { missionLang } from '../i18n'
+
+const COPY = {
+  es: { empty: 'Bandeja vacía.', from: 'De', select: 'Selecciona un correo.' },
+  en: { empty: 'Inbox empty.', from: 'From', select: 'Select an email.' },
+}
 
 export function MailTool({ mission, state, dispatch }: ToolProps) {
   const mails = state.messages.filter((m) => m.channel === 'email').slice().reverse()
   const [openId, setOpenId] = useState<number | null>(mails[0]?.id ?? null)
   const open = mails.find((m) => m.id === openId)
+  const c = COPY[missionLang(mission)]
 
   return (
     <div className="grid h-full min-h-0 md:grid-cols-[18rem_1fr]">
@@ -40,19 +47,19 @@ export function MailTool({ mission, state, dispatch }: ToolProps) {
             </li>
           )
         })}
-        {mails.length === 0 && <li className="p-4 text-body-sm text-ase-muted">Bandeja vacía.</li>}
+        {mails.length === 0 && <li className="p-4 text-body-sm text-ase-muted">{c.empty}</li>}
       </ul>
       <div className="min-h-0 overflow-y-auto p-5">
         {open ? (
           <article className="mx-auto max-w-2xl">
             <h2 className="font-sans text-heading-sm font-semibold">{open.subject}</h2>
             <p className="mb-4 mt-1 text-caption text-ase-muted">
-              De {npcOf(mission, open.from).name} · {clockLabel(mission, open.at)}
+              {c.from} {npcOf(mission, open.from).name} · {clockLabel(mission, open.at)}
             </p>
             <RichText text={open.body} />
           </article>
         ) : (
-          <p className="text-body-sm text-ase-muted">Selecciona un correo.</p>
+          <p className="text-body-sm text-ase-muted">{c.select}</p>
         )}
       </div>
     </div>

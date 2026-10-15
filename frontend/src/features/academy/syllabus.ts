@@ -1,4 +1,5 @@
 import { getCourse } from './content/courseList'
+import { EXAM_COURSES } from './exam/studyMap'
 
 /**
  * Temario de un curso de ASE Academy generado a partir de sus misiones
@@ -14,15 +15,15 @@ export const SYLLABUS_END = '[//]: # (fin-temario-academy)'
 
 export type SyllabusMission = { id: string; title: string; available: boolean; free: boolean }
 
-export function courseSyllabus(courseKey: string): SyllabusMission[] {
-  const course = getCourse(courseKey)
+export function courseSyllabus(courseKey: string, language: 'es' | 'en' = 'es'): SyllabusMission[] {
+  const course = getCourse(courseKey, language)
   if (!course) return []
   return course.missions.map((m, i) => ({ id: m.id, title: m.title, available: m.available, free: i === 0 }))
 }
 
 /** Bloque Markdown del temario, delimitado para poder sustituirlo al actualizar. */
 export function syllabusMarkdown(courseKey: string, language: 'es' | 'en' = 'es'): string {
-  const missions = courseSyllabus(courseKey)
+  const missions = courseSyllabus(courseKey, language)
   if (missions.length === 0) return ''
   const t =
     language === 'en'
@@ -32,6 +33,8 @@ export function syllabusMarkdown(courseKey: string, language: 'es' | 'en' = 'es'
     const tags = [m.available ? t.ready : t.soon, m.free ? t.free : null].filter(Boolean).join(' · ')
     return `${i + 1}. **${m.title}** — ${tags}`
   })
+  const exam = EXAM_COURSES[courseKey]
+  if (exam) lines.push('', `**+** ${language === 'en' ? exam.labelEn : exam.label}`)
   return [SYLLABUS_START, '', t.title, '', ...lines, '', SYLLABUS_END].join('\n')
 }
 

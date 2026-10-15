@@ -96,3 +96,26 @@ describe('tarjetas · exportar y capturas', () => {
     expect(screenshot(INITIAL_CARDS, env(), 'card', { active: none }).bugs).toEqual([])
   })
 })
+
+describe('tarjetas · misión en inglés', () => {
+  it('C4: en inglés la errata está en el botón en inglés y la captura la detecta', () => {
+    const b = { active: [B.typo] }
+    expect(freezeLabel(env({ lang: 'en' }), false, b, 'en')).toBe('Freese card')
+    expect(freezeLabel(env(), false, b, 'en')).toBe('Congelar tarjeta')
+    expect(screenshot(INITIAL_CARDS, env({ lang: 'en' }), 'card', b, 'en').bugs).toEqual([B.typo])
+    expect(screenshot(INITIAL_CARDS, env(), 'card', b, 'en').bugs).toEqual([])
+    expect(screenshot(INITIAL_CARDS, env({ lang: 'en' }), 'card', { active: none }, 'en').bugs).toEqual([])
+  })
+
+  it('mismos resultados que en español, con textos en inglés', () => {
+    const b = { active: [B.englishLimit] }
+    const es = setLimit(INITIAL_CARDS, env({ lang: 'en' }), '1,000', b)
+    const en = setLimit(INITIAL_CARDS, env({ lang: 'en' }), '1,000', b, 'en')
+    expect(en.state).toEqual(es.state)
+    expect(en.event.bugs).toEqual(es.event.bugs)
+    expect(en.message).toBe('Monthly limit: €1.00')
+    const x = exportCsv(INITIAL_CARDS, env(), '2026-09-01', '2026-09-30', { active: [B.exportLastDay] }, 'en')
+    expect(x.event.bugs).toEqual([B.exportLastDay])
+    expect(x.message).toBe('CSV generated: 7 transactions')
+  })
+})

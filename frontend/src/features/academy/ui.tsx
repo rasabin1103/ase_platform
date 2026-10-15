@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import type { Npc } from './engine/types'
+import type { AcademyLang } from './i18n'
 
 export function Avatar({ npc, size = 'md' }: { npc: Npc; size?: 'sm' | 'md' }) {
   const dim = size === 'sm' ? 'h-7 w-7 text-[10px]' : 'h-9 w-9 text-xs'
@@ -62,9 +63,9 @@ export function RichText({ text, className = '' }: { text: string; className?: s
   return <div className={`space-y-2 text-body-sm leading-relaxed text-ase-text2 ${className}`}>{blocks}</div>
 }
 
-export function Stars({ value }: { value: number }) {
+export function Stars({ value, lang = 'es' }: { value: number; lang?: AcademyLang }) {
   return (
-    <span className="tracking-widest" aria-label={`${value} de 5`}>
+    <span className="tracking-widest" aria-label={lang === 'en' ? `${value} of 5` : `${value} de 5`}>
       <span className="text-ase-gold">{'★'.repeat(value)}</span>
       <span className="text-white/15">{'★'.repeat(5 - value)}</span>
     </span>

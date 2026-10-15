@@ -4,6 +4,7 @@ import type { Message } from '../engine/types'
 import { Avatar, RichText } from '../ui'
 import { npcOf } from '../uiHelpers'
 import type { ToolProps } from './types'
+import { missionLang, tr } from '../i18n'
 
 export function ChatTool({ mission, state, dispatch }: ToolProps) {
   const conversations = useMemo(() => {
@@ -15,6 +16,7 @@ export function ChatTool({ mission, state, dispatch }: ToolProps) {
   const current = active ?? conversations[0]?.[0] ?? null
   const thread = useMemo(() => conversations.find(([id]) => id === current)?.[1] ?? [], [conversations, current])
   const bottom = useRef<HTMLDivElement>(null)
+  const lang = missionLang(mission)
 
   useEffect(() => {
     // Se marcan como leídos salvo los que esperan respuesta (siguen con aviso).
@@ -52,7 +54,7 @@ export function ChatTool({ mission, state, dispatch }: ToolProps) {
             </li>
           )
         })}
-        {conversations.length === 0 && <li className="p-4 text-body-sm text-ase-muted">Sin conversaciones.</li>}
+        {conversations.length === 0 && <li className="p-4 text-body-sm text-ase-muted">{tr(lang, 'Sin conversaciones.', 'No conversations.')}</li>}
       </ul>
 
       <div className="flex min-h-0 flex-col">
@@ -93,7 +95,7 @@ export function ChatTool({ mission, state, dispatch }: ToolProps) {
                 })}
                 {options.length > 0 && (
                   <div className="ml-10 space-y-2 border-l-2 border-ase-brand/40 pl-4">
-                    <p className="text-label uppercase text-ase-muted">Responder</p>
+                    <p className="text-label uppercase text-ase-muted">{tr(lang, 'Responder', 'Reply')}</p>
                     {options.map((c) => (
                       <button
                         key={c.id}

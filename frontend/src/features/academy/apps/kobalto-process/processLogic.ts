@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 
 /**
  * App del curso 2, misión 0: mapa del proceso de pruebas (actividades,
@@ -40,6 +41,44 @@ const ROLE_OF: Record<ActivityId, RoleId> = {
   execution: 'tester',
 }
 
+// ------------------------------------------------- Textos en inglés (ISTQB CTFL v4.0)
+const ACTIVITY_EN: Record<ActivityId, { label: string; summary: string }> = {
+  analysis: { label: 'Test analysis', summary: 'Analyze the test basis and decide WHAT to test.' },
+  completion: { label: 'Test completion', summary: 'At a milestone: archive, evaluate and learn.' },
+  design: { label: 'Test design', summary: 'Decide HOW to test it: test cases and coverage.' },
+  execution: { label: 'Test execution', summary: 'Run the tests, compare results and log them.' },
+  planning: { label: 'Test planning', summary: 'Objectives, approach, resources and schedule.' },
+  implementation: { label: 'Test implementation', summary: 'Prepare everything needed for execution.' },
+  monitoring: { label: 'Test monitoring and control', summary: 'Compare progress against the plan and take corrective action.' },
+}
+
+const TESTWARE_EN: Record<string, string> = {
+  logs: 'Test logs and defect reports',
+  conditions: 'Prioritized test conditions',
+  closure: 'Test completion report and lessons learned',
+  cases: 'Test cases',
+  plan: 'Test plan',
+  procedures: 'Test procedures, test data and test scripts',
+  progress: 'Test progress reports',
+}
+
+export const ROLE_LABEL_EN: Record<RoleId, string> = { management: 'Test management', tester: 'Testing' }
+
+/** Actividades en el idioma pedido (mismos ids y orden). */
+export function activitiesFor(lang: AcademyLang = 'es'): typeof ACTIVITIES {
+  return lang === 'en' ? ACTIVITIES.map((a) => ({ ...a, ...ACTIVITY_EN[a.id] })) : ACTIVITIES
+}
+
+/** Testware en el idioma pedido (mismos ids). */
+export function testwareFor(lang: AcademyLang = 'es'): typeof TESTWARE {
+  return lang === 'en' ? TESTWARE.map((t) => ({ ...t, label: TESTWARE_EN[t.id] ?? t.label })) : TESTWARE
+}
+
+/** Roles en el idioma pedido. */
+export function roleLabelFor(lang: AcademyLang = 'es'): Record<RoleId, string> {
+  return lang === 'en' ? ROLE_LABEL_EN : ROLE_LABEL
+}
+
 export interface ActivityPlan {
   position: number | null
   testware: string
@@ -69,6 +108,30 @@ export const DEFECTS = [
   { id: 'D1', label: 'D1 · Una compra de 500 € justos se rechaza', case: 'T5' },
   { id: 'D2', label: 'D2 · La tarjeta bloqueada acepta pagos durante 5 minutos', case: 'T3' },
 ]
+const TRACE_LABEL_EN: Record<string, string> = {
+  H1: 'H1 · Spending limit per employee',
+  H2: 'H2 · Block a team card',
+  H3: 'H3 · Monthly expense report',
+  C1: 'C1 · A purchase above the limit is rejected',
+  C2: 'C2 · The administrator can change the limit',
+  C3: 'C3 · A blocked card does not accept payments',
+  C4: 'C4 · The report groups expenses by employee',
+  T1: 'T1 · €500 limit, €501 purchase → rejected',
+  T2: 'T2 · Change the limit to €800 and buy €700 → accepted',
+  T3: 'T3 · Block the card and pay right away → rejected',
+  T4: 'T4 · Report with two employees → two groups',
+  T5: 'T5 · €500 limit, €500 purchase → accepted',
+  D1: 'D1 · A purchase of exactly €500 is rejected',
+  D2: 'D2 · The blocked card accepts payments for 5 minutes',
+}
+
+/** Elementos de la matriz de trazabilidad en el idioma pedido (mismos ids y enlaces). */
+export function traceItemsFor(lang: AcademyLang = 'es'): { stories: typeof STORIES; conditions: typeof CONDITIONS; cases: typeof CASES; defects: typeof DEFECTS } {
+  if (lang !== 'en') return { stories: STORIES, conditions: CONDITIONS, cases: CASES, defects: DEFECTS }
+  const en = <T extends { id: string; label: string }>(xs: T[]): T[] => xs.map((x) => ({ ...x, label: TRACE_LABEL_EN[x.id] ?? x.label }))
+  return { stories: en(STORIES), conditions: en(CONDITIONS), cases: en(CASES), defects: en(DEFECTS) }
+}
+
 export const TRACE_TOTAL = CONDITIONS.length + CASES.length + DEFECTS.length
 
 export interface ProcessState {
@@ -91,27 +154,45 @@ const emptyPlan = (): Record<ActivityId, ActivityPlan> =>
 export const INITIAL_PROCESS: ProcessState = { plan: emptyPlan(), links: {} }
 
 // ----------------------------------------------------------- Evaluación
-export function evaluateOrder(plan: Record<ActivityId, ActivityPlan>): { ok: boolean; issues: string[] } {
+const ORDER_TEXT = {
+  es: {
+    missing: 'Hay actividades sin posición en el proceso.',
+    duplicate: 'Dos actividades ocupan la misma posición.',
+    planning: 'La planificación debería ser lo primero: sin objetivos ni enfoque, el resto va a ciegas.',
+    completion: 'El cierre va al final del hito: archivar, evaluar y aprender.',
+    chain: 'Análisis (qué probar), diseño (cómo), implementación (preparar) y ejecución tienen un orden lógico.',
+  },
+  en: {
+    missing: 'Some activities have no position in the process.',
+    duplicate: 'Two activities share the same position.',
+    planning: 'Test planning should come first: without objectives or an approach, everything else is done blind.',
+    completion: 'Test completion goes at the end of the milestone: archive, evaluate and learn.',
+    chain: 'Test analysis (what to test), test design (how), test implementation (prepare) and test execution follow a logical order.',
+  },
+}
+
+export function evaluateOrder(plan: Record<ActivityId, ActivityPlan>, lang: AcademyLang = 'es'): { ok: boolean; issues: string[] } {
+  const T = ORDER_TEXT[lang]
   const pos = (id: ActivityId) => plan[id].position
   const issues: string[] = []
   const all = ACTIVITIES.map((a) => pos(a.id))
-  if (all.some((p) => p === null)) issues.push('Hay actividades sin posición en el proceso.')
-  else if (new Set(all).size !== all.length) issues.push('Dos actividades ocupan la misma posición.')
+  if (all.some((p) => p === null)) issues.push(T.missing)
+  else if (new Set(all).size !== all.length) issues.push(T.duplicate)
   if (issues.length) return { ok: false, issues }
-  if (pos('planning') !== 1) issues.push('La planificación debería ser lo primero: sin objetivos ni enfoque, el resto va a ciegas.')
-  if (pos('completion') !== ACTIVITIES.length) issues.push('El cierre va al final del hito: archivar, evaluar y aprender.')
+  if (pos('planning') !== 1) issues.push(T.planning)
+  if (pos('completion') !== ACTIVITIES.length) issues.push(T.completion)
   const chain: ActivityId[] = ['analysis', 'design', 'implementation', 'execution']
   for (let i = 1; i < chain.length; i++) {
     if ((pos(chain[i]) ?? 0) < (pos(chain[i - 1]) ?? 0)) {
-      issues.push('Análisis (qué probar), diseño (cómo), implementación (preparar) y ejecución tienen un orden lógico.')
+      issues.push(T.chain)
       break
     }
   }
   return { ok: issues.length === 0, issues }
 }
 
-export function evaluatePlan(plan: Record<ActivityId, ActivityPlan>): ProposalResult & { orderIssues: string[] } {
-  const order = evaluateOrder(plan)
+export function evaluatePlan(plan: Record<ActivityId, ActivityPlan>, lang: AcademyLang = 'es'): ProposalResult & { orderIssues: string[] } {
+  const order = evaluateOrder(plan, lang)
   let testware = 0
   let roles = 0
   for (const a of ACTIVITIES) {
@@ -135,35 +216,66 @@ function edit(state: ProcessState, summary: string): { state: ProcessState; even
   return { state, event: { app: 'kobalto-process', action: 'edit', summary, technical: 'process.edit', status: 'ok', bugs: [], cost: 0 } }
 }
 
-export function setActivity(state: ProcessState, id: ActivityId, patch: Partial<ActivityPlan>): { state: ProcessState; event: AppEvent } {
+export function setActivity(
+  state: ProcessState,
+  id: ActivityId,
+  patch: Partial<ActivityPlan>,
+  lang: AcademyLang = 'es',
+): { state: ProcessState; event: AppEvent } {
   const position = patch.position === undefined ? state.plan[id].position : patch.position === null ? null : Math.max(1, Math.min(ACTIVITIES.length, Math.round(patch.position)))
   const next = { ...state.plan[id], ...patch, position }
-  return edit({ ...state, plan: { ...state.plan, [id]: next } }, `Proceso: ${id} actualizado.`)
+  return edit({ ...state, plan: { ...state.plan, [id]: next } }, lang === 'en' ? `Process: ${id} updated.` : `Proceso: ${id} actualizado.`)
 }
 
-export function setLink(state: ProcessState, from: string, to: string): { state: ProcessState; event: AppEvent } {
-  return edit({ ...state, links: { ...state.links, [from]: to } }, `Trazabilidad: ${from} → ${to || '—'}.`)
+export function setLink(state: ProcessState, from: string, to: string, lang: AcademyLang = 'es'): { state: ProcessState; event: AppEvent } {
+  return edit({ ...state, links: { ...state.links, [from]: to } }, `${lang === 'en' ? 'Traceability' : 'Trazabilidad'}: ${from} → ${to || '—'}.`)
 }
 
-export function askLaura(state: ProcessState): { state: ProcessState; event: AppEvent } {
-  const r = evaluatePlan(state.plan)
+export function askLaura(state: ProcessState, lang: AcademyLang = 'es'): { state: ProcessState; event: AppEvent } {
+  const en = lang === 'en'
+  const r = evaluatePlan(state.plan, lang)
   const fb: string[] = []
   fb.push(...r.orderIssues.slice(0, 2))
-  if (r.testware < ACTIVITIES.length) fb.push(`${ACTIVITIES.length - r.testware} actividad${ACTIVITIES.length - r.testware === 1 ? '' : 'es'} no tiene${ACTIVITIES.length - r.testware === 1 ? '' : 'n'} el testware que produce de verdad.`)
-  if (r.roles < ACTIVITIES.length) fb.push('Revisa los roles: la gestión de pruebas planifica, sigue y cierra; el tester analiza, diseña, implementa y ejecuta.')
+  const tw = ACTIVITIES.length - r.testware
+  if (r.testware < ACTIVITIES.length)
+    fb.push(
+      en
+        ? `${tw} ${tw === 1 ? 'activity does' : 'activities do'} not have the testware ${tw === 1 ? 'it' : 'they'} actually produce${tw === 1 ? 's' : ''}.`
+        : `${tw} actividad${tw === 1 ? '' : 'es'} no tiene${tw === 1 ? '' : 'n'} el testware que produce de verdad.`,
+    )
+  if (r.roles < ACTIVITIES.length)
+    fb.push(
+      en
+        ? 'Check the roles: test management plans, monitors and controls, and completes; the testing role analyzes, designs, implements and executes.'
+        : 'Revisa los roles: la gestión de pruebas planifica, sigue y cierra; el tester analiza, diseña, implementa y ejecuta.',
+    )
   if (!state.traceSent) {
     const t = traceScore(state.links)
-    if (t < TRACE_TOTAL) fb.push(`En la matriz de trazabilidad hay ${TRACE_TOTAL - t} enlace${TRACE_TOTAL - t === 1 ? '' : 's'} sin hacer o mal hecho${TRACE_TOTAL - t === 1 ? '' : 's'}.`)
+    const n = TRACE_TOTAL - t
+    if (t < TRACE_TOTAL)
+      fb.push(
+        en
+          ? `The traceability matrix has ${n} link${n === 1 ? '' : 's'} missing or wrong.`
+          : `En la matriz de trazabilidad hay ${n} enlace${n === 1 ? '' : 's'} sin hacer o mal hecho${n === 1 ? '' : 's'}.`,
+      )
   }
-  if (fb.length === 0) fb.push('Proceso coherente y trazabilidad completa. Adelante.')
+  if (fb.length === 0) fb.push(en ? 'Consistent process and complete traceability. Go ahead.' : 'Proceso coherente y trazabilidad completa. Adelante.')
   return {
     state: { ...state, feedback: fb },
-    event: { app: 'kobalto-process', action: 'ask_laura', summary: `Laura revisa tu propuesta: ${fb.join(' ')}`, technical: 'process.review', status: 'ok', bugs: [], cost: 10 },
+    event: {
+      app: 'kobalto-process',
+      action: 'ask_laura',
+      summary: `${en ? 'Laura reviews your proposal' : 'Laura revisa tu propuesta'}: ${fb.join(' ')}`,
+      technical: 'process.review',
+      status: 'ok',
+      bugs: [],
+      cost: 10,
+    },
   }
 }
 
-export function propose(state: ProcessState): { state: ProcessState; event: AppEvent } {
-  const r = evaluatePlan(state.plan)
+export function propose(state: ProcessState, lang: AcademyLang = 'es'): { state: ProcessState; event: AppEvent } {
+  const r = evaluatePlan(state.plan, lang)
   const flags = ['proc.submitted']
   if (r.order) flags.push('proc.order')
   if (r.testware === ACTIVITIES.length) flags.push('proc.testware')
@@ -174,7 +286,9 @@ export function propose(state: ProcessState): { state: ProcessState; event: AppE
     event: {
       app: 'kobalto-process',
       action: 'propose',
-      summary: `Propuesta de proceso enviada a Raúl: orden ${r.order ? 'coherente' : 'con huecos'}, testware ${r.testware}/${ACTIVITIES.length}, roles ${r.roles}/${ACTIVITIES.length}.`,
+      summary: lang === 'en'
+        ? `Process proposal sent to Raúl: order ${r.order ? 'consistent' : 'with gaps'}, testware ${r.testware}/${ACTIVITIES.length}, roles ${r.roles}/${ACTIVITIES.length}.`
+        : `Propuesta de proceso enviada a Raúl: orden ${r.order ? 'coherente' : 'con huecos'}, testware ${r.testware}/${ACTIVITIES.length}, roles ${r.roles}/${ACTIVITIES.length}.`,
       technical: `process.propose ${JSON.stringify(r)}`,
       status: 'ok',
       bugs: [],
@@ -184,7 +298,7 @@ export function propose(state: ProcessState): { state: ProcessState; event: AppE
   }
 }
 
-export function sendTrace(state: ProcessState): { state: ProcessState; event: AppEvent } {
+export function sendTrace(state: ProcessState, lang: AcademyLang = 'es'): { state: ProcessState; event: AppEvent } {
   const correct = traceScore(state.links)
   const flags = ['trace.sent']
   if (correct === TRACE_TOTAL) flags.push('trace.ok')
@@ -193,7 +307,10 @@ export function sendTrace(state: ProcessState): { state: ProcessState; event: Ap
     event: {
       app: 'kobalto-process',
       action: 'send_trace',
-      summary: `Matriz de trazabilidad enviada a Carmen: ${correct} de ${TRACE_TOTAL} enlaces correctos.`,
+      summary:
+        lang === 'en'
+          ? `Traceability matrix sent to Carmen: ${correct} of ${TRACE_TOTAL} links correct.`
+          : `Matriz de trazabilidad enviada a Carmen: ${correct} de ${TRACE_TOTAL} enlaces correctos.`,
       technical: 'process.trace',
       status: correct === TRACE_TOTAL ? 'ok' : 'error',
       bugs: [],

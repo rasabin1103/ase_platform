@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUGS, INITIAL_BANK, isValidIban, submitTransfer, type TransferForm } from './transferLogic'
+import { BUGS, INITIAL_BANK, formatEur, isValidIban, submitTransfer, type TransferForm } from './transferLogic'
 
 const VALID_IBAN = 'ES30 9101 0001 1202 0001 2345'
 const form = (over: Partial<TransferForm> = {}): TransferForm => ({
@@ -125,5 +125,23 @@ describe('variantes de bugs', () => {
     const r = submitTransfer(INITIAL_BANK, form(), { concurrent: true, fixed: ['B5'] })
     expect(r.ok).toBe(false)
     expect(r.event.bugs).toEqual([])
+  })
+})
+
+describe('idioma inglés', () => {
+  it('mismos resultados y bugs; textos en inglés y formato en-US', () => {
+    const f = form({ amount: '10,50' })
+    const es = submitTransfer(INITIAL_BANK, f)
+    const en = submitTransfer(INITIAL_BANK, f, {}, 'en')
+    expect(en.ok).toBe(es.ok)
+    expect(en.bank).toEqual(es.bank)
+    expect(en.event.bugs).toEqual(es.event.bugs)
+    expect(en.event.action).toBe(es.event.action)
+    expect(en.message).toBe('Transfer sent')
+    expect(en.event.summary).toContain('€1,050.00')
+    const rej = submitTransfer(INITIAL_BANK, form({ amount: '0' }), {}, 'en')
+    expect(rej.message).toBe('The amount must be greater than 0')
+    expect(formatEur(1250.5, 'en')).toBe('€1,250.50')
+    expect(formatEur(1250.5)).toBe(formatEur(1250.5, 'es'))
   })
 })

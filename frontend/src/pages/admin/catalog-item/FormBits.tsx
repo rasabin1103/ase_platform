@@ -78,7 +78,7 @@ export function FormSection({
   children: ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-16 border-t border-white/10 pt-6 first:border-t-0 first:pt-0">
+    <section id={id} className="scroll-mt-28 lg:scroll-mt-2 border-t border-white/10 pt-6 first:border-t-0 first:pt-0">
       <header className="mb-4 flex items-start gap-3">
         <span
           className={cn(

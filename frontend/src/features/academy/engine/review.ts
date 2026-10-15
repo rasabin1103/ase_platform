@@ -1,10 +1,23 @@
 import type { IssueType, Mission, RunState } from './types'
+import type { AcademyLang } from '../i18n'
 
 export const ISSUE_LABEL: Record<IssueType, string> = {
   ambiguous: 'Ambiguo',
   incomplete: 'Incompleto',
   contradictory: 'Contradictorio',
   untestable: 'No verificable',
+}
+
+export const ISSUE_LABEL_EN: Record<IssueType, string> = {
+  ambiguous: 'Ambiguous',
+  incomplete: 'Incomplete',
+  contradictory: 'Contradictory',
+  untestable: 'Untestable',
+}
+
+/** Etiquetas de tipo de problema en el idioma indicado. */
+export function issueLabels(lang: AcademyLang): Record<IssueType, string> {
+  return lang === 'en' ? ISSUE_LABEL_EN : ISSUE_LABEL
 }
 
 export interface ReviewSummary {

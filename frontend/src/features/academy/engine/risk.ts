@@ -1,4 +1,5 @@
 import type { Mission, RunState } from './types'
+import { missionLang, tr } from '../i18n'
 
 /**
  * Evaluación de la priorización por riesgo (probabilidad × impacto) del
@@ -68,17 +69,41 @@ export function riskFeedback(mission: Mission, state: RunState): string {
   const a = riskAssessment(mission, state)
   if (!a) return ''
   const label = (id: string) => mission.riskModel?.items.find((i) => i.id === id)?.label ?? id
+  const lang = missionLang(mission)
   if (a.rated < a.total) {
-    return `Te faltan zonas por valorar (${a.rated} de ${a.total}). Valóralas todas: lo que no está en la matriz no se prioriza, se olvida.`
+    return tr(
+      lang,
+      `Te faltan zonas por valorar (${a.rated} de ${a.total}). Valóralas todas: lo que no está en la matriz no se prioriza, se olvida.`,
+      `You still have areas to rate (${a.rated} of ${a.total}). Rate them all: what isn't in the matrix doesn't get prioritized, it gets forgotten.`,
+    )
   }
-  const lines = [`Tu prioridad: ${a.myTop.map(label).join(', ')}.`]
-  if (a.good) lines.push('Muy bien: coincide con lo que haría yo. Empieza por ahí y di claramente qué queda sin probar.')
-  else {
+  const lines = [tr(lang, `Tu prioridad: ${a.myTop.map(label).join(', ')}.`, `Your priority: ${a.myTop.map(label).join(', ')}.`)]
+  if (a.good) {
+    lines.push(
+      tr(
+        lang,
+        'Muy bien: coincide con lo que haría yo. Empieza por ahí y di claramente qué queda sin probar.',
+        "Very good: it matches what I would do. Start there and say clearly what's left untested.",
+      ),
+    )
+  } else {
     if (a.topMatches < a.refTop.length) {
-      lines.push('Revisa la probabilidad: ¿qué partes son lógica nueva con números y reglas? ¿Qué cosas «probó en local» el dev?')
+      lines.push(
+        tr(
+          lang,
+          'Revisa la probabilidad: ¿qué partes son lógica nueva con números y reglas? ¿Qué cosas «probó en local» el dev?',
+          'Revisit the likelihood: which parts are new logic with numbers and rules? What did the dev only “test locally”?',
+        ),
+      )
     }
     if (a.underratedImpact.length) {
-      lines.push(`Ojo con el impacto de ${a.underratedImpact.join(', ')}: en un banco, todo lo que mueve dinero es impacto alto.`)
+      lines.push(
+        tr(
+          lang,
+          `Ojo con el impacto de ${a.underratedImpact.join(', ')}: en un banco, todo lo que mueve dinero es impacto alto.`,
+          `Watch the impact of ${a.underratedImpact.join(', ')}: in a bank, anything that moves money is high impact.`,
+        ),
+      )
     }
   }
   return lines.join('\n')

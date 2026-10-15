@@ -1,48 +1,89 @@
 import { ArrowRight, Clock, Gamepad2, GraduationCap, Lock, Sparkles, Star, Target, Trophy, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ACADEMY_COURSES as COURSES, LEVEL_LABEL } from '../content/courseList'
+import { ACADEMY_COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses } from '../content/courseList'
 import { PageHero } from '../../../components/public/home/PageHero'
 import { Reveal, SectionHeading } from '../../../components/public/home/Reveal'
 import { ButtonLink } from '../../../components/ui/Button'
 import { cn } from '../../../components/ui/cn'
 import { useHomeCopy } from '../../../components/public/home/useHomeCopy'
+import { useAcademyLang } from '../i18n'
 
-const PLAYABLE = COURSES.reduce((n, c) => n + c.missions.filter((m) => m.available).length, 0)
-const HOURS = COURSES.reduce((n, c) => n + c.estimatedHours, 0)
+const PLAYABLE = ACADEMY_COURSES.reduce((n, c) => n + c.missions.filter((m) => m.available).length, 0)
+const HOURS = ACADEMY_COURSES.reduce((n, c) => n + c.estimatedHours, 0)
 
-const HOW = [
-  {
-    Icon: Users,
-    title: 'Entras a trabajar',
-    text: 'Te incorporas a una empresa ficticia con compañeros, jefes y clientes que tienen sus propias prisas.',
+const HOW_ICONS = [Users, Target, Sparkles, Trophy]
+
+const COPY = {
+  es: {
+    how: [
+      { title: 'Entras a trabajar', text: 'Te incorporas a una empresa ficticia con compañeros, jefes y clientes que tienen sus propias prisas.' },
+      { title: 'Decides bajo presión', text: 'Reuniones, chats y herramientas reales: tú eliges qué probar, qué reportar y qué dejar pasar.' },
+      { title: 'Ves las consecuencias', text: 'Lo que no pruebes se convierte en un bug que verás nacer. Lo que evites, también queda registrado.' },
+      { title: 'Debrief con estrellas', text: 'Rigor, comunicación, gestión del tiempo y visión de riesgo, más un test antes y después estilo ISTQB®.' },
+    ],
+    titleBefore: 'Aprende',
+    titleHighlight: 'viviendo el trabajo real',
+    subtitle:
+      'Cursos-juego en los que entras a trabajar en una empresa ficticia, tomas decisiones con presión real y descubres sus consecuencias. Al final de cada misión, un debrief convierte lo que has vivido en teoría.',
+    playFirst: 'Jugar la primera misión gratis',
+    stats: { missions: 'misiones jugables', courses: 'cursos', practice: 'de práctica' },
+    firstFree: '1.ª misión gratis',
+    missions: 'misiones',
+    missionsAria: 'Misiones',
+    soon: 'Próximamente',
+    viewCourse: 'Ver curso',
+    howEyebrow: 'Cómo funciona',
+    howTitle: 'No vas a ver vídeos. Vas a trabajar.',
+    insideEyebrow: 'Una misión por dentro',
+    insideSubtitle: 'Cada misión dura una jornada simulada. El reloj avanza, los compañeros escriben y las decisiones se acumulan.',
+    ctaTitle: 'La primera misión de cada curso es gratis.',
+    ctaBody: 'Juega, equivócate sin consecuencias reales y decide después si quieres el curso completo o un plan.',
+    startNow: 'Empezar ahora',
+    plans: 'Ver planes',
   },
-  {
-    Icon: Target,
-    title: 'Decides bajo presión',
-    text: 'Reuniones, chats y herramientas reales: tú eliges qué probar, qué reportar y qué dejar pasar.',
+  en: {
+    how: [
+      { title: 'You start the job', text: 'You join a fictional company with teammates, managers and clients who all have their own deadlines.' },
+      { title: 'You decide under pressure', text: 'Meetings, chats and real tools: you choose what to test, what to report and what to let go.' },
+      { title: 'You see the consequences', text: "Whatever you don't test becomes a bug you'll watch being born. Whatever you prevent is recorded too." },
+      { title: 'Debrief with stars', text: 'Rigor, communication, time management and risk awareness, plus an ISTQB®-style test before and after.' },
+    ],
+    titleBefore: 'Learn',
+    titleHighlight: 'by living the real job',
+    subtitle:
+      'Course-games where you go to work at a fictional company, make decisions under real pressure and discover their consequences. At the end of each mission, a debrief turns what you lived through into theory.',
+    playFirst: 'Play the first mission for free',
+    stats: { missions: 'playable missions', courses: 'courses', practice: 'of practice' },
+    firstFree: '1st mission free',
+    missions: 'missions',
+    missionsAria: 'Missions',
+    soon: 'Coming soon',
+    viewCourse: 'View course',
+    howEyebrow: 'How it works',
+    howTitle: "You won't watch videos. You'll work.",
+    insideEyebrow: 'Inside a mission',
+    insideSubtitle: 'Each mission lasts one simulated workday. The clock ticks, teammates message you and decisions pile up.',
+    ctaTitle: 'The first mission of every course is free.',
+    ctaBody: 'Play, make mistakes with no real consequences and then decide whether you want the full course or a plan.',
+    startNow: 'Start now',
+    plans: 'See plans',
   },
-  {
-    Icon: Sparkles,
-    title: 'Ves las consecuencias',
-    text: 'Lo que no pruebes se convierte en un bug que verás nacer. Lo que evites, también queda registrado.',
-  },
-  {
-    Icon: Trophy,
-    title: 'Debrief con estrellas',
-    text: 'Rigor, comunicación, gestión del tiempo y visión de riesgo, más un test antes y después estilo ISTQB®.',
-  },
-]
+}
 
 export function AcademyHomePage() {
   const day = useHomeCopy().academy
+  const lang = useAcademyLang()
+  const c = COPY[lang]
+  const COURSES = academyCourses(lang)
+  const levelLabel = lang === 'en' ? LEVEL_LABEL_EN : LEVEL_LABEL
   return (
     <div className="overflow-x-clip bg-ase-bg">
       <PageHero
         eyebrow="ASE Academy"
-        titleBefore="Aprende"
-        titleHighlight="viviendo el trabajo real"
+        titleBefore={c.titleBefore}
+        titleHighlight={c.titleHighlight}
         titleAfter="."
-        subtitle="Cursos-juego en los que entras a trabajar en una empresa ficticia, tomas decisiones con presión real y descubres sus consecuencias. Al final de cada misión, un debrief convierte lo que has vivido en teoría."
+        subtitle={c.subtitle}
       >
         <div className="flex flex-col items-center gap-6">
           <ButtonLink
@@ -50,13 +91,13 @@ export function AcademyHomePage() {
             size="lg"
             leftIcon={<Gamepad2 className="h-4 w-4" aria-hidden />}
           >
-            Jugar la primera misión gratis
+            {c.playFirst}
           </ButtonLink>
           <dl className="grid grid-cols-3 gap-6 sm:gap-12">
             {[
-              { v: PLAYABLE, l: 'misiones jugables' },
-              { v: COURSES.length, l: 'cursos' },
-              { v: `~${HOURS} h`, l: 'de práctica' },
+              { v: PLAYABLE, l: c.stats.missions },
+              { v: COURSES.length, l: c.stats.courses },
+              { v: `~${HOURS} h`, l: c.stats.practice },
             ].map((s) => (
               <div key={s.l} className="text-center">
                 <dd className="font-display text-3xl font-semibold text-ase-text sm:text-4xl">{s.v}</dd>
@@ -88,7 +129,7 @@ export function AcademyHomePage() {
                         <GraduationCap className="h-5 w-5" aria-hidden />
                       </span>
                       <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold text-emerald-200">
-                        1.ª misión gratis
+                        {c.firstFree}
                       </span>
                     </div>
                     <p className="relative mt-5 text-[11px] font-semibold uppercase tracking-wide text-sky-300">
@@ -103,18 +144,18 @@ export function AcademyHomePage() {
                   <div className="flex flex-1 flex-col px-7 py-6">
                     <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-ase-muted">
                       <span className="inline-flex items-center gap-1.5">
-                        <Star className="h-3.5 w-3.5" aria-hidden /> {LEVEL_LABEL[course.level]}
+                        <Star className="h-3.5 w-3.5" aria-hidden /> {levelLabel[course.level]}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" aria-hidden /> ~{course.estimatedHours} h
                       </span>
                       <span className="inline-flex items-center gap-1.5">
-                        <Gamepad2 className="h-3.5 w-3.5" aria-hidden /> {playable}/{course.missions.length} misiones
+                        <Gamepad2 className="h-3.5 w-3.5" aria-hidden /> {playable}/{course.missions.length} {c.missions}
                       </span>
                     </div>
 
                     {/* Mapa de misiones */}
-                    <ol className="mt-5 flex flex-wrap gap-1.5" aria-label="Misiones">
+                    <ol className="mt-5 flex flex-wrap gap-1.5" aria-label={c.missionsAria}>
                       {course.missions.map((m, i) => (
                         <li
                           key={m.id}
@@ -128,13 +169,13 @@ export function AcademyHomePage() {
                                 : 'bg-ase-brand/20 text-sky-200 ring-1 ring-ase-brand/40',
                           )}
                         >
-                          {m.available ? i : <Lock className="h-3 w-3" aria-label="Próximamente" />}
+                          {m.available ? i : <Lock className="h-3 w-3" aria-label={c.soon} />}
                         </li>
                       ))}
                     </ol>
 
                     <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-sky-300">
-                      Ver curso
+                      {c.viewCourse}
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden />
                     </span>
                   </div>
@@ -148,9 +189,11 @@ export function AcademyHomePage() {
       {/* Cómo funciona */}
       <section className="border-y border-white/5 bg-ase-bg2/40 py-20 lg:py-24">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
-          <SectionHeading eyebrow="Cómo funciona" title="No vas a ver vídeos. Vas a trabajar." />
+          <SectionHeading eyebrow={c.howEyebrow} title={c.howTitle} />
           <ol className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {HOW.map(({ Icon, title, text }, i) => (
+            {c.how.map(({ title, text }, i) => {
+              const Icon = HOW_ICONS[i]
+              return (
               <Reveal as="li" key={title} delayMs={i * 90}>
                 <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6">
                   <div className="flex items-center justify-between">
@@ -163,7 +206,8 @@ export function AcademyHomePage() {
                   <p className="mt-2 text-sm leading-relaxed text-ase-text2">{text}</p>
                 </div>
               </Reveal>
-            ))}
+              )
+            })}
           </ol>
         </div>
       </section>
@@ -172,9 +216,9 @@ export function AcademyHomePage() {
       <section className="py-20 lg:py-24">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-5 sm:px-8 lg:grid-cols-2">
           <SectionHeading
-            eyebrow="Una misión por dentro"
+            eyebrow={c.insideEyebrow}
             title={day.dayTitle}
-            subtitle="Cada misión dura una jornada simulada. El reloj avanza, los compañeros escriben y las decisiones se acumulan."
+            subtitle={c.insideSubtitle}
             align="left"
           />
           <Reveal delayMs={100}>
@@ -204,17 +248,17 @@ export function AcademyHomePage() {
             <div aria-hidden className="absolute inset-0 ase-gradient-brand opacity-80" />
             <div className="relative rounded-[calc(2rem-1px)] bg-ase-bg px-6 py-14 text-center sm:px-12">
               <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold leading-tight text-ase-text sm:text-4xl">
-                La primera misión de cada curso es gratis.
+                {c.ctaTitle}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-base text-ase-text2">
-                Juega, equivócate sin consecuencias reales y decide después si quieres el curso completo o un plan.
+                {c.ctaBody}
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <ButtonLink to={`/academy/${COURSES[0].key}`} size="lg">
-                  Empezar ahora
+                  {c.startNow}
                 </ButtonLink>
                 <ButtonLink to="/pricing" size="lg" variant="secondary">
-                  Ver planes
+                  {c.plans}
                 </ButtonLink>
               </div>
             </div>
