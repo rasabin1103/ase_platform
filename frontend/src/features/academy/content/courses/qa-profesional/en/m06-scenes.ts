@@ -1,0 +1,177 @@
+import type { Effect, Scene } from '../../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Scenes for course 2, mission 6 (Numbers that count). */
+export const m06ScenesEn: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: 'Progress report for management',
+    body: "We're halfway through sprint 3 and management wants to know at 12:00 PM how the release is going. Prepare a test progress report for me using the metrics dashboard (the \"Metrics\" app). And late in the day, the test completion report for the sprint.\n\nI need to know whether we'll make it or not, not how many things we've done.\n\nRaúl",
+  },
+  {
+    id: 'chat_tomas',
+    channel: 'chat',
+    from: 'tomas',
+    at: 20,
+    body: 'Morning. Heads-up: yesterday I closed 5 invoice bugs as "cannot reproduce". Everything works on my machine. That way the closed-defects chart looks nice for management. 😉',
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 40,
+    body: 'Before sending anything, look at the whole dashboard. A single number almost always tells only the good part: cross-check passed test cases against requirements covered, and closed defects against how they were closed. The metrics guide is on the wiki.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'test_metrics' }],
+  },
+  {
+    id: 'laura_progress_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'progress.sent' },
+        { kind: 'flag', key: 'metrics.ok' },
+        { kind: 'flag', key: 'misleading.ok' },
+        { kind: 'flag', key: 'report.audience' },
+      ],
+    },
+    body: "I've read your report. Neither dressed up nor a data dump: status, risk and what decision is needed. And the team's version is something they can work from tomorrow. That's how you communicate status.",
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'communication', add: 1 },
+      { kind: 'unlock', conceptId: 'status_comm' },
+      { kind: 'note', tone: 'good', text: 'You sent useful metrics, correctly interpreted and tailored to each audience.' },
+    ],
+  },
+  {
+    id: 'status',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena'],
+    at: 180,
+    subject: '12:00 PM · Release status with management',
+    body: '**Raúl:** Management is asking how we\'re doing. Elena says the dashboard shows a very green 100%. What do I tell them?',
+    choices: [
+      {
+        id: 'honest',
+        text: "We're amber. The 100% is of the little we've tested: 8 of 20 requirements. We're at 40% against the planned 50%, there's an open critical defect in invoices, and cards, which are high risk, haven't been tested yet. With the actions in the report we'll cover what's critical; for the rest I need a decision on scope.",
+        requires: { kind: 'flag', key: 'report.mgmt' },
+        cost: 15,
+        reply: "Amber with a plan is something I can defend. I'll take them your report as it is.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'status.honest' },
+          { kind: 'score', key: 'communication', add: 2 },
+          { kind: 'score', key: 'risk', add: 1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'good', text: 'You communicated the real status: progress against the plan, coverage, defects and residual risk.' },
+        ],
+      },
+      {
+        id: 'green',
+        text: "We're green: 100% of the test cases have passed and we've closed 12 defects.",
+        cost: 5,
+        reply: "Great, I'll tell them that.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'report.makeup' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'score', key: 'communication', add: -1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'bad', text: 'You dressed up the status with misleading metrics.' },
+        ],
+      },
+      {
+        id: 'volume',
+        text: "We've executed 48 test cases and logged 26 defects. The team is working incredibly hard.",
+        cost: 5,
+        reply: "Sure… but will we make it or not?",
+        replyFrom: 'elena',
+        effects: [
+          { kind: 'score', key: 'communication', add: -1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'bad', text: "You reported volume instead of risk: management can't decide with that." },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'control',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'laura', 'tomas'],
+    at: 360,
+    subject: '3:00 PM · Sprint monitoring',
+    body: "**Raúl:** Management is keeping the release date. We're still behind the plan. What do we do?",
+    choices: [
+      {
+        id: 'control',
+        text: "We reprioritize: tomorrow, cards first; CSV export and language move to the next sprint if there's no time. Tomás, we reopen the 5 \"cannot reproduce\" defects and look at them together on staging. And Elena, if high risks remain untested on Friday, management either accepts the risk in writing or we move the scope.",
+        requires: { kind: 'flag', key: 'progress.sent' },
+        cost: 15,
+        reply: "Agreed. The CSV can wait; the cards can't.",
+        replyFrom: 'elena',
+        effects: [
+          { kind: 'flag', key: 'control.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'good', text: 'You took control actions: reprioritizing by risk, reopening doubtful defects and renegotiating scope.' },
+        ],
+      },
+      {
+        id: 'overtime',
+        text: "We work overtime all week and get everything done.",
+        cost: 5,
+        reply: 'We already tried that in sprint 1… and ended up with more bugs.',
+        replyFrom: 'tomas',
+        effects: [
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'bad', text: 'You responded to the delay with more hours instead of control: priority, resources or scope.' },
+        ],
+      },
+      {
+        id: 'hide',
+        text: "We remove the untested risks from the report; if they don't show up, nobody asks.",
+        cost: 5,
+        reply: "I'm not signing that.",
+        replyFrom: 'laura',
+        effects: [
+          { kind: 'flag', key: 'report.makeup' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'bad', text: 'You proposed hiding the residual risk instead of managing it.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    at: 480,
+    subject: '5:00 PM · Coffee with Laura',
+    body: '**Laura:** A day of numbers. What are you taking away?',
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: "That a metric is useful if it helps decide: progress against the plan, coverage, defects and residual risk. That 100% can lie. That each audience needs its own report. And that measuring is for correcting course and for closing out by also reporting what didn't go well.",
+        reply: "That's it. Now we need to know exactly which version we're testing…",
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'That what matters is for the chart to come out green.',
+        reply: "Check in the debrief what happens when the green isn't true.",
+        effects: [{ kind: 'note', tone: 'neutral', text: 'You saw metrics as a shop window, not as a tool.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]
