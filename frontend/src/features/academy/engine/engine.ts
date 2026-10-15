@@ -15,7 +15,8 @@ import type {
 } from './types'
 import { designCoverage, designRigorBonus, reviewMessage, type DesignCoverage } from './design'
 import { riskAssessment, riskFeedback } from './risk'
-import { ISSUE_LABEL } from './review'
+import { issueLabels } from './review'
+import { missionLang, tr, type AcademyLang } from '../i18n'
 
 /**
  * Motor determinista: `step(mission, state, action)` es una función pura.
@@ -43,12 +44,36 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
   low: 'Baja',
 }
 
+export const SEVERITY_LABEL_EN: Record<Severity, string> = {
+  critical: 'Critical',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+}
+
+/** Etiquetas de severidad en el idioma indicado. */
+export function severityLabels(lang: AcademyLang): Record<Severity, string> {
+  return lang === 'en' ? SEVERITY_LABEL_EN : SEVERITY_LABEL
+}
+
 /** Valor de `Message.chosen` para reuniones a las que no se asistió. */
 export const PRIORITY_LABEL: Record<Priority, string> = {
   p1: 'P1 · Urgente',
   p2: 'P2 · Alta',
   p3: 'P3 · Media',
   p4: 'P4 · Baja',
+}
+
+export const PRIORITY_LABEL_EN: Record<Priority, string> = {
+  p1: 'P1 · Urgent',
+  p2: 'P2 · High',
+  p3: 'P3 · Medium',
+  p4: 'P4 · Low',
+}
+
+/** Etiquetas de prioridad en el idioma indicado. */
+export function priorityLabels(lang: AcademyLang): Record<Priority, string> {
+  return lang === 'en' ? PRIORITY_LABEL_EN : PRIORITY_LABEL
 }
 const PRIORITY_ORDER: Priority[] = ['p1', 'p2', 'p3', 'p4']
 
@@ -240,7 +265,11 @@ function advance(mission: Mission, s: RunState, minutes: number): void {
       if (m.channel === 'meeting' && !m.chosen && m.sceneId !== mission.endSceneId) {
         m.chosen = MISSED
         m.read = true
-        s.notes.push({ at: s.clock, tone: 'bad', text: `Te perdiste la reunión «${m.subject ?? ''}».` })
+        s.notes.push({
+          at: s.clock,
+          tone: 'bad',
+          text: tr(missionLang(mission), `Te perdiste la reunión «${m.subject ?? ''}».`, `You missed the meeting “${m.subject ?? ''}”.`),
+        })
       }
     }
     deliverScene(mission, s, sceneById(mission, mission.endSceneId))
@@ -298,6 +327,8 @@ export function evaluateReport(
   /** Report que se está completando (no cuenta como ya reportado). */
   excludeKey?: string,
 ): Pick<BugReport, 'bugId' | 'status' | 'quality' | 'feedback'> {
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
   const feedback: string[] = []
   const evidenceBugs = Array.from(
     new Set(s.log.filter((l) => input.evidence.includes(l.id)).flatMap((l) => l.bugs)),
@@ -308,8 +339,8 @@ export function evaluateReport(
       quality: 0,
       feedback: [
         input.evidence.length === 0
-          ? 'No has adjuntado evidencia: sin ella nadie puede reproducir el problema.'
-          : 'La evidencia adjunta muestra un comportamiento conforme a la especificación actual.',
+          ? t('No has adjuntado evidencia: sin ella nadie puede reproducir el problema.', 'You did not attach any evidence: without it nobody can reproduce the problem.')
+          : t('La evidencia adjunta muestra un comportamiento conforme a la especificación actual.', 'The attached evidence shows behavior that matches the current specification.'),
       ],
     }
   }
@@ -320,24 +351,29 @@ export function evaluateReport(
   const common = evidenceBugs.filter((id) => withBugs.every((l) => l.bugs.includes(id)))
   const bugId = common.find((id) => !already.includes(id)) ?? evidenceBugs.find((id) => !already.includes(id))
   if (!bugId) {
-    return { bugId: evidenceBugs[0], status: 'duplicate', quality: 0, feedback: ['Este bug ya estaba reportado.'] }
+    return { bugId: evidenceBugs[0], status: 'duplicate', quality: 0, feedback: [t('Este bug ya estaba reportado.', 'This bug was already reported.')] }
   }
   const bug = mission.bugs.find((b) => b.id === bugId)!
 
   let quality = 0
   if (input.title.trim().length >= 12) quality++
-  else feedback.push('Título demasiado vago: debe decir qué falla y dónde.')
+  else feedback.push(t('Título demasiado vago: debe decir qué falla y dónde.', 'Title too vague: it should say what fails and where.'))
   if (input.steps.split('\n').filter((l) => l.trim().length > 0).length >= 2) quality++
-  else feedback.push('Faltan pasos para reproducir (uno por línea).')
+  else feedback.push(t('Faltan pasos para reproducir (uno por línea).', 'Steps to reproduce are missing (one per line).'))
   if (input.expected.trim().length >= 5) quality++
-  else feedback.push('Falta el resultado esperado.')
+  else feedback.push(t('Falta el resultado esperado.', 'The expected result is missing.'))
   if (input.actual.trim().length >= 5) quality++
-  else feedback.push('Falta el resultado obtenido.')
+  else feedback.push(t('Falta el resultado obtenido.', 'The actual result is missing.'))
   const diff = Math.abs(SEVERITY_ORDER.indexOf(input.severity) - SEVERITY_ORDER.indexOf(bug.severity))
   if (diff === 0) quality += 2
   else {
     if (diff === 1) quality += 1
-    feedback.push(`Severidad: el equipo la ha reclasificado como ${SEVERITY_LABEL[bug.severity]}.`)
+    feedback.push(
+      t(
+        `Severidad: el equipo la ha reclasificado como ${SEVERITY_LABEL[bug.severity]}.`,
+        `Severity: the team has reclassified it as ${SEVERITY_LABEL_EN[bug.severity]}.`,
+      ),
+    )
   }
 
   // Evidencia a granel: marcar todo para «acertar» no es un buen report.
@@ -345,25 +381,36 @@ export function evaluateReport(
   const irrelevant = attached.filter((l) => !l.bugs.includes(bugId)).length
   if (attached.length > 2 && irrelevant > attached.length / 2) {
     quality -= 3
-    feedback.push('Adjunta solo la evidencia que muestra el fallo: el resto confunde a quien lo tiene que reproducir.')
+    feedback.push(
+      t(
+        'Adjunta solo la evidencia que muestra el fallo: el resto confunde a quien lo tiene que reproducir.',
+        'Attach only the evidence that shows the failure: the rest confuses whoever has to reproduce it.',
+      ),
+    )
   }
   if (common.length === 0 && withBugs.length > 1) {
     quality -= 1
-    feedback.push('La evidencia mezcla fallos distintos: un report, un bug.')
+    feedback.push(t('La evidencia mezcla fallos distintos: un report, un bug.', 'The evidence mixes different failures: one report, one bug.'))
   }
 
   if (mission.reportPriority && bug.priority) {
-    if (!input.priority) feedback.push('Falta la prioridad: ¿cuándo hay que arreglarlo?')
+    if (!input.priority) feedback.push(t('Falta la prioridad: ¿cuándo hay que arreglarlo?', 'Priority is missing: when does it need to be fixed?'))
     else if (input.priority === bug.priority) quality += 1
     else {
       const pdiff = Math.abs(PRIORITY_ORDER.indexOf(input.priority) - PRIORITY_ORDER.indexOf(bug.priority))
-      feedback.push(`Prioridad: en el triaje queda como ${PRIORITY_LABEL[bug.priority]}${bug.priorityWhy ? ` (${bug.priorityWhy})` : ''}.`)
+      const why = bug.priorityWhy ? ` (${bug.priorityWhy})` : ''
+      feedback.push(
+        t(
+          `Prioridad: en el triaje queda como ${PRIORITY_LABEL[bug.priority]}${why}.`,
+          `Priority: triage set it to ${PRIORITY_LABEL_EN[bug.priority]}${why}.`,
+        ),
+      )
       if (pdiff >= 2) quality -= 1
     }
   }
 
   if (bug.requiresFlag && !s.flags[bug.requiresFlag]) {
-    return { bugId, status: 'disputed', quality, feedback: [bug.disputeReply ?? 'El equipo no está de acuerdo en que sea un bug.'] }
+    return { bugId, status: 'disputed', quality, feedback: [bug.disputeReply ?? t('El equipo no está de acuerdo en que sea un bug.', 'The team does not agree that this is a bug.')] }
   }
   if (bug.repro) {
     const text = normalizeText(`${input.title}\n${input.steps}\n${input.actual}`)
@@ -382,6 +429,24 @@ const REVIEW_REPLY: Record<ReportStatus, string> = {
   resolved: '',
   verified: '',
   reopened: '',
+}
+
+const REVIEW_REPLY_EN: Record<ReportStatus, string> = {
+  accepted: '',
+  needs_info: "I looked at {key} but I can't reproduce it with what it says. {reason}",
+  disputed: '{key}: {reason}',
+  duplicate: "{key} is a duplicate, it's already reported 😉",
+  rejected: "Closing {key}: I don't see the failure in the evidence you attached.",
+  resolved: '',
+  verified: '',
+  reopened: '',
+}
+
+/** Respuesta del revisor a un report no aceptado. */
+function reviewReply(mission: Mission, status: ReportStatus, key: string, feedback: string[]): string {
+  const lang = missionLang(mission)
+  const template = (lang === 'en' ? REVIEW_REPLY_EN : REVIEW_REPLY)[status]
+  return template.replace('{key}', key).replace('{reason}', feedback[0] ?? tr(lang, '¿Me pasas pasos más claros?', 'Could you send me clearer steps?'))
 }
 
 function submitReport(mission: Mission, s: RunState, input: BugReportInput): void {
@@ -405,8 +470,7 @@ function submitReport(mission: Mission, s: RunState, input: BugReportInput): voi
       break
   }
   if (result.status !== 'accepted') {
-    const reply = REVIEW_REPLY[result.status].replace('{key}', key).replace('{reason}', result.feedback[0] ?? '¿Me pasas pasos más claros?')
-    pushMessage(s, mission.reportReviewer, reply)
+    pushMessage(s, mission.reportReviewer, reviewReply(mission, result.status, key, result.feedback))
   }
   advance(mission, s, mission.reportCost)
 }
@@ -420,11 +484,20 @@ function amendReport(mission: Mission, s: RunState, key: string, input: BugRepor
   if (result.status === 'accepted') {
     scheduleFix(mission, s, r)
     s.scores.rigor += 1
-    s.notes.push({ at: s.clock, tone: 'neutral', text: `${key} se aceptó al completarlo (${r.amendments} ${r.amendments === 1 ? 'vuelta' : 'vueltas'} con ${npcName(mission, mission.reportReviewer)}).` })
-    pushMessage(s, mission.reportReviewer, `Ahora sí reproduzco ${key} 👍 Me pongo con ello.`)
+    const lang = missionLang(mission)
+    const who = npcName(mission, mission.reportReviewer)
+    s.notes.push({
+      at: s.clock,
+      tone: 'neutral',
+      text: tr(
+        lang,
+        `${key} se aceptó al completarlo (${r.amendments} ${r.amendments === 1 ? 'vuelta' : 'vueltas'} con ${who}).`,
+        `${key} was accepted once you completed it (${r.amendments} ${r.amendments === 1 ? 'round' : 'rounds'} with ${who}).`,
+      ),
+    })
+    pushMessage(s, mission.reportReviewer, tr(lang, `Ahora sí reproduzco ${key} 👍 Me pongo con ello.`, `Now I can reproduce ${key} 👍 I'm on it.`))
   } else {
-    const reply = REVIEW_REPLY[result.status].replace('{key}', key).replace('{reason}', result.feedback[0] ?? '¿Me pasas pasos más claros?')
-    pushMessage(s, mission.reportReviewer, reply)
+    pushMessage(s, mission.reportReviewer, reviewReply(mission, result.status, key, result.feedback))
   }
   advance(mission, s, Math.ceil(mission.reportCost / 2))
 }
@@ -434,6 +507,8 @@ function submitReview(mission: Mission, s: RunState): void {
   const model = mission.requirementsReview
   if (!model) return
   const pending = model.fragments.filter((f) => s.reviewMarks[f.id] && !s.reviewResults[f.id])
+  const lang = missionLang(mission)
+  const labels = issueLabels(lang)
   const lines: string[] = []
   let falsePositives = 0
   // Lo que aportan otros revisores (p. ej. en la reunión de una inspección).
@@ -446,7 +521,13 @@ function submitReview(mission: Mission, s: RunState): void {
       s.reviewResults[id] = { at: s.clock, correct: true, typeOk: true, by: tf.by }
       if (s.flags[f.issue.clarifyFlag]) continue
       s.flags[f.issue.clarifyFlag] = true
-      lines.push(`- «${shorten(f.text)}» (lo señala ${npcName(mission, tf.by)}): ${f.issue.clarification}`)
+      lines.push(
+        tr(
+          lang,
+          `- «${shorten(f.text)}» (lo señala ${npcName(mission, tf.by)}): ${f.issue.clarification}`,
+          `- “${shorten(f.text)}” (raised by ${npcName(mission, tf.by)}): ${f.issue.clarification}`,
+        ),
+      )
     }
   }
   for (const f of pending) {
@@ -455,17 +536,24 @@ function submitReview(mission: Mission, s: RunState): void {
       const typeOk = f.issue.types.includes(marked)
       s.reviewResults[f.id] = { at: s.clock, correct: true, typeOk }
       if (s.flags[f.issue.clarifyFlag]) {
-        lines.push(`- «${shorten(f.text)}»: ya lo aclaramos antes 😉`)
+        lines.push(tr(lang, `- «${shorten(f.text)}»: ya lo aclaramos antes 😉`, `- “${shorten(f.text)}”: we already clarified that 😉`))
         continue
       }
       s.flags[f.issue.clarifyFlag] = true
       s.scores.rigor += 1
-      const typeNote = typeOk ? '' : ` (Más que «${ISSUE_LABEL[marked].toLowerCase()}», yo diría «${ISSUE_LABEL[f.issue.types[0]].toLowerCase()}».)`
-      lines.push(`- «${shorten(f.text)}»: ${f.issue.clarification}${typeNote}`)
+      const typeNote = typeOk
+        ? ''
+        : tr(
+            lang,
+            ` (Más que «${labels[marked].toLowerCase()}», yo diría «${labels[f.issue.types[0]].toLowerCase()}».)`,
+            ` (Rather than “${labels[marked].toLowerCase()}”, I'd say “${labels[f.issue.types[0]].toLowerCase()}”.)`,
+          )
+      lines.push(tr(lang, `- «${shorten(f.text)}»: ${f.issue.clarification}${typeNote}`, `- “${shorten(f.text)}”: ${f.issue.clarification}${typeNote}`))
     } else {
       s.reviewResults[f.id] = { at: s.clock, correct: false, typeOk: false }
       falsePositives += 1
-      lines.push(`- «${shorten(f.text)}»: ${f.fineReply ?? 'esto creo que está claro tal como está.'}`)
+      const fine = f.fineReply ?? tr(lang, 'esto creo que está claro tal como está.', 'I think this is clear as it stands.')
+      lines.push(tr(lang, `- «${shorten(f.text)}»: ${fine}`, `- “${shorten(f.text)}”: ${fine}`))
     }
   }
   if (falsePositives >= 2) s.scores.rigor -= 1
@@ -478,8 +566,16 @@ function submitReview(mission: Mission, s: RunState): void {
     s,
     model.reviewer,
     lines.length
-      ? `${model.teamFindings ? 'Acta de la revisión' : '¡Gracias por la revisión!'} Te respondo punto por punto (lo dejo también en ${model.storyId}):\n${lines.join('\n')}`
-      : 'No veo dudas nuevas marcadas en la revisión. ¿Has seleccionado los fragmentos y el tipo de problema?',
+      ? tr(
+          lang,
+          `${model.teamFindings ? 'Acta de la revisión' : '¡Gracias por la revisión!'} Te respondo punto por punto (lo dejo también en ${model.storyId}):\n${lines.join('\n')}`,
+          `${model.teamFindings ? 'Review minutes.' : 'Thanks for the review!'} Here are my answers point by point (I'm also adding them to ${model.storyId}):\n${lines.join('\n')}`,
+        )
+      : tr(
+          lang,
+          'No veo dudas nuevas marcadas en la revisión. ¿Has seleccionado los fragmentos y el tipo de problema?',
+          "I don't see any new issues marked in the review. Did you select the fragments and the problem type?",
+        ),
   )
   advance(mission, s, model.submitCost)
 }
@@ -522,7 +618,11 @@ function deployFixes(mission: Mission, s: RunState): void {
     pushMessage(
       s,
       mission.reportReviewer,
-      `He subido el fix de ${report.key} a staging (build rc${3 + s.build}).${note} ¿Me lo verificas y lo cierras si está bien?`,
+      tr(
+        missionLang(mission),
+        `He subido el fix de ${report.key} a staging (build rc${3 + s.build}).${note} ¿Me lo verificas y lo cierras si está bien?`,
+        `I've deployed the fix for ${report.key} to staging (build rc${3 + s.build}).${note} Can you verify it and close it if it's OK?`,
+      ),
     )
   }
 }
@@ -540,27 +640,43 @@ function verifyReport(
   const actuallyFixed = s.fixedBugs.includes(report.bugId)
   const stillFailsShown = after.some((l) => l.bugs.includes(report.bugId as string))
   const reviewer = mission.reportReviewer
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
   let correct: boolean
   if (action.verdict === 'close') {
     correct = actuallyFixed
     report.status = 'verified'
     if (!retested) {
       s.scores.rigor -= 1
-      s.notes.push({ at: s.clock, tone: 'bad', text: `Cerraste ${report.key} sin volver a probarlo en el build nuevo.` })
+      s.notes.push({ at: s.clock, tone: 'bad', text: t(`Cerraste ${report.key} sin volver a probarlo en el build nuevo.`, `You closed ${report.key} without retesting it on the new build.`) })
     } else if (correct) {
       s.scores.rigor += 1
     }
     if (!correct) {
       s.scores.risk -= 2
-      s.notes.push({ at: s.clock, tone: 'bad', text: `Cerraste ${report.key}, pero el fix no funcionaba: el bug sigue en staging camino de producción.` })
+      s.notes.push({
+        at: s.clock,
+        tone: 'bad',
+        text: t(
+          `Cerraste ${report.key}, pero el fix no funcionaba: el bug sigue en staging camino de producción.`,
+          `You closed ${report.key}, but the fix didn't work: the bug is still in staging on its way to production.`,
+        ),
+      })
     }
   } else {
     correct = !actuallyFixed && stillFailsShown
     if (correct) {
       s.scores.rigor += 2
       report.status = 'reopened'
-      s.notes.push({ at: s.clock, tone: 'good', text: `Detectaste que el fix de ${report.key} no funcionaba y lo reabriste con evidencia.` })
-      pushMessage(s, reviewer, `Uf, tienes razón con ${report.key}: sigue fallando. Lo miro otra vez.`)
+      s.notes.push({
+        at: s.clock,
+        tone: 'good',
+        text: t(
+          `Detectaste que el fix de ${report.key} no funcionaba y lo reabriste con evidencia.`,
+          `You spotted that the fix for ${report.key} didn't work and reopened it with evidence.`,
+        ),
+      })
+      pushMessage(s, reviewer, t(`Uf, tienes razón con ${report.key}: sigue fallando. Lo miro otra vez.`, `Ugh, you're right about ${report.key}: it still fails. I'll look at it again.`))
       scheduleFix(mission, s, report)
     } else {
       s.scores.rigor -= 1
@@ -568,8 +684,14 @@ function verifyReport(
         s,
         reviewer,
         retested
-          ? `He vuelto a mirar ${report.key} y a mí me funciona. ¿Puedes adjuntar una ejecución del build nuevo donde falle?`
-          : `Para reabrir ${report.key} necesito una ejecución en el build nuevo donde se vea el fallo.`,
+          ? t(
+              `He vuelto a mirar ${report.key} y a mí me funciona. ¿Puedes adjuntar una ejecución del build nuevo donde falle?`,
+              `I took another look at ${report.key} and it works for me. Can you attach a run on the new build where it fails?`,
+            )
+          : t(
+              `Para reabrir ${report.key} necesito una ejecución en el build nuevo donde se vea el fallo.`,
+              `To reopen ${report.key} I need a run on the new build that shows the failure.`,
+            ),
       )
     }
   }
@@ -717,7 +839,11 @@ export function step(mission: Mission, state: RunState, action: Action): RunStat
       s.notes.push({
         at: s.clock,
         tone: score >= 4 ? 'good' : score >= 3 ? 'neutral' : 'bad',
-        text: `${npcName(mission, mission.mentor ?? mission.reportReviewer)} valoró tu report ${r.key} con ${score}/5.`,
+        text: tr(
+          missionLang(mission),
+          `${npcName(mission, mission.mentor ?? mission.reportReviewer)} valoró tu report ${r.key} con ${score}/5.`,
+          `${npcName(mission, mission.mentor ?? mission.reportReviewer)} rated your report ${r.key} ${score}/5.`,
+        ),
       })
       advance(mission, s, 5)
       break
@@ -745,10 +871,27 @@ export function step(mission: Mission, state: RunState, action: Action): RunStat
       const assessment = riskAssessment(mission, s)
       if (s.riskSubmissions === 1 && assessment && assessment.rated === assessment.total) {
         s.scores.risk += assessment.good ? 2 : 0
+        const lang = missionLang(mission)
         s.notes.push(
           assessment.good
-            ? { at: s.clock, tone: 'good', text: 'Priorizaste por riesgo (probabilidad × impacto) y acertaste con las zonas críticas.' }
-            : { at: s.clock, tone: 'neutral', text: 'Priorizaste por riesgo, aunque no diste con todas las zonas críticas.' },
+            ? {
+                at: s.clock,
+                tone: 'good',
+                text: tr(
+                  lang,
+                  'Priorizaste por riesgo (probabilidad × impacto) y acertaste con las zonas críticas.',
+                  'You prioritized by risk (likelihood × impact) and identified the critical areas.',
+                ),
+              }
+            : {
+                at: s.clock,
+                tone: 'neutral',
+                text: tr(
+                  lang,
+                  'Priorizaste por riesgo, aunque no diste con todas las zonas críticas.',
+                  "You prioritized by risk, although you didn't identify all the critical areas.",
+                ),
+              },
         )
       }
       if (!s.unlocked.includes('risk_based')) s.unlocked.push('risk_based')
@@ -834,6 +977,12 @@ export interface MissionSummary {
   }[]
 }
 
+const DEFAULT_VERDICTS_EN: NonNullable<Mission['verdicts']> = {
+  good: { title: 'Day passed with flying colors', body: 'The team leaves the meeting convinced they can count on your judgment.' },
+  ok: { title: 'Day passed', body: 'Good work, with some things to polish. Check the debrief: almost everything that slipped through has a specific technique behind it.' },
+  bad: { title: 'A tough day', body: 'Nobody is born knowing. Replay the mission trying other decisions: you will see how the day changes.' },
+}
+
 export function summarize(mission: Mission, s: RunState): MissionSummary {
   const best = (bugId: string): ReportStatus | undefined => {
     const statuses = s.reports.filter((r) => r.bugId === bugId).map((r) => r.status)
@@ -874,11 +1023,11 @@ export function summarize(mission: Mission, s: RunState): MissionSummary {
     efficiency: stars(s.scores.efficiency),
   }
   const avg = (st.rigor + st.communication + st.risk + st.efficiency) / 4
-  const texts = mission.verdicts ?? {
+  const texts = mission.verdicts ?? (missionLang(mission) === 'en' ? DEFAULT_VERDICTS_EN : {
     good: { title: 'Jornada superada con nota', body: 'El equipo sale de la reunión convencido de que puede contar con tu criterio.' },
     ok: { title: 'Jornada superada', body: 'Buen trabajo, con cosas que pulir. Revisa el debrief: casi todo lo que se escapó tiene una técnica concreta detrás.' },
     bad: { title: 'Jornada complicada', body: 'Nadie nace sabiendo. Repite la misión probando otras decisiones: verás cómo cambia el día.' },
-  }
+  })
   const tone: MissionSummary['verdict']['tone'] = avg >= 3.5 && criticalMissed <= 1 ? 'good' : avg >= 2.5 ? 'ok' : 'bad'
   const verdict: MissionSummary['verdict'] = { ...texts[tone], tone }
   const reportQuality = s.reports

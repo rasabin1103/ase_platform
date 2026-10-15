@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PAY_BUGS as B, actOn, createTestPayment, INITIAL_PAYMENTS, seedPayment, specOutcome, type Payment, type PayState, type Plan } from './paymentLogic'
+import { PAY_BUGS as B, actOn, createTestPayment, INITIAL_PAYMENTS, initialPayments, seedPayment, specOutcome, type Payment, type PayState, type Plan } from './paymentLogic'
 
 const seed = (state: PayState, over: { plan?: Plan; amount?: string; days?: string } = {}): Payment => {
   const p = seedPayment(99, { plan: over.plan ?? 'standard', amount: over.amount ?? '100', days: over.days ?? '5', state })
@@ -98,5 +98,23 @@ describe('generador de datos de prueba', () => {
     expect(r.ok).toBe(true)
     expect(r.state.payments[0]).toMatchObject({ ref: 'KP-1005', state: 'disputed', prevState: 'settled' })
     expect(createTestPayment(INITIAL_PAYMENTS, { plan: 'pro', amount: '0', days: '5', state: 'settled' }).ok).toBe(false)
+  })
+})
+
+describe('idioma inglés', () => {
+  it('mismo resultado y bugs; textos en inglés', () => {
+    const p = seed('cancelled')
+    const es = actOn(p, 'refund', '20', { active: [B.refundCancelled] })
+    const en = actOn(p, 'refund', '20', { active: [B.refundCancelled] }, 'en')
+    expect(en.ok).toBe(es.ok)
+    expect(en.payment.state).toBe(es.payment.state)
+    expect(en.payment.refunded).toBe(es.payment.refunded)
+    expect(en.fee).toBe(es.fee)
+    expect(en.bugs).toEqual(es.bugs)
+    expect(en.message).toContain('Partially refunded')
+    expect(actOn(seed('cancelled'), 'refund', '20', { active: none }, 'en').message).toBe('409 · Transition not allowed: Voided → Refund')
+    const created = createTestPayment(initialPayments('en'), { plan: 'pro', amount: '100', days: '5', state: 'settled' }, 'en')
+    expect(created.message).toBe('KP-1005 created as Settled')
+    expect(initialPayments('en').payments.map((x) => [x.state, x.amount])).toEqual(INITIAL_PAYMENTS.payments.map((x) => [x.state, x.amount]))
   })
 })

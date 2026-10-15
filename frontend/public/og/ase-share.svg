@@ -7,7 +7,7 @@
   <rect x="80" y="80" width="1040" height="470" rx="32" fill="none" stroke="#38BDF8" stroke-opacity="0.22" stroke-width="2"/>
   <text x="120" y="250" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="#F8FAFC">Arce Sabin</text>
   <text x="120" y="340" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="#38BDF8">Engineering</text>
-  <text x="120" y="420" font-family="system-ui, sans-serif" font-size="28" fill="#CBD5E1">Enterprise SaaS � QA Automation � Software Architecture</text>
+  <text x="120" y="420" font-family="system-ui, sans-serif" font-size="28" fill="#CBD5E1">Enterprise SaaS · QA Automation · Software Architecture</text>
   <rect x="120" y="460" width="120" height="4" rx="2" fill="#38BDF8"/>
   <defs>
     <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">

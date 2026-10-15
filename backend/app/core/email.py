@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import smtplib
 import socket
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -55,6 +56,7 @@ def send_email(
     html_body: str,
     text_body: str | None = None,
     reply_to: str | None = None,
+    attachments: list[tuple[str, bytes, str]] | None = None,
 ) -> bool:
     """Best-effort transactional email via the SMTP server configured in
     .env (bring-your-own SMTP — no third-party email API). Returns True if
@@ -70,7 +72,8 @@ def send_email(
         logger.warning("SMTP_HOST not configured — skipping email to %s (subject=%r)", to_email, subject)
         return False
 
-    message = MIMEMultipart("alternative")
+    # Con adjuntos: multipart/mixed que envuelve el multipart/alternative.
+    message = MIMEMultipart("mixed" if attachments else "alternative")
     message["Subject"] = subject
     message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
     message["To"] = to_email
@@ -79,8 +82,15 @@ def send_email(
         # to whoever filled in the contact form, instead of back to our own
         # transactional From address — see public_catalog/service.py.
         message["Reply-To"] = reply_to
-    message.attach(MIMEText(text_body or html_body, "plain", "utf-8"))
-    message.attach(MIMEText(html_body, "html", "utf-8"))
+    body = MIMEMultipart("alternative") if attachments else message
+    body.attach(MIMEText(text_body or html_body, "plain", "utf-8"))
+    body.attach(MIMEText(html_body, "html", "utf-8"))
+    if attachments:
+        message.attach(body)
+        for filename, content, mimetype in attachments:
+            part = MIMEApplication(content, _subtype=mimetype.split("/")[-1])
+            part.add_header("Content-Disposition", "attachment", filename=filename)
+            message.attach(part)
 
     try:
         with _IPv4OnlySMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:

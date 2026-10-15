@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 import { formatEur } from '../kobalto/transferLogic'
 
 /**
@@ -102,6 +103,43 @@ export function frenchInstallment(amount: number, annualRatePct: number, months:
   return (amount * i) / (1 - Math.pow(1 + i, -months))
 }
 
+/** Textos del simulador (errores, motivos y resúmenes de eventos). */
+const MESSAGES = {
+  es: {
+    numeric: 'Revisa los datos: todos los campos son numéricos',
+    age: 'Edad no válida: de 18 a 70 años',
+    amount: 'Importe no válido: de 1.000 € a 30.000 €, en múltiplos de 100 €',
+    term: 'Plazo no válido: de 12 a 84 meses',
+    income: 'Ingresos insuficientes: mínimo 1.000 € netos al mes',
+    endAge: 'No preaprobado: terminarías de pagar con más de 75 años',
+    ratio: 'No preaprobado: la cuota supera el 35 % de tus ingresos',
+    input: (f: LoanForm) => `edad ${f.age}, ingresos ${f.income}, importe ${f.amount}, plazo ${f.term}`,
+    errorSummary: (input: string, err: string) => `Error al simular (${input}): ${err}`,
+    okSummary: (input: string, rate: string, inst: string, total: string, ratio: string, verdict: string) =>
+      `Simulación (${input}) → TIN ${rate} %, cuota ${inst}, total ${total}, ratio ${ratio} %: ${verdict}`,
+    approved: 'PREAPROBADO',
+  },
+  en: {
+    numeric: 'Check your details: all fields must be numbers',
+    age: 'Invalid age: 18 to 70 years',
+    amount: 'Invalid amount: €1,000 to €30,000, in multiples of €100',
+    term: 'Invalid term: 12 to 84 months',
+    income: 'Insufficient income: minimum €1,000 net per month',
+    endAge: 'Not pre-approved: you would finish repaying after age 75',
+    ratio: 'Not pre-approved: the installment exceeds 35% of your income',
+    input: (f: LoanForm) => `age ${f.age}, income ${f.income}, amount ${f.amount}, term ${f.term}`,
+    errorSummary: (input: string, err: string) => `Simulation failed (${input}): ${err}`,
+    okSummary: (input: string, rate: string, inst: string, total: string, ratio: string, verdict: string) =>
+      `Simulation (${input}) → APR ${rate}%, installment ${inst}, total ${total}, ratio ${ratio}%: ${verdict}`,
+    approved: 'PRE-APPROVED',
+  },
+}
+
+/** Mensajes del simulador en el idioma indicado. */
+export function loanMessages(lang: AcademyLang = 'es') {
+  return MESSAGES[lang]
+}
+
 function parseNum(raw: string): number {
   let s = raw.trim()
   // «6.000» o «6.000,50»: punto como separador de miles; si no, coma decimal.
@@ -111,8 +149,8 @@ function parseNum(raw: string): number {
 }
 
 /** Resultado según la política (sin bugs): el oráculo. */
-export function specQuote(form: LoanForm): { error?: string; quote?: LoanQuote } {
-  return evaluate(form, { active: [] }).spec
+export function specQuote(form: LoanForm, lang: AcademyLang = 'es'): { error?: string; quote?: LoanQuote } {
+  return evaluate(form, { active: [] }, lang).spec
 }
 
 interface Evaluation {
@@ -121,7 +159,8 @@ interface Evaluation {
   bugs: string[]
 }
 
-function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
+function evaluate(form: LoanForm, build: LoanBuild, lang: AcademyLang = 'es'): Evaluation {
+  const M = MESSAGES[lang]
   const active = new Set(build.active ?? LOAN_BUG_SLOTS.map((s) => s.options[0]))
   const fixed = new Set(build.fixed ?? [])
   const regressions = new Set(build.regressions ?? [])
@@ -138,7 +177,7 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
   const checks: Check[] = []
   const nums = [age, income, amount, term]
   if (nums.some((n) => Number.isNaN(n))) {
-    const error = 'Revisa los datos: todos los campos son numéricos'
+    const error = M.numeric
     return { spec: { error }, actual: { error }, bugs }
   }
 
@@ -153,7 +192,7 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
     ageActual = Number.isInteger(age) && age >= SPEC.ageMin && age < SPEC.ageMax
     ageBug = LOAN_BUGS.age70Rejected
   }
-  checks.push({ specOk: ageSpec, actualOk: ageActual, bug: ageBug, error: 'Edad no válida: de 18 a 70 años' })
+  checks.push({ specOk: ageSpec, actualOk: ageActual, bug: ageBug, error: M.age })
 
   // Importe
   const amountSpec = amount >= SPEC.amountMin && amount <= SPEC.amountMax && amount % 100 === 0
@@ -166,7 +205,7 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
     amountActual = amount >= SPEC.amountMin && amount < SPEC.amountMax && amount % 100 === 0
     amountBug = LOAN_BUGS.max30000Rejected
   }
-  checks.push({ specOk: amountSpec, actualOk: amountActual, bug: amountBug, error: 'Importe no válido: de 1.000 € a 30.000 €, en múltiplos de 100 €' })
+  checks.push({ specOk: amountSpec, actualOk: amountActual, bug: amountBug, error: M.amount })
 
   // Plazo
   const termSpec = Number.isInteger(term) && term >= SPEC.termMin && term <= SPEC.termMax
@@ -179,11 +218,11 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
     termActual = Number.isInteger(term) && term >= SPEC.termMin && term < SPEC.termMax
     termBug = LOAN_BUGS.term84Rejected
   }
-  checks.push({ specOk: termSpec, actualOk: termActual, bug: termBug, error: 'Plazo no válido: de 12 a 84 meses' })
+  checks.push({ specOk: termSpec, actualOk: termActual, bug: termBug, error: M.term })
 
   // Ingresos
   const incomeOk = income >= SPEC.incomeMin
-  checks.push({ specOk: incomeOk, actualOk: incomeOk, error: 'Ingresos insuficientes: mínimo 1.000 € netos al mes' })
+  checks.push({ specOk: incomeOk, actualOk: incomeOk, error: M.income })
 
   let specError: string | undefined
   let actualError: string | undefined
@@ -212,10 +251,10 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
     const ratioOk = ratio <= ratioLimit || (buggy && has(LOAN_BUGS.ratioIgnored))
     if (!ageTermOk) {
       approved = false
-      reason = 'No preaprobado: terminarías de pagar con más de 75 años'
+      reason = M.endAge
     } else if (!ratioOk) {
       approved = false
-      reason = 'No preaprobado: la cuota supera el 35 % de tus ingresos'
+      reason = M.ratio
     }
     return { rate, installment, total, interest, ratio, approved, reason }
   }
@@ -235,9 +274,10 @@ function evaluate(form: LoanForm, build: LoanBuild): Evaluation {
   return { spec: { error: specError, quote: specQ }, actual: { error: actualError, quote: actualQ }, bugs }
 }
 
-export function simulate(form: LoanForm, build: LoanBuild = {}): LoanResult {
-  const ev = evaluate(form, build)
-  const input = `edad ${form.age}, ingresos ${form.income}, importe ${form.amount}, plazo ${form.term}`
+export function simulate(form: LoanForm, build: LoanBuild = {}, lang: AcademyLang = 'es'): LoanResult {
+  const M = MESSAGES[lang]
+  const ev = evaluate(form, build, lang)
+  const input = M.input(form)
   if (ev.actual.error) {
     return {
       ok: false,
@@ -245,7 +285,7 @@ export function simulate(form: LoanForm, build: LoanBuild = {}): LoanResult {
       event: {
         app: 'kobalto-loans',
         action: 'simulate',
-        summary: `Error al simular (${input}): ${ev.actual.error}`,
+        summary: M.errorSummary(input, ev.actual.error),
         technical: `POST /api/v1/loans/simulate {${input}} → 422 {"error":"${ev.actual.error}"}`,
         status: 'error',
         bugs: ev.bugs,
@@ -259,7 +299,7 @@ export function simulate(form: LoanForm, build: LoanBuild = {}): LoanResult {
     event: {
       app: 'kobalto-loans',
       action: 'simulate',
-      summary: `Simulación (${input}) → TIN ${q.rate.toFixed(2)} %, cuota ${formatEur(q.installment)}, total ${formatEur(q.total)}, ratio ${(q.ratio * 100).toFixed(1)} %: ${q.approved ? 'PREAPROBADO' : q.reason}`,
+      summary: M.okSummary(input, q.rate.toFixed(2), formatEur(q.installment, lang), formatEur(q.total, lang), (q.ratio * 100).toFixed(1), q.approved ? M.approved : (q.reason ?? '')),
       technical: `POST /api/v1/loans/simulate {${input}} → 200 {"tin":${q.rate},"cuota":${q.installment},"total":${q.total},"approved":${q.approved}}`,
       status: 'ok',
       bugs: ev.bugs,

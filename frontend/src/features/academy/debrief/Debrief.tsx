@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { RotateCcw } from "lucide-react";
 import {
-  SEVERITY_LABEL,
+  priorityLabels,
   quizScore,
+  severityLabels,
   summarize,
-  PRIORITY_LABEL,
 } from "../engine/engine";
 import { riskAssessment } from "../engine/risk";
 import { reviewSummary } from "../engine/review";
@@ -13,7 +13,153 @@ import { Avatar, Stars } from "../ui";
 import { CourseReviewPrompt } from "../CourseReviews";
 import { getCourse } from "../content/registry";
 import { useCourseAccess } from "../useCourseAccess";
-import { SCORE_LABEL, SEVERITY_STYLE, npcOf } from "../uiHelpers";
+import { SCORE_LABEL, SEVERITY_STYLE, npcOf, scoreLabels } from "../uiHelpers";
+import { missionLang } from "../i18n";
+
+const plural = (n: number, s: string, p: string) => (n === 1 ? s : p);
+
+const COPY = {
+  es: {
+    kicker: (n: number, title: string) => `Debrief · Misión ${n}: ${title}`,
+    quizTitle: (pc: number, pt: number, qc: number, qt: number) =>
+      `Diagnóstico ${pc}/${pt} → Comprobación ${qc}/${qt}`,
+    quizIntro: "Mismos conceptos antes y después de la misión, en situaciones distintas.",
+    correctAnswer: "Respuesta correcta:",
+    reviewTitle: (found: number, total: number) =>
+      `Revisión de requisitos: ${found} de ${total} defectos detectados`,
+    prevented: (team: boolean, n: number) =>
+      `${team ? "Gracias a la revisión" : "Gracias a lo que aclaraste"} antes del desarrollo, ${n} bug${plural(n, "", "s")} nunca llegaron a existir. `,
+    nonePrevented: "Nada de lo que revisaste llegó a tiempo de evitar bugs. ",
+    falsePositives: (n: number) =>
+      `Marcaste ${n} fragmento${plural(n, "", "s")} que estaban bien.`,
+    preventedTeam: "Bugs evitados en la revisión",
+    preventedQuestion: "Bugs evitados (coste: una pregunta)",
+    appeared: "Bugs que nacieron de dudas sin aclarar",
+    foundBy: (name: string) => `(lo encontró ${name})`,
+    poClarification: "Aclaración de la PO:",
+    of: "de",
+    bugsTitle: (found: number, total: number) => `Bugs reportados: ${found} de ${total}`,
+    bugsIntro: "Estos eran todos los bugs sembrados en esta misión y la técnica que los encuentra.",
+    reported: "Reportado",
+    disputed: "Reportado, pero sin poder justificarlo",
+    triggered: "Lo provocaste, pero no lo reportaste",
+    notFound: "No encontrado",
+    regression: "Regresión",
+    technique: "Técnica:",
+    qualityTitle: "Calidad de tus reports",
+    qualityIntro: (ok: number, total: number) =>
+      `Aceptados a la primera: ${ok} de ${total}. Cada ida y vuelta con el desarrollador es tiempo perdido para los dos.`,
+    thReport: "Report",
+    thRounds: "Idas y vueltas",
+    thSeverity: "Severidad (tuya → equipo)",
+    thPriority: "Prioridad (tuya → triaje)",
+    notAccepted: "Se quedó sin aceptar",
+    notSet: "Sin indicar",
+    fixesTitle: "Verificación de correcciones",
+    fixesIntro: "QA abre y QA cierra: cada fix se verifica en el build nuevo, y se repiten los casos relacionados.",
+    notVerified: "No lo verificaste",
+    closedNoRetest: "Lo cerraste sin re-probar",
+    verifiedOk: "Verificado correctamente",
+    reopenedOk: "Reabierto con razón",
+    closedBroken: "Cerrado, pero el fix no funcionaba",
+    reopenedNoReason: "Reabierto sin motivo",
+    firstFix: (works: boolean) => `· el primer fix ${works ? "funcionaba" : "no funcionaba"}`,
+    designTitle: (c: number, t: number) => `Tu diseño de pruebas: ${c} de ${t} particiones clave`,
+    noDesign: "No diseñaste casos: probaste sin plan. Diseñar antes de ejecutar es lo que hace que no se escapen bugs.",
+    designedFirst: "Diseñaste antes de ejecutar: así se prueba con intención y no al azar.",
+    designedLate: "Empezaste a probar antes de diseñar. La próxima vez, diseña primero.",
+    caseFound: (id: number, input: string) => `🐞 Tu caso #${id} («${input}») encontraba: `,
+    accepts: "se acepta",
+    rejects: "se rechaza",
+    expectedWrong: (id: number, input: string, mine: string, correct: string, missing: boolean) =>
+      `! Caso #${id} («${input}»): esperabas «${mine}», pero según los criterios ${correct}.${missing ? " Sin preguntar a la PO no podías saberlo." : ""}`,
+    resultWrong: (id: number, pass: boolean, reveals: boolean) =>
+      `! Caso #${id}: lo marcaste como «${pass ? "pasa" : "falla"}», pero ${reveals ? "ese caso revela un bug." : "el sistema se comporta correctamente."}`,
+    riskTitle: "Priorización por riesgo",
+    noRisk: "No priorizaste: sin saber qué es lo más arriesgado, el tiempo se reparte al azar.",
+    riskMatches: (m: number, t: number) => `Coincidiste en ${m} de ${t} zonas prioritarias.`,
+    thArea: "Zona",
+    thMine: "Tu valoración",
+    thSenior: "QA senior",
+    thWhy: "Por qué",
+    priorityTag: "prioridad",
+    decisions: "Tus decisiones",
+    learned: "Lo que has aprendido hoy",
+    senior: "Qué habría hecho un QA senior",
+    restart: "Repetir con otras decisiones",
+    back: "Volver al curso",
+  },
+  en: {
+    kicker: (n: number, title: string) => `Debrief · Mission ${n}: ${title}`,
+    quizTitle: (pc: number, pt: number, qc: number, qt: number) =>
+      `Diagnostic ${pc}/${pt} → Check ${qc}/${qt}`,
+    quizIntro: "The same concepts before and after the mission, in different situations.",
+    correctAnswer: "Correct answer:",
+    reviewTitle: (found: number, total: number) =>
+      `Requirements review: ${found} of ${total} defects detected`,
+    prevented: (team: boolean, n: number) =>
+      `${team ? "Thanks to the review" : "Thanks to what you clarified"} before development, ${n} bug${plural(n, "", "s")} never came to exist. `,
+    nonePrevented: "Nothing you reviewed came in time to prevent bugs. ",
+    falsePositives: (n: number) =>
+      `You marked ${n} fragment${plural(n, "", "s")} that ${plural(n, "was", "were")} fine.`,
+    preventedTeam: "Bugs prevented in the review",
+    preventedQuestion: "Bugs prevented (cost: one question)",
+    appeared: "Bugs born from unclarified questions",
+    foundBy: (name: string) => `(found by ${name})`,
+    poClarification: "PO clarification:",
+    of: "of",
+    bugsTitle: (found: number, total: number) => `Bugs reported: ${found} of ${total}`,
+    bugsIntro: "These were all the bugs seeded in this mission and the technique that finds them.",
+    reported: "Reported",
+    disputed: "Reported, but couldn't justify it",
+    triggered: "You triggered it, but didn't report it",
+    notFound: "Not found",
+    regression: "Regression",
+    technique: "Technique:",
+    qualityTitle: "Quality of your reports",
+    qualityIntro: (ok: number, total: number) =>
+      `Accepted first time: ${ok} of ${total}. Every back-and-forth with the developer is time lost for both of you.`,
+    thReport: "Report",
+    thRounds: "Back-and-forths",
+    thSeverity: "Severity (yours → team)",
+    thPriority: "Priority (yours → triage)",
+    notAccepted: "Never got accepted",
+    notSet: "Not set",
+    fixesTitle: "Fix verification",
+    fixesIntro: "QA opens and QA closes: every fix is verified on the new build, and the related cases are re-run.",
+    notVerified: "You didn't verify it",
+    closedNoRetest: "You closed it without retesting",
+    verifiedOk: "Verified correctly",
+    reopenedOk: "Rightly reopened",
+    closedBroken: "Closed, but the fix didn't work",
+    reopenedNoReason: "Reopened for no reason",
+    firstFix: (works: boolean) => `· the first fix ${works ? "worked" : "didn't work"}`,
+    designTitle: (c: number, t: number) => `Your test design: ${c} of ${t} key partitions`,
+    noDesign: "You didn't design any cases: you tested without a plan. Designing before executing is what keeps bugs from slipping through.",
+    designedFirst: "You designed before executing: that's how you test with intent, not at random.",
+    designedLate: "You started testing before designing. Next time, design first.",
+    caseFound: (id: number, input: string) => `🐞 Your case #${id} (“${input}”) found: `,
+    accepts: "accepted",
+    rejects: "rejected",
+    expectedWrong: (id: number, input: string, mine: string, correct: string, missing: boolean) =>
+      `! Case #${id} (“${input}”): you expected “${mine}”, but according to the acceptance criteria it is ${correct}.${missing ? " You couldn't have known without asking the PO." : ""}`,
+    resultWrong: (id: number, pass: boolean, reveals: boolean) =>
+      `! Case #${id}: you marked it as “${pass ? "pass" : "fail"}”, but ${reveals ? "that case reveals a bug." : "the system behaves correctly."}`,
+    riskTitle: "Risk-based prioritization",
+    noRisk: "You didn't prioritize: without knowing what's riskiest, time gets spread at random.",
+    riskMatches: (m: number, t: number) => `You matched ${m} of ${t} priority areas.`,
+    thArea: "Area",
+    thMine: "Your rating",
+    thSenior: "Senior QA",
+    thWhy: "Why",
+    priorityTag: "priority",
+    decisions: "Your decisions",
+    learned: "What you learned today",
+    senior: "What a senior QA would have done",
+    restart: "Replay with other decisions",
+    back: "Back to the course",
+  },
+};
 
 const TONE = {
   good: "border-ase-success/40 bg-ase-success/10",
@@ -33,7 +179,12 @@ export function Debrief({
   backTo: string;
 }) {
   const { access } = useCourseAccess(mission.courseKey);
-  const courseMissions = getCourse(mission.courseKey)?.missions ?? [];
+  const lang = missionLang(mission);
+  const t = COPY[lang];
+  const scoreLabel = scoreLabels(lang);
+  const sevLabel = severityLabels(lang);
+  const prioLabel = priorityLabels(lang);
+  const courseMissions = getCourse(mission.courseKey, lang)?.missions ?? [];
   const lastMission =
     courseMissions.length > 0 &&
     courseMissions[courseMissions.length - 1].id === mission.id;
@@ -52,7 +203,7 @@ export function Debrief({
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="space-y-2">
           <p className="text-label uppercase text-ase-brand">
-            Debrief · Misión {mission.number}: {mission.title}
+            {t.kicker(mission.number, mission.title)}
           </p>
           <h1 className="font-display text-heading-xl">
             {summary.verdict.title}
@@ -66,7 +217,7 @@ export function Debrief({
           >
             <Avatar npc={laura} />
             <p className="text-body-sm text-ase-text">
-              «{closing.replies[0].body}»
+              {lang === "en" ? `“${closing.replies[0].body}”` : `«${closing.replies[0].body}»`}
             </p>
           </div>
         )}
@@ -77,8 +228,8 @@ export function Debrief({
               key={k}
               className="flex items-center justify-between rounded-ase-lg border border-ase-border bg-ase-surface px-4 py-3"
             >
-              <span className="text-body-sm">{SCORE_LABEL[k]}</span>
-              <Stars value={summary.stars[k]} />
+              <span className="text-body-sm">{scoreLabel[k]}</span>
+              <Stars value={summary.stars[k]} lang={lang} />
             </div>
           ))}
         </section>
@@ -86,14 +237,15 @@ export function Debrief({
         {mission.quiz && quizScore(mission, state, "post").answered > 0 && (
           <section className="rounded-ase-lg border border-ase-border bg-ase-surface p-5">
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Diagnóstico {quizScore(mission, state, "pre").correct}/
-              {quizScore(mission, state, "pre").total} → Comprobación{" "}
-              {quizScore(mission, state, "post").correct}/
-              {quizScore(mission, state, "post").total}
+              {t.quizTitle(
+                quizScore(mission, state, "pre").correct,
+                quizScore(mission, state, "pre").total,
+                quizScore(mission, state, "post").correct,
+                quizScore(mission, state, "post").total,
+              )}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
-              Mismos conceptos antes y después de la misión, en situaciones
-              distintas.
+              {t.quizIntro}
             </p>
             <ul className="space-y-3">
               {mission.quiz.post.map((q) => {
@@ -105,7 +257,7 @@ export function Debrief({
                     </p>
                     {!ok && (
                       <p className="text-ase-text2">
-                        Respuesta correcta: {q.options[q.correct]}
+                        {t.correctAnswer} {q.options[q.correct]}
                       </p>
                     )}
                     <p className="text-caption text-ase-muted">
@@ -121,21 +273,19 @@ export function Debrief({
         {review && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Revisión de requisitos: {review.found} de {review.total} defectos
-              detectados
+              {t.reviewTitle(review.found, review.total)}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
               {review.prevented.length > 0
-                ? `${mission.requirementsReview?.teamFindings ? "Gracias a la revisión" : "Gracias a lo que aclaraste"} antes del desarrollo, ${review.prevented.length} bug${review.prevented.length === 1 ? "" : "s"} nunca llegaron a existir. `
-                : "Nada de lo que revisaste llegó a tiempo de evitar bugs. "}
-              {review.falsePositives > 0 &&
-                `Marcaste ${review.falsePositives} fragmento${review.falsePositives === 1 ? "" : "s"} que estaban bien.`}
+                ? t.prevented(!!mission.requirementsReview?.teamFindings, review.prevented.length)
+                : t.nonePrevented}
+              {review.falsePositives > 0 && t.falsePositives(review.falsePositives)}
             </p>
             <div className="grid gap-3 md:grid-cols-2">
               {review.prevented.length > 0 && (
                 <article className="rounded-ase-lg border border-ase-success/40 bg-ase-success/5 p-4">
                   <h3 className="mb-2 font-sans text-body-md font-semibold text-ase-success">
-                    {mission.requirementsReview?.teamFindings ? 'Bugs evitados en la revisión' : 'Bugs evitados (coste: una pregunta)'}
+                    {mission.requirementsReview?.teamFindings ? t.preventedTeam : t.preventedQuestion}
                   </h3>
                   <ul className="space-y-1 text-body-sm text-ase-text2">
                     {review.prevented.map((b) => (
@@ -147,7 +297,7 @@ export function Debrief({
               {review.appeared.length > 0 && (
                 <article className="rounded-ase-lg border border-ase-warning/40 bg-ase-warning/5 p-4">
                   <h3 className="mb-2 font-sans text-body-md font-semibold text-ase-warning">
-                    Bugs que nacieron de dudas sin aclarar
+                    {t.appeared}
                   </h3>
                   <ul className="space-y-1 text-body-sm text-ase-text2">
                     {review.appeared.map((b) => (
@@ -165,17 +315,16 @@ export function Debrief({
                 >
                   <p className={i.found ? "text-ase-text" : "text-ase-warning"}>
                     {i.found ? "✓" : "✗"}{" "}
-                    {i.fragments.map((f) => `«${f}»`).join(" / ")}
+                    {i.fragments.map((f) => (lang === "en" ? `“${f}”` : `«${f}»`)).join(" / ")}
                     {i.foundBy && (
                       <span className="ml-1 text-caption text-ase-muted">
-                        (lo encontró{" "}
-                        {npcOf(mission, i.foundBy).name.split(" ")[0]})
+                        {t.foundBy(npcOf(mission, i.foundBy).name.split(" ")[0])}
                       </span>
                     )}
                   </p>
                   <p className="text-ase-text2">{i.explanation}</p>
                   <p className="text-caption text-ase-brand">
-                    Aclaración de la PO: {i.clarification}
+                    {t.poClarification} {i.clarification}
                   </p>
                 </li>
               ))}
@@ -191,7 +340,7 @@ export function Debrief({
           return (
             <section>
               <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-                {p.title}: {covered} de {p.rules.length}
+                {p.title}: {covered} {t.of} {p.rules.length}
               </h2>
               <p className="mb-4 text-body-sm text-ase-muted">{p.intro}</p>
               <div className="grid gap-3 md:grid-cols-2">
@@ -233,11 +382,10 @@ export function Debrief({
         {!mission.hideBugList && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Bugs reportados: {summary.found} de {summary.total}
+              {t.bugsTitle(summary.found, summary.total)}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
-              Estos eran todos los bugs sembrados en esta misión y la técnica
-              que los encuentra.
+              {t.bugsIntro}
             </p>
             <ul className="space-y-3">
               {summary.bugs.map((b) => {
@@ -250,18 +398,12 @@ export function Debrief({
                     "verified",
                     "reopened",
                   ].includes(b.reportStatus)
-                    ? { t: "Reportado", c: "text-ase-success" }
+                    ? { t: t.reported, c: "text-ase-success" }
                     : b.reportStatus === "disputed"
-                      ? {
-                          t: "Reportado, pero sin poder justificarlo",
-                          c: "text-ase-warning",
-                        }
+                      ? { t: t.disputed, c: "text-ase-warning" }
                       : b.triggered
-                        ? {
-                            t: "Lo provocaste, pero no lo reportaste",
-                            c: "text-ase-warning",
-                          }
-                        : { t: "No encontrado", c: "text-ase-muted" };
+                        ? { t: t.triggered, c: "text-ase-warning" }
+                        : { t: t.notFound, c: "text-ase-muted" };
                 return (
                   <li
                     key={b.id}
@@ -271,11 +413,11 @@ export function Debrief({
                       <span
                         className={`rounded border px-2 text-caption ${SEVERITY_STYLE[b.severity]}`}
                       >
-                        {SEVERITY_LABEL[b.severity]}
+                        {sevLabel[b.severity]}
                       </span>
                       {b.regression && (
                         <span className="rounded border border-ase-error/40 px-2 text-caption text-ase-error">
-                          Regresión
+                          {t.regression}
                         </span>
                       )}
                       <span className="font-medium">{b.title}</span>
@@ -287,7 +429,7 @@ export function Debrief({
                       {b.explanation}
                     </p>
                     <p className="mt-1 text-caption text-ase-brand">
-                      Técnica: {b.technique}
+                      {t.technique} {b.technique}
                     </p>
                   </li>
                 );
@@ -299,29 +441,27 @@ export function Debrief({
         {mission.reportPriority && summary.reportQuality.length > 0 && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Calidad de tus reports
+              {t.qualityTitle}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
-              Aceptados a la primera:{" "}
-              {
+              {t.qualityIntro(
                 summary.reportQuality.filter(
                   (r) =>
                     r.amendments === 0 &&
                     r.status !== "needs_info" &&
                     r.status !== "disputed",
-                ).length
-              }{" "}
-              de {summary.reportQuality.length}. Cada ida y vuelta con el
-              desarrollador es tiempo perdido para los dos.
+                ).length,
+                summary.reportQuality.length,
+              )}
             </p>
             <div className="overflow-x-auto rounded-ase-lg border border-ase-border">
               <table className="w-full min-w-[640px] text-left text-body-sm">
                 <thead className="bg-ase-bg2 text-caption uppercase text-ase-muted">
                   <tr>
-                    <th className="px-3 py-2">Report</th>
-                    <th className="px-3 py-2">Idas y vueltas</th>
-                    <th className="px-3 py-2">Severidad (tuya → equipo)</th>
-                    <th className="px-3 py-2">Prioridad (tuya → triaje)</th>
+                    <th className="px-3 py-2">{t.thReport}</th>
+                    <th className="px-3 py-2">{t.thRounds}</th>
+                    <th className="px-3 py-2">{t.thSeverity}</th>
+                    <th className="px-3 py-2">{t.thPriority}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ase-border">
@@ -335,7 +475,7 @@ export function Debrief({
                         {(r.status === "needs_info" ||
                           r.status === "disputed") && (
                           <span className="block text-caption text-ase-warning">
-                            Se quedó sin aceptar
+                            {t.notAccepted}
                           </span>
                         )}
                       </td>
@@ -347,20 +487,20 @@ export function Debrief({
                       <td
                         className={`px-3 py-2 ${r.realSeverity && r.realSeverity !== r.severity ? "text-ase-warning" : "text-ase-text2"}`}
                       >
-                        {SEVERITY_LABEL[r.severity]}
+                        {sevLabel[r.severity]}
                         {r.realSeverity &&
                           r.realSeverity !== r.severity &&
-                          ` → ${SEVERITY_LABEL[r.realSeverity]}`}
+                          ` → ${sevLabel[r.realSeverity]}`}
                       </td>
                       <td
                         className={`px-3 py-2 ${r.realPriority && r.realPriority !== r.priority ? "text-ase-warning" : "text-ase-text2"}`}
                       >
                         {r.priority
-                          ? PRIORITY_LABEL[r.priority]
-                          : "Sin indicar"}
+                          ? prioLabel[r.priority]
+                          : t.notSet}
                         {r.realPriority &&
                           r.realPriority !== r.priority &&
-                          ` → ${PRIORITY_LABEL[r.realPriority]}`}
+                          ` → ${prioLabel[r.realPriority]}`}
                       </td>
                     </tr>
                   ))}
@@ -373,32 +513,25 @@ export function Debrief({
         {summary.fixes.length > 0 && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Verificación de correcciones
+              {t.fixesTitle}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
-              QA abre y QA cierra: cada fix se verifica en el build nuevo, y se
-              repiten los casos relacionados.
+              {t.fixesIntro}
             </p>
             <ul className="space-y-2">
               {summary.fixes.map((f) => {
                 const last = f.verifications.at(-1);
                 const verdict = !last
-                  ? { t: "No lo verificaste", c: "text-ase-warning" }
+                  ? { t: t.notVerified, c: "text-ase-warning" }
                   : !last.retested
-                    ? { t: "Lo cerraste sin re-probar", c: "text-ase-warning" }
+                    ? { t: t.closedNoRetest, c: "text-ase-warning" }
                     : last.correct
                       ? {
-                          t:
-                            last.verdict === "close"
-                              ? "Verificado correctamente"
-                              : "Reabierto con razón",
+                          t: last.verdict === "close" ? t.verifiedOk : t.reopenedOk,
                           c: "text-ase-success",
                         }
                       : {
-                          t:
-                            last.verdict === "close"
-                              ? "Cerrado, pero el fix no funcionaba"
-                              : "Reabierto sin motivo",
+                          t: last.verdict === "close" ? t.closedBroken : t.reopenedNoReason,
                           c: "text-ase-error",
                         };
                 return (
@@ -411,8 +544,7 @@ export function Debrief({
                     </span>
                     <span className="text-ase-text">{f.title}</span>
                     <span className="text-caption text-ase-muted">
-                      · el primer fix{" "}
-                      {f.firstFixWorks ? "funcionaba" : "no funcionaba"}
+                      {t.firstFix(f.firstFixWorks)}
                     </span>
                     <span className={`ml-auto text-caption ${verdict.c}`}>
                       {verdict.t}
@@ -427,15 +559,14 @@ export function Debrief({
         {summary.design && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Tu diseño de pruebas: {summary.design.coreCovered} de{" "}
-              {summary.design.coreTotal} particiones clave
+              {t.designTitle(summary.design.coreCovered, summary.design.coreTotal)}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
               {summary.design.cases.length === 0
-                ? "No diseñaste casos: probaste sin plan. Diseñar antes de ejecutar es lo que hace que no se escapen bugs."
+                ? t.noDesign
                 : summary.design.designedBeforeExecuting
-                  ? "Diseñaste antes de ejecutar: así se prueba con intención y no al azar."
-                  : "Empezaste a probar antes de diseñar. La próxima vez, diseña primero."}
+                  ? t.designedFirst
+                  : t.designedLate}
             </p>
             <div className="grid gap-3 md:grid-cols-2">
               {summary.design.areas.map((a) => (
@@ -481,7 +612,7 @@ export function Debrief({
                   .filter((c) => c.reveals)
                   .map((c) => (
                     <li key={`r${c.case.id}`} className="text-ase-text2">
-                      🐞 Tu caso #{c.case.id} («{c.case.input}») encontraba:{" "}
+                      {t.caseFound(c.case.id, c.case.input)}
                       {mission.bugs.find((b) => b.id === c.reveals)?.title}
                     </li>
                   ))}
@@ -489,24 +620,20 @@ export function Debrief({
                   .filter((c) => c.expectedWrong)
                   .map((c) => (
                     <li key={`e${c.case.id}`} className="text-ase-warning">
-                      ! Caso #{c.case.id} («{c.case.input}»): esperabas «
-                      {c.case.expectAccept ? "se acepta" : "se rechaza"}», pero
-                      según los criterios{" "}
-                      {c.correctAccept ? "se acepta" : "se rechaza"}.
-                      {c.missingRules
-                        ? " Sin preguntar a la PO no podías saberlo."
-                        : ""}
+                      {t.expectedWrong(
+                        c.case.id,
+                        c.case.input,
+                        c.case.expectAccept ? t.accepts : t.rejects,
+                        c.correctAccept ? t.accepts : t.rejects,
+                        c.missingRules,
+                      )}
                     </li>
                   ))}
                 {summary.design.cases
                   .filter((c) => c.resultWrong)
                   .map((c) => (
                     <li key={`x${c.case.id}`} className="text-ase-warning">
-                      ! Caso #{c.case.id}: lo marcaste como «
-                      {c.case.result === "pass" ? "pasa" : "falla"}», pero{" "}
-                      {c.reveals
-                        ? "ese caso revela un bug."
-                        : "el sistema se comporta correctamente."}
+                      {t.resultWrong(c.case.id, c.case.result === "pass", !!c.reveals)}
                     </li>
                   ))}
               </ul>
@@ -517,21 +644,21 @@ export function Debrief({
         {risk && (
           <section>
             <h2 className="mb-1 font-sans text-heading-sm font-semibold">
-              Priorización por riesgo
+              {t.riskTitle}
             </h2>
             <p className="mb-4 text-body-sm text-ase-muted">
               {risk.rated === 0
-                ? "No priorizaste: sin saber qué es lo más arriesgado, el tiempo se reparte al azar."
-                : `Coincidiste en ${risk.topMatches} de ${risk.refTop.length} zonas prioritarias.`}
+                ? t.noRisk
+                : t.riskMatches(risk.topMatches, risk.refTop.length)}
             </p>
             <div className="overflow-x-auto rounded-ase-lg border border-ase-border">
               <table className="w-full min-w-[600px] text-left text-body-sm">
                 <thead className="bg-ase-bg2 text-caption uppercase text-ase-muted">
                   <tr>
-                    <th className="px-3 py-2">Zona</th>
-                    <th className="px-3 py-2">Tu valoración</th>
-                    <th className="px-3 py-2">QA senior</th>
-                    <th className="px-3 py-2">Por qué</th>
+                    <th className="px-3 py-2">{t.thArea}</th>
+                    <th className="px-3 py-2">{t.thMine}</th>
+                    <th className="px-3 py-2">{t.thSenior}</th>
+                    <th className="px-3 py-2">{t.thWhy}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ase-border">
@@ -541,7 +668,7 @@ export function Debrief({
                         {r.label}
                         {risk.refTop.includes(r.id) && (
                           <span className="ml-2 text-caption text-ase-error">
-                            prioridad
+                            {t.priorityTag}
                           </span>
                         )}
                       </td>
@@ -565,7 +692,7 @@ export function Debrief({
         {state.notes.length > 0 && (
           <section>
             <h2 className="mb-3 font-sans text-heading-sm font-semibold">
-              Tus decisiones
+              {t.decisions}
             </h2>
             <ul className="space-y-2">
               {state.notes.map((n, i) => (
@@ -590,7 +717,7 @@ export function Debrief({
 
         <section>
           <h2 className="mb-3 font-sans text-heading-sm font-semibold">
-            Lo que has aprendido hoy
+            {t.learned}
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
             {concepts.map((c) => (
@@ -609,7 +736,7 @@ export function Debrief({
 
         <section className="rounded-ase-lg border border-ase-gold/40 bg-ase-gold/5 p-5">
           <h2 className="mb-2 font-sans text-heading-sm font-semibold">
-            Qué habría hecho un QA senior
+            {t.senior}
           </h2>
           <ul className="ml-5 list-disc space-y-1 text-body-sm text-ase-text2">
             {mission.seniorTips.map((t, i) => (
@@ -628,13 +755,13 @@ export function Debrief({
             onClick={onRestart}
             className="flex items-center gap-2 rounded-ase-md bg-ase-brand px-4 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong"
           >
-            <RotateCcw className="h-4 w-4" /> Repetir con otras decisiones
+            <RotateCcw className="h-4 w-4" /> {t.restart}
           </button>
           <Link
             to={backTo}
             className="rounded-ase-md border border-ase-border px-4 py-2 text-body-sm text-ase-text hover:border-ase-brand"
           >
-            Volver al curso
+            {t.back}
           </Link>
         </div>
       </div>

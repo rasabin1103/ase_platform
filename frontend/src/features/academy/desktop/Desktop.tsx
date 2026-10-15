@@ -16,30 +16,78 @@ import type { ToolProps } from '../tools/types'
 import { WikiTool } from '../tools/WikiTool'
 import { Avatar, RichText } from '../ui'
 import { npcOf } from '../uiHelpers'
+import { missionLang, type AcademyLang } from '../i18n'
 
-const TOOL_META: Record<ToolId, { label: string; icon: typeof Mail }> = {
-  mail: { label: 'Correo', icon: Mail },
-  chat: { label: 'Chat', icon: MessageSquare },
-  tickets: { label: 'Tablero', icon: ClipboardList },
-  review: { label: 'Revisión', icon: FileSearch },
-  design: { label: 'Diseño', icon: ListChecks },
-  wiki: { label: 'Wiki', icon: BookOpen },
-  app: { label: 'Staging', icon: Landmark },
-  logs: { label: 'Logs', icon: Terminal },
+const TOOL_ICON: Record<ToolId, typeof Mail> = {
+  mail: Mail,
+  chat: MessageSquare,
+  tickets: ClipboardList,
+  review: FileSearch,
+  design: ListChecks,
+  wiki: BookOpen,
+  app: Landmark,
+  logs: Terminal,
+}
+
+const TOOL_LABEL: Record<AcademyLang, Record<ToolId, string>> = {
+  es: { mail: 'Correo', chat: 'Chat', tickets: 'Tablero', review: 'Revisión', design: 'Diseño', wiki: 'Wiki', app: 'Staging', logs: 'Logs' },
+  en: { mail: 'Mail', chat: 'Chat', tickets: 'Board', review: 'Review', design: 'Design', wiki: 'Wiki', app: 'Staging', logs: 'Logs' },
+}
+
+const COPY = {
+  es: {
+    exit: 'Salir (la partida se guarda)',
+    ask: (name: string) => `Pregúntale a ${name}`,
+    wait: 'Esperar 30 min',
+    confirmEnd: '¿Terminar la jornada e ir a la charla de las 17:00?',
+    endDay: 'Terminar el día',
+    newMail: 'Nuevo correo',
+    newMessage: 'Nuevo mensaje',
+    meeting: 'Reunión',
+  },
+  en: {
+    exit: 'Exit (your game is saved)',
+    ask: (name: string) => `Ask ${name}`,
+    wait: 'Wait 30 min',
+    confirmEnd: 'End the day and go to the 17:00 wrap-up talk?',
+    endDay: 'End the day',
+    newMail: 'New email',
+    newMessage: 'New message',
+    meeting: 'Meeting',
+  },
 }
 
 const channelTool: Record<Message['channel'], ToolId> = { email: 'mail', chat: 'chat', meeting: 'chat' }
 
-const SYNC_LABEL: Record<SyncStatus, { text: string; cls: string }> = {
-  saved: { text: 'Progreso guardado', cls: 'text-ase-success' },
-  saving: { text: 'Guardando…', cls: 'text-ase-muted' },
-  loading: { text: 'Cargando…', cls: 'text-ase-muted' },
-  error: { text: 'Sin conexión: guardado solo en este navegador', cls: 'text-ase-warning' },
-  local: { text: 'Inicia sesión para guardar tu progreso en tu cuenta', cls: 'text-ase-muted' },
+const SYNC_CLS: Record<SyncStatus, string> = {
+  saved: 'text-ase-success',
+  saving: 'text-ase-muted',
+  loading: 'text-ase-muted',
+  error: 'text-ase-warning',
+  local: 'text-ase-muted',
+}
+
+const SYNC_TEXT: Record<AcademyLang, Record<SyncStatus, string>> = {
+  es: {
+    saved: 'Progreso guardado',
+    saving: 'Guardando…',
+    loading: 'Cargando…',
+    error: 'Sin conexión: guardado solo en este navegador',
+    local: 'Inicia sesión para guardar tu progreso en tu cuenta',
+  },
+  en: {
+    saved: 'Progress saved',
+    saving: 'Saving…',
+    loading: 'Loading…',
+    error: 'Offline: saved in this browser only',
+    local: 'Sign in to save your progress to your account',
+  },
 }
 
 export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObject<RunState>; backTo: string; sync: SyncStatus }) {
   const { mission, state, dispatch } = props
+  const lang = missionLang(mission)
+  const c = COPY[lang]
   const [tool, setTool] = useState<ToolId>('mail')
   const [mentorOpen, setMentorOpen] = useState(false)
   // Datos que la herramienta de diseño precarga en la app bajo prueba.
@@ -67,15 +115,15 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
     <div className="flex h-dvh flex-col bg-ase-bg text-ase-text">
       {/* Barra superior */}
       <header className="flex flex-wrap items-center gap-3 border-b border-ase-border bg-ase-bg2 px-4 py-2">
-        <Link to={props.backTo} className="text-caption text-ase-muted hover:text-ase-text" title="Salir (la partida se guarda)">
+        <Link to={props.backTo} className="text-caption text-ase-muted hover:text-ase-text" title={c.exit}>
           <LogOut className="h-4 w-4" />
         </Link>
         <span className="font-display text-body-lg font-semibold">{mission.world.company}</span>
         <span className="hidden text-caption text-ase-muted sm:inline">
           {mission.playerRole} · {mission.title}
         </span>
-        <span className={`hidden text-caption lg:inline ${SYNC_LABEL[sync].cls}`} role="status">
-          {SYNC_LABEL[sync].text}
+        <span className={`hidden text-caption lg:inline ${SYNC_CLS[sync]}`} role="status">
+          {SYNC_TEXT[lang][sync]}
         </span>
         <div className="ml-auto flex items-center gap-3">
           <span className="flex items-center gap-1.5 font-mono text-data-md">
@@ -92,7 +140,7 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
               disabled={!!meeting || state.finished}
               className="flex items-center gap-1 rounded-ase-md border border-ase-brand/50 px-2.5 py-1 text-caption text-ase-text hover:bg-ase-brand/10 disabled:opacity-40"
             >
-              <GraduationCap className="h-3.5 w-3.5" /> Pregúntale a {npcOf(mission, mission.mentor ?? mission.reportReviewer).name.split(' ')[0]}
+              <GraduationCap className="h-3.5 w-3.5" /> {c.ask(npcOf(mission, mission.mentor ?? mission.reportReviewer).name.split(' ')[0])}
             </button>
           )}
           <button
@@ -101,17 +149,17 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
             disabled={!!meeting || state.finished}
             className="rounded-ase-md border border-ase-border px-2.5 py-1 text-caption text-ase-text2 hover:border-ase-brand disabled:opacity-40"
           >
-            Esperar 30 min
+            {c.wait}
           </button>
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('¿Terminar la jornada e ir a la charla de las 17:00?')) dispatch({ type: 'endDay' })
+              if (window.confirm(c.confirmEnd)) dispatch({ type: 'endDay' })
             }}
             disabled={!!meeting || state.finished}
             className="flex items-center gap-1 rounded-ase-md bg-ase-surfaceSoft px-2.5 py-1 text-caption text-ase-text hover:bg-ase-brand/20 disabled:opacity-40"
           >
-            <FastForward className="h-3.5 w-3.5" /> Terminar el día
+            <FastForward className="h-3.5 w-3.5" /> {c.endDay}
           </button>
         </div>
       </header>
@@ -120,8 +168,8 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
         {/* Dock de herramientas */}
         <nav className="flex shrink-0 justify-around border-t border-ase-border bg-ase-bg2 md:flex-col md:justify-start md:gap-1 md:border-r md:border-t-0 md:p-2">
           {mission.tools.map(({ tool: id }) => {
-            const meta = id === 'app' && mission.appLabel ? { ...TOOL_META.app, label: mission.appLabel } : TOOL_META[id]
-            const Icon = meta.icon
+            const label = id === 'app' && mission.appLabel ? mission.appLabel : TOOL_LABEL[lang][id]
+            const Icon = TOOL_ICON[id]
             const n = unread(id)
             const locked = toolStatus(mission, state, id) === 'locked'
             return (
@@ -134,7 +182,7 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
                 }`}
               >
                 <Icon className="h-5 w-5" />
-                {meta.label}
+                {label}
                 {locked && <Lock className="absolute right-1.5 top-1.5 h-3 w-3" />}
                 {n > 0 && (
                   <span className="absolute right-1 top-1 min-w-4 rounded-full bg-ase-brand px-1 text-[10px] font-semibold text-white">{n}</span>
@@ -196,7 +244,7 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
               <Avatar npc={npcOf(mission, toast.from)} size="sm" />
               <span className="min-w-0">
                 <span className="block text-caption text-ase-muted">
-                  {toast.channel === 'email' ? 'Nuevo correo' : 'Nuevo mensaje'} · {npcOf(mission, toast.from).name}
+                  {toast.channel === 'email' ? c.newMail : c.newMessage} · {npcOf(mission, toast.from).name}
                 </span>
                 <span className="line-clamp-2 text-body-sm text-ase-text">{toast.subject ?? toast.body.replace(/\*\*/g, '').replace(/\s*\n+\s*-?\s*/g, ' · ')}</span>
               </span>
@@ -218,7 +266,9 @@ function MeetingModal({ mission, state, dispatch, meeting }: ToolProps & { meeti
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal aria-labelledby="meeting-title">
       <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-ase-xl border border-ase-border bg-ase-bg2 p-6 shadow-soft">
-        <p className="text-label uppercase text-ase-brand">Reunión · {clockLabel(mission, meeting.at)}</p>
+        <p className="text-label uppercase text-ase-brand">
+          {COPY[missionLang(mission)].meeting} · {clockLabel(mission, meeting.at)}
+        </p>
         <h2 id="meeting-title" className="mb-3 font-sans text-heading-sm font-semibold">
           {meeting.subject}
         </h2>

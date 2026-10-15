@@ -1,0 +1,177 @@
+import type { Effect, Scene } from '../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Escenas de la misión 6 del curso 2 (Números que cuentan). */
+export const m06Scenes: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: 'Informe de progreso para dirección',
+    body: 'Estamos a mitad del sprint 3 y dirección quiere saber a las 12:00 cómo vamos con la release. Prepárame un informe de progreso con el panel de métricas (app «Métricas»). Y a última hora, el informe de cierre de las pruebas del sprint.\n\nNecesito saber si llegamos o no, no cuántas cosas hemos hecho.\n\nRaúl',
+  },
+  {
+    id: 'chat_tomas',
+    channel: 'chat',
+    from: 'tomas',
+    at: 20,
+    body: 'Buenos días. Te aviso: ayer cerré 5 bugs de facturas como «no reproducible». En mi máquina funciona todo. Así el gráfico de cerrados queda bonito para dirección. 😉',
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 40,
+    body: 'Antes de mandar nada, mira el panel entero. Un número suelto casi siempre cuenta solo la parte buena: cruza los casos pasados con los requisitos cubiertos y los cerrados con cómo se cerraron. Tienes la guía de métricas en la wiki.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'test_metrics' }],
+  },
+  {
+    id: 'laura_progress_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'progress.sent' },
+        { kind: 'flag', key: 'metrics.ok' },
+        { kind: 'flag', key: 'misleading.ok' },
+        { kind: 'flag', key: 'report.audience' },
+      ],
+    },
+    body: 'He leído tu informe. Ni maquillado ni un volcado de datos: estado, riesgo y qué decisión hace falta. Y el del equipo sirve para trabajar mañana. Así se comunica el estado.',
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'communication', add: 1 },
+      { kind: 'unlock', conceptId: 'status_comm' },
+      { kind: 'note', tone: 'good', text: 'Enviaste métricas útiles, bien interpretadas y adaptadas a cada audiencia.' },
+    ],
+  },
+  {
+    id: 'status',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena'],
+    at: 180,
+    subject: '12:00 · Estado de la release con dirección',
+    body: '**Raúl:** Dirección pregunta cómo vamos. Elena dice que el panel tiene un 100 % muy verde. ¿Qué les cuento?',
+    choices: [
+      {
+        id: 'honest',
+        text: 'Vamos en ámbar. El 100 % es de lo poco que hemos probado: 8 de 20 requisitos. Vamos al 40 % frente al 50 % previsto, hay un crítico abierto en facturas y las tarjetas, que son riesgo alto, aún no se han probado. Con las acciones del informe llegamos a lo crítico; para el resto necesito una decisión sobre el alcance.',
+        requires: { kind: 'flag', key: 'report.mgmt' },
+        cost: 15,
+        reply: 'Ámbar con un plan es algo que puedo defender. Les llevo tu informe tal cual.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'status.honest' },
+          { kind: 'score', key: 'communication', add: 2 },
+          { kind: 'score', key: 'risk', add: 1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'good', text: 'Comunicaste el estado real: avance frente al plan, cobertura, defectos y riesgo residual.' },
+        ],
+      },
+      {
+        id: 'green',
+        text: 'Vamos en verde: el 100 % de los casos ha pasado y hemos cerrado 12 defectos.',
+        cost: 5,
+        reply: 'Genial, se lo digo así.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'report.makeup' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'score', key: 'communication', add: -1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'bad', text: 'Maquillaste el estado con métricas engañosas.' },
+        ],
+      },
+      {
+        id: 'volume',
+        text: 'Hemos ejecutado 48 casos y registrado 26 defectos. El equipo está trabajando muchísimo.',
+        cost: 5,
+        reply: 'Ya… pero ¿llegamos o no llegamos?',
+        replyFrom: 'elena',
+        effects: [
+          { kind: 'score', key: 'communication', add: -1 },
+          { kind: 'unlock', conceptId: 'progress_report' },
+          { kind: 'note', tone: 'bad', text: 'Reportaste volumen en lugar de riesgo: dirección no puede decidir con eso.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'control',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'laura', 'tomas'],
+    at: 360,
+    subject: '15:00 · Seguimiento del sprint',
+    body: '**Raúl:** Dirección mantiene la fecha de la release. Seguimos por detrás del plan. ¿Qué hacemos?',
+    choices: [
+      {
+        id: 'control',
+        text: 'Repriorizamos: mañana, tarjetas primero; la exportación CSV y el idioma pasan al siguiente sprint si no da tiempo. Tomás, reabrimos los 5 «no reproducible» y los vemos juntos en staging. Y Elena, si el viernes quedan riesgos altos sin probar, que dirección acepte por escrito el riesgo o movemos el alcance.',
+        requires: { kind: 'flag', key: 'progress.sent' },
+        cost: 15,
+        reply: 'De acuerdo. El CSV puede esperar; las tarjetas no.',
+        replyFrom: 'elena',
+        effects: [
+          { kind: 'flag', key: 'control.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'good', text: 'Tomaste acciones de control: repriorizar por riesgo, reabrir defectos dudosos y renegociar el alcance.' },
+        ],
+      },
+      {
+        id: 'overtime',
+        text: 'Hacemos horas extra toda la semana y llegamos a todo.',
+        cost: 5,
+        reply: 'Ya lo intentamos en el sprint 1… y acabamos con más bugs.',
+        replyFrom: 'tomas',
+        effects: [
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'bad', text: 'Respondiste al retraso con más horas en lugar de con control: prioridad, recursos o alcance.' },
+        ],
+      },
+      {
+        id: 'hide',
+        text: 'Quitamos del informe los riesgos sin probar; si no salen, nadie pregunta.',
+        cost: 5,
+        reply: 'Eso no lo voy a firmar.',
+        replyFrom: 'laura',
+        effects: [
+          { kind: 'flag', key: 'report.makeup' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'test_control' },
+          { kind: 'note', tone: 'bad', text: 'Propusiste esconder el riesgo residual en lugar de gestionarlo.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    at: 480,
+    subject: '17:00 · Café con Laura',
+    body: '**Laura:** Día de números. ¿Qué te llevas?',
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: 'Que una métrica sirve si ayuda a decidir: avance frente al plan, cobertura, defectos y riesgo residual. Que un 100 % puede mentir. Que cada audiencia necesita su informe. Y que medir sirve para corregir el rumbo y cerrar contando también lo que no salió.',
+        reply: 'Eso es. Ahora falta saber qué versión estamos probando exactamente…',
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'Que lo importante es que el gráfico salga en verde.',
+        reply: 'Mira en el debrief qué pasa cuando el verde no es verdad.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'Te quedaste con las métricas como escaparate, no como herramienta.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

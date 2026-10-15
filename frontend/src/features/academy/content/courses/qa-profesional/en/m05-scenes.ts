@@ -1,0 +1,178 @@
+import type { Effect, Scene } from '../../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Scenes for course 2, mission 5 (The plan). */
+export const m05ScenesEn: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: 'Test plan for release 1.0',
+    body: 'Today at 3:00 PM I have a committee meeting with management to set the date for Business release 1.0. I need your test plan and an estimate we can defend. You have the planner in the "Plan" app.\n\nRaúl',
+  },
+  {
+    id: 'mail_elena',
+    channel: 'email',
+    from: 'elena',
+    at: 0,
+    subject: 'Watch out for the e-signature',
+    body: "The e-signature vendor just wrote to me: their API will reach us two weeks later than planned. 😬 And don't forget that what customers care about most are the cards and the invoices.\n\nElena",
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 30,
+    body: "For the plan, you have the template and the estimation guide on the wiki. A tip: a plan is useful if someone can make a decision with it. Measurable criteria, well-classified risks and an estimate with its numbers.",
+    onDeliver: [{ kind: 'unlock', conceptId: 'test_plan' }],
+  },
+  {
+    id: 'delphi',
+    channel: 'meeting',
+    from: 'laura',
+    with: ['tomas', 'sofia'],
+    at: 120,
+    subject: '11:00 AM · Team estimation (Wideband Delphi)',
+    body: '**Laura:** First blind round for the release test effort, in person-days: **Tomás 10 · Sofía 26 · Laura 19 · you 20**. A wide spread. How do we proceed?',
+    choices: [
+      {
+        id: 'explain',
+        text: 'Let the outliers explain: Tomás, why 10? Sofía, why 26? Then another blind round.',
+        cost: 20,
+        reply: "I hadn't counted regression or performance… In the second round I'll say 18. — Sofía: and I had counted the e-signature twice; I'll say 21. We're converging around 20.",
+        replyFrom: 'tomas',
+        effects: [
+          { kind: 'flag', key: 'delphi.ok' },
+          { kind: 'score', key: 'communication', add: 1 },
+          { kind: 'score', key: 'rigor', add: 1 },
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'good', text: 'You applied Wideband Delphi: have the outliers explain and repeat the round until the estimates converge.' },
+        ],
+      },
+      {
+        id: 'average',
+        text: "We take the average and that's it: 18.75.",
+        cost: 5,
+        reply: 'Quick… but nobody knows why Tomás and Sofía were so far apart.',
+        replyFrom: 'laura',
+        effects: [
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'bad', text: 'You averaged the first round without discussing the differences.' },
+        ],
+      },
+      {
+        id: 'senior',
+        text: "We go with Tomás's, since he's the senior.",
+        cost: 5,
+        reply: 'Uh… OK.',
+        replyFrom: 'sofia',
+        effects: [
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'unlock', conceptId: 'estimation' },
+          { kind: 'note', tone: 'bad', text: "You went with the senior's estimate: the lowest one, and without discussion." },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'laura_plan_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'plan.submitted' },
+        { kind: 'flag', key: 'est.ok' },
+        { kind: 'flag', key: 'plan.exit' },
+        { kind: 'flag', key: 'plan.risks' },
+        { kind: 'flag', key: 'prio.ok' },
+      ],
+    },
+    body: "I've seen the plan: measurable exit criteria, risks properly separated, risk-based priority and an estimate with a ratio and three points. Raúl will have something to defend it with.",
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'risk', add: 1 },
+      { kind: 'unlock', conceptId: 'test_plan' },
+      { kind: 'note', tone: 'good', text: 'You delivered a plan with measurable criteria and a justified estimate.' },
+    ],
+  },
+  {
+    id: 'committee',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'laura'],
+    at: 360,
+    subject: '3:00 PM · Release 1.0 committee',
+    body: '**Raúl:** Management wants to ship sooner. They\'re asking for testing to be done in **half** the time you estimate. Can we?',
+    choices: [
+      {
+        id: 'negotiate',
+        text: "With half the time we can't test the same things. I propose testing the high-risk items thoroughly (cards, invoices and e-signature when it arrives) and moving the low-risk items to the next release, or having management accept the remaining risk in writing. The estimate's numbers are in the plan.",
+        requires: { kind: 'all', of: [{ kind: 'flag', key: 'plan.submitted' }, { kind: 'flag', key: 'est.ok' }] },
+        cost: 15,
+        reply: 'This I can take to management: scope based on risk and an explicit decision. Approved like that.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'est.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'communication', add: 1 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'good', text: 'You defended the estimate by negotiating scope based on risk, not effort.' },
+          PREVENT,
+        ],
+      },
+      {
+        id: 'accept',
+        text: "OK, we'll do it in half the time.",
+        cost: 5,
+        reply: "Perfect. I'll tell them yes.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'bad', text: 'You accepted half the time without changing the scope or the risk taken on.' },
+          PREVENT,
+        ],
+      },
+      {
+        id: 'refuse',
+        text: "Impossible. We need all the time or I'm not signing anything.",
+        cost: 5,
+        reply: "I can't go to management like this. I need options, not a no.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'communication', add: -2 },
+          { kind: 'unlock', conceptId: 'risk_mgmt' },
+          { kind: 'note', tone: 'bad', text: 'You refused without offering scope or risk alternatives.' },
+          PREVENT,
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    at: 480,
+    subject: '5:00 PM · Coffee with Laura',
+    body: '**Laura:** What are you taking away from your first plan?',
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: 'That the plan is for making decisions: clear scope, measurable criteria, product and project risks properly separated, an estimate with a method, and priority driven by risk. And that when time gets tight, you negotiate scope, not quality.',
+        reply: "That's right. And now it's time to measure whether the plan is being met.",
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'That plans are paperwork for management.',
+        reply: 'Check in the debrief what happens in the sprints when each piece of the plan is missing.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'You saw the plan as a formality, not as a tool.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

@@ -15,8 +15,8 @@ export const qaProfesionalCourse: CourseDef = {
     { id: 'm03-cobertura', title: 'Dentro del código', available: true },
     { id: 'm04-exploratoria', title: 'Intuición experta', available: true },
     { id: 'm05-plan', title: 'El plan', available: true },
-    { id: 'm06-metricas', title: 'Números que cuentan', available: false },
-    { id: 'm07-configuracion', title: '¿Qué versión es?', available: false },
-    { id: 'm08-herramientas', title: 'Herramientas', available: false },
+    { id: 'm06-metricas', title: 'Números que cuentan', available: true },
+    { id: 'm07-configuracion', title: '¿Qué versión es?', available: true },
+    { id: 'm08-herramientas', title: 'Herramientas', available: true },
   ],
 }

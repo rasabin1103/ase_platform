@@ -8,7 +8,7 @@ import { TRANSITIONS, actOn, seedPayment, specOutcome, type PayAction, type PayS
  */
 
 const STATE_WORDS: [RegExp, PayState][] = [
-  [/^(devuelto|devuelta)?\s*parcial(mente)?(\s*devuelto)?$|^devuelto_parcial$|^partially_refunded$/, 'partially_refunded'],
+  [/^(devuelto|devuelta)?\s*parcial(mente)?(\s*devuelto)?$|^devuelto_parcial$|^partially_refunded$|^partial(ly)?(\s*refunded)?$/, 'partially_refunded'],
   [/^pendiente$|^pending$/, 'pending'],
   [/^autorizad[oa]$|^authorized$/, 'authorized'],
   [/^rechazad[oa]$|^declined$/, 'declined'],
@@ -80,7 +80,7 @@ function feeCase(input: string): FeeCase | null {
   const p = parts(input)
   if (p.length !== 3) return null
   const plan: Plan | undefined = /^pro$/.test(p[0]) ? 'pro' : /^est[aá]ndar$|^standard$/.test(p[0]) ? 'standard' : undefined
-  const total = /^total$/.test(p[1]) ? true : /^parcial$/.test(p[1]) ? false : undefined
+  const total = /^total$/.test(p[1]) ? true : /^parcial$|^partial$/.test(p[1]) ? false : undefined
   const days = Number(p[2].replace(/d[ií]as?$/, '').trim())
   if (!plan || total === undefined || !Number.isInteger(days) || days < 0) return null
   return { plan, total, days }

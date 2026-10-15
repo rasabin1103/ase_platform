@@ -5,10 +5,28 @@ import { getCourse, getMission, isFreeMission } from '../content/registry'
 import { MissionPlayer } from '../MissionPlayer'
 import { useCourseAccess } from '../useCourseAccess'
 import { useAcademyUserKey } from '../useMissionRun'
+import { useAcademyLang } from '../i18n'
+
+const COPY = {
+  es: {
+    unavailable: 'Esta misión todavía no está disponible.',
+    back: 'Volver al curso',
+    locked: 'Esta misión forma parte del curso completo.',
+    unlock: 'Ver cómo desbloquearlo',
+  },
+  en: {
+    unavailable: 'This mission is not available yet.',
+    back: 'Back to the course',
+    locked: 'This mission is part of the full course.',
+    unlock: 'See how to unlock it',
+  },
+}
 
 export function AcademyPlayerPage() {
   const { courseKey = '', missionId = '' } = useParams()
-  const mission = getMission(courseKey, missionId)
+  const lang = useAcademyLang()
+  const mission = getMission(courseKey, missionId, lang)
+  const c = COPY[lang]
   const isFree = isFreeMission(getCourse(courseKey), missionId)
   const { userKey, authReady } = useAcademyUserKey()
   const { access, isLoading } = useCourseAccess(courseKey, !!mission && !isFree && authReady)
@@ -16,9 +34,9 @@ export function AcademyPlayerPage() {
   if (!mission) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-ase-bg text-ase-text">
-        <p>Esta misión todavía no está disponible.</p>
+        <p>{c.unavailable}</p>
         <Link to={`/academy/${courseKey}`} className="text-ase-brand hover:underline">
-          Volver al curso
+          {c.back}
         </Link>
       </div>
     )
@@ -33,12 +51,12 @@ export function AcademyPlayerPage() {
         <div className="flex min-h-dvh items-center justify-center bg-ase-bg px-4 text-ase-text">
           <div className="max-w-md space-y-4 rounded-ase-xl border border-ase-border bg-ase-surface p-6 text-center">
             <Lock className="mx-auto h-8 w-8 text-ase-muted" />
-            <p className="text-body-md">Esta misión forma parte del curso completo.</p>
+            <p className="text-body-md">{c.locked}</p>
             <Link
               to={`/academy/${courseKey}`}
               className="inline-block rounded-ase-md bg-ase-brand px-4 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong"
             >
-              Ver cómo desbloquearlo
+              {c.unlock}
             </Link>
           </div>
         </div>
@@ -47,5 +65,5 @@ export function AcademyPlayerPage() {
   }
 
   // `key` reinicia el estado al cambiar de misión o de usuario.
-  return <MissionPlayer key={`${userKey}:${mission.id}`} mission={mission} />
+  return <MissionPlayer key={`${userKey}:${mission.id}:${mission.lang ?? 'es'}`} mission={mission} />
 }

@@ -11,7 +11,9 @@ const BASE: LoanForm = { age: '35', income: '2500', amount: '6000', term: '48' }
 const RATIO_LOAN = { amount: '15000', term: '36' } // cuota 455,99 € → límite de ingresos ≈ 1.302,83 €
 
 function num(raw: string): number {
-  const s = raw.trim().replace(/\./g, '').replace(',', '.')
+  const t = raw.trim()
+  // «5.000» y «5.000,01» (español) o «5000.01» (inglés: punto decimal con 1-2 decimales).
+  const s = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : /^-?\d+\.\d{1,2}$/.test(t) ? t : t.replace(/\./g, '')
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN
 }
 

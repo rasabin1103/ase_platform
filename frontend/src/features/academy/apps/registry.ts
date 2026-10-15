@@ -15,6 +15,9 @@ import { KobaltoProcessApp } from './kobalto-process/KobaltoProcessApp'
 import { KobaltoCoverageApp } from './kobalto-coverage/KobaltoCoverageApp'
 import { KobaltoExploreApp } from './kobalto-explore/KobaltoExploreApp'
 import { KobaltoPlanApp } from './kobalto-plan/KobaltoPlanApp'
+import { KobaltoMetricsApp } from './kobalto-metrics/KobaltoMetricsApp'
+import { KobaltoConfigApp } from './kobalto-config/KobaltoConfigApp'
+import { KobaltoToolsApp } from './kobalto-tools/KobaltoToolsApp'
 
 export type AppProps = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
 
@@ -34,6 +37,9 @@ export const APP_COMPONENTS: Record<string, ComponentType<AppProps>> = {
   'kobalto-coverage': KobaltoCoverageApp as ComponentType<AppProps>,
   'kobalto-explore': KobaltoExploreApp as ComponentType<AppProps>,
   'kobalto-plan': KobaltoPlanApp as ComponentType<AppProps>,
+  'kobalto-metrics': KobaltoMetricsApp as ComponentType<AppProps>,
+  'kobalto-config': KobaltoConfigApp as ComponentType<AppProps>,
+  'kobalto-tools': KobaltoToolsApp as ComponentType<AppProps>,
 }
 
 export const DEFAULT_APP = 'kobalto-transfers'

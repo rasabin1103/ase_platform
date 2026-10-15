@@ -1,18 +1,79 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ToolProps } from '../../tools/types'
 import type { RunState } from '../../engine/types'
+import { missionLang, type AcademyLang } from '../../i18n'
 import { INITIAL_BANK, formatEur, submitTransfer, type BankState, type Transfer, type TransferForm } from './transferLogic'
 
 const PROCESSING_MS = 900
 const EMPTY: TransferForm = { iban: '', beneficiary: '', amount: '', concept: '' }
 
+const UI = {
+  es: {
+    path: 'transferencias',
+    account: 'Cuenta QA-01',
+    title: 'Nueva transferencia',
+    subtitle: 'Envía dinero a cualquier cuenta española.',
+    sentReceipt: 'Transferencia enviada · Justificante',
+    to: 'a',
+    ibanLabel: 'IBAN del destinatario',
+    beneficiary: 'Beneficiario',
+    beneficiaryPh: 'Nombre y apellidos',
+    amountLabel: 'Importe (€)',
+    amountPh: '0,00',
+    conceptLabel: 'Concepto (opcional)',
+    conceptPh: 'Ej.: cena del viernes',
+    next: 'Continuar',
+    review: 'Revisa los datos antes de confirmar:',
+    amount: 'Importe',
+    concept: 'Concepto',
+    edit: 'Modificar',
+    processing: 'Procesando…',
+    confirm: 'Confirmar',
+    balance: 'Saldo disponible',
+    sentToday: 'Enviado hoy:',
+    recent: 'Últimos movimientos',
+    noMovements: 'Sin movimientos hoy.',
+    transfer: 'Transferencia',
+  },
+  en: {
+    path: 'transfers',
+    account: 'Account QA-01',
+    title: 'New transfer',
+    subtitle: 'Send money to any Spanish account.',
+    sentReceipt: 'Transfer sent · Receipt',
+    to: 'to',
+    ibanLabel: 'Recipient IBAN',
+    beneficiary: 'Beneficiary',
+    beneficiaryPh: 'Full name',
+    amountLabel: 'Amount (€)',
+    amountPh: '0.00',
+    conceptLabel: 'Reference (optional)',
+    conceptPh: 'E.g.: Friday dinner',
+    next: 'Continue',
+    review: 'Review the details before confirming:',
+    amount: 'Amount',
+    concept: 'Reference',
+    edit: 'Edit',
+    processing: 'Processing…',
+    confirm: 'Confirm',
+    balance: 'Available balance',
+    sentToday: 'Sent today:',
+    recent: 'Recent activity',
+    noMovements: 'No activity today.',
+    transfer: 'Transfer',
+  },
+} satisfies Record<AcademyLang, Record<string, string>>
+
 /** App bajo prueba: banca web de Kobalto en el entorno de staging. */
 export function KobaltoTransferApp({
+  mission,
   dispatch,
   stateRef,
   state,
   initialForm,
 }: ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Partial<TransferForm> }) {
+  const lang = missionLang(mission)
+  const t = UI[lang]
   const bank = (state.appState.kobalto as BankState | undefined) ?? INITIAL_BANK
   const [form, setForm] = useState<TransferForm>(() => ({ ...EMPTY, ...initialForm }))
   const [step, setStep] = useState<'form' | 'confirm'>('form')
@@ -29,7 +90,7 @@ export function KobaltoTransferApp({
     const concurrent = pending > 0
     const snapshot = form
     setPending((p) => p + 1)
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       const run = stateRef.current
       const current = (run?.appState.kobalto as BankState | undefined) ?? INITIAL_BANK
       const r = submitTransfer(current, snapshot, {
@@ -37,14 +98,14 @@ export function KobaltoTransferApp({
         active: run?.activeBugs,
         fixed: run?.fixedBugs,
         regressions: run?.activeRegressions,
-      })
+      }, lang)
       dispatch({ type: 'app', event: { ...r.event, state: r.bank } })
       setPending((p) => p - 1)
       setResult({ ok: r.ok, message: r.message, transfer: r.transfer })
       if (!concurrent) setStep('form')
       if (r.ok && !concurrent) setForm(EMPTY)
     }, PROCESSING_MS)
-    timers.current.push(t)
+    timers.current.push(timer)
   }
 
   const inputCls =
@@ -53,17 +114,17 @@ export function KobaltoTransferApp({
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>⚠ STAGING · https://staging.kobalto.example/transferencias</span>
+        <span>⚠ STAGING · https://staging.kobalto.example/{t.path}</span>
         <span>build 2.14.0-rc{3 + state.build}</span>
       </div>
       <header className="flex items-center justify-between bg-teal-700 px-5 py-3 text-white">
         <span className="text-lg font-bold tracking-tight">kobalto</span>
-        <span className="text-sm">Cuenta QA-01</span>
+        <span className="text-sm">{t.account}</span>
       </header>
       <div className="mx-auto grid max-w-5xl gap-5 p-5 lg:grid-cols-[1fr_20rem]">
         <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-1 font-sans text-lg font-semibold text-slate-900">Nueva transferencia</h2>
-          <p className="mb-4 text-sm text-slate-500">Envía dinero a cualquier cuenta española.</p>
+          <h2 className="mb-1 font-sans text-lg font-semibold text-slate-900">{t.title}</h2>
+          <p className="mb-4 text-sm text-slate-500">{t.subtitle}</p>
 
           {result && (
             <div
@@ -72,8 +133,8 @@ export function KobaltoTransferApp({
             >
               {result.ok && result.transfer ? (
                 <>
-                  ✓ Transferencia enviada · Justificante TRF-{String(result.transfer.id).padStart(5, '0')} ·{' '}
-                  {formatEur(result.transfer.amount)} a {result.transfer.beneficiary}
+                  ✓ {t.sentReceipt} TRF-{String(result.transfer.id).padStart(5, '0')} ·{' '}
+                  {formatEur(result.transfer.amount, lang)} {t.to} {result.transfer.beneficiary}
                 </>
               ) : (
                 <>✕ {result.message}</>
@@ -91,36 +152,36 @@ export function KobaltoTransferApp({
               }}
             >
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-600">IBAN del destinatario</span>
+                <span className="mb-1 block text-slate-600">{t.ibanLabel}</span>
                 <input className={inputCls} value={form.iban} onChange={set('iban')} placeholder="ES00 0000 0000 0000 0000 0000" />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-600">Beneficiario</span>
-                <input className={inputCls} value={form.beneficiary} onChange={set('beneficiary')} placeholder="Nombre y apellidos" />
+                <span className="mb-1 block text-slate-600">{t.beneficiary}</span>
+                <input className={inputCls} value={form.beneficiary} onChange={set('beneficiary')} placeholder={t.beneficiaryPh} />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-600">Importe (€)</span>
-                <input className={inputCls} value={form.amount} onChange={set('amount')} placeholder="0,00" inputMode="decimal" />
+                <span className="mb-1 block text-slate-600">{t.amountLabel}</span>
+                <input className={inputCls} value={form.amount} onChange={set('amount')} placeholder={t.amountPh} inputMode="decimal" />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-600">Concepto (opcional)</span>
-                <input className={inputCls} value={form.concept} onChange={set('concept')} placeholder="Ej.: cena del viernes" />
+                <span className="mb-1 block text-slate-600">{t.conceptLabel}</span>
+                <input className={inputCls} value={form.concept} onChange={set('concept')} placeholder={t.conceptPh} />
               </label>
               <button type="submit" className="w-full rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
-                Continuar
+                {t.next}
               </button>
             </form>
           ) : (
             <div className="space-y-3 text-sm">
-              <p className="text-slate-600">Revisa los datos antes de confirmar:</p>
+              <p className="text-slate-600">{t.review}</p>
               <dl className="grid grid-cols-[8rem_1fr] gap-y-1 rounded-lg bg-slate-50 p-3">
                 <dt className="text-slate-500">IBAN</dt>
                 <dd className="font-mono">{form.iban || '—'}</dd>
-                <dt className="text-slate-500">Beneficiario</dt>
+                <dt className="text-slate-500">{t.beneficiary}</dt>
                 <dd>{form.beneficiary || '—'}</dd>
-                <dt className="text-slate-500">Importe</dt>
-                <dd>{form.amount || '—'} €</dd>
-                <dt className="text-slate-500">Concepto</dt>
+                <dt className="text-slate-500">{t.amount}</dt>
+                <dd>{lang === 'en' ? `€${form.amount || '—'}` : `${form.amount || '—'} €`}</dd>
+                <dt className="text-slate-500">{t.concept}</dt>
                 <dd>{form.concept || '—'}</dd>
               </dl>
               <div className="flex gap-2">
@@ -129,10 +190,10 @@ export function KobaltoTransferApp({
                   onClick={() => setStep('form')}
                   className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Modificar
+                  {t.edit}
                 </button>
                 <button type="button" onClick={confirm} className="flex-1 rounded-lg bg-teal-700 py-2.5 font-semibold text-white hover:bg-teal-800">
-                  {pending > 0 ? 'Procesando…' : 'Confirmar'}
+                  {pending > 0 ? t.processing : t.confirm}
                 </button>
               </div>
             </div>
@@ -141,21 +202,21 @@ export function KobaltoTransferApp({
 
         <aside className="space-y-5">
           <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Saldo disponible</p>
-            <p className="text-2xl font-bold">{formatEur(bank.balance)}</p>
-            <p className="mt-1 text-xs text-slate-500">Enviado hoy: {formatEur(bank.dailyTotal)}</p>
+            <p className="text-sm text-slate-500">{t.balance}</p>
+            <p className="text-2xl font-bold">{formatEur(bank.balance, lang)}</p>
+            <p className="mt-1 text-xs text-slate-500">{t.sentToday} {formatEur(bank.dailyTotal, lang)}</p>
           </section>
           <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="mb-2 font-sans text-sm font-semibold text-slate-900">Últimos movimientos</h3>
-            {bank.transfers.length === 0 && <p className="text-sm text-slate-500">Sin movimientos hoy.</p>}
+            <h3 className="mb-2 font-sans text-sm font-semibold text-slate-900">{t.recent}</h3>
+            {bank.transfers.length === 0 && <p className="text-sm text-slate-500">{t.noMovements}</p>}
             <ul className="space-y-2">
-              {bank.transfers.slice(0, 8).map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
+              {bank.transfers.slice(0, 8).map((tr) => (
+                <li key={tr.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="min-w-0">
-                    <span className="block truncate">{t.beneficiary}</span>
-                    <span className="block truncate text-xs text-slate-500">{t.concept || 'Transferencia'}</span>
+                    <span className="block truncate">{tr.beneficiary}</span>
+                    <span className="block truncate text-xs text-slate-500">{tr.concept || t.transfer}</span>
                   </span>
-                  <span className={t.amount < 0 ? 'text-emerald-700' : 'text-slate-900'}>{formatEur(-t.amount)}</span>
+                  <span className={tr.amount < 0 ? 'text-emerald-700' : 'text-slate-900'}>{formatEur(-tr.amount, lang)}</span>
                 </li>
               ))}
             </ul>

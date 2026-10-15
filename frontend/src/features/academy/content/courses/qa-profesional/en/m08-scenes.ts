@@ -1,0 +1,176 @@
+import type { Effect, Scene } from '../../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Scenes for course 2, mission 8 (Tools). */
+export const m08ScenesEn: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: "Budget for the squad's tools",
+    body: 'Good news: management approves €20,000 a year for test tools for the Business squad. We decide at 3:00 PM with Elena and Iván. Three vendors gave demos this week; in the "Tools" app you have their profiles and the needs that came up in the retro.\n\nI want a proposal I can defend, not a catalog.\n\nRaúl',
+  },
+  {
+    id: 'chat_sergio',
+    channel: 'chat',
+    from: 'sergio',
+    at: 20,
+    body: "Did you see the TestForge demo? 🤩 They recorded 40 test cases in an hour. With that we automate the whole regression in a month and forget about manual testing.",
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 40,
+    body: "Before looking at tools, look at the needs: they aren't all solved with the same thing. And for each candidate, read what the demo doesn't show: maintenance, script format, CI integration and three-year cost. The guide is on the wiki.",
+    onDeliver: [{ kind: 'unlock', conceptId: 'tool_categories' }],
+  },
+  {
+    id: 'laura_proposal_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'proposal.sent' },
+        { kind: 'flag', key: 'needs.ok' },
+        { kind: 'flag', key: 'eval.ok' },
+        { kind: 'flag', key: 'pilot.ok' },
+      ],
+    },
+    body: "Good proposal: each need with its tool category, each candidate's risks out in the open and a pilot with criteria that can be measured. That way you don't buy a demo, you buy a solution.",
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'risk', add: 1 },
+      { kind: 'unlock', conceptId: 'tool_pilot' },
+      { kind: 'note', tone: 'good', text: 'You proposed tools by need, with evaluated risks and a measurable pilot.' },
+    ],
+  },
+  {
+    id: 'sergio_deal',
+    channel: 'meeting',
+    from: 'sergio',
+    with: ['laura'],
+    at: 180,
+    subject: '12:00 PM · Coffee with Sergio',
+    body: "**Sergio:** The TestForge sales rep told me that if we sign today they'll give us a 30% discount on the three-year contract. Shall I tell Raúl?",
+    choices: [
+      {
+        id: 'pilot',
+        text: "A discount on something we haven't tried isn't a saving. Recording 40 test cases in an hour is easy; maintaining them when the UI changes isn't. I propose a scoped pilot with measurable criteria, and your automation experience would be great for designing it.",
+        requires: { kind: 'flag', key: 'proposal.sent' },
+        cost: 15,
+        reply: "OK… the bit about maintaining recorded scripts is true, it happened to us in Cards. Count me in for the pilot.",
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'flag', key: 'sergio.aligned' },
+          { kind: 'score', key: 'communication', add: 2 },
+          { kind: 'unlock', conceptId: 'automation_risks' },
+          { kind: 'note', tone: 'good', text: 'You stopped an impulse purchase and got Sergio on board with the pilot.' },
+        ],
+      },
+      {
+        id: 'sign',
+        text: '30% is a lot. Tell Raúl to sign today.',
+        cost: 5,
+        reply: "Great! I'll tell him now.",
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'flag', key: 'tool.rushed' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_risks' },
+          { kind: 'note', tone: 'bad', text: 'You pushed to sign three years of licenses without evaluating or piloting.' },
+        ],
+      },
+      {
+        id: 'nothing',
+        text: "Better not to automate anything: manual testing is safer.",
+        cost: 5,
+        reply: "And who does the regression every sprint? It's taking us three days per release…",
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'score', key: 'efficiency', add: -1 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'You ruled out test automation without weighing its benefits.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'committee',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'ivan', 'sergio'],
+    at: 360,
+    subject: '3:00 PM · Tools decision',
+    body: '**Raúl:** We have €20,000 a year. What do we buy?',
+    choices: [
+      {
+        id: 'pilot',
+        text: "A 4-week pilot with Kestrel on the invoices API regression: it runs in the pipeline, the tests live in the repo and we don't depend on a proprietary format. Cost: training and, if needed, €4,000 of support. Criteria: regression on every merge in under 10 minutes, less than 5% flaky tests and a self-sufficient team. If they're met, we expand; if not, we'll know within a month. Exploratory testing continues; automation doesn't replace it.",
+        requires: { kind: 'all', of: [{ kind: 'flag', key: 'choice.ok' }, { kind: 'flag', key: 'pilot.ok' }] },
+        cost: 15,
+        reply: 'One month, little money and a data-driven decision. Approved. And we have budget left over for the load testing tool.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'proposal.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'good', text: 'You defended a gradual adoption with a pilot, measurable criteria and realistic expectations.' },
+        ],
+      },
+      {
+        id: 'everything',
+        text: 'TestForge and QualiCloud: between the two of them they cover everything.',
+        cost: 5,
+        reply: "That's €27,000 a year. We're over budget.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'efficiency', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'You proposed buying tools instead of solving needs.' },
+        ],
+      },
+      {
+        id: 'promise',
+        text: "With TestForge we'll automate 100% in a month and there'll be no need for manual testing anymore.",
+        cost: 5,
+        reply: "I'll note that down as a commitment to management.",
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'promise.unrealistic' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'You promised unrealistic expectations about test automation.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    with: ['raul', 'elena', 'tomas', 'sofia', 'ivan', 'carmen'],
+    at: 480,
+    subject: '5:00 PM · Squad retro: six months of quality',
+    body: "**Laura:** Last retro of the quarter. A few weeks ago this squad had no QA process. Now we have reviews, BDD, coverage, exploratory testing, a plan, metrics, configuration under control and, as of today, a tool strategy. What are you taking away?",
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: "That quality belongs to the team and is built throughout the lifecycle: reviewing before coding, agreeing on examples with the business, measuring what matters, knowing which version is being tested and choosing tools by need, with pilots and no magic promises. Tools help; they don't think for us.",
+        reply: "That's a QA who leads the quality process. Now, on to the exam.",
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'That with the right tool, QA is no longer needed.',
+        reply: 'Check in the debrief what happens when the tool replaces judgment.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'You took away the tool as a substitute for testing judgment.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

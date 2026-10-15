@@ -15,6 +15,7 @@ from app.models.product import Product
 from app.models.plan_product import PlanProduct
 from app.models.course import Course
 from app.models.course_enrollment import CourseEnrollment
+from app.models.academy_exam import AcademyCertificate, AcademyExamAttempt
 from app.models.academy_run import AcademyRun
 from app.models.invitation import Invitation
 from app.models.audit_log import AuditLog
@@ -88,6 +89,8 @@ __all__ = [
     "CatalogItem",
     "CatalogFavorite",
     "CatalogPurchase",
+    "AcademyCertificate",
+    "AcademyExamAttempt",
     "AcademyRun",
     "CatalogItemRating",
     "CatalogItemImage",

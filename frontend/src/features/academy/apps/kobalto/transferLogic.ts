@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import type { AcademyLang } from '../../i18n'
 
 /**
  * Lógica de la app bajo prueba "Kobalto · Transferencias" (staging).
@@ -101,8 +102,51 @@ export function isValidIban(raw: string): boolean {
   return rest === 1
 }
 
-export function formatEur(n: number): string {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n)
+export function formatEur(n: number, lang: AcademyLang = 'es'): string {
+  return new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-ES', { style: 'currency', currency: 'EUR' }).format(n)
+}
+
+/** Mensajes de la API de transferencias (los ve el jugador). */
+const MESSAGES = {
+  es: {
+    invalidIban: 'IBAN no válido',
+    beneficiaryRequired: 'Indica el nombre del beneficiario',
+    amountRequired: 'Indica un importe',
+    maxDecimals: 'El importe admite como máximo 2 decimales',
+    invalidAmount: 'Importe no válido',
+    amountPositive: 'El importe debe ser mayor que 0',
+    perOperation: 'Supera el límite por operación de 5.000 €',
+    daily: 'Supera el límite diario de 6.000 €',
+    insufficient: 'Saldo insuficiente',
+    conceptMax: (n: number) => `El concepto admite como máximo ${n} caracteres`,
+    duplicate: 'Operación duplicada: ya hay una transferencia idéntica en curso',
+    sent: 'Transferencia enviada',
+    errorSummary: (raw: string, iban: string, msg: string) => `Error al enviar (importe tecleado: "${raw}", IBAN ${iban}): ${msg}`,
+    okSummary: (amount: string, who: string, iban: string, raw: string, balance: string) =>
+      `Transferencia de ${amount} a ${who} (${iban}) · importe tecleado: "${raw}" · saldo: ${balance}`,
+  },
+  en: {
+    invalidIban: 'Invalid IBAN',
+    beneficiaryRequired: "Enter the beneficiary's name",
+    amountRequired: 'Enter an amount',
+    maxDecimals: 'The amount can have at most 2 decimal places',
+    invalidAmount: 'Invalid amount',
+    amountPositive: 'The amount must be greater than 0',
+    perOperation: 'Exceeds the per-transaction limit of €5,000',
+    daily: 'Exceeds the daily limit of €6,000',
+    insufficient: 'Insufficient funds',
+    conceptMax: (n: number) => `The reference can be at most ${n} characters long`,
+    duplicate: 'Duplicate transaction: an identical transfer is already in progress',
+    sent: 'Transfer sent',
+    errorSummary: (raw: string, iban: string, msg: string) => `Transfer failed (amount typed: "${raw}", IBAN ${iban}): ${msg}`,
+    okSummary: (amount: string, who: string, iban: string, raw: string, balance: string) =>
+      `Transfer of ${amount} to ${who} (${iban}) · amount typed: "${raw}" · balance: ${balance}`,
+  },
+}
+
+/** Mensajes de la app de transferencias en el idioma indicado. */
+export function transferMessages(lang: AcademyLang = 'es') {
+  return MESSAGES[lang]
 }
 
 function maskIban(iban: string): string {
@@ -126,7 +170,9 @@ export function submitTransfer(
   bank: BankState,
   form: TransferForm,
   opts: { concurrent?: boolean } & BuildState = {},
+  lang: AcademyLang = 'es',
 ): SubmitResult {
+  const M = MESSAGES[lang]
   const active = new Set(opts.active ?? DEFAULT_ACTIVE)
   const fixed = new Set(opts.fixed ?? [])
   const regressions = new Set(opts.regressions ?? [])
@@ -146,7 +192,7 @@ export function submitTransfer(
     event: {
       app: 'kobalto',
       action: 'transfer',
-      summary: `Error al enviar (importe tecleado: "${rawAmount}", IBAN ${maskIban(iban) || '—'}): ${message}`,
+      summary: M.errorSummary(rawAmount, maskIban(iban) || '—', message),
       technical: `POST /api/v1/transfers ${payload} → 422 {"error":"${message}"}`,
       status: 'error',
       bugs,
@@ -154,15 +200,15 @@ export function submitTransfer(
   })
 
   // --- IBAN ---
-  if (!/^ES\d{22}$/.test(iban)) return reject('IBAN no válido', payloadFor(rawAmount || ''))
+  if (!/^ES\d{22}$/.test(iban)) return reject(M.invalidIban, payloadFor(rawAmount || ''))
   if (has(BUGS.ibanSpaces) && /\s/.test(form.iban.trim()))
-    return reject('IBAN no válido', payloadFor(rawAmount || ''), isValidIban(iban) ? [BUGS.ibanSpaces] : [])
-  if (!has(BUGS.ibanChecksum) && !isValidIban(iban)) return reject('IBAN no válido', payloadFor(rawAmount || ''))
+    return reject(M.invalidIban, payloadFor(rawAmount || ''), isValidIban(iban) ? [BUGS.ibanSpaces] : [])
+  if (!has(BUGS.ibanChecksum) && !isValidIban(iban)) return reject(M.invalidIban, payloadFor(rawAmount || ''))
 
   // --- Beneficiario e importe ---
-  if (!beneficiary) return reject('Indica el nombre del beneficiario', payloadFor(rawAmount || ''))
-  if (!rawAmount) return reject('Indica un importe', payloadFor(''))
-  if (/[.,]\d{3,}$/.test(rawAmount)) return reject('El importe admite como máximo 2 decimales', payloadFor(`"${rawAmount}"`))
+  if (!beneficiary) return reject(M.beneficiaryRequired, payloadFor(rawAmount || ''))
+  if (!rawAmount) return reject(M.amountRequired, payloadFor(''))
+  if (/[.,]\d{3,}$/.test(rawAmount)) return reject(M.maxDecimals, payloadFor(`"${rawAmount}"`))
 
   const correctText = rawAmount.replace(',', '.')
   let parsedText = correctText
@@ -171,37 +217,37 @@ export function submitTransfer(
   else if (has(BUGS.commaTruncated) && rawAmount.includes(',')) parsedText = rawAmount.split(',')[0]
   const amount = parseFloat(parsedText)
   const correctAmount = parseFloat(correctText)
-  if (Number.isNaN(amount)) return reject('Importe no válido', payloadFor(`"${rawAmount}"`))
+  if (Number.isNaN(amount)) return reject(M.invalidAmount, payloadFor(`"${rawAmount}"`))
 
-  if (amount === 0 && !has(BUGS.zeroAmount)) return reject('El importe debe ser mayor que 0', payloadFor(amount))
-  if (amount < 0 && !has(BUGS.negativeAmount)) return reject('El importe debe ser mayor que 0', payloadFor(amount))
+  if (amount === 0 && !has(BUGS.zeroAmount)) return reject(M.amountPositive, payloadFor(amount))
+  if (amount < 0 && !has(BUGS.negativeAmount)) return reject(M.amountPositive, payloadFor(amount))
 
   // --- Límite por operación ---
   if (has(BUGS.perOperationLimit)) {
-    if (Math.floor(amount) > SPEC.maxPerOperation) return reject('Supera el límite por operación de 5.000 €', payloadFor(amount))
+    if (Math.floor(amount) > SPEC.maxPerOperation) return reject(M.perOperation, payloadFor(amount))
   } else if (has(BUGS.maxRejected)) {
     if (amount >= SPEC.maxPerOperation)
-      return reject('Supera el límite por operación de 5.000 €', payloadFor(amount), amount === SPEC.maxPerOperation ? [BUGS.maxRejected] : [])
+      return reject(M.perOperation, payloadFor(amount), amount === SPEC.maxPerOperation ? [BUGS.maxRejected] : [])
   } else if (amount > SPEC.maxPerOperation) {
-    return reject('Supera el límite por operación de 5.000 €', payloadFor(amount))
+    return reject(M.perOperation, payloadFor(amount))
   }
 
   // --- Límite diario ---
   const dayTotal = bank.dailyTotal + amount
   if (has(BUGS.dailyLimit)) {
-    if (amount > SPEC.dailyLimit) return reject('Supera el límite diario de 6.000 €', payloadFor(amount))
+    if (amount > SPEC.dailyLimit) return reject(M.daily, payloadFor(amount))
   } else if (has(BUGS.dailyExactRejected)) {
     if (dayTotal >= SPEC.dailyLimit)
-      return reject('Supera el límite diario de 6.000 €', payloadFor(amount), dayTotal === SPEC.dailyLimit ? [BUGS.dailyExactRejected] : [])
+      return reject(M.daily, payloadFor(amount), dayTotal === SPEC.dailyLimit ? [BUGS.dailyExactRejected] : [])
   } else if (dayTotal > SPEC.dailyLimit) {
-    return reject('Supera el límite diario de 6.000 €', payloadFor(amount))
+    return reject(M.daily, payloadFor(amount))
   }
 
-  if (amount > bank.balance) return reject('Saldo insuficiente', payloadFor(amount))
+  if (amount > bank.balance) return reject(M.insufficient, payloadFor(amount))
   if (concept.length > SPEC.conceptMax)
-    return reject(`El concepto admite como máximo ${SPEC.conceptMax} caracteres`, payloadFor(amount))
+    return reject(M.conceptMax(SPEC.conceptMax), payloadFor(amount))
   if (opts.concurrent && !has(BUGS.doubleSubmit))
-    return reject('Operación duplicada: ya hay una transferencia idéntica en curso', payloadFor(amount))
+    return reject(M.duplicate, payloadFor(amount))
 
   // --- Aceptada: ¿qué bugs se han manifestado según la especificación? ---
   const bugs: string[] = []
@@ -227,12 +273,12 @@ export function submitTransfer(
   return {
     bank: next,
     ok: true,
-    message: 'Transferencia enviada',
+    message: M.sent,
     transfer,
     event: {
       app: 'kobalto',
       action: 'transfer',
-      summary: `Transferencia de ${formatEur(amount)} a ${beneficiary} (${maskIban(iban)}) · importe tecleado: "${rawAmount}" · saldo: ${formatEur(next.balance)}`,
+      summary: M.okSummary(formatEur(amount, lang), beneficiary, maskIban(iban), rawAmount, formatEur(next.balance, lang)),
       technical: `POST /api/v1/transfers ${payloadFor(amount)} → 201 {"id":"TRF-${String(transfer.id).padStart(5, '0')}","balance":${next.balance}}`,
       status: 'ok',
       bugs,

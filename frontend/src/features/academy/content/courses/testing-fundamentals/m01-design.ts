@@ -51,9 +51,10 @@ function monthlyStart(day: number): string {
 
 function cancelMode(input: string): 'once' | 'next' | 'series' | null {
   const t = input.toLowerCase()
-  if (/única|unica|una vez/.test(t)) return 'once'
-  if (/próxima|proxima/.test(t)) return 'next'
-  if (/serie|toda/.test(t)) return 'series'
+  // Acepta las palabras en español y en inglés (misión en inglés).
+  if (/única|unica|una vez|one-off|one off|once|single/.test(t)) return 'once'
+  if (/próxima|proxima|next/.test(t)) return 'next'
+  if (/serie|toda|series|whole|all/.test(t)) return 'series'
   return null
 }
 
@@ -76,7 +77,7 @@ function formFor(areaId: string, input: string): { form: ScheduleForm; cancel?: 
       return { form: { ...BASE, frequency: 'weekly', endDate: addDays(BASE.date, Number(t)) } }
     }
     case 'destination':
-      return { form: { ...BASE, iban: /propia/i.test(input) ? OWN_ACCOUNTS[0] : THIRD_PARTY } }
+      return { form: { ...BASE, iban: /propia|\bown\b/i.test(input) ? OWN_ACCOUNTS[0] : THIRD_PARTY } }
     case 'cancel': {
       const mode = cancelMode(input)
       if (!mode) return null
@@ -200,7 +201,7 @@ export const m01Design: TestDesignModel = {
         return [n < 0 ? 'before' : n === 0 ? 'same' : 'after']
       }
       case 'destination':
-        return /propia/i.test(input) ? ['own'] : /tercer/i.test(input) ? ['third'] : []
+        return /propia|\bown\b/i.test(input) ? ['own'] : /tercer|third/i.test(input) ? ['third'] : []
       case 'cancel': {
         const m = cancelMode(input)
         return m ? [m] : []
@@ -227,7 +228,7 @@ export const m01Design: TestDesignModel = {
       case 'end_date':
         return formFor(areaId, input) ? !input.trim() || Number(input.trim()) >= 0 : undefined
       case 'destination':
-        return /propia|tercer/i.test(input) ? true : undefined
+        return /propia|tercer|\bown\b|third/i.test(input) ? true : undefined
       case 'cancel':
         return cancelMode(input) ? true : undefined
       default:

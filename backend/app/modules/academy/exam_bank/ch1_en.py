@@ -1,0 +1,311 @@
+"""Capítulo 1 · versión en inglés (mismos ids que ch1.py; la correcta primero)."""
+
+from app.modules.academy.exam_bank.model import BankText, en
+
+EN: dict[str, BankText] = {
+    # 1.1 What is testing?
+    "c1-01": en(
+        "Which of the following is a typical test objective?",
+        "Reducing the level of risk of inadequate software quality",
+        ["Proving that the software has no defects", "Debugging the code to fix the defects", "Replacing reviews of the requirements"],
+        "Test objectives include evaluating work products, triggering failures and finding defects, reducing risk, verification, validation and providing information for decision-making. Testing never proves the absence of defects.",
+    ),
+    "c1-02": en(
+        "A dynamic test triggers a failure in the interest calculation. Which activity is debugging?",
+        "Locating the cause of the failure in the code and fixing it",
+        ["Designing a test case that triggers the failure", "Logging the failure in the defect management tool", "Running the regression tests before the release"],
+        "Debugging means reproducing the failure, diagnosing its cause and fixing it. Triggering and reporting the failure are testing activities.",
+    ),
+    "c1-03": en(
+        "What does validation describe?",
+        "Checking that the system meets the needs of users and other stakeholders in its operational environment",
+        ["Checking that the system meets the specified requirements", "Reviewing that the code follows the coding standard", "Measuring the statement coverage of the code"],
+        "Verification checks whether the specified requirements are fulfilled; validation checks whether the system meets the real needs.",
+    ),
+    "c1-04": en(
+        "Which statement about the scope of testing is correct?",
+        "It includes static activities, such as reviewing requirements, in addition to executing the software",
+        ["It consists solely of executing test cases", "It includes fixing the defects found", "It is only performed in the production environment"],
+        "Testing covers planning, analysis, design, implementation and execution, and also static testing such as reviews.",
+    ),
+    "c1-25": en(
+        "A developer fixes a defect that a tester had found in customer onboarding. Who should preferably perform the confirmation testing?",
+        "The same person who performed the initial test in which the failure occurred",
+        ["The developer who fixed the defect", "The end customer in production", "The application security officer"],
+        "According to the syllabus, confirmation testing is preferably done by the person who performed the initial test, as they know how the failure was triggered.",
+    ),
+    "c1-26": en(
+        "A review reveals that a user story states the wrong return period for an order. What does debugging involve in this case?",
+        "Removing the defect directly, with no need to reproduce a failure or diagnose its cause",
+        ["Executing the code until the failure is reproduced", "Designing dynamic test cases that trigger the failure", "Waiting for system testing to confirm the defect"],
+        "When static testing finds a defect, debugging is concerned only with removing it: there is no failure to reproduce or diagnose.",
+    ),
+    "c1-27": en(
+        "A neobank must demonstrate to the regulator that its app applies the strong customer authentication required by EU payment regulations. Which test objective is especially relevant?",
+        "Verifying that the test object complies with contractual, legal and regulatory requirements",
+        ["Proving that the app contains no defects", "Improving the team's development process", "Debugging the code of the authentication module"],
+        "Verifying compliance with legal and regulatory requirements is one of the test objectives; proving the absence of defects is not.",
+    ),
+    "c1-28": en(
+        "The product owner of an e-commerce site must decide whether to launch the new checkout on Friday. What does testing contribute to that decision?",
+        "Information about quality and outstanding risks so that she can make an informed decision",
+        ["A guarantee that the launch will be free of incidents", "The final decision, which belongs to the testers", "The fixing of any defects that remain open"],
+        "One test objective is to provide information to stakeholders so they can make informed decisions; the decision itself is theirs.",
+    ),
+    "c1-29": en(
+        "Checking that a transfer is rejected when it exceeds the €10,000 limit set in the specification is mainly an example of…",
+        "Verification",
+        ["Validation", "Debugging", "Quality assurance"],
+        "Verification checks whether specified requirements are fulfilled; validation checks whether the system meets users' actual needs.",
+    ),
+    "c1-30": en(
+        "Which of the following is a test objective?",
+        "Evaluating work products such as requirements, user stories, designs and code",
+        ["Fixing the defects found in the code", "Setting the business priorities of the backlog", "Defining the system architecture"],
+        "Evaluating work products is a test objective; fixing defects is debugging, and the other options are business or design tasks.",
+    ),
+    # 1.2 Why is testing necessary?
+    "c1-05": en(
+        "A developer misunderstands a requirement and codes an incorrect rounding rule; in production, an invoice comes out one cent short. What is the missing cent?",
+        "A failure",
+        ["An error", "A defect", "A root cause"],
+        "Error (human mistake) → defect (in the code) → failure (behaviour observed during execution).",
+    ),
+    "c1-06": en(
+        "Several calculation defects were caused by the team not having access to the current tax regulations. That lack of access is…",
+        "The root cause of the defects",
+        ["A system failure", "A defect in the code", "A product risk"],
+        "A root cause is the fundamental reason why the error was made. Analysing it helps prevent similar defects.",
+    ),
+    "c1-07": en(
+        "Which statement about quality assurance (QA) and testing is correct?",
+        "Testing is a form of quality control, which is corrective and product-oriented; QA is preventive and process-oriented",
+        ["They are two names for the same activity", "QA is performed exclusively by the test team", "Testing is preventive and QA is corrective"],
+        "QA improves the process to prevent defects; testing evaluates the product to detect them.",
+    ),
+    "c1-08": en(
+        "How does involving a tester in user story refinement contribute to project success?",
+        "It detects defects and ambiguities in the requirements before they are coded",
+        ["It reduces the cost of tool licences", "It removes the need for system testing", "It guarantees that the customer will accept the product"],
+        "Involving testers early helps find defects in the requirements, when fixing them is cheaper.",
+    ),
+    "c1-09": en(
+        "Apart from defects, what can cause failures in a system?",
+        "Environmental conditions, such as radiation or electromagnetic fields",
+        ["Code reviews", "Project documentation", "Test metrics"],
+        "Failures can also be caused by environmental conditions, not only by software defects.",
+    ),
+    "c1-31": en(
+        "The code that calculates the fee for transfers to Japan contains a defect, but it has never failed in production. What is the most likely explanation?",
+        "A defect only causes a failure when it is executed under the specific circumstances that trigger it, and these have not yet occurred",
+        ["A defect that causes no failures is no longer considered a defect", "Defects only cause failures in the test environment", "It is actually a human error, not a defect in the code"],
+        "Some defects always result in a failure, others only in specific circumstances, and some may never do so.",
+    ),
+    "c1-32": en(
+        "How are test results used in quality assurance (QA)?",
+        "As feedback on how well the development and test processes are performing",
+        ["To fix the product's defects directly", "To identify who is to blame for each defect", "To replace acceptance testing"],
+        "In testing, results are used to fix defects; in QA, they are used to assess and improve the processes.",
+    ),
+    "c1-33": en(
+        "Which of these situations makes people more likely to make errors?",
+        "Time pressure, system complexity, fatigue or lack of training",
+        ["Using a version control system", "Holding peer reviews", "Having clear and stable requirements"],
+        "The syllabus cites time pressure, complexity, fatigue and inadequate training as common causes of human errors.",
+    ),
+    "c1-34": en(
+        "Where can defects be found?",
+        "In documentation (requirements or test scripts), in source code, or in supporting artifacts such as a build file",
+        ["Only in source code, since it is the only thing that is executed", "In code and in the database, but not in documentation", "In requirements and code, but never in test scripts"],
+        "Defects can be found in any work product, not just in the code.",
+    ),
+    "c1-35": en(
+        "In an online shop, the tester uses the product as a shopper would and brings that point of view to the demos. Which contribution of testing does this illustrate?",
+        "Users' needs are taken into account throughout development",
+        ["Acceptance testing can be skipped", "Quality is guaranteed without business feedback", "Fewer users are needed in production"],
+        "Testers indirectly represent users, because involving a representative set of real users is usually costly or not possible.",
+    ),
+    # 1.3 Testing principles
+    "c1-10": en(
+        "A form has 12 fields, each with dozens of possible values, and someone asks for all combinations to be tested. Which principle advises against this?",
+        "Exhaustive testing is impossible",
+        ["Defects cluster together", "Early testing saves time and money", "Absence-of-defects fallacy"],
+        "Except in trivial cases, it is not possible to test everything: test techniques, prioritization and risk-based testing should be used.",
+    ),
+    "c1-11": en(
+        "80% of the failures in the last release came from two modules. Which principle describes this and how is it used?",
+        "Defects cluster together: more test effort is focused on those modules",
+        ["Tests wear out: old tests are discarded", "Testing is context dependent: the technique is changed", "Early testing: testing is done before development"],
+        "A small number of components usually contain most of the defects; this information is an input to risk analysis.",
+    ),
+    "c1-12": en(
+        "The same regression suite has not found any new defects for months, although defects keep appearing in production. Which principle applies?",
+        "Tests wear out",
+        ["Exhaustive testing is impossible", "Defects cluster together", "Testing is context dependent"],
+        "Repeating the same tests makes them less effective at finding new defects: they need to be reviewed and new tests added.",
+    ),
+    "c1-13": en(
+        "All defects found were fixed, but users do not use the new feature because it does not solve their problem. Which principle does this illustrate?",
+        "Absence-of-defects fallacy",
+        ["Testing shows the presence, not the absence of defects", "Defects cluster together", "Tests wear out"],
+        "Finding and fixing defects does not guarantee success: the system must also be validated against users' needs.",
+    ),
+    "c1-14": en(
+        "\"Testing shows the presence, not the absence of defects\" means that…",
+        "Testing reduces the probability of defects remaining undiscovered, but does not prove that there are none",
+        ["If no defects are found, the software is correct", "Testing should stop as soon as no defects appear", "Only static testing finds defects"],
+        "Even if no defects are found, it cannot be claimed that the software is correct.",
+    ),
+    "c1-36": en(
+        "A review of the payments API specification detects a missing mandatory field before a single line of code is written. Which principle explains the savings achieved?",
+        "Early testing saves time and money",
+        ["Defects cluster together", "Exhaustive testing is impossible", "Tests wear out"],
+        "Defects removed early do not cause defects in derived work products, which reduces the cost of quality.",
+    ),
+    "c1-37": en(
+        "A team applies to a casual mobile game the same formal and exhaustive test approach it uses for medical device software. Which principle is it ignoring?",
+        "Testing is context dependent",
+        ["Absence-of-defects fallacy", "Early testing saves time and money", "Testing shows the presence, not the absence of defects"],
+        "There is no universally applicable test approach: testing is done differently in different contexts.",
+    ),
+    "c1-38": en(
+        "In which case can the wearing out of tests have a beneficial outcome?",
+        "In automated regression testing, where it results in a relatively low number of regression defects",
+        ["In exploratory testing, because the same sessions are always repeated", "In acceptance testing, because the customer already knows the test cases", "In no case: it is always a problem to be avoided"],
+        "The syllabus notes that in automated regression testing this effect can be beneficial: it indicates few regression defects.",
+    ),
+    "c1-39": en(
+        "Which of these statements is one of the testing principles?",
+        "Exhaustive testing is impossible",
+        ["Testing should start when the code is finished", "Testing proves that the software is correct", "Defects are evenly distributed across modules"],
+        "It is one of the seven principles; the other statements contradict the principles of early testing, presence of defects and defect clustering.",
+    ),
+    "c1-40": en(
+        "Why does detecting a defect in the requirements save more than detecting it during system testing?",
+        "Because a defect removed early does not cause defects in derived work products, such as the design or the code",
+        ["Because requirements defects never cause failures", "Because defects cannot be reported during system testing", "Because fixing code is always free"],
+        "If it is removed early, the defect does not propagate and fewer failures occur later, which reduces the cost of quality.",
+    ),
+    # 1.4 Test activities, testware and test roles
+    "c1-15": en(
+        "In which activity is \"what to test\" decided by identifying test conditions from the test basis?",
+        "Test analysis",
+        ["Test planning", "Test design", "Test implementation"],
+        "Test analysis answers \"what to test\"; test design answers \"how to test\" (test cases).",
+    ),
+    "c1-16": en(
+        "Which activity includes preparing test data, setting up the test environment and organizing test procedures into test suites?",
+        "Test implementation",
+        ["Test design", "Test execution", "Test completion"],
+        "Test implementation creates or acquires the testware needed for execution: test procedures, test suites, test data and test environment.",
+    ),
+    "c1-17": en(
+        "Which is a typical work product of test design?",
+        "Test cases and test data requirements",
+        ["Test plan", "Test log", "Test completion report"],
+        "Test design produces test cases, test charters, coverage items and test data and test environment requirements.",
+    ),
+    "c1-18": en(
+        "What does traceability between the test basis and the test cases make possible?",
+        "Evaluating coverage and analysing the impact of changes",
+        ["Executing tests faster", "Removing the need for reviews", "Automating all tests"],
+        "Traceability shows which requirements are covered and what a change affects, and makes reports understandable.",
+    ),
+    "c1-19": en(
+        "Which role focuses on test planning, monitoring, control and completion?",
+        "The test management role",
+        ["The testing role", "The developer", "The end user"],
+        "Test management handles planning, control and completion; the testing role handles the technical side: analysis, design, implementation and execution.",
+    ),
+    "c1-20": en(
+        "Which of these contextual factors influences how testing is organized?",
+        "The business domain, the SDLC, time and budget constraints, and risks",
+        ["The product's brand name", "The corporate colour of the user interface", "The number of weekly meetings"],
+        "Testing is context dependent: stakeholders, team members, business domain, technical factors, project constraints, organizational factors and SDLC.",
+    ),
+    "c1-41": en(
+        "Halfway through the sprint, the test manager compares actual progress against the plan, sees that the regression testing of the cards module is behind schedule and reassigns two people. Which activity does the reassignment belong to?",
+        "Test control",
+        ["Test monitoring", "Test planning", "Test completion"],
+        "Test monitoring compares progress against the plan; test control takes the actions needed to meet the test objectives.",
+    ),
+    "c1-42": en(
+        "What is done during test completion?",
+        "Archiving useful testware, shutting down the test environment, analysing lessons learned and producing the test completion report",
+        ["Defining the entry and exit criteria", "Comparing actual results with expected results", "Identifying and prioritizing test conditions"],
+        "The other options belong to test planning, test execution and test analysis, respectively.",
+    ),
+    "c1-43": en(
+        "Which work products are typically produced during test execution?",
+        "Test logs and defect reports",
+        ["Test plan", "Prioritized test conditions", "Test suites and test data"],
+        "Test execution produces test logs and defect reports; the test plan comes from planning, test conditions from analysis and test suites from implementation.",
+    ),
+    "c1-44": en(
+        "During test analysis, a tester discovers that two user stories contradict each other on the limit for instant transfers. Which statement is correct?",
+        "This is to be expected: test analysis includes evaluating the test basis to identify defects in it",
+        ["She must wait for test execution to report it as a failure", "This is a test completion task", "It shows that test analysis was performed too early"],
+        "Analysing the test basis often reveals ambiguities, omissions or contradictions, which are reported at that point.",
+    ),
+    # 1.5 Essential skills and good practices in testing
+    "c1-21": en(
+        "Which skill is especially important for testers when communicating defects?",
+        "Constructive communication, focused on facts rather than on people",
+        ["Knowledge of compilers", "Graphic design", "Cost accounting"],
+        "Finding defects can be perceived as criticism; communicating them constructively maintains collaboration.",
+    ),
+    "c1-22": en(
+        "What characterizes the whole-team approach?",
+        "Any team member with the necessary knowledge and skills can perform any task, and everyone is responsible for quality",
+        ["Only the QA team is responsible for quality", "Testers do not talk directly to business representatives", "Testing is always performed by an external team"],
+        "The whole team shares responsibility for quality; testers collaborate with business representatives and developers.",
+    ),
+    "c1-23": en(
+        "What is a benefit of independence of testing?",
+        "Independent testers are likely to recognize different kinds of failures because of their different biases and backgrounds compared with the author",
+        ["It removes the need for developers to test", "It always improves communication between teams", "It reduces the overall cost of testing"],
+        "A different point of view finds failures that the author does not see; even so, developers still test too.",
+    ),
+    "c1-24": en(
+        "What is a possible drawback of independence of testing?",
+        "Testers may become isolated from the team, and developers may lose a sense of responsibility for quality",
+        ["Fewer defects are found", "It always delays the release", "It prevents the use of black-box test techniques"],
+        "Independence can lead to isolation, bottlenecks or a lack of shared information.",
+    ),
+    "c1-45": en(
+        "Which of these situations represents the highest level of independence of testing?",
+        "An external test lab outside the organization tests the banking app",
+        ["The developer tests their own code", "A colleague from the same team tests the code", "The company's test team, separate from the authoring team, tests the app"],
+        "Levels range from no independence (the author) to very high independence (testers from outside the organization).",
+    ),
+    "c1-46": en(
+        "Which distribution of independence of testing does the syllabus describe as common in many projects?",
+        "Developers perform component and component integration testing, a test team performs system and system integration testing, and business representatives perform acceptance testing",
+        ["An external supplier performs all testing, from component to acceptance, to maximize independence", "Developers perform all testing, including acceptance testing, because they know the code best", "Business representatives perform component testing and the test team performs acceptance testing"],
+        "Most projects benefit from combining several levels of independence depending on the test level.",
+    ),
+    "c1-47": en(
+        "In which context may the whole-team approach not be appropriate?",
+        "In safety-critical systems, where a high level of test independence is required",
+        ["In agile teams working with user stories", "When business representatives take part in acceptance testing", "In products with continuous integration"],
+        "The syllabus warns that in some contexts, such as safety-critical software, a high level of independence is needed.",
+    ),
+    "c1-48": en(
+        "A developer rejects a well-documented defect report because \"that code has always worked\". What best describes this reaction?",
+        "Confirmation bias: it is hard to accept information that contradicts what one already believes",
+        ["Tests wearing out", "Defect clustering", "Absence-of-defects fallacy"],
+        "Confirmation bias makes bad news hard to accept; that is why testers should communicate constructively and based on facts.",
+    ),
+    "c1-49": en(
+        "Which of these is an important generic skill for testers?",
+        "Thoroughness, curiosity and attention to detail",
+        ["Readiness to approve deliveries without questioning them", "A preference for working without interacting with the team", "Accepting the team's assumptions without challenging them"],
+        "The syllabus lists, among others, thoroughness, curiosity, attention to detail, analytical and critical thinking, creativity and good communication.",
+    ),
+    "c1-50": en(
+        "In a team that follows the whole-team approach, how do testers work with business representatives?",
+        "They help them create suitable acceptance tests",
+        ["They hand over all responsibility for quality to them", "They avoid talking to them in order to stay independent", "They only send them the test completion report"],
+        "Testers help business representatives with acceptance tests and agree on the test strategy and test automation approach with developers.",
+    ),
+}

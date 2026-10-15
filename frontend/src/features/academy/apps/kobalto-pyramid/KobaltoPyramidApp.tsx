@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { RunState } from '../../engine/types'
+import { missionLang, tr } from '../../i18n'
 import type { ToolProps } from '../../tools/types'
-import { CHECKS, EFFORT, INITIAL_PLAN, LEVEL_LABEL, implement, metrics, submitPlan, type Level, type PlanState } from './pyramidLogic'
+import { EFFORT, INITIAL_PLAN, checksFor, implement, levelLabelFor, metrics, submitPlan, type Level, type PlanState } from './pyramidLogic'
 
 const LEVELS: Level[] = ['unit', 'api', 'e2e', 'manual', 'perf']
 const BAR: { level: Level; cls: string }[] = [
@@ -11,7 +12,11 @@ const BAR: { level: Level; cls: string }[] = [
 ]
 
 /** Planificador de pruebas de KOB-190: decidir en qué nivel vive cada comprobación. */
-export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }) {
+export function KobaltoPyramidApp({ dispatch, state, mission }: ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }) {
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
+  const CHECKS = checksFor(lang)
+  const LEVEL_LABEL = levelLabelFor(lang)
   const app = (state.appState['kobalto-pyramid'] as PlanState | undefined) ?? INITIAL_PLAN
   const build = { active: state.activeBugs, fixed: state.fixedBugs }
   const [choice, setChoice] = useState<Record<string, Level | ''>>({})
@@ -21,22 +26,23 @@ export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: R
   const go = (id: string) => {
     const level = choice[id] || app.entries[id]?.level
     if (!level) return
-    const r = implement(app, id, level, state.build, build)
+    const r = implement(app, id, level, state.build, build, lang)
     dispatch({ type: 'app', event: { ...r.event, state: r.state } })
   }
 
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>⚠ STAGING · Planificador de pruebas · KOB-190 «Dividir un gasto»</span>
+        <span>{t('⚠ STAGING · Planificador de pruebas · KOB-190 «Dividir un gasto»', '⚠ STAGING · Test planner · KOB-190 "Split an expense"')}</span>
         <span>build 5.2.0-dev{1 + state.build}</span>
       </div>
       <div className="mx-auto grid max-w-6xl gap-4 p-5 lg:grid-cols-[1fr_18rem]">
         <section className="rounded-2xl bg-white p-4 shadow-sm">
-          <h3 className="mb-1 font-sans text-sm font-semibold text-slate-900">Comprobaciones de KOB-190</h3>
+          <h3 className="mb-1 font-sans text-sm font-semibold text-slate-900">{t('Comprobaciones de KOB-190', 'KOB-190 checks')}</h3>
           <p className="mb-3 text-xs text-slate-500">
-            Elige el nivel de cada comprobación y escríbela (o ejecútala, si es manual). Coste: unitaria {EFFORT.unit} min · API {EFFORT.api} · E2E {EFFORT.e2e} · manual{' '}
-            {EFFORT.manual} · rendimiento {EFFORT.perf}.
+            {lang === 'en'
+              ? `Choose the level for each check and write it (or run it, if manual). Cost: unit ${EFFORT.unit} min · API ${EFFORT.api} · E2E ${EFFORT.e2e} · manual ${EFFORT.manual} · performance ${EFFORT.perf}.`
+              : `Elige el nivel de cada comprobación y escríbela (o ejecútala, si es manual). Coste: unitaria ${EFFORT.unit} min · API ${EFFORT.api} · E2E ${EFFORT.e2e} · manual ${EFFORT.manual} · rendimiento ${EFFORT.perf}.`}
           </p>
           <ul className="divide-y divide-slate-100">
             {CHECKS.map((c) => {
@@ -49,16 +55,16 @@ export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: R
                   <span className="min-w-[14rem] flex-1 text-slate-800">{c.title}</span>
                   {e && (
                     <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${e.result === 'pass' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                      {LEVEL_LABEL[e.level]} · {e.result === 'pass' ? 'pasa' : 'falla'}
+                      {LEVEL_LABEL[e.level]} · {e.result === 'pass' ? t('pasa', 'pass') : t('falla', 'fail')}
                     </span>
                   )}
                   <select
-                    aria-label={`Nivel de ${c.id}`}
+                    aria-label={`${t('Nivel de', 'Level for')} ${c.id}`}
                     value={sel}
                     onChange={(ev) => setChoice((x) => ({ ...x, [c.id]: ev.target.value as Level | '' }))}
                     className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs"
                   >
-                    <option value="">Nivel…</option>
+                    <option value="">{t('Nivel…', 'Level…')}</option>
                     {LEVELS.map((l) => (
                       <option key={l} value={l}>
                         {LEVEL_LABEL[l]}
@@ -69,10 +75,10 @@ export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: R
                     type="button"
                     disabled={!sel}
                     onClick={() => go(c.id)}
-                    aria-label={`Escribir ${c.id}`}
+                    aria-label={`${t('Escribir', 'Write')} ${c.id}`}
                     className="rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-medium text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
                   >
-                    {!sel ? 'Escribir' : sel === 'manual' ? 'Ejecutar' : same ? 'Relanzar' : 'Escribir'} · {sel ? (same ? Math.ceil(EFFORT[sel] / 4) : EFFORT[sel]) : '—'} min
+                    {!sel ? t('Escribir', 'Write') : sel === 'manual' ? t('Ejecutar', 'Run') : same ? t('Relanzar', 'Rerun') : t('Escribir', 'Write')} · {sel ? (same ? Math.ceil(EFFORT[sel] / 4) : EFFORT[sel]) : '—'} min
                   </button>
                 </li>
               )
@@ -82,7 +88,7 @@ export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: R
 
         <aside className="space-y-4">
           <section className="rounded-2xl bg-white p-4 shadow-sm">
-            <h3 className="mb-3 font-sans text-sm font-semibold text-slate-900">Forma de tu suite automática</h3>
+            <h3 className="mb-3 font-sans text-sm font-semibold text-slate-900">{t('Forma de tu suite automática', 'Shape of your automated suite')}</h3>
             <div className="space-y-1.5">
               {BAR.map((b) => (
                 <div key={b.level} className="flex items-center gap-2 text-xs">
@@ -96,31 +102,31 @@ export function KobaltoPyramidApp({ dispatch, state }: ToolProps & { stateRef: R
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-slate-50 p-2">
-                <dt className="text-slate-500">CI por ejecución</dt>
+                <dt className="text-slate-500">{t('CI por ejecución', 'CI per run')}</dt>
                 <dd className={`font-semibold ${m.ciMinutes > 15 ? 'text-red-700' : ''}`}>{m.ciMinutes} min</dd>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <dt className="text-slate-500">Fallos intermitentes</dt>
+                <dt className="text-slate-500">{t('Fallos intermitentes', 'Flaky failures')}</dt>
                 <dd className={`font-semibold ${m.flakyRate > 10 ? 'text-red-700' : ''}`}>{m.flakyRate} %</dd>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <dt className="text-slate-500">Manuales</dt>
+                <dt className="text-slate-500">{t('Manuales', 'Manual')}</dt>
                 <dd className="font-semibold">{m.counts.manual}</dd>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <dt className="text-slate-500">Rendimiento</dt>
+                <dt className="text-slate-500">{t('Rendimiento', 'Performance')}</dt>
                 <dd className="font-semibold">{m.counts.perf}</dd>
               </div>
             </dl>
             <button
               type="button"
               onClick={() => {
-                const r = submitPlan(app)
+                const r = submitPlan(app, lang)
                 dispatch({ type: 'app', event: { ...r.event, state: r.state } })
               }}
               className="mt-4 w-full rounded-lg bg-indigo-700 py-2 text-sm font-semibold text-white hover:bg-indigo-800"
             >
-              Enviar el plan a Laura · 5 min
+              {t('Enviar el plan a Laura', 'Send the plan to Laura')} · 5 min
             </button>
           </section>
         </aside>

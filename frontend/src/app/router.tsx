@@ -17,7 +17,9 @@ import { RouteLoadingFallback } from '../components/layout/RouteLoadingFallback'
 // `router` export below breaks Fast Refresh.
 import {
   AboutPage,
+  AcademyCertificatePage,
   AcademyCoursePage,
+  AcademyExamPage,
   AcademyHomePage,
   AcademyPlayerPage,
   AdminAnnouncementsPage,
@@ -109,7 +111,17 @@ export const router = createBrowserRouter([
       { path: '/terms-of-service', element: <TermsPage /> },
       { path: '/academy', element: <AcademyHomePage /> },
       { path: '/academy/:courseKey', element: <AcademyCoursePage /> },
+      { path: '/academy/:courseKey/simulacro', element: <AcademyExamPage /> },
     ],
+  },
+  // Certificado de ASE Academy: fuera de los layouts para imprimirlo limpio.
+  {
+    path: '/academy/certificado/:code',
+    element: (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <AcademyCertificatePage />
+      </Suspense>
+    ),
   },
   // ASE Academy: el reproductor ocupa toda la pantalla (escritorio simulado),
   // así que va fuera de los layouts y necesita su propio Suspense.

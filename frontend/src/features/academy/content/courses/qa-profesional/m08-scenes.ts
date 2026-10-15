@@ -1,0 +1,176 @@
+import type { Effect, Scene } from '../../../engine/types'
+
+const PREVENT: Effect = { kind: 'preventBugs' }
+
+/** Escenas de la misión 8 del curso 2 (Herramientas). */
+export const m08Scenes: Scene[] = [
+  {
+    id: 'mail_raul',
+    channel: 'email',
+    from: 'raul',
+    at: 0,
+    subject: 'Presupuesto para herramientas del squad',
+    body: 'Buenas noticias: dirección aprueba 20.000 € al año para herramientas de pruebas del squad Empresas. A las 15:00 lo decidimos con Elena e Iván. Esta semana han hecho demo tres proveedores; en la app «Herramientas» tienes las fichas y las necesidades que salieron en la retro.\n\nQuiero una propuesta que pueda defender, no un catálogo.\n\nRaúl',
+  },
+  {
+    id: 'chat_sergio',
+    channel: 'chat',
+    from: 'sergio',
+    at: 20,
+    body: '¿Viste la demo de TestForge? 🤩 Grabaron 40 casos en una hora. Con eso automatizamos toda la regresión en un mes y nos olvidamos de probar a mano.',
+  },
+  {
+    id: 'laura_hint',
+    channel: 'chat',
+    from: 'laura',
+    at: 40,
+    body: 'Antes de mirar herramientas, mira las necesidades: no todas se resuelven con lo mismo. Y de cada candidata, lee lo que no sale en la demo: mantenimiento, formato de los scripts, integración con el CI y coste a tres años. La guía está en la wiki.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'tool_categories' }],
+  },
+  {
+    id: 'laura_proposal_ok',
+    channel: 'chat',
+    from: 'laura',
+    when: {
+      kind: 'all',
+      of: [
+        { kind: 'flag', key: 'proposal.sent' },
+        { kind: 'flag', key: 'needs.ok' },
+        { kind: 'flag', key: 'eval.ok' },
+        { kind: 'flag', key: 'pilot.ok' },
+      ],
+    },
+    body: 'Buena propuesta: cada necesidad con su tipo de herramienta, los riesgos de cada candidata a la vista y un piloto con criterios que se pueden medir. Así no se compra una demo, se compra una solución.',
+    onDeliver: [
+      { kind: 'score', key: 'rigor', add: 2 },
+      { kind: 'score', key: 'risk', add: 1 },
+      { kind: 'unlock', conceptId: 'tool_pilot' },
+      { kind: 'note', tone: 'good', text: 'Propusiste herramientas por necesidad, con riesgos evaluados y un piloto medible.' },
+    ],
+  },
+  {
+    id: 'sergio_deal',
+    channel: 'meeting',
+    from: 'sergio',
+    with: ['laura'],
+    at: 180,
+    subject: '12:00 · Café con Sergio',
+    body: '**Sergio:** El comercial de TestForge me ha dicho que si firmamos hoy nos hace un 30 % de descuento en el contrato de tres años. ¿Se lo digo a Raúl?',
+    choices: [
+      {
+        id: 'pilot',
+        text: 'Un descuento sobre algo que no hemos probado no es ahorro. Grabar 40 casos en una hora es fácil; mantenerlos cuando cambia la interfaz, no. Propongo un piloto acotado con criterios medibles, y tu experiencia en automatización me vendría genial para diseñarlo.',
+        requires: { kind: 'flag', key: 'proposal.sent' },
+        cost: 15,
+        reply: 'Vale… lo de mantener los scripts grabados es verdad, en Tarjetas nos pasó. Cuenta conmigo para el piloto.',
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'flag', key: 'sergio.aligned' },
+          { kind: 'score', key: 'communication', add: 2 },
+          { kind: 'unlock', conceptId: 'automation_risks' },
+          { kind: 'note', tone: 'good', text: 'Frenaste una compra por impulso y sumaste a Sergio al piloto.' },
+        ],
+      },
+      {
+        id: 'sign',
+        text: 'Un 30 % es mucho. Dile a Raúl que firme hoy.',
+        cost: 5,
+        reply: '¡Genial! Se lo digo ahora.',
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'flag', key: 'tool.rushed' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_risks' },
+          { kind: 'note', tone: 'bad', text: 'Empujaste a firmar tres años de licencia sin evaluar ni pilotar.' },
+        ],
+      },
+      {
+        id: 'nothing',
+        text: 'Mejor no automatizamos nada: lo manual es más seguro.',
+        cost: 5,
+        reply: '¿Y la regresión de cada sprint quién la hace? Llevamos tres días por release…',
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'score', key: 'efficiency', add: -1 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'Descartaste la automatización sin valorar sus beneficios.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'committee',
+    channel: 'meeting',
+    from: 'raul',
+    with: ['elena', 'ivan', 'sergio'],
+    at: 360,
+    subject: '15:00 · Decisión de herramientas',
+    body: '**Raúl:** Tenemos 20.000 € al año. ¿Qué compramos?',
+    choices: [
+      {
+        id: 'pilot',
+        text: 'Un piloto de 4 semanas con Kestrel en la regresión de la API de facturas: corre en el pipeline, las pruebas viven en el repo y no dependemos de un formato propietario. Coste: formación y, si hace falta, 4.000 € de soporte. Criterios: regresión en cada merge en menos de 10 minutos, menos del 5 % de pruebas inestables y el equipo autónomo. Si se cumplen, ampliamos; si no, lo sabremos en un mes. La exploratoria sigue, la automatización no la sustituye.',
+        requires: { kind: 'all', of: [{ kind: 'flag', key: 'choice.ok' }, { kind: 'flag', key: 'pilot.ok' }] },
+        cost: 15,
+        reply: 'Un mes, poco dinero y una decisión con datos. Aprobado. Y nos sobra presupuesto para la herramienta de carga.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'proposal.defended' },
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'efficiency', add: 2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'good', text: 'Defendiste una adopción gradual con piloto, criterios medibles y expectativas realistas.' },
+        ],
+      },
+      {
+        id: 'everything',
+        text: 'TestForge y QualiCloud: entre las dos lo cubren todo.',
+        cost: 5,
+        reply: 'Eso son 27.000 € al año. Nos pasamos del presupuesto.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'score', key: 'efficiency', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'Propusiste comprar herramientas en lugar de resolver necesidades.' },
+        ],
+      },
+      {
+        id: 'promise',
+        text: 'Con TestForge automatizamos el 100 % en un mes y ya no hará falta probar a mano.',
+        cost: 5,
+        reply: 'Lo apunto como compromiso para dirección.',
+        replyFrom: 'raul',
+        effects: [
+          { kind: 'flag', key: 'promise.unrealistic' },
+          { kind: 'score', key: 'risk', add: -2 },
+          { kind: 'unlock', conceptId: 'automation_benefits' },
+          { kind: 'note', tone: 'bad', text: 'Prometiste expectativas irreales sobre la automatización.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'laura',
+    with: ['raul', 'elena', 'tomas', 'sofia', 'ivan', 'carmen'],
+    at: 480,
+    subject: '17:00 · Retro del squad: seis meses de calidad',
+    body: '**Laura:** Última retro del trimestre. Hace unas semanas este squad no tenía proceso de QA. Ahora tenemos revisiones, BDD, cobertura, exploratorias, un plan, métricas, configuración bajo control y, desde hoy, una estrategia de herramientas. ¿Qué te llevas?',
+    onDeliver: [PREVENT],
+    choices: [
+      {
+        id: 'lesson',
+        text: 'Que la calidad es del equipo y se construye en todo el ciclo: revisar antes de programar, acordar ejemplos con negocio, medir lo que importa, saber qué versión se prueba y elegir herramientas por necesidad, con pilotos y sin promesas mágicas. Las herramientas ayudan; no piensan por nosotros.',
+        reply: 'Eso es un QA que dirige el proceso de calidad. Ahora, a por el examen.',
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'paper',
+        text: 'Que con la herramienta adecuada ya no hace falta QA.',
+        reply: 'Mira en el debrief qué pasa cuando la herramienta sustituye al criterio.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'Te quedaste con la herramienta como sustituto del criterio de pruebas.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

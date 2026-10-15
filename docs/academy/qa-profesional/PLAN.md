@@ -155,7 +155,7 @@ Formato común (heredado del curso 1):
   - herramienta que no se integra con el CI.
 - **Cierre del curso:** retro con el squad sobre lo construido en las 9 misiones.
 
-### Final · Simulacro de examen CTFL
+### Final · Simulacro de examen CTFL ✅ (ver `../simulacro.md`)
 - **Formato del examen real** (CTFL v4.0): 40 preguntas de opción múltiple, 60 minutos (75 si no es tu idioma nativo), aprobado con 26 (65 %).
 - **Banco de preguntas propio:**
   - **Origen:** escritas para el curso, nunca copiadas de exámenes oficiales.
@@ -208,8 +208,9 @@ Backend: tablas de banco de preguntas e intentos de examen, endpoint de correcci
 
 ## 6. Orden de construcción propuesto
 
-1. **Simulacro de examen y banco de preguntas** (sirve a los dos cursos y es lo que más vende a quien prepara el CTFL).
+1. ~~Simulacro de examen y banco de preguntas~~ ✅ (hecho: `../simulacro.md`; 250 preguntas en español e inglés, simulacro del curso 2, evaluación final del curso 1, certificado verificable con PDF y aviso por email).
+6. ~~Versión en inglés de los dos cursos~~ ✅ (ver `../i18n.md`).
 2. ~~M3 Dentro del código~~ ✅ (hecha: `missions/m03-cobertura.md`) y ~~M2 Dado, cuando, entonces~~ ✅ (hecha: `missions/m02-gherkin.md`) (las más diferenciales).
 3. ~~M0 Equipo nuevo~~ ✅ (hecha: `missions/m00-equipo.md`, demo gratuita), ~~M1~~ ✅ (hecha: `missions/m01-inspeccion.md`), ~~M4~~ ✅ (hecha: `missions/m04-exploratoria.md`).
-4. ~~M5~~ ✅ (hecha: `missions/m05-plan.md`), **M6, M7, M8.**
+4. ~~M5~~ ✅ (hecha: `missions/m05-plan.md`), ~~M6~~ ✅ (hecha: `missions/m06-metricas.md`), ~~M7~~ ✅ (hecha: `missions/m07-configuracion.md`), ~~M8~~ ✅ (hecha: `missions/m08-herramientas.md`). Las 9 misiones están jugables.
 5. Registro del curso en el catálogo (`academy_course_key = qa-profesional`) cuando haya al menos M0 y el simulacro jugables.

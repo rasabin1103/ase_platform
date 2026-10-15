@@ -1,7 +1,8 @@
-import { CheckCircle2, Clock, Gamepad2 } from 'lucide-react'
+import { Award, CheckCircle2, Clock, Gamepad2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { courseSyllabus } from './syllabus'
+import { EXAM_COURSES } from './exam/studyMap'
 
 const COPY = {
   es: { missions: 'Misiones del curso', ready: 'Disponible', soon: 'Próximamente', free: 'Gratis', count: (a: number, n: number) => `${a} de ${n} disponibles` },
@@ -25,7 +26,7 @@ export function AcademyCatalogPanel({
 }) {
   const { language } = useI18n()
   const c = language === 'en' ? COPY.en : COPY.es
-  const missions = courseSyllabus(courseKey)
+  const missions = courseSyllabus(courseKey, language === 'en' ? 'en' : 'es')
   const available = missions.filter((m) => m.available).length
 
   return (
@@ -66,6 +67,12 @@ export function AcademyCatalogPanel({
               </li>
             ))}
           </ol>
+          {EXAM_COURSES[courseKey] ? (
+            <p className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/[0.06] px-3.5 py-2.5 text-sm text-ase-text">
+              <Award className="h-4 w-4 shrink-0 text-amber-300" aria-hidden />
+              {language === 'en' ? EXAM_COURSES[courseKey].labelEn : EXAM_COURSES[courseKey].label}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

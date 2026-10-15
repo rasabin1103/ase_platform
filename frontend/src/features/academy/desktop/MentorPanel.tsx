@@ -3,6 +3,28 @@ import { X } from 'lucide-react'
 import type { ToolProps } from '../tools/types'
 import { Avatar, RichText } from '../ui'
 import { npcOf } from '../uiHelpers'
+import { missionLang } from '../i18n'
+
+const COPY = {
+  es: {
+    ask: (name: string) => `Pregúntale a ${name}`,
+    costHint: 'Cada consulta nueva te lleva unos minutos de jornada.',
+    close: 'Cerrar',
+    consulted: 'Consultada',
+    others: '← Otras preguntas',
+    explains: (name: string, min: number) => `${name} te lo explica en unos ${min} minutos.`,
+    askBtn: (min: number) => `Preguntar · ${min} min`,
+  },
+  en: {
+    ask: (name: string) => `Ask ${name}`,
+    costHint: 'Each new question takes a few minutes of your day.',
+    close: 'Close',
+    consulted: 'Asked',
+    others: '← Other questions',
+    explains: (name: string, min: number) => `${name} will explain it in about ${min} minutes.`,
+    askBtn: (min: number) => `Ask · ${min} min`,
+  },
+}
 
 /** «Pregúntale a Laura»: microlecciones en contexto con coste de tiempo. */
 export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & { onClose: () => void }) {
@@ -11,17 +33,18 @@ export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & {
   const [openId, setOpenId] = useState<string | null>(null)
   const open = lessons.find((l) => l.id === openId)
   const read = open ? state.lessonsRead.includes(open.id) : false
+  const c = COPY[missionLang(mission)]
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/50" role="dialog" aria-modal aria-label={`Pregúntale a ${mentor.name}`} onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex justify-end bg-black/50" role="dialog" aria-modal aria-label={c.ask(mentor.name)} onClick={onClose}>
       <aside className="flex h-full w-full max-w-lg flex-col border-l border-ase-border bg-ase-bg2 shadow-soft" onClick={(e) => e.stopPropagation()}>
         <header className="flex items-center gap-3 border-b border-ase-border p-4">
           <Avatar npc={mentor} />
           <div className="min-w-0 flex-1">
-            <p className="font-sans text-body-md font-semibold">Pregúntale a {mentor.name.split(' ')[0]}</p>
-            <p className="text-caption text-ase-muted">Cada consulta nueva te lleva unos minutos de jornada.</p>
+            <p className="font-sans text-body-md font-semibold">{c.ask(mentor.name.split(' ')[0])}</p>
+            <p className="text-caption text-ase-muted">{c.costHint}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded p-1 text-ase-muted hover:text-ase-text">
+          <button type="button" onClick={onClose} aria-label={c.close} className="rounded p-1 text-ase-muted hover:text-ase-text">
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -37,7 +60,7 @@ export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & {
                   >
                     <span>{l.question}</span>
                     <span className="shrink-0 text-caption text-ase-muted">
-                      {state.lessonsRead.includes(l.id) ? 'Consultada' : `${l.cost} min`}
+                      {state.lessonsRead.includes(l.id) ? c.consulted : `${l.cost} min`}
                     </span>
                   </button>
                 </li>
@@ -46,7 +69,7 @@ export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & {
           ) : (
             <article className="space-y-4">
               <button type="button" onClick={() => setOpenId(null)} className="text-caption text-ase-brand hover:underline">
-                ← Otras preguntas
+                {c.others}
               </button>
               <h3 className="font-sans text-body-lg font-semibold">{open.question}</h3>
               {read ? (
@@ -54,7 +77,7 @@ export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & {
               ) : (
                 <div className="rounded-ase-lg border border-dashed border-ase-border p-5 text-center">
                   <p className="mb-3 text-body-sm text-ase-text2">
-                    {mentor.name.split(' ')[0]} te lo explica en unos {open.cost} minutos.
+                    {c.explains(mentor.name.split(' ')[0], open.cost)}
                   </p>
                   <button
                     type="button"
@@ -62,7 +85,7 @@ export function MentorPanel({ mission, state, dispatch, onClose }: ToolProps & {
                     onClick={() => dispatch({ type: 'askMentor', lessonId: open.id })}
                     className="rounded-ase-md bg-ase-brand px-4 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong disabled:opacity-40"
                   >
-                    Preguntar · {open.cost} min
+                    {c.askBtn(open.cost)}
                   </button>
                 </div>
               )}

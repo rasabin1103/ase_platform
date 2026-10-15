@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # Base URL of the frontend app — used to build links inside transactional
     # emails (password reset, email verification). No trailing slash.
     FRONTEND_URL: str = "http://localhost:5173"
+    # Dominio canónico público (sitemap.xml, robots.txt y datos estructurados).
+    # Debe coincidir con <link rel="canonical"> de frontend/index.html.
+    PUBLIC_SITE_URL: str = "https://www.arcesabinengineering.com"
 
     # Public base URL of this backend itself (e.g. the Railway domain) — used
     # only to turn a relative path like /api/v1/public/catalog-cover/{id}

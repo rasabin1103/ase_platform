@@ -26,6 +26,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
         },
+        // sitemap.xml y robots.txt los genera el backend (en producción los
+        // publica Vercel con un rewrite, ver vercel.json).
+        '/sitemap.xml': { target: apiOrigin, changeOrigin: true, secure: true },
+        '/robots.txt': { target: apiOrigin, changeOrigin: true, secure: true },
       },
     },
     build: {

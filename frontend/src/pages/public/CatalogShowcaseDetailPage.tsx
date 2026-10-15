@@ -16,6 +16,7 @@ import { catalogImageAspectClass } from '../../components/catalog/catalogCardSha
 import { MarkdownContent } from '../../components/catalog/MarkdownViewer'
 import { CatalogShowcasePreviewModal } from '../../components/catalog/CatalogShowcasePreviewModal'
 import { JsonLd, SITE_URL } from '../../components/seo/JsonLd'
+import { BRAND_IMAGES, SELLER, absoluteUrl, digitalOfferDetails, priceValidUntil } from '../../components/seo/merchant'
 import { useAuth } from '../../hooks/useAuth'
 import { usePageTitle } from '../../hooks/usePageTitle'
 import { useI18n } from '../../i18n'
@@ -84,21 +85,30 @@ export function CatalogShowcaseDetailPage() {
 
   const catalogPath = '/catalog'
 
+  // Datos de producto para Google: solo ítems de pago (las fichas de
+  // comerciante exigen precio > 0). Ver components/seo/merchant.ts.
+  const itemPrice = Number(item?.price ?? 0)
   const productJsonLd =
-    item && itemType && slug
+    item && itemType && slug && itemPrice > 0
       ? {
           '@context': 'https://schema.org',
           '@type': 'Product',
           name: title,
-          description: shortDescription,
-          image: item.imageUrl ? `${SITE_URL}${item.imageUrl}` : undefined,
+          description: shortDescription || title,
+          image: absoluteUrl(item.imageUrl) ? [absoluteUrl(item.imageUrl) as string] : BRAND_IMAGES,
+          sku: `${itemType}-${slug}`,
+          category: item.category || undefined,
           brand: { '@type': 'Brand', name: 'Arce Sabin Engineering' },
           offers: {
             '@type': 'Offer',
             url: `${SITE_URL}/catalog/item/${itemType}/${slug}`,
-            priceCurrency: item.currency,
-            price: item.price,
+            priceCurrency: item.currency || 'EUR',
+            price: itemPrice.toFixed(2),
+            priceValidUntil: priceValidUntil(),
+            itemCondition: 'https://schema.org/NewCondition',
             availability: 'https://schema.org/InStock',
+            seller: SELLER,
+            ...digitalOfferDetails(item.currency || 'EUR'),
           },
           ...(item.averageRating != null && item.reviewCount > 0
             ? {
