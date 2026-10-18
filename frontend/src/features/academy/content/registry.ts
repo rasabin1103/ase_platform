@@ -16,6 +16,17 @@ import { m07Configuracion } from './courses/qa-profesional/m07-configuracion'
 import { m08Herramientas } from './courses/qa-profesional/m08-herramientas'
 import { m01Inspeccion } from './courses/qa-profesional/m01-inspeccion'
 import { m02Gherkin } from './courses/qa-profesional/m02-gherkin'
+import { m00HolaKarate } from './courses/karate-framework/m00-hola-karate'
+import { m01Match } from './courses/karate-framework/m01-match'
+import { m02Config } from './courses/karate-framework/m02-config'
+import { m03Payloads } from './courses/karate-framework/m03-payloads'
+import { m04Datos } from './courses/karate-framework/m04-datos'
+import { m05Auth } from './courses/karate-framework/m05-auth'
+import { m06Errores } from './courses/karate-framework/m06-errores'
+import { m07Mocks } from './courses/karate-framework/m07-mocks'
+import { m08Pipeline } from './courses/karate-framework/m08-pipeline'
+import { m09Framework } from './courses/karate-framework/m09-framework'
+import { m10Examen } from './courses/karate-framework/m10-examen'
 
 import { MISSIONS_EN as TF_EN } from './courses/testing-fundamentals/en'
 import { MISSIONS_EN as QAP_EN } from './courses/qa-profesional/en'
@@ -23,7 +34,7 @@ import { MISSIONS_EN as QAP_EN } from './courses/qa-profesional/en'
 export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses, getCourse, isFreeMission } from './courseList'
 
 /** Misiones jugables. Añadir una misión = importarla aquí. */
-const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas]
+const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas, m00HolaKarate, m01Match, m02Config, m03Payloads, m04Datos, m05Auth, m06Errores, m07Mocks, m08Pipeline, m09Framework, m10Examen]
 
 /** Traducciones al inglés (misma estructura e ids). */
 export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN]

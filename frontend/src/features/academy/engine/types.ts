@@ -6,6 +6,8 @@
  * contenido tipado que cumple estos contratos. Ver docs/academy/PLAN.md §3 y §8.
  */
 
+import type { CodeLabModel } from '../karate/types'
+
 export type ScoreKey = 'rigor' | 'communication' | 'risk' | 'efficiency'
 export type Severity = 'critical' | 'high' | 'medium' | 'low'
 /** Prioridad de negocio (cuándo se arregla), independiente de la severidad (cuánto daña). */
@@ -378,8 +380,26 @@ export interface Mission {
     preventedLabel: string
     appearedLabel: string
   }
+  /** Laboratorio de código (IDE de Karate, app «karate-ide»). */
+  codeLab?: CodeLabModel
+  /**
+   * Examen práctico: la misión se puntúa (retos del IDE y bugs reportados) y
+   * solo cuenta como terminada si se aprueba.
+   */
+  practicalExam?: PracticalExamModel
   /** Idioma del contenido (por defecto, español). Ver features/academy/i18n.ts. */
   lang?: 'es' | 'en'
+}
+
+export interface PracticalExamModel {
+  /** Puntos para aprobar (sobre el máximo). */
+  passMark: number
+  /** Puntos por reto del IDE conseguido. */
+  retoPoints: number
+  /** Puntos por bug de la misión reportado y aceptado. */
+  bugPoints: number
+  /** Puntos que resta cada report rechazado (no era un bug). */
+  rejectedPenalty: number
 }
 
 export interface CourseDef {

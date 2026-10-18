@@ -26,6 +26,8 @@ class ExamConfig:
     distribution: dict[int, int]
     missions: tuple[str, ...]
     sections: frozenset[str] | None = field(default=None)  # None = todo el temario
+    # Bloques numerados a partir de 11 en el banco (curso de Karate): se muestran restando esto.
+    chapter_offset: int = 0
 
     def course_title_for(self, lang: str) -> str:
         return self.course_title_en if lang == "en" else self.course_title
@@ -35,6 +37,13 @@ class ExamConfig:
 
     def allows(self, section: str) -> bool:
         return self.sections is None or section in self.sections
+
+    def chapter_label(self, chapter: int) -> str:
+        return str(chapter - self.chapter_offset)
+
+    def section_label(self, section: str) -> str:
+        head, _, rest = section.partition(".")
+        return f"{int(head) - self.chapter_offset}.{rest}" if rest else section
 
 
 EXAMS: dict[str, ExamConfig] = {
@@ -88,6 +97,36 @@ EXAMS: dict[str, ExamConfig] = {
         ),
         # Secciones que trabaja el curso 1 (docs/academy/qa-profesional/PLAN.md §5).
         sections=frozenset({"1.1", "1.2", "1.3", "2.2", "3.1", "4.1", "4.2", "5.2", "5.5"}),
+    ),
+    "karate-framework": ExamConfig(
+        course_key="karate-framework",
+        course_title="Karate Framework: automatización de APIs",
+        course_title_en="Karate Framework: API test automation",
+        title="Evaluación final teórica de Karate",
+        title_en="Karate final theory assessment",
+        certificate_prefix="KAR",
+        # 30 preguntas (6 por bloque), 45 min (56 con tiempo ampliado), aprobado con 20.
+        # El certificado exige además el examen práctico (misión m10-examen),
+        # que solo cuenta como terminado si se aprueba (70/100).
+        total=30,
+        minutes=45,
+        extended_minutes=56,
+        pass_mark=20,
+        distribution={11: 6, 12: 6, 13: 6, 14: 6, 15: 6},
+        chapter_offset=10,
+        missions=(
+            "m00-hola-karate",
+            "m01-match",
+            "m02-config",
+            "m03-payloads",
+            "m04-datos",
+            "m05-auth",
+            "m06-errores",
+            "m07-mocks",
+            "m08-pipeline",
+            "m09-framework",
+            "m10-examen",
+        ),
     ),
 }
 

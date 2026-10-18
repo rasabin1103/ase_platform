@@ -9,6 +9,7 @@ import { listAcademyRuns } from '../api'
 import { readMissionStatus, useAcademyUserKey } from '../useMissionRun'
 import { EXAM_COURSES } from '../exam/studyMap'
 import { useAcademyLang, type AcademyLang } from '../i18n'
+import { usePageTitle } from '../../../hooks/usePageTitle'
 
 const COPY = {
   es: {
@@ -63,6 +64,7 @@ export function AcademyCoursePage() {
   const lang = useAcademyLang()
   const c = COPY[lang]
   const course = getCourse(courseKey, lang)
+  usePageTitle(course ? `${course.title} · ASE Academy` : '', course?.description)
   const { access, isLoading } = useCourseAccess(courseKey, !!course)
   const { userKey, authenticated } = useAcademyUserKey()
   const runsQuery = useQuery({

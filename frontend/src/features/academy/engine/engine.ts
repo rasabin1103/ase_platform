@@ -15,6 +15,7 @@ import type {
 } from './types'
 import { designCoverage, designRigorBonus, reviewMessage, type DesignCoverage } from './design'
 import { riskAssessment, riskFeedback } from './risk'
+import { practicalScore } from './practicalExam'
 import { issueLabels } from './review'
 import { missionLang, tr, type AcademyLang } from '../i18n'
 
@@ -1028,7 +1029,9 @@ export function summarize(mission: Mission, s: RunState): MissionSummary {
     ok: { title: 'Jornada superada', body: 'Buen trabajo, con cosas que pulir. Revisa el debrief: casi todo lo que se escapó tiene una técnica concreta detrás.' },
     bad: { title: 'Jornada complicada', body: 'Nadie nace sabiendo. Repite la misión probando otras decisiones: verás cómo cambia el día.' },
   })
-  const tone: MissionSummary['verdict']['tone'] = avg >= 3.5 && criticalMissed <= 1 ? 'good' : avg >= 2.5 ? 'ok' : 'bad'
+  // En un examen práctico manda la nota: aprobado o no.
+  const exam = practicalScore(mission, s)
+  const tone: MissionSummary['verdict']['tone'] = exam ? (exam.passed ? 'good' : 'bad') : avg >= 3.5 && criticalMissed <= 1 ? 'good' : avg >= 2.5 ? 'ok' : 'bad'
   const verdict: MissionSummary['verdict'] = { ...texts[tone], tone }
   const reportQuality = s.reports
     .filter((r) => r.bugId && r.status !== 'duplicate' && r.status !== 'rejected')

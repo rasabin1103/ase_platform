@@ -66,3 +66,9 @@ Todas aceptan `?lang=es|en` (por defecto, español).
 - Backend: `tests/test_academy_exam_bank.py` (coherencia del banco, reparto, no repetición, filtro del curso 1 y que las misiones exigidas coinciden con los `course.ts` del frontend) y `tests/test_academy_exam.py` (acceso, flujo completo, corrección en servidor, tiempo agotado, certificado, verificación y borrado al anonimizar).
 - Frontend: `exam/ExamRunner.test.tsx` (autoguardado, entrega con confirmación, entrega automática al acabar el tiempo) y `exam/studyMap.test.ts`.
 - Recorrido manual con backend y base de datos reales: resumen, examen (escritorio y móvil), resultado, revisión y certificado.
+
+## Curso de Karate (17 oct)
+
+- Evaluación teórica `karate-framework`: 30 preguntas, 45 min (56 ampliado), aprobado con 20, 6 por bloque. Banco propio de 60 preguntas en `exam_bank/karate.py`, con bloques numerados 11–15 en el banco (no se mezclan con el temario CTFL) que se muestran como 1–5 (`ExamConfig.chapter_offset`). Solo en español: con `lang=en` se sirven en español.
+- Certificado `ASE-KAR-…`: exige las 10 misiones, el examen práctico (misión `m10-examen`, que solo cuenta como terminada si se aprueba con 70/100) y la evaluación teórica.
+- Detalle en `docs/academy/karate-framework/missions/m10-examen.md`.

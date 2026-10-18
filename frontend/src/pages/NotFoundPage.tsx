@@ -4,10 +4,13 @@ import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicHeader } from '../components/public/PublicHeader'
 import { ScrollToTop } from '../components/layout/ScrollToTop'
 import { useI18n } from '../i18n'
+import { useNoIndex } from '../components/seo/seo'
 
 /** Branded 404 — see DESIGN.md § Página 404 */
 export function NotFoundPage() {
   const { t } = useI18n()
+  // La SPA responde 200 a cualquier ruta: sin esto Google vería «soft 404».
+  useNoIndex()
 
   return (
     <div className="relative min-h-full overflow-x-hidden bg-ase-bg text-ase-text">

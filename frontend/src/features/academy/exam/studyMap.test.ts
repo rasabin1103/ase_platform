@@ -15,5 +15,9 @@ describe('simulacro: mapa de repaso', () => {
       }
     }
     expect(studyMissionFor('qa-profesional', '4.3')).toBe('m03-cobertura')
+    expect(studyMissionFor('karate-framework', '4.2')).toBe('m07-mocks')
+    for (const s of ['1.1', '1.2', '2.1', '2.2', '2.3', '3.1', '3.2', '4.1', '4.2', '5.1', '5.2']) {
+      expect(getCourse('karate-framework')!.missions.map((m) => m.id)).toContain(studyMissionFor('karate-framework', s))
+    }
   })
 })

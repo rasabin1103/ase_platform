@@ -70,3 +70,16 @@ def test_certificate_missions_match_frontend_courses():
         source = (_FRONTEND_COURSES / key / "course.ts").read_text(encoding="utf-8")
         missions = re.findall(r"\{ id: '([a-z0-9-]+)', title:", source)
         assert tuple(missions) == config.missions, key
+
+
+def test_karate_exam_uses_its_own_blocks_and_labels():
+    config = EXAMS["karate-framework"]
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(5))
+    assert len(drawn) == config.total
+    assert {BY_ID[item["id"]].chapter for item in drawn} == {11, 12, 13, 14, 15}
+    assert config.chapter_label(11) == "1" and config.section_label("14.2") == "4.2"
+    # Los simulacros CTFL nunca sacan preguntas de Karate.
+    for key in ("qa-profesional", "testing-fundamentals"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(2))
+        assert all(BY_ID[item["id"]].chapter < 11 for item in drawn)

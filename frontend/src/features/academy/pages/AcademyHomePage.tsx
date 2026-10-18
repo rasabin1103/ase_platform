@@ -7,6 +7,7 @@ import { ButtonLink } from '../../../components/ui/Button'
 import { cn } from '../../../components/ui/cn'
 import { useHomeCopy } from '../../../components/public/home/useHomeCopy'
 import { useAcademyLang } from '../i18n'
+import { usePageTitle } from '../../../hooks/usePageTitle'
 
 const PLAYABLE = ACADEMY_COURSES.reduce((n, c) => n + c.missions.filter((m) => m.available).length, 0)
 const HOURS = ACADEMY_COURSES.reduce((n, c) => n + c.estimatedHours, 0)
@@ -74,6 +75,7 @@ export function AcademyHomePage() {
   const day = useHomeCopy().academy
   const lang = useAcademyLang()
   const c = COPY[lang]
+  usePageTitle(`ASE Academy: ${c.titleBefore.toLowerCase()} ${c.titleHighlight}`, c.subtitle)
   const COURSES = academyCourses(lang)
   const levelLabel = lang === 'en' ? LEVEL_LABEL_EN : LEVEL_LABEL
   return (

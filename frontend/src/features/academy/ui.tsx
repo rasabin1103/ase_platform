@@ -16,18 +16,22 @@ export function Avatar({ npc, size = 'md' }: { npc: Npc; size?: 'sm' | 'md' }) {
 }
 
 function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+  return text.split(/(\*\*[^*]+\*\*|`[^`\n]+`)/g).map((part, i) =>
     part.startsWith('**') && part.endsWith('**') ? (
       <strong key={i} className="font-semibold text-ase-text">
         {part.slice(2, -2)}
       </strong>
+    ) : part.length > 2 && part.startsWith('`') && part.endsWith('`') ? (
+      <code key={i} className="rounded bg-black/30 px-1 py-px font-mono text-[0.92em] text-ase-text">
+        {part.slice(1, -1)}
+      </code>
     ) : (
       <Fragment key={i}>{part}</Fragment>
     ),
   )
 }
 
-/** Markdown mínimo: párrafos, `## títulos`, listas `- ` y **negrita**. */
+/** Markdown mínimo: párrafos, `## títulos`, listas `- `, **negrita**, `código` y bloques ``` de código. */
 export function RichText({ text, className = '' }: { text: string; className?: string }) {
   const blocks: ReactNode[] = []
   let list: string[] = []
@@ -43,8 +47,27 @@ export function RichText({ text, className = '' }: { text: string; className?: s
       list = []
     }
   }
+  let code: string[] | null = null
   for (const raw of text.split('\n')) {
     const line = raw.trimEnd()
+    if (line.trimStart().startsWith('```')) {
+      if (code) {
+        blocks.push(
+          <pre key={`c${blocks.length}`} className="overflow-x-auto rounded-ase-md bg-black/40 p-3 font-mono text-[12px] leading-[18px] text-ase-text">
+            {code.join('\n')}
+          </pre>,
+        )
+        code = null
+      } else {
+        flush()
+        code = []
+      }
+      continue
+    }
+    if (code) {
+      code.push(raw)
+      continue
+    }
     if (line.startsWith('- ')) {
       list.push(line.slice(2))
       continue

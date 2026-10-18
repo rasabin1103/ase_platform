@@ -3,6 +3,7 @@ import { testingFundamentalsCourse } from './courses/testing-fundamentals/course
 import { qaProfesionalCourse } from './courses/qa-profesional/course'
 import { testingFundamentalsCourseEn } from './courses/testing-fundamentals/en/course'
 import { qaProfesionalCourseEn } from './courses/qa-profesional/en/course'
+import { karateFrameworkCourse } from './courses/karate-framework/course'
 
 /**
  * Lista ligera de cursos del simulador (sin el contenido de las misiones).
@@ -12,11 +13,15 @@ import { qaProfesionalCourseEn } from './courses/qa-profesional/en/course'
  * Añadir un curso nuevo: crear su carpeta en content/courses/<clave>/,
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
-export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse]
+export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse]
 export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn]
 
+/** Cursos que aún no tienen versión en inglés (en inglés se muestran en español). */
+export const PENDING_TRANSLATION = new Set(['karate-framework'])
+
 export function academyCourses(lang: 'es' | 'en' = 'es'): CourseDef[] {
-  return lang === 'en' ? ACADEMY_COURSES_EN : ACADEMY_COURSES
+  if (lang !== 'en') return ACADEMY_COURSES
+  return ACADEMY_COURSES.map((c) => ACADEMY_COURSES_EN.find((e) => e.key === c.key) ?? c)
 }
 
 export const LEVEL_LABEL: Record<CourseDef['level'], string> = {
