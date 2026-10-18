@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { countsAsFinished } from './engine/practicalExam'
 import { useAuth } from '../../hooks/useAuth'
 import { getAcademyRun, saveAcademyRun } from './api'
 import { createRun, replay, step } from './engine/engine'
@@ -123,7 +124,8 @@ export function useMissionRun(mission: Mission) {
   // Guardado: local inmediato; servidor con un pequeño retardo tras cada acción.
   useEffect(() => {
     stateRef.current = run.state
-    const data: Saved = { seed: run.seed, actions: run.actions, finished: run.state.finished }
+    // Un examen práctico solo cuenta como terminado si se aprueba.
+    const data: Saved = { seed: run.seed, actions: run.actions, finished: countsAsFinished(mission, run.state) }
     writeLocal(mission, userKey, data)
     if (!remote || loading.current || !dirty.current) return
     const t = window.setTimeout(() => {

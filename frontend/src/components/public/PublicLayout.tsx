@@ -5,12 +5,14 @@ import { SkipLink } from '../layout/SkipLink'
 import { RouteLoadingFallback } from '../layout/RouteLoadingFallback'
 import { PublicHeader } from './PublicHeader'
 import { PublicFooter } from './PublicFooter'
+import { RouteSeo } from '../seo/RouteSeo'
 
 export function PublicLayout() {
   return (
     <div className="relative flex min-h-full flex-col overflow-x-clip bg-ase-bg text-ase-text">
       <SkipLink />
       <ScrollToTop />
+      <RouteSeo />
       <div className="pointer-events-none absolute inset-0">
         {/* Blueprint grid — the brand's own technical/engineering signature,
             used as the site-wide background instead of generic aurora glow. */}

@@ -67,6 +67,12 @@ CHAPTER_TITLES: dict[int, str] = {
     4: "Análisis y diseño de pruebas",
     5: "Gestión de las pruebas",
     6: "Herramientas de prueba",
+    # Curso de Karate (bloques de la evaluación final; se muestran como 1–5).
+    11: "Fundamentos y match",
+    12: "Configuración, payloads y datos",
+    13: "Reutilización y autenticación",
+    14: "Errores, procesos asíncronos y mocks",
+    15: "Pipeline y framework",
 }
 
 CHAPTER_TITLES_EN: dict[int, str] = {
@@ -76,6 +82,11 @@ CHAPTER_TITLES_EN: dict[int, str] = {
     4: "Test analysis and design",
     5: "Managing the test activities",
     6: "Test tools",
+    11: "Fundamentals and match",
+    12: "Configuration, payloads and data",
+    13: "Reuse and authentication",
+    14: "Errors, async processes and mocks",
+    15: "Pipeline and framework",
 }
 
 SECTION_TITLES_EN: dict[str, str] = {
@@ -101,6 +112,17 @@ SECTION_TITLES_EN: dict[str, str] = {
     "5.5": "Defect management",
     "6.1": "Tool support for testing",
     "6.2": "Benefits and risks of test automation",
+    "11.1": "Anatomy of a feature",
+    "11.2": "match and fuzzy markers",
+    "12.1": "karate-config.js and environments",
+    "12.2": "POST, read() and chaining",
+    "12.3": "Data-driven tests and boundary values",
+    "13.1": "call, callonce and callSingle",
+    "13.2": "Testing authentication",
+    "14.1": "Negative cases, errors and retry until",
+    "14.2": "Karate mocks",
+    "15.1": "Runners, tags, parallel and flaky tests",
+    "15.2": "Structure, conventions and reviews",
 }
 
 SECTION_TITLES: dict[str, str] = {
@@ -126,4 +148,15 @@ SECTION_TITLES: dict[str, str] = {
     "5.5": "Gestión de defectos",
     "6.1": "Herramientas de prueba",
     "6.2": "Beneficios y riesgos de la automatización",
+    "11.1": "Anatomía de un feature",
+    "11.2": "match y marcadores difusos",
+    "12.1": "karate-config.js y entornos",
+    "12.2": "POST, read() y encadenar",
+    "12.3": "Dirigido por datos y valores límite",
+    "13.1": "call, callonce y callSingle",
+    "13.2": "Probar la autenticación",
+    "14.1": "Casos negativos, errores y retry until",
+    "14.2": "Mocks de Karate",
+    "15.1": "Runners, tags, paralelo y tests inestables",
+    "15.2": "Estructura, convenciones y revisión",
 }

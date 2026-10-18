@@ -1,0 +1,182 @@
+import type { Scene } from '../../../engine/types'
+
+/** Escenas de la misión 8 del curso de Karate (El tercero que no responde). */
+export const m07Scenes: Scene[] = [
+  {
+    id: 'mail_ivan',
+    channel: 'email',
+    from: 'ivan',
+    at: 0,
+    subject: 'Pagos con tarjeta: lanzamiento el lunes (y Paynexo sin sandbox)',
+    body: 'Buenos días:\n\nEl lunes abrimos a los partners los **pagos con tarjeta** (`POST /cards/{id}/payments`). Para autorizar cada pago, nuestro servicio llama a **Paynexo**, el procesador de tarjetas.\n\nEl problema: el sandbox de Paynexo **lleva caído desde el lunes** y no nos dan fecha. Y aunque volviera, no nos deja provocar denegaciones, errores ni lentitud a voluntad.\n\nNecesito saber, sin Paynexo, qué hace nuestro servicio con cada cosa que Paynexo pueda responder. Contrato y arranque en local, en la wiki.\n\nIván',
+  },
+  {
+    id: 'chat_sergio',
+    channel: 'chat',
+    from: 'sergio',
+    at: 2,
+    body: 'No podemos depender de un tercero que no responde 😅 El servicio de pagos lo arrancamos en local y está configurado para llamar a Paynexo en `localhost:8090`. Ahí ponemos **nuestro propio Paynexo**: un **mock de Karate**.\n\nTe he dejado el esqueleto en `mocks/paynexo.feature` y el arranque en el Background de `payments.feature`. Ahora mismo el mock responde 501 a todo.',
+  },
+  {
+    id: 'standup',
+    channel: 'meeting',
+    from: 'ivan',
+    with: ['sergio', 'nico'],
+    at: 20,
+    subject: '09:20 · ¿Cómo probamos los pagos sin Paynexo?',
+    body: '**Nico:** Yo esperaría al viernes, cuando vuelva su sandbox.\n\n**Iván:** El lanzamiento es el lunes…',
+    choices: [
+      {
+        id: 'mock',
+        text: 'Con un mock de Paynexo en local: aprobado, denegado, errores y lentitud, cada uno a voluntad. Y el viernes, una prueba corta contra su sandbox real para confirmar que el mock dice la verdad.',
+        cost: 10,
+        reply: 'Mock para cubrir todos los casos y una comprobación con el real. Hecho.',
+        replyFrom: 'ivan',
+        effects: [
+          { kind: 'flag', key: 'standup.done' },
+          { kind: 'score', key: 'risk', add: 1 },
+          { kind: 'score', key: 'efficiency', add: 1 },
+          { kind: 'unlock', conceptId: 'mock' },
+          { kind: 'note', tone: 'good', text: 'Propusiste un mock de Paynexo para los casos difíciles y una comprobación final contra el sandbox real.' },
+        ],
+      },
+      {
+        id: 'wait',
+        text: 'Esperamos al viernes y probamos contra Paynexo.',
+        cost: 5,
+        reply: 'Un día para probarlo todo, y sin poder provocar una denegación ni un timeout…',
+        replyFrom: 'sergio',
+        effects: [
+          { kind: 'flag', key: 'standup.done' },
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'note', tone: 'bad', text: 'Propusiste esperar al tercero: poco tiempo y sin poder provocar los casos de error.' },
+        ],
+      },
+      {
+        id: 'validations',
+        text: 'Probamos lo que no llega a Paynexo: validaciones y tarjetas bloqueadas.',
+        cost: 5,
+        reply: 'Eso está bien, pero lo arriesgado es justo lo que pasa cuando hablamos con Paynexo.',
+        replyFrom: 'ivan',
+        effects: [
+          { kind: 'flag', key: 'standup.done' },
+          { kind: 'note', tone: 'neutral', text: 'Propusiste probar solo lo que no depende del procesador.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'sergio_mock',
+    channel: 'chat',
+    from: 'sergio',
+    when: { kind: 'flag', key: 'ide.run' },
+    at: 70,
+    body: 'En la consola verás lo que recibe el mock: `[mock :8090] POST /v2/authorizations → 501 · Scenario: (catch-all)`. Cada `Scenario` del mock es una **condición** (`pathMatches(…) && …`) y gana **la primera** que se cumple: pon los casos concretos arriba y el que lo recoge todo, al final.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'mock' }],
+  },
+  {
+    id: 'nico_centimos',
+    channel: 'chat',
+    from: 'nico',
+    at: 150,
+    body: 'Un detalle que se me olvidó: la semana pasada migramos a la **v2 de Paynexo**, que recibe el importe en **céntimos enteros** (25,50 € → 2550). Si le mandas otra cosa, responde **400**. Tu mock debería hacer lo mismo, o aceptará cosas que el Paynexo de verdad rechaza.',
+    onDeliver: [{ kind: 'flag', key: 'nico.centimos' }],
+  },
+  {
+    id: 'carmen_timeout',
+    channel: 'chat',
+    from: 'carmen',
+    at: 240,
+    body: 'Para la auditoría de pagos: nuestro servicio espera a Paynexo **3 segundos**. ¿Qué pasa si tarda más? Necesito la prueba de que **nunca aprobamos un pago que Paynexo no ha autorizado**.',
+    onDeliver: [{ kind: 'flag', key: 'carmen.timeout' }],
+  },
+  {
+    id: 'sergio_red',
+    channel: 'chat',
+    from: 'sergio',
+    when: { kind: 'bugTriggered' },
+    body: 'Rojo con el mock 👀 Antes de reportar, comprueba que el mock respondió lo que dice el contrato de Paynexo (la consola enseña qué escenario del mock contestó). Si el mock tiene razón, el fallo es nuestro: repórtalo.',
+    onDeliver: [{ kind: 'unlock', conceptId: 'dobles' }],
+  },
+  // ------------------------------------------------------------- Decisión y cierre
+  {
+    id: 'decision',
+    channel: 'meeting',
+    from: 'ivan',
+    with: ['carmen', 'alba'],
+    at: 450,
+    subject: '16:30 · ¿Lanzamos los pagos el lunes?',
+    body: '**Alba:** Paynexo dice que su sandbox vuelve el viernes. Los partners tienen los pagos anunciados para el lunes.\n\n**Iván:** ¿Qué nos dice la suite?',
+    choices: [
+      {
+        id: 'blocked',
+        text: 'Con el arreglo antes: si Paynexo tarda más de 3 s, aprobamos el pago sin autorización. Está reportado. Con el fix y la prueba del viernes contra el sandbox real, lanzamos el lunes.',
+        requires: { kind: 'bugReported', bugId: 'KA-TIMEOUT' },
+        cost: 10,
+        reply: 'Aprobar pagos que nadie ha autorizado… Bien visto. Fix primero, y el viernes la prueba con Paynexo.',
+        replyFrom: 'carmen',
+        effects: [
+          { kind: 'score', key: 'risk', add: 2 },
+          { kind: 'score', key: 'communication', add: 1 },
+          { kind: 'note', tone: 'good', text: 'El mock con responseDelay destapó que un timeout aprobaba pagos sin autorizar, antes del lanzamiento.' },
+        ],
+      },
+      {
+        id: 'yes',
+        text: 'Sí: con el mock, los pagos aprobados y denegados funcionan.',
+        cost: 5,
+        reply: '¿Y si Paynexo va lento, como le pasa cada viernes por la tarde?',
+        replyFrom: 'carmen',
+        effects: [
+          {
+            kind: 'if',
+            when: { kind: 'flag', key: 'reto.lento' },
+            then: [{ kind: 'note', tone: 'neutral', text: 'Tenías la prueba de lentitud, pero no la usaste para decidir.' }],
+            else: [
+              { kind: 'score', key: 'risk', add: -2 },
+              { kind: 'note', tone: 'bad', text: 'El primer viernes lento de Paynexo se aprobaron pagos sin autorizar: nadie había probado el timeout.' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'unsure',
+        text: 'No lo sé: hasta que vuelva Paynexo no podemos saberlo.',
+        cost: 5,
+        reply: 'Para eso estaba el mock…',
+        replyFrom: 'ivan',
+        effects: [
+          { kind: 'score', key: 'risk', add: -1 },
+          { kind: 'note', tone: 'neutral', text: 'No llegaste a la decisión con los casos del procesador probados.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'closing',
+    channel: 'meeting',
+    from: 'sergio',
+    at: 480,
+    subject: '17:00 · Cinco minutos con Sergio',
+    body: '**Sergio:** ¿Qué te llevas de hoy?',
+    onDeliver: [
+      { kind: 'if', when: { kind: 'all', of: [{ kind: 'flag', key: 'reto.denegado' }, { kind: 'flag', key: 'reto.caida' }] }, then: [{ kind: 'score', key: 'rigor', add: 1 }] },
+      { kind: 'if', when: { kind: 'flag', key: 'reto.lento' }, then: [{ kind: 'score', key: 'risk', add: 1 }] },
+      { kind: 'if', when: { kind: 'flag', key: 'reto.contrato' }, then: [{ kind: 'score', key: 'rigor', add: 1 }] },
+    ],
+    choices: [
+      {
+        id: 'lesson',
+        text: 'Que un mock me deja provocar lo que el tercero real no me deja (denegaciones, errores, lentitud), que tiene que validar el contrato para no aprobarlo todo, y que no sustituye a una prueba final con el servicio real.',
+        reply: 'Exacto. Mañana: todo esto, en verde en el pipeline.',
+        effects: [{ kind: 'score', key: 'communication', add: 1 }, { kind: 'endMission' }],
+      },
+      {
+        id: 'fake',
+        text: 'Que con mocks ya no hace falta probar contra Paynexo.',
+        reply: 'Cuidado: un mock dice lo que tú crees que hace Paynexo. El viernes hay que comprobarlo con el de verdad.',
+        effects: [{ kind: 'note', tone: 'neutral', text: 'Te quedaste con que el mock sustituye al servicio real; no lo hace.' }, { kind: 'endMission' }],
+      },
+    ],
+  },
+]

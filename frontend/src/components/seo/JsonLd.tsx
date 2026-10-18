@@ -1,4 +1,4 @@
-/** Canonical site origin, matching `index.html`'s `<link rel="canonical">`. */
+/** Dominio público del sitio (canónicas: components/seo/RouteSeo.tsx). */
 export const SITE_URL = 'https://www.arcesabinengineering.com'
 
 /**

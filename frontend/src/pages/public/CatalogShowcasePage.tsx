@@ -24,6 +24,7 @@ import { catalogImageAspectClass } from '../../components/catalog/catalogCardSha
 import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import { ExpandableDescription } from '../../components/catalog/ExpandableDescription'
+import { usePageTitle } from '../../hooks/usePageTitle'
 
 type ViewMode = 'grid' | 'list'
 
@@ -48,6 +49,7 @@ export function CatalogShowcasePage() {
   const [sort, setSort] = useState<CatalogShowcaseSort>('newest')
   const [type, setType] = useState<CatalogItemType | undefined>(undefined)
   const v2 = (language === 'en' ? pagesV2En : pagesV2Es).catalog
+  usePageTitle(`${v2.eyebrow}: ${v2.titleBefore} ${v2.titleHighlight}`, v2.subtitle)
   // Single shared modal for the whole grid/list rather than one per card —
   // cards just report which item to preview, the page owns the fetch.
   const [previewItem, setPreviewItem] = useState<CatalogShowcaseItem | null>(null)

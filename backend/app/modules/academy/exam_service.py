@@ -188,7 +188,7 @@ class AcademyExamService:
             extendedMinutes=config.extended_minutes,
             passMark=config.pass_mark,
             distribution=[
-                ExamChapterQuota(chapter=c, title=self._chapter_title(c), count=n) for c, n in sorted(config.distribution.items())
+                ExamChapterQuota(chapter=c - config.chapter_offset, title=self._chapter_title(c), count=n) for c, n in sorted(config.distribution.items())
             ],
             bankSize=sum(len(pool_for(config, c)) for c in config.distribution),
             distinctExams=distinct_exams(config),
@@ -453,8 +453,8 @@ class AcademyExamService:
                 ExamQuestionRead(
                     id=bank.id,
                     number=number,
-                    chapter=bank.chapter,
-                    section=bank.section,
+                    chapter=bank.chapter - config.chapter_offset,
+                    section=config.section_label(bank.section),
                     sectionTitle=self._section_title(bank.section),
                     k=bank.k,
                     text=source.text,
@@ -484,13 +484,13 @@ class AcademyExamService:
                 passed=bool(attempt.passed),
                 timedOut=attempt.timed_out,
                 chapters=[
-                    ExamScoreLine(key=str(c), title=self._chapter_title(c), correct=v[0], total=v[1])
+                    ExamScoreLine(key=config.chapter_label(c), title=self._chapter_title(c), correct=v[0], total=v[1])
                     for c, v in sorted(chapter_totals.items())
                 ],
                 # Primero las secciones con peor porcentaje: son las que hay que repasar.
                 sections=sorted(
                     (
-                        ExamScoreLine(key=s, title=self._section_title(s), correct=v[0], total=v[1])
+                        ExamScoreLine(key=config.section_label(s), title=self._section_title(s), correct=v[0], total=v[1])
                         for s, v in section_totals.items()
                     ),
                     key=lambda line: (line.correct / line.total, line.key),

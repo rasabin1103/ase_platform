@@ -284,3 +284,62 @@ def test_send_email_with_attachment_builds_mixed_message(monkeypatch):
     assert ok is True
     assert "multipart/mixed" in captured["raw"]
     assert 'filename="c.pdf"' in captured["raw"]
+
+
+def test_karate_exam_blocks_labels_and_practical_requirement(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    url = "/api/v1/academy/exams/karate-framework"
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "Karate (simulador)",
+            "slug": "karate-simulador",
+            "type": "course",
+            "category": "Testing",
+            "short_description": "Curso de Karate.",
+            "long_description": "Automatización de APIs con Karate.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "intermediate",
+            "author": "ASE",
+            "academy_course_key": "karate-framework",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(url).json()
+    assert overview["config"]["total"] == 30
+    assert [c["chapter"] for c in overview["config"]["distribution"]] == [1, 2, 3, 4, 5]
+
+    attempt = client.post(f"{url}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
+    assert all(q["section"].split(".")[0] in {"1", "2", "3", "4", "5"} for q in attempt["questions"])
+    # Pide inglés: el curso no está traducido y las preguntas salen en español.
+    english = client.get(f"{url}/attempts/{attempt['id']}?lang=en", headers=independent_headers).json()
+    assert english["questions"][0]["text"] == attempt["questions"][0]["text"]
+
+    # Todas las misiones menos el examen práctico: aprobado, pero sin certificado.
+    for mission_id in EXAMS["karate-framework"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="karate-framework", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{url}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert {c["key"] for c in result["chapters"]} == {"1", "2", "3", "4", "5"}
+    assert result["missingMissions"] == ["m10-examen"]
+    assert result["certificate"] is None
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="karate-framework", mission_id="m10-examen", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/karate-framework", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-KAR-")

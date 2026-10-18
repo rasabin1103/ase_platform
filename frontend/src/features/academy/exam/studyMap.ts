@@ -28,6 +28,20 @@ const STUDY_MAP: Record<string, Record<string, string>> = {
     '6.1': 'm08-herramientas',
     '6.2': 'm08-herramientas',
   },
+  // Evaluación final de Karate: bloques 1–5 (en el banco, 11–15).
+  'karate-framework': {
+    '1.1': 'm00-hola-karate',
+    '1.2': 'm01-match',
+    '2.1': 'm02-config',
+    '2.2': 'm03-payloads',
+    '2.3': 'm04-datos',
+    '3.1': 'm05-auth',
+    '3.2': 'm05-auth',
+    '4.1': 'm06-errores',
+    '4.2': 'm07-mocks',
+    '5.1': 'm08-pipeline',
+    '5.2': 'm09-framework',
+  },
   'testing-fundamentals': {
     '1.1': 'm00-primer-dia',
     '1.2': 'm00-primer-dia',
@@ -52,6 +66,12 @@ export const EXAM_COURSES: Record<string, { title: string; titleEn: string; labe
     titleEn: 'CTFL mock exam',
     label: 'Simulacro de examen CTFL v4.0 (40 preguntas, 60 min) y certificado de finalización',
     labelEn: 'CTFL v4.0 mock exam (40 questions, 60 min) and completion certificate',
+  },
+  'karate-framework': {
+    title: 'Evaluación final teórica',
+    titleEn: 'Final theory assessment',
+    label: 'Evaluación final: teórica (30 preguntas, 45 min) y examen práctico en el IDE; certificado de finalización',
+    labelEn: 'Final assessment: theory (30 questions, 45 min) and a hands-on exam in the IDE; completion certificate',
   },
   'testing-fundamentals': {
     title: 'Evaluación final',

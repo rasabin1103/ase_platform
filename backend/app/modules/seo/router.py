@@ -141,10 +141,18 @@ def build_sitemap(db: Session) -> str:
     urls = [
         _url(path, lastmod=lastmod_for.get(path), changefreq=freq, priority=prio) for path, freq, prio in STATIC_PAGES
     ]
-    # ASE Academy: página de cada curso y de su simulacro.
-    for key in EXAMS:
-        urls.append(_url(f"/academy/{key}", changefreq="weekly", priority="0.8"))
-        urls.append(_url(f"/academy/{key}/simulacro", changefreq="monthly", priority="0.6"))
+    # ASE Academy: página de cada curso (los que tienen examen y los vendidos en
+    # el catálogo con «Curso interactivo») y de su simulacro, si lo tiene.
+    course_updated: dict[str, datetime | None] = {key: None for key in EXAMS}
+    for item in items:
+        key = item.academy_course_key
+        if key and key.strip():
+            previous = course_updated.get(key)
+            course_updated[key] = max(filter(None, (previous, item.updated_at)), default=None)
+    for key in sorted(course_updated):
+        urls.append(_url(f"/academy/{key}", lastmod=course_updated[key], changefreq="weekly", priority="0.8"))
+        if key in EXAMS:
+            urls.append(_url(f"/academy/{key}/simulacro", changefreq="monthly", priority="0.6"))
     for post in posts:
         urls.append(_url(f"/blog/{post.slug}", lastmod=post.updated_at or post.published_at, changefreq="monthly", priority="0.7"))
     for item in items:

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { practicalScore } from "../engine/practicalExam";
 import { RotateCcw } from "lucide-react";
 import {
   priorityLabels,
@@ -189,6 +190,7 @@ export function Debrief({
     courseMissions.length > 0 &&
     courseMissions[courseMissions.length - 1].id === mission.id;
   const summary = summarize(mission, state);
+  const exam = practicalScore(mission, state);
   const risk = riskAssessment(mission, state);
   const review = reviewSummary(mission, state);
   const closing = state.messages.find((m) => m.sceneId === mission.endSceneId);
@@ -220,6 +222,58 @@ export function Debrief({
               {lang === "en" ? `“${closing.replies[0].body}”` : `«${closing.replies[0].body}»`}
             </p>
           </div>
+        )}
+
+        {exam && (
+          <section
+            className={`rounded-ase-lg border p-5 ${exam.passed ? "border-ase-success/40 bg-ase-success/5" : "border-ase-error/40 bg-ase-error/5"}`}
+            aria-label={lang === "en" ? "Practical exam score" : "Nota del examen práctico"}
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="font-sans text-heading-sm font-semibold">
+                {lang === "en" ? "Practical exam" : "Examen práctico"}
+              </h2>
+              <p className="font-display text-heading-lg tabular-nums">
+                {exam.score}/{exam.max}{" "}
+                <span className={`text-body-md font-semibold ${exam.passed ? "text-ase-success" : "text-ase-error"}`}>
+                  {exam.passed ? (lang === "en" ? "PASSED" : "APTO") : lang === "en" ? "NOT PASSED" : "NO APTO"}
+                </span>
+              </p>
+            </div>
+            <p className="mt-1 text-body-sm text-ase-text2">
+              {lang === "en"
+                ? `Pass mark: ${exam.passMark}. ${exam.passed ? "It counts towards the certificate." : "Replay the exam when you are ready: it only counts as completed when you pass."}`
+                : `Para aprobar: ${exam.passMark}. ${exam.passed ? "Cuenta para el certificado." : "Repite el examen cuando quieras: solo cuenta como terminado si lo apruebas."}`}
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <ul className="space-y-1 text-body-sm">
+                {exam.retos.map((r) => (
+                  <li key={r.id} className="flex justify-between gap-3">
+                    <span className={r.ok ? "text-ase-text" : "text-ase-muted"}>
+                      {r.ok ? "✓" : "✗"} {r.title}
+                    </span>
+                    <span className="tabular-nums">+{r.points}</span>
+                  </li>
+                ))}
+              </ul>
+              <ul className="space-y-1 text-body-sm">
+                {exam.bugs.map((b) => (
+                  <li key={b.id} className="flex justify-between gap-3">
+                    <span className={b.found ? "text-ase-text" : "text-ase-muted"}>
+                      {b.found ? "✓" : "✗"} {b.id}
+                    </span>
+                    <span className="tabular-nums">+{b.points}</span>
+                  </li>
+                ))}
+                {exam.rejected > 0 && (
+                  <li className="flex justify-between gap-3 text-ase-error">
+                    <span>{lang === "en" ? `Rejected reports (${exam.rejected})` : `Reports rechazados (${exam.rejected})`}</span>
+                    <span className="tabular-nums">−{exam.penalty}</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </section>
         )}
 
         <section className="grid gap-3 sm:grid-cols-2">

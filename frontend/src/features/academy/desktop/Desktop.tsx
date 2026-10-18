@@ -39,7 +39,7 @@ const COPY = {
     exit: 'Salir (la partida se guarda)',
     ask: (name: string) => `Pregúntale a ${name}`,
     wait: 'Esperar 30 min',
-    confirmEnd: '¿Terminar la jornada e ir a la charla de las 17:00?',
+    confirmEnd: (time: string) => `¿Terminar la jornada e ir a la reunión de las ${time}?`,
     endDay: 'Terminar el día',
     newMail: 'Nuevo correo',
     newMessage: 'Nuevo mensaje',
@@ -49,7 +49,7 @@ const COPY = {
     exit: 'Exit (your game is saved)',
     ask: (name: string) => `Ask ${name}`,
     wait: 'Wait 30 min',
-    confirmEnd: 'End the day and go to the 17:00 wrap-up talk?',
+    confirmEnd: (time: string) => `End the day and go to the ${time} wrap-up meeting?`,
     endDay: 'End the day',
     newMail: 'New email',
     newMessage: 'New message',
@@ -154,7 +154,9 @@ export function Desktop({ sync, ...props }: ToolProps & { stateRef: React.RefObj
           <button
             type="button"
             onClick={() => {
-              if (window.confirm(c.confirmEnd)) dispatch({ type: 'endDay' })
+              const end = mission.dayStart + mission.duration
+              const time = `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+              if (window.confirm(c.confirmEnd(time))) dispatch({ type: 'endDay' })
             }}
             disabled={!!meeting || state.finished}
             className="flex items-center gap-1 rounded-ase-md bg-ase-surfaceSoft px-2.5 py-1 text-caption text-ase-text hover:bg-ase-brand/20 disabled:opacity-40"

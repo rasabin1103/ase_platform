@@ -18,6 +18,7 @@ import { KobaltoPlanApp } from './kobalto-plan/KobaltoPlanApp'
 import { KobaltoMetricsApp } from './kobalto-metrics/KobaltoMetricsApp'
 import { KobaltoConfigApp } from './kobalto-config/KobaltoConfigApp'
 import { KobaltoToolsApp } from './kobalto-tools/KobaltoToolsApp'
+import { KarateIdeApp } from './karate-ide/KarateIdeApp'
 
 export type AppProps = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
 
@@ -40,6 +41,7 @@ export const APP_COMPONENTS: Record<string, ComponentType<AppProps>> = {
   'kobalto-metrics': KobaltoMetricsApp as ComponentType<AppProps>,
   'kobalto-config': KobaltoConfigApp as ComponentType<AppProps>,
   'kobalto-tools': KobaltoToolsApp as ComponentType<AppProps>,
+  'karate-ide': KarateIdeApp as ComponentType<AppProps>,
 }
 
 export const DEFAULT_APP = 'kobalto-transfers'

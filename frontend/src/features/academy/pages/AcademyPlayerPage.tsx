@@ -6,6 +6,7 @@ import { MissionPlayer } from '../MissionPlayer'
 import { useCourseAccess } from '../useCourseAccess'
 import { useAcademyUserKey } from '../useMissionRun'
 import { useAcademyLang } from '../i18n'
+import { usePageTitle } from '../../../hooks/usePageTitle'
 
 const COPY = {
   es: {
@@ -26,6 +27,7 @@ export function AcademyPlayerPage() {
   const { courseKey = '', missionId = '' } = useParams()
   const lang = useAcademyLang()
   const mission = getMission(courseKey, missionId, lang)
+  usePageTitle(mission ? `${mission.title} · ASE Academy` : '', mission?.subtitle)
   const c = COPY[lang]
   const isFree = isFreeMission(getCourse(courseKey), missionId)
   const { userKey, authReady } = useAcademyUserKey()

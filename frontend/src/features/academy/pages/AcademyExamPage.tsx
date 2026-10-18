@@ -11,6 +11,8 @@ import { claimCertificate, getExamAttempt, getExamOverview, startExam, type Exam
 import { useCourseAccess } from '../useCourseAccess'
 import { useAcademyUserKey } from '../useMissionRun'
 import { useAcademyLang, type AcademyLang } from '../i18n'
+import { usePageTitle } from '../../../hooks/usePageTitle'
+import { EXAM_COURSES } from '../exam/studyMap'
 
 const DATE_FMT: Record<AcademyLang, Intl.DateTimeFormat> = {
   es: new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -124,6 +126,8 @@ export function AcademyExamPage() {
   const lang = useAcademyLang()
   const c = COPY[lang]
   const course = getCourse(courseKey, lang)
+  const examInfo = EXAM_COURSES[courseKey]
+  usePageTitle(course && examInfo ? `${lang === 'en' ? examInfo.titleEn : examInfo.title} · ${course.title}` : '', examInfo ? (lang === 'en' ? examInfo.labelEn : examInfo.label) : undefined)
   const [params, setParams] = useSearchParams()
   const attemptId = params.get('intento')
   const queryClient = useQueryClient()
