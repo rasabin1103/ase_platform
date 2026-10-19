@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -72,3 +73,7 @@ class CatalogShowcaseItemDetail(CatalogShowcaseItemRead):
     # ASE Academy simulator course key — lets the public page offer the
     # free demo mission before signing up.
     academyCourseKey: str | None = None
+    # Tráiler opcional: YouTube canónico o .mp4/.webm (app/core/video_urls.py).
+    trailerUrl: str | None = None
+    # Fecha de la última edición del ítem (uploadDate del VideoObject del tráiler).
+    updatedAt: datetime | None = None

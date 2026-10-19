@@ -11,6 +11,8 @@ import { Input } from '../../../components/ui/Input'
 import { Select } from '../../../components/ui/Select'
 import { Switch } from '../../../components/ui/Switch'
 import { useI18n } from '../../../i18n'
+import { TrailerPlayer } from '../../../components/catalog/TrailerPlayer'
+import { parseTrailer } from '../../../components/catalog/trailer'
 import { Field, SubGroup } from './FormBits'
 import {
   LEVELS,
@@ -185,7 +187,35 @@ export function MediaFields({ s, initial }: SectionProps & { initial?: CatalogIt
       <Field label={t('adminCatalog.fields.previewUrl')} error={msg(errors.preview_url)} wide>
         <Input placeholder="https://…" {...form.register('preview_url')} />
       </Field>
+      <Field label={t('adminCatalog.fields.trailerUrl')} hint={t('adminCatalog.trailerUrlHint')} error={msg(errors.trailer_url)} wide>
+        <Input
+          placeholder="https://www.youtube.com/watch?v=…"
+          {...form.register('trailer_url', { setValueAs: (v) => (typeof v === 'string' && v.trim() === '' ? null : v) })}
+        />
+      </Field>
+      <TrailerAdminPreview s={s} />
     </>
+  )
+}
+
+/** Vista previa del tráiler mientras se escribe el enlace (no se guarda nada aquí). */
+function TrailerAdminPreview({ s }: SectionProps) {
+  const { language } = useI18n()
+  const value = useWatch({ control: s.form.control, name: 'trailer_url' })
+  if (!value || !String(value).trim()) return null
+  if (!parseTrailer(value)) {
+    return (
+      <p className="text-xs text-ase-warning sm:col-span-2">
+        {language === 'en'
+          ? 'This link is not recognised as a YouTube video or an https .mp4/.webm file; saving will fail.'
+          : 'Este enlace no se reconoce como vídeo de YouTube ni como archivo .mp4/.webm https; al guardar dará error.'}
+      </p>
+    )
+  }
+  return (
+    <div className="max-w-xl sm:col-span-2">
+      <TrailerPlayer url={value} title={language === 'en' ? 'Trailer preview' : 'Vista previa del tráiler'} />
+    </div>
   )
 }
 

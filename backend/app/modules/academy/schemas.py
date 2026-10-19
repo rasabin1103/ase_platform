@@ -23,6 +23,8 @@ class AcademyCourseAccessRead(BaseModel):
     catalogType: CatalogItemType | None = None
     catalogStatus: CatalogItemStatus | None = None
     title: str | None = None
+    # Tráiler del ítem del catálogo, si tiene (se muestra en la página del curso).
+    trailerUrl: str | None = None
     price: Decimal | None = None
     currency: str | None = None
     isFree: bool = False

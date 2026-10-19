@@ -513,6 +513,7 @@ class ConsumerCatalogService:
             licenseRefundPolicy=item.license_refund_policy,
             gettingStarted=item.getting_started,
             academyCourseKey=item.academy_course_key,
+            trailerUrl=item.trailer_url,
             createdAt=item.created_at,
             updatedAt=item.updated_at,
         )

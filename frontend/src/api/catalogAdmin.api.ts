@@ -97,6 +97,8 @@ export type CatalogItemAdmin = {
   // ASE Academy simulator course key (course items only) — links this
   // catalog item to an interactive course of features/academy.
   academy_course_key?: string | null
+  // Tráiler opcional: enlace de YouTube (se guarda canónico) o .mp4/.webm https.
+  trailer_url?: string | null
   created_at: string
   updated_at: string
 }
@@ -155,6 +157,8 @@ export type CatalogItemAdminPayload = {
   // ASE Academy simulator course key (course items only) — links this
   // catalog item to an interactive course of features/academy.
   academy_course_key?: string | null
+  // Tráiler opcional: enlace de YouTube (se guarda canónico) o .mp4/.webm https.
+  trailer_url?: string | null
 }
 
 // `type` stays fixed once created (changing the underlying kind of a

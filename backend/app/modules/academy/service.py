@@ -68,6 +68,7 @@ class AcademyService:
             catalogType=item.type,
             catalogStatus=item.status,
             title=item.title,
+            trailerUrl=item.trailer_url,
             price=item.price,
             currency=item.currency,
             isFree=is_free,

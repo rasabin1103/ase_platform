@@ -9,29 +9,33 @@ export default defineConfig(({ mode }) => {
     env.VITE_API_BACKEND?.replace(/\/$/, '') ||
     'http://localhost:8000'
 
+  const proxy = {
+    '/api': {
+      target: apiOrigin,
+      changeOrigin: true,
+      secure: true,
+    },
+    '/health': {
+      target: apiOrigin,
+      changeOrigin: true,
+      secure: true,
+    },
+    // sitemap.xml y robots.txt los genera el backend (en producción los
+    // publica Vercel con un rewrite, ver vercel.json).
+    '/sitemap.xml': { target: apiOrigin, changeOrigin: true, secure: true },
+    '/robots.txt': { target: apiOrigin, changeOrigin: true, secure: true },
+  }
+
   return {
     plugins: [react()],
     server: {
       host: '127.0.0.1',
       port: 5173,
       strictPort: true,
-      proxy: {
-        '/api': {
-          target: apiOrigin,
-          changeOrigin: true,
-          secure: true,
-        },
-        '/health': {
-          target: apiOrigin,
-          changeOrigin: true,
-          secure: true,
-        },
-        // sitemap.xml y robots.txt los genera el backend (en producción los
-        // publica Vercel con un rewrite, ver vercel.json).
-        '/sitemap.xml': { target: apiOrigin, changeOrigin: true, secure: true },
-        '/robots.txt': { target: apiOrigin, changeOrigin: true, secure: true },
-      },
+      proxy,
     },
+    // `vite preview` (build de producción en local, p. ej. para los tests E2E) con el mismo proxy.
+    preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy },
     build: {
       rollupOptions: {
         output: {
@@ -63,7 +67,12 @@ export default defineConfig(({ mode }) => {
           // actually needs.
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined
-            if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router') || id.includes('@tanstack')) {
+            if (
+              id.includes('react-dom') ||
+              id.includes('/react/') ||
+              id.includes('react-router') ||
+              id.includes('@tanstack')
+            ) {
               return 'vendor-react'
             }
             return undefined
@@ -76,6 +85,8 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: ['./src/test/setup.ts'],
       css: false,
+      // Los E2E del navegador (Playwright) van aparte: npm run e2e.
+      exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
     },
   }
 })

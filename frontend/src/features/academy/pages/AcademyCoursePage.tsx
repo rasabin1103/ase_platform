@@ -10,6 +10,7 @@ import { readMissionStatus, useAcademyUserKey } from '../useMissionRun'
 import { EXAM_COURSES } from '../exam/studyMap'
 import { useAcademyLang, type AcademyLang } from '../i18n'
 import { usePageTitle } from '../../../hooks/usePageTitle'
+import { TrailerPlayer } from '../../../components/catalog/TrailerPlayer'
 
 const COPY = {
   es: {
@@ -103,6 +104,12 @@ export function AcademyCoursePage() {
         <h1 className="font-display text-display-lg">{course.title}</h1>
         <p className="text-body-lg text-ase-text2">{course.description}</p>
       </header>
+
+      {access.trailerUrl ? (
+        <div className="mb-8 max-w-3xl">
+          <TrailerPlayer url={access.trailerUrl} title={`${lang === 'en' ? 'Trailer' : 'Tráiler'} · ${course.title}`} />
+        </div>
+      ) : null}
 
       {!isLoading && (
         <div className="mb-8 rounded-ase-lg border border-ase-border bg-ase-surface p-4 text-body-sm">

@@ -77,7 +77,7 @@ Evaluación final: examen práctico (misión `m10-examen`) + evaluación teóric
 - Intérprete v1 + API simulada (cuentas) + IDE.
 - Misiones 1 y 2 en español, jugables de principio a fin.
 - Curso registrado en la lista (selector «Curso interactivo» del catálogo): misiones 3–10 aparecen como «próximamente».
-- Pendiente para la siguiente tanda: misiones 3–10, versión en inglés, simulacro práctico y certificado.
+- Pendiente para la siguiente tanda: misiones 3–10, versión en inglés, simulacro práctico y certificado (todo hecho: ver «Entregas»).
 
 ## Entregas
 - 16 oct: misiones 1 y 2.
@@ -90,3 +90,10 @@ Evaluación final: examen práctico (misión `m10-examen`) + evaluación teóric
 - 17 oct: misión 9 «Verde en el pipeline».
 - 17 oct: misión 10 «Tu framework». Curso completo (10 misiones en español).
 - 17 oct: evaluación final: examen práctico en el IDE (misión `m10-examen`, aprobado 70/100) y evaluación teórica (30 preguntas, 45 min, aprobado 20) con certificado ASE-KAR. Ver missions/m10-examen.md.
+- 19 oct: **versión en inglés del curso completo** (ver `../i18n.md`):
+  - las 11 misiones en `content/courses/karate-framework/en/` (misma estructura e ids; mundo `worlds/kobaltoApi.en.ts`);
+  - los laboratorios ingleses reutilizan el español y solo cambian textos (`en/shared.ts`: `retosEn`, `filesEn`): comentarios y nombres de escenario de los ficheros, fragmentos, jobs del pipeline y retos; las comprobaciones son las mismas funciones;
+  - mensajes del intérprete en inglés (errores de Karate, JavaScript, parser, runner JUnit, logs de mocks e hilos) con `karate/messagesEn.ts`, aplicado al final de cada ejecución en las misiones inglesas;
+  - evaluación teórica en inglés (`exam_bank/karate_en.py`, 60 preguntas);
+  - el curso ya no está en `PENDING_TRANSLATION`: con la web en inglés se muestra en inglés.
+  - Se mantienen en español a propósito los datos de la API simulada y del alumno de ejemplo (titulares de cuentas, conceptos como «Cena», comercio «DENEGADO»), porque Kobalto es un banco español y los retos no dependen de ellos.

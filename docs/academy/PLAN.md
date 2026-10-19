@@ -341,6 +341,14 @@ El contenido de las misiones viaja al navegador, así que un usuario técnico po
 - **Despliegue:** sin infraestructura nueva. El frontend sigue en Vercel y el backend en Railway, con la misma base de datos PostgreSQL.
 - **B2B (más adelante):** las `organizations` ya existentes permiten vender licencias a equipos con un panel de progreso para el responsable.
 
+### 8.6 Tests de recorrido completo (cada curso, es y en)
+
+Garantizan que cada curso se puede jugar entero y acaba en un certificado, en los dos idiomas:
+
+- **Motor (Vitest, en cada `npm test`):** `frontend/src/features/academy/engine/coursePlaythrough.test.ts` juega todas las misiones de los 3 cursos en es y en, contestando a cada reunión y terminando el día, con el examen práctico de Karate resuelto con la solución de referencia. Comprueba que llegan al final, que cuentan como terminadas y que la partida guardada se reproduce igual.
+- **Navegador (Playwright, `npm run e2e:academy`):** `frontend/e2e/academy.spec.ts`, 6 tests (curso × idioma). Inicio de sesión → todas las misiones hasta el debrief, con la partida terminada guardada en el servidor → evaluación final aprobada → certificado verificable y su PDF. Usa alumnos `e2e.<curso>.<idioma>@…` que prepara `backend/scripts/e2e_academy.py seed` (solo contra una base de datos local). Cómo ejecutarlo: `frontend/e2e/README.md`. Unos 4 minutos con 3 navegadores en paralelo, contra el build de producción (`vite preview`).
+- **Arreglado gracias al E2E:** si el alumno salía de la misión antes de 700 ms tras la última acción (p. ej. justo al ver el debrief), el guardado en el servidor se cancelaba y la misión no contaba para el certificado. Ahora el guardado pendiente se envía al salir de la misión (`useMissionRun`).
+
 ## 9. Roadmap
 
 Las estimaciones son orientativas (una persona con asistencia de IA, dedicación parcial).
@@ -513,9 +521,19 @@ Decisión de implementación: de momento el contenido se escribe en **módulos T
 - Escenas: alerta, sala de crisis, comunicación a clientes, pista falsa de CPU, mitigación rápida o lenta, presión para reactivar el flag y postmortem sin culpables. Cierre del curso.
 - Verificado: 49 tests del motor + 70 de apps, tsc y eslint limpios, partida completa en navegador sin errores de consola.
 
+**Estado de idiomas (2026-10-19):** los tres cursos están completos en español y en inglés.
+
+| Curso | Misiones | Español | Inglés | Evaluación (es / en) |
+| --- | --- | --- | --- | --- |
+| Fundamentos de Testing | 8 | ✅ | ✅ | Evaluación final 20 preguntas ✅ / ✅ |
+| QA Profesional | 9 | ✅ | ✅ | Simulacro CTFL 40 preguntas ✅ / ✅ |
+| Karate Framework | 10 + examen práctico | ✅ | ✅ (19 oct) | Teórica 30 preguntas + práctico ✅ / ✅ |
+
+Revisión del 19 oct: paridad de las 28 misiones (`i18nParity.test.ts`), sin restos de español en los textos ingleses de Fundamentos y QA Profesional, curso de Karate traducido entero (misiones, laboratorios, mensajes del intérprete y banco teórico) y recorrido en navegador del curso de Karate en inglés. Detalle en [i18n.md](i18n.md).
+
 **Siguiente:**
 1. Probar la misión 0 con 3–5 personas y ajustar tiempos, dificultad y textos.
-2. Versión en inglés de la misión 0 (cuando los textos estén validados con usuarios).
+2. ~~Versión en inglés~~ ✅ (los tres cursos, ver «Estado de idiomas»). Al validar textos con usuarios, aplicar los cambios en los dos idiomas (`i18n.md`, «Añadir o cambiar una misión»).
 3. Evaluación final (puntuada en servidor) y continuidad entre misiones (las decisiones de un día afectan al siguiente).
 4. Cerrar las decisiones abiertas de §12.
 5. Skill de autor de misiones para crear cursos sin depender de esta sesión.

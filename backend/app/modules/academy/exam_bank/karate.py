@@ -2,8 +2,8 @@
 
 Los bloques se numeran desde 11 para no mezclarse con los capítulos del
 temario CTFL (1–6) del mismo banco; el servidor los muestra como 1–5
-(ExamConfig.chapter_offset). Solo en español: el curso todavía no tiene
-versión en inglés y el servicio usa el español si falta la traducción.
+(ExamConfig.chapter_offset). La versión en inglés está en karate_en.py
+(mismos ids, la correcta primero).
 """
 
 from app.modules.academy.exam_bank.model import q

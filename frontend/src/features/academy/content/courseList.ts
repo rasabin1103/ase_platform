@@ -4,6 +4,7 @@ import { qaProfesionalCourse } from './courses/qa-profesional/course'
 import { testingFundamentalsCourseEn } from './courses/testing-fundamentals/en/course'
 import { qaProfesionalCourseEn } from './courses/qa-profesional/en/course'
 import { karateFrameworkCourse } from './courses/karate-framework/course'
+import { karateFrameworkCourseEn } from './courses/karate-framework/en/course'
 
 /**
  * Lista ligera de cursos del simulador (sin el contenido de las misiones).
@@ -14,10 +15,10 @@ import { karateFrameworkCourse } from './courses/karate-framework/course'
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
 export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse]
-export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn]
+export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn]
 
 /** Cursos que aún no tienen versión en inglés (en inglés se muestran en español). */
-export const PENDING_TRANSLATION = new Set(['karate-framework'])
+export const PENDING_TRANSLATION = new Set<string>()
 
 export function academyCourses(lang: 'es' | 'en' = 'es'): CourseDef[] {
   if (lang !== 'en') return ACADEMY_COURSES

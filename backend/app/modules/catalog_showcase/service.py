@@ -134,6 +134,8 @@ class CatalogShowcaseService:
             requirements=item.requirements_json or [],
             includedItems=item.included_items_json or [],
             academyCourseKey=item.academy_course_key,
+            trailerUrl=item.trailer_url,
+            updatedAt=item.updated_at,
         )
 
     def list_items(
