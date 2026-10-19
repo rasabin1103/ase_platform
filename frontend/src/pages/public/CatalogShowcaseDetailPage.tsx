@@ -23,6 +23,8 @@ import { useI18n } from '../../i18n'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
 import { AcademyCatalogPanel } from '../../features/academy/AcademyCatalogPanel'
 import { PublicReviewList } from '../../components/catalog/PublicReviewList'
+import { TrailerPlayer } from '../../components/catalog/TrailerPlayer'
+import { parseTrailer, trailerJsonLd } from '../../components/catalog/trailer'
 
 function formatPrice(price: string, currency: string, freeLabel: string) {
   const n = Number(price)
@@ -122,6 +124,17 @@ export function CatalogShowcaseDetailPage() {
         }
       : null
 
+  const trailer = parseTrailer(item?.trailerUrl)
+  const videoJsonLd =
+    item && trailer
+      ? trailerJsonLd(trailer, {
+          name: `${language === 'en' ? 'Trailer' : 'Tráiler'} · ${title}`,
+          description: shortDescription || title,
+          uploadDate: item.updatedAt,
+          thumbnailUrl: absoluteUrl(item.imageUrl),
+        })
+      : null
+
   if (query.isLoading) {
     return (
       <div className="mx-auto w-full max-w-5xl px-6 py-12 sm:px-8">
@@ -150,6 +163,7 @@ export function CatalogShowcaseDetailPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-12 sm:px-8">
       {productJsonLd ? <JsonLd data={productJsonLd} /> : null}
+      {videoJsonLd ? <JsonLd data={videoJsonLd} /> : null}
 
       <Link
         to={catalogPath}
@@ -246,6 +260,7 @@ export function CatalogShowcaseDetailPage() {
       </div>
 
       <div className="mt-10 space-y-4">
+        {trailer ? <TrailerPlayer url={item.trailerUrl} title={`${language === 'en' ? 'Trailer' : 'Tráiler'} · ${title}`} /> : null}
         {item.academyCourseKey ? (
           <AcademyCatalogPanel courseKey={item.academyCourseKey} owned={Number(item.price) <= 0} t={t} />
         ) : null}

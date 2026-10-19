@@ -9,6 +9,7 @@ import { runProject, type RunResult, type ScenarioResult } from '../../karate/ru
 import type { CodeLabModel, PipelineContext } from '../../karate/types'
 import { parseRunner } from '../../karate/pipeline'
 import { tr, type AcademyLang } from '../../i18n'
+import { localizeRun, messageEn } from '../../karate/messagesEn'
 
 export const IDE_APP = 'karate-ide'
 
@@ -160,6 +161,10 @@ export function runLab(mission: Mission, state: RunState, files: Record<string, 
       server,
       liveBugs(state),
     )
+  }
+  if (lang === 'en') {
+    result = localizeRun(result)
+    if (pipeline) pipeline = { ...pipeline, compileErrors: pipeline.compileErrors.map(messageEn) }
   }
   const scenarios = result.features.flatMap((f) => f.scenarios)
   const events: AppEvent[] = []

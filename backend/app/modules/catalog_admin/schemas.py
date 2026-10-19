@@ -9,6 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.video_urls import normalize_trailer_url
 from app.models.enums import CatalogItemLevel, CatalogItemStatus, CatalogItemType
 
 
@@ -182,11 +183,18 @@ class CatalogItemAdminBase(BaseModel):
     # --- ASE Academy simulator course key — course-only in the admin UI
     # (see CatalogItem.academy_course_key).
     academy_course_key: str | None = Field(default=None, max_length=80)
+    # Tráiler opcional (YouTube o .mp4/.webm propio), ver app/core/video_urls.py.
+    trailer_url: str | None = Field(default=None, max_length=2048)
 
     @field_validator("academy_course_key")
     @classmethod
     def _validate_academy_course_key(cls, value: str | None) -> str | None:
         return _normalize_academy_course_key(value)
+
+    @field_validator("trailer_url")
+    @classmethod
+    def _validate_trailer_url(cls, value: str | None) -> str | None:
+        return normalize_trailer_url(value)
 
 
 class CatalogItemAdminCreate(CatalogItemAdminBase):
@@ -245,6 +253,7 @@ class CatalogItemAdminUpdate(BaseModel):
     license_refund_policy: str | None = None
     getting_started: str | None = None
     academy_course_key: str | None = Field(default=None, max_length=80)
+    trailer_url: str | None = Field(default=None, max_length=2048)
 
     @field_validator("preview_url", "repo_url", "audiobook_url", "test_repo_url")
     @classmethod
@@ -255,6 +264,11 @@ class CatalogItemAdminUpdate(BaseModel):
     @classmethod
     def _validate_academy_course_key(cls, value: str | None) -> str | None:
         return _normalize_academy_course_key(value)
+
+    @field_validator("trailer_url")
+    @classmethod
+    def _validate_trailer_url(cls, value: str | None) -> str | None:
+        return normalize_trailer_url(value)
 
 
 class CatalogItemImageRead(BaseModel):

@@ -30,6 +30,7 @@ import { m10Examen } from './courses/karate-framework/m10-examen'
 
 import { MISSIONS_EN as TF_EN } from './courses/testing-fundamentals/en'
 import { MISSIONS_EN as QAP_EN } from './courses/qa-profesional/en'
+import { MISSIONS_EN as KAR_EN } from './courses/karate-framework/en'
 
 export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses, getCourse, isFreeMission } from './courseList'
 
@@ -37,7 +38,7 @@ export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses
 const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas, m00HolaKarate, m01Match, m02Config, m03Payloads, m04Datos, m05Auth, m06Errores, m07Mocks, m08Pipeline, m09Framework, m10Examen]
 
 /** Traducciones al inglés (misma estructura e ids). */
-export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN]
+export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN, ...KAR_EN]
 
 /** Todas las misiones en español (para tests de paridad). */
 export const MISSIONS_ES: Mission[] = MISSIONS

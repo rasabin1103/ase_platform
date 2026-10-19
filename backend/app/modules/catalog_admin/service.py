@@ -144,6 +144,7 @@ class CatalogAdminService:
             license_refund_policy=item.license_refund_policy,
             getting_started=item.getting_started,
             academy_course_key=item.academy_course_key,
+            trailer_url=item.trailer_url,
             recommended_price=item.recommended_price,
             version_updated_at=item.version_updated_at,
             created_at=item.created_at,
@@ -387,6 +388,7 @@ class CatalogAdminService:
             license_refund_policy=payload.license_refund_policy,
             getting_started=(payload.getting_started or "").strip() or None,
             academy_course_key=payload.academy_course_key,
+            trailer_url=payload.trailer_url,
         )
         if item.current_version:
             item.version_updated_at = datetime.now(timezone.utc)

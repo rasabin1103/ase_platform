@@ -12,6 +12,8 @@ from app.core.user_anonymize import anonymize_user_pii
 from app.models.academy_exam import AcademyCertificate, AcademyExamAttempt
 from app.models.academy_run import AcademyRun
 from app.models.user import User
+from app.modules.academy.exam_bank import BY_ID, SECTION_TITLES_EN
+from app.modules.academy.exam_bank.karate_en import EN as KARATE_EN
 from app.modules.academy.exam_config import EXAMS
 
 CATALOG_URL = "/api/v1/admin/catalog"
@@ -286,14 +288,10 @@ def test_send_email_with_attachment_builds_mixed_message(monkeypatch):
     assert 'filename="c.pdf"' in captured["raw"]
 
 
-def test_karate_exam_blocks_labels_and_practical_requirement(
-    client: TestClient,
-    db: Session,
-    super_admin_headers: dict[str, str],
-    independent_user: User,
-    independent_headers: dict[str, str],
-):
-    url = "/api/v1/academy/exams/karate-framework"
+KARATE_EXAM_URL = "/api/v1/academy/exams/karate-framework"
+
+
+def _publish_karate_course(client: TestClient, super_admin_headers: dict[str, str]) -> None:
     resp = client.post(
         CATALOG_URL,
         json={
@@ -314,6 +312,17 @@ def test_karate_exam_blocks_labels_and_practical_requirement(
         headers=super_admin_headers,
     )
     assert resp.status_code == 201, resp.text
+
+
+def test_karate_exam_blocks_labels_and_practical_requirement(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    url = KARATE_EXAM_URL
+    _publish_karate_course(client, super_admin_headers)
     overview = client.get(url).json()
     assert overview["config"]["total"] == 30
     assert [c["chapter"] for c in overview["config"]["distribution"]] == [1, 2, 3, 4, 5]
@@ -322,9 +331,10 @@ def test_karate_exam_blocks_labels_and_practical_requirement(
     assert len(attempt["questions"]) == 30
     assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
     assert all(q["section"].split(".")[0] in {"1", "2", "3", "4", "5"} for q in attempt["questions"])
-    # Pide inglés: el curso no está traducido y las preguntas salen en español.
+    # El mismo intento leído en inglés: mismas preguntas, texto traducido.
     english = client.get(f"{url}/attempts/{attempt['id']}?lang=en", headers=independent_headers).json()
-    assert english["questions"][0]["text"] == attempt["questions"][0]["text"]
+    assert [q["id"] for q in english["questions"]] == [q["id"] for q in attempt["questions"]]
+    assert english["questions"][0]["text"] == KARATE_EN[attempt["questions"][0]["id"]].text
 
     # Todas las misiones menos el examen práctico: aprobado, pero sin certificado.
     for mission_id in EXAMS["karate-framework"].missions[:-1]:
@@ -343,3 +353,25 @@ def test_karate_exam_blocks_labels_and_practical_requirement(
     cert = client.post("/api/v1/academy/certificates/karate-framework", headers=independent_headers)
     assert cert.status_code == 200
     assert cert.json()["code"].startswith("ASE-KAR-")
+
+
+def test_karate_exam_in_english(
+    client: TestClient,
+    super_admin_headers: dict[str, str],
+    independent_headers: dict[str, str],
+):
+    _publish_karate_course(client, super_admin_headers)
+    overview = client.get(f"{KARATE_EXAM_URL}?lang=en").json()
+    assert overview["config"]["title"] == "Karate final theory assessment"
+    assert overview["config"]["distribution"][0]["title"] == "Fundamentals and match"
+
+    attempt = client.post(f"{KARATE_EXAM_URL}/attempts?lang=en", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    for question in attempt["questions"]:
+        english = KARATE_EN[question["id"]]
+        assert question["text"] == english.text
+        assert sorted(question["options"]) == sorted(english.options)
+        assert question["text"] != BY_ID[question["id"]].text
+        assert question["sectionTitle"] in SECTION_TITLES_EN.values()
+    # Un texto concreto del banco, para que la traducción no cambie sin querer.
+    assert KARATE_EN["c11-02"].text == "When does the Background of a feature run?"

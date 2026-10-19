@@ -45,6 +45,9 @@ export type CatalogShowcaseItemDetail = CatalogShowcaseItem & {
   includedItems: string[]
   /** ASE Academy simulator course key — offers the free demo mission. */
   academyCourseKey?: string | null
+  /** Tráiler opcional: YouTube canónico o .mp4/.webm. */
+  trailerUrl?: string | null
+  updatedAt?: string | null
 }
 
 export type CatalogShowcaseListResponse = {

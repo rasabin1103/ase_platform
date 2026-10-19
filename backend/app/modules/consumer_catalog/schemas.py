@@ -157,6 +157,7 @@ class CatalogItemRead(BaseModel):
     # detail page offers "Jugar el curso"; access to paid missions follows
     # isPurchased / free price like every other entitlement.
     academyCourseKey: str | None = None
+    trailerUrl: str | None = None
     createdAt: datetime
     updatedAt: datetime
 

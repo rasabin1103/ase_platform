@@ -57,6 +57,7 @@ import { useI18n } from '../../i18n'
 import type { CatalogItemType } from '../../types/catalog.types'
 import { parseApiError } from '../../utils/apiError'
 import { localizedCatalogText } from '../../utils/localizedCatalogText'
+import { TrailerPlayer } from '../../components/catalog/TrailerPlayer'
 import {
   BulletList,
   CollapsibleDescription,
@@ -476,6 +477,10 @@ export function CatalogDetailPage() {
           </Card>
 
           {item.seriesName ? <SeriesPanel slug={item.slug} currentSlug={item.slug} /> : null}
+
+          {item.trailerUrl ? (
+            <TrailerPlayer url={item.trailerUrl} title={`${language === 'en' ? 'Trailer' : 'Tráiler'} · ${title}`} />
+          ) : null}
 
           <CollapsibleDescription content={longDescription} t={t} />
 

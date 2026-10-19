@@ -97,6 +97,8 @@ export type CatalogItem = {
   gettingStarted?: string | null
   /** ASE Academy simulator course key (course items only). */
   academyCourseKey?: string | null
+  /** Tráiler opcional: YouTube canónico o .mp4/.webm. */
+  trailerUrl?: string | null
   createdAt: string
   updatedAt: string
 }

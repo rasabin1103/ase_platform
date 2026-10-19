@@ -212,6 +212,10 @@ class CatalogItem(Base, IdPkMixin, PublicUuidMixin, TimestampMixin):
     # course's paid missions. Null = a regular, non-interactive course.
     academy_course_key: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
 
+    # Tráiler opcional (cualquier tipo de ítem): enlace de YouTube en forma
+    # canónica o URL https de un .mp4/.webm propio. Ver app/core/video_urls.py.
+    trailer_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+
     images: Mapped[list["CatalogItemImage"]] = relationship(
         "CatalogItemImage",
         back_populates="catalog_item",

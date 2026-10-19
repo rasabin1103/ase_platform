@@ -92,6 +92,8 @@ export function useMissionRun(mission: Mission) {
   const stateRef = useRef(run.state)
   const loading = useRef(remote)
   const dirty = useRef(false)
+  // Lo último pendiente de subir: si la misión se cierra antes del retardo, se sube al desmontar.
+  const pending = useRef<Saved | null>(null)
 
   // Carga inicial desde el servidor: gana la copia con más progreso.
   useEffect(() => {
@@ -128,7 +130,9 @@ export function useMissionRun(mission: Mission) {
     const data: Saved = { seed: run.seed, actions: run.actions, finished: countsAsFinished(mission, run.state) }
     writeLocal(mission, userKey, data)
     if (!remote || loading.current || !dirty.current) return
+    pending.current = data
     const t = window.setTimeout(() => {
+      pending.current = null
       setSync('saving')
       saveAcademyRun(mission.courseKey, mission.id, { seed: data.seed, actions: data.actions, finished: !!data.finished })
         .then(() => {
@@ -139,6 +143,18 @@ export function useMissionRun(mission: Mission) {
     }, SAVE_DEBOUNCE_MS)
     return () => window.clearTimeout(t)
   }, [mission, run, remote, userKey])
+
+  // Al salir de la misión (p. ej. justo tras el debrief) no se pierde el último guardado.
+  useEffect(
+    () => () => {
+      const data = pending.current
+      if (!data) return
+      pending.current = null
+      const run = { seed: data.seed, actions: data.actions, finished: !!data.finished }
+      void saveAcademyRun(mission.courseKey, mission.id, run).catch(() => {})
+    },
+    [mission],
+  )
 
   const dispatch = useCallback(
     (action: Action) => {

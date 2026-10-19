@@ -69,6 +69,6 @@ Todas aceptan `?lang=es|en` (por defecto, español).
 
 ## Curso de Karate (17 oct)
 
-- Evaluación teórica `karate-framework`: 30 preguntas, 45 min (56 ampliado), aprobado con 20, 6 por bloque. Banco propio de 60 preguntas en `exam_bank/karate.py`, con bloques numerados 11–15 en el banco (no se mezclan con el temario CTFL) que se muestran como 1–5 (`ExamConfig.chapter_offset`). Solo en español: con `lang=en` se sirven en español.
+- Evaluación teórica `karate-framework`: 30 preguntas, 45 min (56 ampliado), aprobado con 20, 6 por bloque. Banco propio de 60 preguntas en `exam_bank/karate.py`, con bloques numerados 11–15 en el banco (no se mezclan con el temario CTFL) que se muestran como 1–5 (`ExamConfig.chapter_offset`). En español y en inglés (19 oct): el inglés está en `exam_bank/karate_en.py` y `validate_bank()` exige la traducción de las 310 preguntas.
 - Certificado `ASE-KAR-…`: exige las 10 misiones, el examen práctico (misión `m10-examen`, que solo cuenta como terminada si se aprueba con 70/100) y la evaluación teórica.
 - Detalle en `docs/academy/karate-framework/missions/m10-examen.md`.

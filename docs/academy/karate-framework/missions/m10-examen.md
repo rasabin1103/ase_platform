@@ -31,6 +31,6 @@ Infraestructura del simulacro (backend `app/modules/academy`), configuración `k
 - **30 preguntas, 45 min (56 con tiempo ampliado), aprobado con 20.** 6 preguntas por bloque.
 - Banco propio de 60 preguntas en `exam_bank/karate.py` (2 evaluaciones distintas sin repetir). Los bloques se numeran 11–15 en el banco para no mezclarse con el temario CTFL y se muestran como 1–5 (`chapter_offset`).
   1. Fundamentos y match · 2. Configuración, payloads y datos · 3. Reutilización y autenticación · 4. Errores, procesos asíncronos y mocks · 5. Pipeline y framework.
-- Solo en español (el curso no está traducido); con `lang=en` se sirven en español.
+- En español y en inglés: el banco inglés está en `exam_bank/karate_en.py` (mismos ids, la correcta primero) y con `lang=en` se sirven en inglés. El examen práctico tiene su versión inglesa en `content/courses/karate-framework/en/m10-examen.ts`.
 - El informe enlaza cada sección floja con su misión (`exam/studyMap.ts`).
 - Certificado con prefijo **KAR** (`ASE-KAR-…`). Misiones exigidas: las 10 + `m10-examen`.

@@ -100,6 +100,7 @@ export const defaultValues = (type: CatalogItemType): FormValues => ({
   license_refund_policy: null,
   getting_started: null,
   academy_course_key: null,
+  trailer_url: null,
 })
 
 export function valuesFromItem(initial: CatalogItemAdmin): FormValues {
@@ -146,6 +147,7 @@ export function valuesFromItem(initial: CatalogItemAdmin): FormValues {
     license_refund_policy: initial.license_refund_policy ?? null,
     getting_started: initial.getting_started ?? null,
     academy_course_key: initial.academy_course_key ?? null,
+    trailer_url: initial.trailer_url ?? null,
   }
 }
 
@@ -197,6 +199,7 @@ export const FIELD_SECTION: Partial<Record<keyof FormValues, SectionId>> = {
   long_description: 'description',
   image_url: 'media',
   preview_url: 'media',
+  trailer_url: 'media',
   price: 'pricing',
   currency: 'pricing',
   repo_url: 'content',

@@ -7,7 +7,7 @@ lleguen nunca al navegador antes de entregar el examen.
 
 from __future__ import annotations
 
-from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, karate
+from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, karate, karate_en
 from app.modules.academy.exam_bank.model import (
     CHAPTER_TITLES,
     CHAPTER_TITLES_EN,
@@ -18,7 +18,7 @@ from app.modules.academy.exam_bank.model import (
 )
 
 # Cambiarlo cuando se modifique el banco: queda guardado en cada intento.
-BANK_VERSION = "ctfl-v4-2026.10-250+karate-60"
+BANK_VERSION = "ctfl-v4-2026.10-250+karate-60-en"
 
 QUESTIONS: tuple[BankQuestion, ...] = tuple(
     [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS]
@@ -27,7 +27,7 @@ QUESTIONS: tuple[BankQuestion, ...] = tuple(
 KARATE_FIRST_CHAPTER = 11
 
 BY_ID: dict[str, BankQuestion] = {question.id: question for question in QUESTIONS}
-EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN}
+EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN}
 
 
 def validate_bank() -> list[str]:
@@ -50,9 +50,7 @@ def validate_bank() -> list[str]:
             problems.append(f"{question.id}: el id no coincide con el capítulo")
         english = EN.get(question.id)
         if english is None:
-            # El curso de Karate (bloques 11–15) aún no tiene versión en inglés.
-            if question.chapter < KARATE_FIRST_CHAPTER:
-                problems.append(f"{question.id}: falta la versión en inglés")
+            problems.append(f"{question.id}: falta la versión en inglés")
             continue
         if len(english.options) != len(question.options) or len(set(english.options)) != len(english.options):
             problems.append(f"{question.id}: opciones en inglés incorrectas")

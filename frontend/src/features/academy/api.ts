@@ -10,6 +10,8 @@ export type AcademyCourseAccess = {
   catalogType: 'product' | 'course' | 'book' | 'resource' | null
   catalogStatus: string | null
   title: string | null
+  /** Tráiler del ítem del catálogo, si tiene. */
+  trailerUrl?: string | null
   price: string | number | null
   currency: string | null
   isFree: boolean
