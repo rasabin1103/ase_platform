@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronUp, Pencil, PlayCircle, PlusCircle, Star, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, FileUp, Info, Pencil, PlayCircle, PlusCircle, Star, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import {
   createFrameworkScenario,
@@ -103,6 +103,8 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
           description: f.description ?? null,
           options: f.options ?? null,
           default: f.default ?? null,
+          visible_when: f.visible_when ?? null,
+          info: f.info ?? null,
           hasValue: false,
           value: f.type !== 'secret' && f.default ? f.default : (null as string | null),
         }))
@@ -124,9 +126,64 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
     }
   }
 
+  // Un campo con `visible_when` solo aparece (y solo se valida / envía) si el
+  // campo que lo controla tiene uno de los valores indicados.
+  const isVisible = (v: { visible_when?: { key: string; values: string[] } | null }) =>
+    !v.visible_when || v.visible_when.values.includes(draft[v.visible_when.key] ?? '')
+
+  // Archivos adjuntos (campos «file»): se leen en el navegador y viajan como
+  // `file:<nombre>:<base64>`; el backend los comprime dentro del workflow.
+  const [fileNames, setFileNames] = useState<Record<string, string>>({})
+  const [readingKey, setReadingKey] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<Record<string, string>>({})
+  const [openInfo, setOpenInfo] = useState<string | null>(null)
+
+  const attachFile = async (key: string, file: File | undefined) => {
+    if (!file) return
+    setUploadError((prev) => ({ ...prev, [key]: '' }))
+    if (!/\.(json|ya?ml)$/i.test(file.name)) {
+      setUploadError((prev) => ({ ...prev, [key]: t('testExecution.config.fileBadType') as string }))
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError((prev) => ({ ...prev, [key]: t('testExecution.config.fileTooLarge') as string }))
+      return
+    }
+    setReadingKey(key)
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      let binary = ''
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+      }
+      setDraft((prev) => ({ ...prev, [key]: `file:${encodeURIComponent(file.name)}:${btoa(binary)}` }))
+      setFileNames((prev) => ({ ...prev, [key]: file.name }))
+    } catch {
+      setUploadError((prev) => ({ ...prev, [key]: t('testExecution.config.uploadError') as string }))
+    } finally {
+      setReadingKey(null)
+    }
+  }
+
+  const clearFile = (key: string) => {
+    setDraft((prev) => ({ ...prev, [key]: '' }))
+    setFileNames((prev) => ({ ...prev, [key]: '' }))
+  }
+
+  // Un adjunto solo viaja al ejecutar (como valor «inline»); nunca se guarda
+  // en el escenario.
+  const buildFilePayload = () => {
+    const payload: Record<string, string> = {}
+    for (const v of values) {
+      if (v.type === 'file' && isVisible(v) && draft[v.key]) payload[v.key] = draft[v.key]
+    }
+    return payload
+  }
+
   const buildPayload = () => {
     const payload: Record<string, string> = {}
     for (const v of values) {
+      if (!isVisible(v) || v.type === 'file') continue
       if (v.type === 'secret') {
         if (touchedSecrets[v.key]) payload[v.key] = draft[v.key] ?? ''
       } else {
@@ -167,7 +224,11 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
   const runMut = useMutation({
     mutationFn: async () => {
       const uuid = await ensureScenario(buildPayload())
-      return triggerTestRun(framework.slug, { scenarioUuid: uuid, ref: selectedRef || undefined })
+      return triggerTestRun(framework.slug, {
+        scenarioUuid: uuid,
+        ref: selectedRef || undefined,
+        variables: buildFilePayload(),
+      })
     },
     onSuccess: () => {
       invalidateScenario()
@@ -205,7 +266,7 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
   })
 
   const hasInvalidJson = values.some((v) => {
-    if (v.type !== 'json') return false
+    if (v.type !== 'json' || !isVisible(v)) return false
     const raw = draft[v.key] ?? ''
     return raw.trim() !== '' && !isValidJson(raw)
   })
@@ -377,16 +438,79 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
         <p className="text-sm text-ase-muted">{t('testExecution.config.empty')}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {values.map((v) => {
+          {values.filter(isVisible).map((v) => {
             const rawValue = draft[v.key] ?? ''
             const jsonError = v.type === 'json' && rawValue.trim() !== '' ? isValidJson(rawValue) : true
             return (
               <label key={v.key} className={`block ${v.type === 'json' ? 'sm:col-span-2' : ''}`}>
-                <span className="mb-1 block text-xs text-ase-muted">
+                <span className="mb-1 flex items-center gap-1.5 text-xs text-ase-muted">
                   {v.label}
                   {v.required ? <span className="text-ase-error"> *</span> : null}
+                  {v.info ? (
+                    <button
+                      type="button"
+                      aria-label={String(t('testExecution.config.infoAria')).replace('{{field}}', v.label)}
+                      aria-expanded={openInfo === v.key}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setOpenInfo(openInfo === v.key ? null : v.key)
+                      }}
+                      className="rounded-full text-ase-brand hover:text-ase-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-ase-brand"
+                    >
+                      <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  ) : null}
                 </span>
-                {v.type === 'choice' ? (
+                {v.info && openInfo === v.key ? (
+                  <p className="mb-2 rounded-lg border border-ase-brand/30 bg-ase-brand/10 px-3 py-2 text-[11px] leading-snug text-ase-text">
+                    {v.info}
+                  </p>
+                ) : null}
+                {v.type === 'file' ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      accept=".json,.yaml,.yml,application/json"
+                      className="sr-only"
+                      id={`file-${v.key}`}
+                      onChange={(e) => {
+                        void attachFile(v.key, e.target.files?.[0])
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor={`file-${v.key}`}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-xs text-ase-text hover:bg-white/[0.08] focus-within:outline focus-within:outline-2 focus-within:outline-ase-brand"
+                    >
+                      <FileUp className="h-4 w-4" aria-hidden="true" />
+                      {readingKey === v.key
+                        ? (t('testExecution.config.uploading') as string)
+                        : fileNames[v.key]
+                          ? (t('testExecution.config.replaceFile') as string)
+                          : (t('testExecution.config.chooseFile') as string)}
+                    </label>
+                    {fileNames[v.key] ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-ase-text">
+                        {fileNames[v.key]}
+                        <button
+                          type="button"
+                          aria-label={t('testExecution.config.removeFile') as string}
+                          onClick={() => clearFile(v.key)}
+                          className="rounded text-ase-muted hover:text-ase-error"
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-ase-muted">{t('testExecution.config.fileHint') as string}</span>
+                    )}
+                    {uploadError[v.key] ? (
+                      <p role="alert" className="w-full text-[11px] text-ase-error">
+                        {uploadError[v.key]}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : v.type === 'choice' ? (
                   <Select value={rawValue} onChange={(e) => setDraft((prev) => ({ ...prev, [v.key]: e.target.value }))}>
                     <option value="">—</option>
                     {(v.options ?? []).map((opt) => (

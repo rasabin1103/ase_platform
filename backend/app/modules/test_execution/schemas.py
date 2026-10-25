@@ -45,6 +45,8 @@ class TestInputVariableRead(BaseModel):
     description: str | None = None
     options: list[str] | None = None
     default: str | None = None
+    visible_when: dict | None = None
+    info: str | None = None
 
 
 class RunnableFrameworkRead(BaseModel):
@@ -58,6 +60,9 @@ class RunnableFrameworkRead(BaseModel):
     usedRuns: int
     remainingRuns: int
     inputSchema: list[TestInputVariableRead] = []
+    # "workflow" = visor genérico (GitHub Actions); otro valor = herramienta
+    # con visor propio (ver app/core/product_viewers.py).
+    viewer: str = "workflow"
 
 
 class TestExecutionConfigValueRead(BaseModel):
@@ -73,6 +78,8 @@ class TestExecutionConfigValueRead(BaseModel):
     description: str | None = None
     options: list[str] | None = None
     default: str | None = None
+    visible_when: dict | None = None
+    info: str | None = None
     hasValue: bool = False
     value: str | None = None
 

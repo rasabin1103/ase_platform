@@ -48,6 +48,18 @@ export function optionsToText(options: string[] | null | undefined): string {
   return (options ?? []).join(', ')
 }
 
+/** `visible_when` se edita como «clave=valor1, valor2» (vacío = siempre visible). */
+export function visibleWhenToText(v: TestInputVariableDef['visible_when']): string {
+  return v ? `${v.key}=${v.values.join(', ')}` : ''
+}
+
+export function textToVisibleWhen(text: string): TestInputVariableDef['visible_when'] {
+  const [key, rest] = text.split('=', 2)
+  const k = (key ?? '').trim()
+  const values = (rest ?? '').split(',').map((x) => x.trim()).filter(Boolean)
+  return k && values.length > 0 ? { key: k, values } : null
+}
+
 export function textToOptions(text: string): string[] {
   return text
     .split(',')

@@ -12,7 +12,7 @@ import { useCourseAccess } from '../useCourseAccess'
 import { useAcademyUserKey } from '../useMissionRun'
 import { useAcademyLang, type AcademyLang } from '../i18n'
 import { usePageTitle } from '../../../hooks/usePageTitle'
-import { EXAM_COURSES } from '../exam/studyMap'
+import { EXAM_COURSES, examDisclaimer, withExamCopy } from '../exam/studyMap'
 
 const DATE_FMT: Record<AcademyLang, Intl.DateTimeFormat> = {
   es: new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -124,7 +124,7 @@ const COPY = {
 export function AcademyExamPage() {
   const { courseKey = '' } = useParams()
   const lang = useAcademyLang()
-  const c = COPY[lang]
+  const c = withExamCopy(COPY[lang], courseKey, lang)
   const course = getCourse(courseKey, lang)
   const examInfo = EXAM_COURSES[courseKey]
   usePageTitle(course && examInfo ? `${lang === 'en' ? examInfo.titleEn : examInfo.title} · ${course.title}` : '', examInfo ? (lang === 'en' ? examInfo.labelEn : examInfo.label) : undefined)
@@ -373,7 +373,7 @@ export function AcademyExamPage() {
       )}
 
       <p className="mt-10 text-caption text-ase-muted">
-        {c.disclaimer}
+        {examDisclaimer(courseKey, lang) ?? c.disclaimer}
       </p>
     </div>
   )

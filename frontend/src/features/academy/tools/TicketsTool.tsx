@@ -156,14 +156,17 @@ export function TicketsTool(props: ToolProps) {
   return (
     <div className="grid h-full min-h-0 md:grid-cols-[18rem_1fr]">
       <aside className="min-h-0 overflow-y-auto border-b border-ase-border p-3 md:border-b-0 md:border-r">
-        <button
-          type="button"
-          onClick={() => setView({ kind: 'new' })}
-          disabled={state.finished}
-          className="mb-3 w-full rounded-ase-md bg-ase-brand px-3 py-2 text-body-sm font-semibold text-white transition hover:bg-ase-brand-strong disabled:opacity-40"
-        >
-          {c.reportBug}
-        </button>
+        {/* Sin app bajo prueba no hay bugs que encontrar: el tablero solo muestra tickets. */}
+        {mission.tools.some((t) => t.tool === 'app') && (
+          <button
+            type="button"
+            onClick={() => setView({ kind: 'new' })}
+            disabled={state.finished}
+            className="mb-3 w-full rounded-ase-md bg-ase-brand px-3 py-2 text-body-sm font-semibold text-white transition hover:bg-ase-brand-strong disabled:opacity-40"
+          >
+            {c.reportBug}
+          </button>
+        )}
         <p className="px-1 pb-1 text-label uppercase text-ase-muted">{c.stories}</p>
         {mission.tickets.map((t) => (
           <button
@@ -179,8 +182,12 @@ export function TicketsTool(props: ToolProps) {
             <span className="text-caption text-ase-muted">{t.status}</span>
           </button>
         ))}
-        <p className="px-1 pb-1 pt-4 text-label uppercase text-ase-muted">{c.yourBugs(state.reports.length)}</p>
-        {state.reports.length === 0 && <p className="px-1 text-caption text-ase-muted">{c.noReports}</p>}
+        {mission.tools.some((t) => t.tool === 'app') && (
+          <>
+            <p className="px-1 pb-1 pt-4 text-label uppercase text-ase-muted">{c.yourBugs(state.reports.length)}</p>
+            {state.reports.length === 0 && <p className="px-1 text-caption text-ase-muted">{c.noReports}</p>}
+          </>
+        )}
         {state.reports
           .slice()
           .reverse()

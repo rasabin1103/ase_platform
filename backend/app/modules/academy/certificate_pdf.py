@@ -42,6 +42,16 @@ _COPY = {
     },
 }
 
+# Cursos que no preparan ningún examen de ISTQB®: su propio aviso en el certificado.
+_NOT_OFFICIAL = {
+    "es": "Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.",
+    "en": "ASE Academy certificate of completion. It is not an official certification from any body.",
+}
+_DISCLAIMERS = {
+    "gestion-equipos-qa": _NOT_OFFICIAL,
+    "sql-iniciacion": _NOT_OFFICIAL,
+}
+
 _INK = (15, 23, 42)
 _MUTED = (100, 116, 139)
 _BRAND = (76, 125, 255)
@@ -145,6 +155,6 @@ def render_certificate_pdf(cert: CertificateRead, *, lang: str, base_url: str) -
     pdf.multi_cell(130, 4.5, t["verify"].format(url=verify_url(base_url, cert.code)), align="R")
     pdf.set_font("Sans", "", 6.5)
     pdf.set_xy(w - 160, h - 34)
-    pdf.multi_cell(130, 3.4, t["disclaimer"], align="R")
+    pdf.multi_cell(130, 3.4, _DISCLAIMERS.get(cert.courseKey, {}).get(lang, t["disclaimer"]), align="R")
 
     return bytes(pdf.output())

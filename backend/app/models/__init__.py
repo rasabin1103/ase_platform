@@ -62,6 +62,7 @@ from app.models.loyalty_reward_grant import LoyaltyRewardGrant
 from app.models.job_posting import JobPosting
 from app.models.ai_analysis_usage_event import AiAnalysisUsageEvent
 from app.models.notification_preference import NotificationPreference
+from app.models.contract_guard_project import ContractGuardProject
 from app.models.job_posting_semantic_analysis import JobPostingSemanticAnalysis
 
 __all__ = [
@@ -114,6 +115,7 @@ __all__ = [
     "JobPostingSemanticAnalysis",
     "AiAnalysisUsageEvent",
     "NotificationPreference",
+    "ContractGuardProject",
     "PricingPillar",
     "PricingDimensionType",
     "PricingDimensionLevel",

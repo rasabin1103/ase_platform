@@ -7,7 +7,7 @@ lleguen nunca al navegador antes de entregar el examen.
 
 from __future__ import annotations
 
-from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, karate, karate_en
+from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, gestion, karate, karate_en, sql
 from app.modules.academy.exam_bank.model import (
     CHAPTER_TITLES,
     CHAPTER_TITLES_EN,
@@ -18,13 +18,20 @@ from app.modules.academy.exam_bank.model import (
 )
 
 # Cambiarlo cuando se modifique el banco: queda guardado en cada intento.
-BANK_VERSION = "ctfl-v4-2026.10-250+karate-60-en"
+BANK_VERSION = "2026.10-ctfl250+kar60en+geq60+sql60"
 
 QUESTIONS: tuple[BankQuestion, ...] = tuple(
-    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS]
+    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS, *gestion.QUESTIONS, *sql.QUESTIONS]
 )
 #: Primer bloque del curso de Karate (los anteriores son capítulos CTFL).
 KARATE_FIRST_CHAPTER = 11
+#: Primer bloque del curso «Gestión de equipos QA».
+GESTION_FIRST_CHAPTER = 21
+#: Primer bloque del curso «SQL desde cero».
+SQL_FIRST_CHAPTER = 31
+#: Bloques aún sin versión en inglés (su curso está pendiente de traducción):
+#: en inglés se muestran en español hasta que se traduzcan.
+PENDING_EN_CHAPTERS = frozenset({21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35})
 
 BY_ID: dict[str, BankQuestion] = {question.id: question for question in QUESTIONS}
 EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN}
@@ -49,6 +56,8 @@ def validate_bank() -> list[str]:
         if not question.id.startswith(f"c{question.chapter}-"):
             problems.append(f"{question.id}: el id no coincide con el capítulo")
         english = EN.get(question.id)
+        if english is None and question.chapter in PENDING_EN_CHAPTERS:
+            continue
         if english is None:
             problems.append(f"{question.id}: falta la versión en inglés")
             continue
@@ -69,6 +78,7 @@ __all__ = [
     "CHAPTER_TITLES",
     "CHAPTER_TITLES_EN",
     "EN",
+    "PENDING_EN_CHAPTERS",
     "QUESTIONS",
     "SECTION_TITLES",
     "SECTION_TITLES_EN",

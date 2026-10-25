@@ -171,6 +171,19 @@ class Settings(BaseSettings):
     # clear "not configured" error instead of crashing.
     GROQ_API_KEY: str | None = None
 
+    # ASE API Contract Guard (producto del catálogo con visor propio, ver
+    # app/modules/contract_guard). El servicio es monousuario y sin
+    # autenticación: ASE es su único cliente y aplica identidad, propiedad
+    # y límites. URL base sin barra final (p. ej. http://contract-guard:8000).
+    # Vacío = la herramienta aparece como "no disponible", sin romper nada.
+    CONTRACT_GUARD_BASE_URL: str | None = None
+    # La comparación puede tardar hasta ACG_COMPARISON_TIMEOUT (30 s por
+    # defecto) en el servicio; dejar margen.
+    CONTRACT_GUARD_TIMEOUT_SECONDS: float = 60.0
+    # Tope de proyectos por usuario: el servicio es compartido y cada
+    # proyecto guarda contratos completos.
+    CONTRACT_GUARD_MAX_PROJECTS_PER_USER: int = 10
+
     @property
     def sqlalchemy_database_url(self) -> str:
         if self.DATABASE_URL:

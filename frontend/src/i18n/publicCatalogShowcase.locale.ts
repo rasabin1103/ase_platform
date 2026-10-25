@@ -36,6 +36,13 @@ export const publicCatalogShowcaseEn = {
   loadError: 'Could not load the catalog. Try again later.',
   empty: 'No items match these filters.',
   emptyHint: 'Try a different search term, or clear the selected category and tags.',
+  pagination: {
+    nav: 'Catalog pages',
+    previous: 'Previous page',
+    next: 'Next page',
+    showing: '{{from}}–{{to}} of {{total}}',
+    page: 'Page {{page}}',
+  },
   detail: {
     back: 'Back to catalog',
     loadError: 'Could not load this item.',
@@ -98,6 +105,13 @@ export const publicCatalogShowcaseEs = {
   loadError: 'No se pudo cargar el catálogo. Inténtalo de nuevo más tarde.',
   empty: 'Ningún ítem coincide con estos filtros.',
   emptyHint: 'Prueba otro término de búsqueda, o borra la categoría y las etiquetas seleccionadas.',
+  pagination: {
+    nav: 'Páginas del catálogo',
+    previous: 'Página anterior',
+    next: 'Página siguiente',
+    showing: '{{from}}–{{to}} de {{total}}',
+    page: 'Página {{page}}',
+  },
   detail: {
     back: 'Volver al catálogo',
     loadError: 'No se pudo cargar este ítem.',

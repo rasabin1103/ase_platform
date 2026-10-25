@@ -31,7 +31,7 @@ export function WikiTool({ mission, state, dispatch }: ToolProps) {
   return (
     <div className="grid h-full min-h-0 md:grid-cols-[18rem_1fr]">
       <ul className="min-h-0 overflow-y-auto border-b border-ase-border p-3 md:border-b-0 md:border-r">
-        <li className="px-1 pb-2 text-label uppercase text-ase-muted">{c.header}</li>
+        <li className="px-1 pb-2 text-label uppercase text-ase-muted">{mission.wikiLabel ?? c.header}</li>
         {docs.map((d) => (
           <li key={d.id}>
             <button

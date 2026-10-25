@@ -20,11 +20,13 @@ export type ApiCredentialCreateResponse = ApiCredential & { clientSecret: string
 export type TestInputVariableDef = {
   key: string
   label: string
-  type: 'text' | 'secret' | 'choice' | 'json'
+  type: 'text' | 'secret' | 'choice' | 'json' | 'file'
   required: boolean
   description?: string | null
   options?: string[] | null
   default?: string | null
+  visible_when?: { key: string; values: string[] } | null
+  info?: string | null
 }
 
 export type RunnableFramework = {
@@ -34,6 +36,8 @@ export type RunnableFramework = {
   usedRuns: number
   remainingRuns: number
   inputSchema: TestInputVariableDef[]
+  /** 'workflow' = visor genérico; otro valor = producto con visor propio. */
+  viewer?: string
 }
 
 // One saved variable's display state for the "Configurar" form. `value` is
@@ -42,11 +46,13 @@ export type RunnableFramework = {
 export type TestExecutionConfigValue = {
   key: string
   label: string
-  type: 'text' | 'secret' | 'choice' | 'json'
+  type: 'text' | 'secret' | 'choice' | 'json' | 'file'
   required: boolean
   description: string | null
   options: string[] | null
   default: string | null
+  visible_when?: { key: string; values: string[] } | null
+  info?: string | null
   hasValue: boolean
   value: string | null
 }

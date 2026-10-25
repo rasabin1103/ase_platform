@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, ChevronUp, Copy, FileText, KeyRound, PlusCircle, RefreshCcw, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import {
   createApiCredential,
   deleteTestRun,
@@ -12,6 +12,8 @@ import {
   type ApiCredentialCreateResponse,
 } from '../../api/testExecution.api'
 import { PremiumHero } from '../../components/admin/premium/PremiumHero'
+import { ProductViewer } from '../../components/productTools/ProductViewer'
+import { hasProductViewer } from '../../components/productTools/registry'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -58,10 +60,16 @@ export function TestExecutionPage() {
     setRunsOffset(0)
   }
 
+  const selectedFramework = frameworks.find((f) => f.slug === selectedSlug) ?? null
+  // Un producto con visor propio (p. ej. una API) no genera ejecuciones de
+  // workflow: ni cuota ni historial de runs.
+  const hasToolViewer = hasProductViewer(selectedFramework?.viewer)
+  const isWorkflow = selectedFramework !== null && !hasToolViewer
+
   const runsQuery = useQuery({
     queryKey: ['test-execution-runs', selectedSlug, runsOffset],
     queryFn: () => listMyTestRuns({ slug: selectedSlug ?? undefined, limit: RUNS_LIMIT, offset: runsOffset }),
-    enabled: selectedSlug !== null,
+    enabled: isWorkflow,
     // Runs are updated server-side by a polling job against GitHub Actions —
     // refetch on a similar cadence so status/progress show up without the
     // user having to manually refresh.
@@ -92,7 +100,6 @@ export function TestExecutionPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['test-execution-runs'] }),
   })
 
-  const selectedFramework = frameworks.find((f) => f.slug === selectedSlug) ?? null
   const runs = runsQuery.data?.items ?? []
   const runsTotal = runsQuery.data?.total ?? 0
 
@@ -145,7 +152,13 @@ export function TestExecutionPage() {
               >
                 <div className="font-medium text-ase-text">{f.title}</div>
                 <div className="mt-1 text-xs text-ase-muted">
-                  {t('testExecution.frameworks.columns.remaining')}: {f.remainingRuns}/{f.includedRuns}
+                  {f.viewer && f.viewer !== 'workflow' ? (
+                    t('testExecution.frameworks.toolBadge')
+                  ) : (
+                    <>
+                      {t('testExecution.frameworks.columns.remaining')}: {f.remainingRuns}/{f.includedRuns}
+                    </>
+                  )}
                 </div>
               </button>
             ))}
@@ -154,7 +167,15 @@ export function TestExecutionPage() {
       </Card>
 
       {/* --- 2. Configure + run ------------------------------------------------ */}
-      {selectedFramework ? (
+      {selectedFramework && hasToolViewer ? (
+        <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
+          <h2 className="mb-4 text-lg font-semibold text-ase-text">{selectedFramework.title}</h2>
+          <Suspense fallback={<Skeleton className="h-48 rounded-2xl" />}>
+            <ProductViewer viewer={selectedFramework.viewer} />
+          </Suspense>
+        </Card>
+      ) : null}
+      {isWorkflow && selectedFramework ? (
         <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
           <h2 className="mb-4 text-lg font-semibold text-ase-text">{selectedFramework.title}</h2>
           <FrameworkRunPanel
@@ -168,7 +189,7 @@ export function TestExecutionPage() {
       ) : null}
 
       {/* --- 3. History --------------------------------------------------------- */}
-      {selectedFramework ? (
+      {isWorkflow ? (
         <Card className="rounded-[2rem] border-white/[0.08] bg-ase-surface p-6 shadow-soft">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-ase-text">{t('testExecution.runs.title')}</h2>

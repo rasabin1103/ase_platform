@@ -36,6 +36,7 @@ from app.modules.test_execution.schemas import (
     TestScenarioSummaryRead,
     TestScenarioUpdateRequest,
 )
+from app.modules.test_execution import uploads
 from app.modules.test_execution.service import (
     ApprovedRefNotFoundError,
     CredentialNotFoundError,
@@ -321,6 +322,8 @@ def trigger_run_from_dashboard(
         )
     except ScenarioNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
+    except uploads.UploadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail={"code": exc.code, "message": exc.message})
     return _run_to_read(run, slug=slug)
 
 
@@ -464,6 +467,8 @@ def trigger_run(
         )
     except ScenarioNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
+    except uploads.UploadError as exc:
+        raise HTTPException(status_code=exc.status_code, detail={"code": exc.code, "message": exc.message})
     return _run_to_read(run, slug=payload.slug)
 
 

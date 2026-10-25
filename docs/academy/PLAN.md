@@ -117,7 +117,7 @@ Un **validador de contenido** (zod y un script de CI) comprueba en cada build qu
 
 | Área | Principiante | Intermedio | Avanzado / gestión |
 |---|---|---|---|
-| Quality Engineering | **Fundamentos de Testing** (curso 1) · Testing de APIs desde cero | Automatización UI · APIs con Karate · Testing en CI/CD | Estrategia QA para microservicios · QA Management |
+| Quality Engineering | **Fundamentos de Testing** (curso 1) · Testing de APIs desde cero | Automatización UI · APIs con Karate · Testing en CI/CD | Estrategia QA para microservicios · **Gestión de equipos QA** (curso 4, en construcción: [gestion-equipos-qa/PLAN.md](gestion-equipos-qa/PLAN.md)) |
 | Desarrollo | Git y trabajo en equipo | Code review y deuda técnica | Arquitectura y decisiones técnicas |
 | Agile / Producto | Scrum en la práctica | Refinamiento e historias de usuario | Gestión de releases y stakeholders |
 
@@ -528,6 +528,7 @@ Decisión de implementación: de momento el contenido se escribe en **módulos T
 | Fundamentos de Testing | 8 | ✅ | ✅ | Evaluación final 20 preguntas ✅ / ✅ |
 | QA Profesional | 9 | ✅ | ✅ | Simulacro CTFL 40 preguntas ✅ / ✅ |
 | Karate Framework | 10 + examen práctico | ✅ | ✅ (19 oct) | Teórica 30 preguntas + práctico ✅ / ✅ |
+| Gestión de equipos QA (en construcción) | 6 de 12 (22 oct) | ✅ M0–M4 y M6 | Pendiente | Evaluación situacional ASE, pendiente |
 
 Revisión del 19 oct: paridad de las 28 misiones (`i18nParity.test.ts`), sin restos de español en los textos ingleses de Fundamentos y QA Profesional, curso de Karate traducido entero (misiones, laboratorios, mensajes del intérprete y banco teórico) y recorrido en navegador del curso de Karate en inglés. Detalle en [i18n.md](i18n.md).
 

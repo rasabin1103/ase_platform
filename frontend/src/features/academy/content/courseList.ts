@@ -5,6 +5,8 @@ import { testingFundamentalsCourseEn } from './courses/testing-fundamentals/en/c
 import { qaProfesionalCourseEn } from './courses/qa-profesional/en/course'
 import { karateFrameworkCourse } from './courses/karate-framework/course'
 import { karateFrameworkCourseEn } from './courses/karate-framework/en/course'
+import { gestionEquiposQaCourse } from './courses/gestion-equipos-qa/course'
+import { sqlIniciacionCourse } from './courses/sql-iniciacion/course'
 
 /**
  * Lista ligera de cursos del simulador (sin el contenido de las misiones).
@@ -14,11 +16,11 @@ import { karateFrameworkCourseEn } from './courses/karate-framework/en/course'
  * Añadir un curso nuevo: crear su carpeta en content/courses/<clave>/,
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
-export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse]
+export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse, gestionEquiposQaCourse, sqlIniciacionCourse]
 export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn]
 
 /** Cursos que aún no tienen versión en inglés (en inglés se muestran en español). */
-export const PENDING_TRANSLATION = new Set<string>()
+export const PENDING_TRANSLATION = new Set<string>(['gestion-equipos-qa', 'sql-iniciacion'])
 
 export function academyCourses(lang: 'es' | 'en' = 'es'): CourseDef[] {
   if (lang !== 'en') return ACADEMY_COURSES

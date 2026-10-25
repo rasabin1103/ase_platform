@@ -13,6 +13,7 @@ import { requestsPageEn, requestsPageEs } from './requestsPage.locale'
 import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication.locale'
 import { adminBlogEn, adminBlogEs, blogPageEn, blogPageEs } from './blog.locale'
 import { notificationsPageEn, notificationsPageEs } from './notificationsPage.locale'
+import { contractGuardEn, contractGuardEs } from './contractGuard.locale'
 import { adminJobPostingsEn, adminJobPostingsEs, jobPostingsPageEn, jobPostingsPageEs } from './jobPostings.locale'
 import { pricingAdminEn, pricingAdminEs, pricingEngineEn, pricingEngineEs } from './pricingAdmin.locale'
 /** Private `/booking` + `/admin/booking` copy (EN + ES). Merged as root keys `bookingPage`/`adminBookingPage`. */
@@ -165,6 +166,7 @@ export const translations = {
     adminJobPostings: adminJobPostingsEn,
     jobPostingsPage: jobPostingsPageEn,
     notificationsPage: notificationsPageEn,
+    contractGuard: contractGuardEn,
     adminPurchases: adminPurchasesEn,
     adminAuditLog: adminAuditLogEn,
     adminBookRedemptions: adminBookRedemptionsEn,
@@ -1165,6 +1167,7 @@ plans: {
     adminJobPostings: adminJobPostingsEs,
     jobPostingsPage: jobPostingsPageEs,
     notificationsPage: notificationsPageEs,
+    contractGuard: contractGuardEs,
     adminPurchases: adminPurchasesEs,
     adminAuditLog: adminAuditLogEs,
     adminBookRedemptions: adminBookRedemptionsEs,

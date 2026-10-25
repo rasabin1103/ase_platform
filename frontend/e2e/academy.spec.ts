@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Response } from '@playwright/test'
-import { ACADEMY_COURSES } from '../src/features/academy/content/courseList'
+import { ACADEMY_COURSES, PENDING_TRANSLATION } from '../src/features/academy/content/courseList'
 import { M10_SOLUTION } from '../src/features/academy/content/courses/karate-framework/m10-lab'
+import { M10_SQL_ANSWERS } from '../src/features/academy/content/courses/sql-iniciacion/m10-examen'
 import { E2E_PASSWORD, backendScript, emailFor } from './support'
 
 /**
@@ -14,7 +15,8 @@ import { E2E_PASSWORD, backendScript, emailFor } from './support'
  * En cada misión se contesta a las reuniones y se termina el día: se
  * comprueba que el curso se puede completar, no que se saque buena nota. El
  * examen práctico de Karate se resuelve en el IDE con la solución de
- * referencia (8 retos = 80/100, aprueba con 70). Las respuestas correctas de
+ * referencia (8 retos = 80/100, aprueba con 70), y el de SQL, en la consola
+ * con PostgreSQL real (10 encargos = 100/100). Las respuestas correctas de
  * la evaluación teórica las da scripts/e2e_academy.py leyendo el intento.
  */
 
@@ -33,7 +35,7 @@ const T = {
   create: /^(Crear|Create)$/,
   run: /^(Ejecutar|Run)$/,
   allRetos: /^(Retos|Challenges) 8\/8/,
-  startExam: /^(Empezar simulacro|Start mock exam|Nuevo simulacro|New mock exam)/,
+  startExam: /^(Empezar simulacro|Start mock exam|Nuevo simulacro|New mock exam|Empezar la evaluación|Nueva evaluación|Start the assessment|New assessment)/,
   submit: /^(Entregar|Submit)$/,
   submitAndSee: /^(Entregar y ver resultado|Submit and see result)$/,
   passed: /^(Aprobado|Passed)$/,
@@ -82,6 +84,18 @@ async function solvePracticalExam(page: Page, lang: Lang) {
   await page.getByRole('button', { name: 'Pipeline', exact: true }).click()
   await closeMeetings(page)
   await expect(page.getByRole('tab', { name: T.allRetos })).toBeVisible()
+}
+
+/** Examen práctico de SQL: las respuestas de referencia, una ejecución por encargo, en la consola. */
+async function solveSqlExam(page: Page) {
+  await page.getByRole('navigation').getByRole('button', { name: /^Consola SQL/ }).click()
+  await expect(page.getByText('Arrancando PostgreSQL')).toHaveCount(0, { timeout: 90_000 })
+  for (const [i, sql] of M10_SQL_ANSWERS.entries()) {
+    await page.getByLabel('Consulta SQL').fill(sql)
+    await page.getByRole('button', { name: /^Ejecutar ·/ }).click()
+    await closeMeetings(page)
+    await expect(page.getByText(`Encargos: ${i + 1}/${M10_SQL_ANSWERS.length}`)).toBeVisible({ timeout: 30_000 })
+  }
 }
 
 async function closeMeetings(page: Page) {
@@ -137,7 +151,8 @@ async function playMission(page: Page, course: string, missionId: string, lang: 
     const endDay = page.getByRole('button', { name: T.endDay })
     if (await endDay.count()) {
       if (missionId === 'm10-examen' && !examSolved) {
-        await solvePracticalExam(page, lang)
+        if (course === 'sql-iniciacion') await solveSqlExam(page)
+        else await solvePracticalExam(page, lang)
         examSolved = true
       }
       await endDay.click() // el confirm del navegador se acepta solo (page.on('dialog'))
@@ -179,8 +194,13 @@ async function passFinalExam(page: Page, course: string, email: string, missions
 
 test.describe.configure({ mode: 'parallel' })
 
-for (const course of ACADEMY_COURSES) {
-  for (const lang of LANGS) {
+// Solo los cursos terminados: todas las misiones jugables y con evaluación
+// final (los cursos en construcción no tienen certificado). Los que aún no
+// están traducidos, solo en español.
+const FINISHED_COURSES = ACADEMY_COURSES.filter((c) => c.missions.every((m) => m.available))
+
+for (const course of FINISHED_COURSES) {
+  for (const lang of PENDING_TRANSLATION.has(course.key) ? (['es'] as Lang[]) : LANGS) {
     test(`${course.key} (${lang}): todas las misiones, evaluación final y certificado`, async ({ page, context }) => {
       const email = emailFor(course.key, lang)
       await context.addInitScript((l) => localStorage.setItem('ase_language', l), lang)

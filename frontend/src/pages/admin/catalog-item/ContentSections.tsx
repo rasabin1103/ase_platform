@@ -16,6 +16,8 @@ import {
   emptyToNullNumber,
   emptyVariable,
   optionsToText,
+  textToVisibleWhen,
+  visibleWhenToText,
   textToOptions,
   textareaClass,
   variableKeySlug,
@@ -212,6 +214,7 @@ function TestVariablesEditor({ s }: SectionProps) {
                     <option value="secret">{t('adminCatalog.testVariableTypes.secret')}</option>
                     <option value="choice">{t('adminCatalog.testVariableTypes.choice')}</option>
                     <option value="json">{t('adminCatalog.testVariableTypes.json')}</option>
+                    <option value="file">{t('adminCatalog.testVariableTypes.file')}</option>
                   </Select>
                 </Field>
                 <Field label={t('adminCatalog.testVariableFields.description')}>
@@ -231,6 +234,22 @@ function TestVariablesEditor({ s }: SectionProps) {
                   />
                 </Field>
               ) : null}
+              <Field label={t('adminCatalog.testVariableFields.info')} hint={t('adminCatalog.testVariableFields.infoHint')}>
+                <Input
+                  value={variable.info ?? ''}
+                  onChange={(e) => update(index, { info: e.target.value })}
+                />
+              </Field>
+              <Field
+                label={t('adminCatalog.testVariableFields.visibleWhen')}
+                hint={t('adminCatalog.testVariableFields.visibleWhenHint')}
+              >
+                <Input
+                  placeholder={t('adminCatalog.testVariableFields.visibleWhenPlaceholder') as string}
+                  defaultValue={visibleWhenToText(variable.visible_when)}
+                  onBlur={(e) => update(index, { visible_when: textToVisibleWhen(e.target.value) })}
+                />
+              </Field>
               {variable.type !== 'secret' ? (
                 <Field label={t('adminCatalog.testVariableFields.default')}>
                   {variable.type === 'json' ? (

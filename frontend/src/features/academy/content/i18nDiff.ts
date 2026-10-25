@@ -6,7 +6,7 @@
 export const TEXT_KEYS = new Set([
   'title', 'subtitle', 'body', 'text', 'reply', 'subject', 'summary', 'explanation', 'question', 'options',
   'paragraphs', 'goals', 'label', 'name', 'role', 'company', 'sector', 'tagline', 'description', 'track',
-  'playerRole', 'dayLabel', 'appLabel', 'updatedLabel', 'technique', 'intro', 'preventedLabel', 'appearedLabel',
+  'playerRole', 'dayLabel', 'appLabel', 'wikiLabel', 'updatedLabel', 'technique', 'intro', 'preventedLabel', 'appearedLabel',
   'seniorTips', 'note', 'hint', 'clarification', 'expectedQuestion', 'fineReply', 'disputeReply', 'lockedMessage',
   'inputLabel', 'inputPlaceholder', 'submitLabel', 'acceptanceCriteria', 'expected', 'actual', 'steps', 'feedback',
   'priorityWhy', 'area', 'author', 'technical', 'input', 'tags', 'heading', 'caption', 'prompt', 'placeholder',

@@ -1,6 +1,6 @@
 /**
- * Nota de un examen práctico (misión con `practicalExam`): retos del IDE
- * conseguidos y bugs reportados, menos los reports rechazados.
+ * Nota de un examen práctico (misión con `practicalExam`): retos conseguidos
+ * (del IDE o de la consola SQL) y bugs reportados, menos los reports rechazados.
  */
 import { reportedBugIds } from './engine'
 import type { Mission, RunState } from './types'
@@ -19,7 +19,7 @@ export interface PracticalScore {
 export function practicalScore(mission: Mission, state: RunState): PracticalScore | null {
   const exam = mission.practicalExam
   if (!exam) return null
-  const retos = (mission.codeLab?.retos ?? []).map((r) => {
+  const retos = [...(mission.codeLab?.retos ?? []), ...(mission.sqlLab?.retos ?? [])].map((r) => {
     const ok = !!state.flags[`reto.${r.id}`]
     return { id: r.id, title: r.title, ok, points: ok ? exam.retoPoints : 0 }
   })
