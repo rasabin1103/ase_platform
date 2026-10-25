@@ -6,7 +6,7 @@ Un test por curso e idioma (3 cursos × es/en = 6). Cada uno, en el navegador y 
 
 1. inicia sesión con su alumno E2E;
 2. juega **todas** las misiones del curso hasta el debrief (diagnóstico, jornada, reuniones, comprobación final) y comprueba que la partida terminada se guarda en el servidor;
-3. en Karate, resuelve el examen práctico en el IDE con la solución de referencia (8 retos, pipeline nocturno);
+3. en Karate, resuelve el examen práctico en el IDE con la solución de referencia (8 retos, pipeline nocturno); en SQL, en la consola con PostgreSQL real (10 encargos, `M10_SQL_ANSWERS`);
 4. aprueba la evaluación final (las respuestas correctas las da `backend/scripts/e2e_academy.py`, que lee el intento abierto);
 5. abre el certificado verificable y descarga su PDF (200, `application/pdf`).
 

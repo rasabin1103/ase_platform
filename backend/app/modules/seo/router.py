@@ -116,9 +116,10 @@ def _url(
     if priority:
         parts.append(f"<priority>{priority}</priority>")
     if image:
-        title = f"<image:title>{escape(image_title)}</image:title>" if image_title else ""
-        parts.append(f"<image:image><image:loc>{escape(_absolute(image))}</image:loc>{title}</image:image>")
-    return "  <url>" + "".join(parts) + "</url>"
+        title = f"\n      <image:title>{escape(image_title)}</image:title>" if image_title else ""
+        parts.append(f"<image:image>\n      <image:loc>{escape(_absolute(image))}</image:loc>{title}\n    </image:image>")
+    # Una etiqueta por línea, sangrada: el XML es el mismo, pero se lee bien al abrirlo en el navegador.
+    return "  <url>\n" + "\n".join(f"    {part}" for part in parts) + "\n  </url>"
 
 
 def build_sitemap(db: Session) -> str:

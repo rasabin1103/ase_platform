@@ -239,6 +239,7 @@ from app.modules.media.router import router as media_router
 from app.modules.public_catalog.router import router as public_catalog_router
 from app.modules.catalog_showcase.router import router as catalog_showcase_router
 from app.modules.notifications.router import router as notifications_router
+from app.modules.contract_guard.router import router as contract_guard_router
 from app.modules.suggestions.router import router as suggestions_router
 from app.modules.book_redemption.router import router as book_redemption_router
 from app.modules.admin_account_lifecycle.router import router as admin_account_lifecycle_router
@@ -293,6 +294,7 @@ def create_app() -> FastAPI:
     app.include_router(test_execution_admin_router)
     app.include_router(catalog_categories_router)
     app.include_router(notifications_router)
+    app.include_router(contract_guard_router)
     app.include_router(suggestions_router)
     app.include_router(book_redemption_router)
     app.include_router(admin_data_reset_router)

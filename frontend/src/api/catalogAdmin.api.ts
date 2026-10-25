@@ -27,11 +27,15 @@ export type TestInputVariableDef = {
   // 'json' is UI-side hinting only (GitHub inputs are always strings): it
   // renders a textarea with client-side JSON validation instead of a
   // single-line input, for fields like a request body or headers map.
-  type: 'text' | 'secret' | 'choice' | 'json'
+  type: 'text' | 'secret' | 'choice' | 'json' | 'file'
   required: boolean
   description?: string | null
   options?: string[] | null
   default?: string | null
+  // Muestra el campo solo si el campo `key` vale alguno de `values`.
+  visible_when?: { key: string; values: string[] } | null
+  // Ayuda que el comprador ve al pulsar el icono (i) junto al campo.
+  info?: string | null
 }
 
 export type CatalogItemAdmin = {

@@ -128,6 +128,67 @@ EXAMS: dict[str, ExamConfig] = {
             "m10-examen",
         ),
     ),
+    "gestion-equipos-qa": ExamConfig(
+        course_key="gestion-equipos-qa",
+        course_title="Gestión de equipos QA: de QA manual a Head of QA",
+        course_title_en="Managing QA teams: from manual QA to Head of QA",
+        title="Evaluación situacional de gestión de equipos QA",
+        title_en="QA team management situational assessment",
+        certificate_prefix="GEQ",
+        # Juicio situacional: 30 casos (5 por rol), 45 min (56 con tiempo
+        # ampliado), aprobado con 21 (70 %). Ver docs/academy/gestion-equipos-qa/PLAN.md §6.
+        total=30,
+        minutes=45,
+        extended_minutes=56,
+        pass_mark=21,
+        distribution={21: 5, 22: 5, 23: 5, 24: 5, 25: 5, 26: 5},
+        chapter_offset=20,
+        missions=(
+            "m00-la-firma",
+            "m01-cuello-botella",
+            "m02-suite",
+            "m03-junior",
+            "m04-estandar",
+            "m05-comprar",
+            "m06-primer-equipo",
+            "m07-conversacion",
+            "m08-contratar",
+            "m09-recortes",
+            "m10-incidente",
+            "m11-estrategia",
+        ),
+    ),
+    "sql-iniciacion": ExamConfig(
+        course_key="sql-iniciacion",
+        course_title="SQL desde cero: consulta los datos de verdad",
+        course_title_en="SQL from scratch: query real data",
+        title="Test final de SQL desde cero",
+        title_en="SQL from scratch final test",
+        certificate_prefix="SQL",
+        # 30 preguntas (6 por bloque), 40 min (50 con tiempo ampliado), aprobado
+        # con 21 (70 %). El certificado exige además el examen práctico (misión
+        # m10-examen), que solo cuenta como terminado si se aprueba (70/100).
+        # Ver docs/academy/sql-iniciacion/PLAN.md §6.
+        total=30,
+        minutes=40,
+        extended_minutes=50,
+        pass_mark=21,
+        distribution={31: 6, 32: 6, 33: 6, 34: 6, 35: 6},
+        chapter_offset=30,
+        missions=(
+            "m00-primera-consulta",
+            "m01-filtrar",
+            "m02-ordenar",
+            "m03-nulos",
+            "m04-contar",
+            "m05-agrupar",
+            "m06-join",
+            "m07-left-join",
+            "m08-modificar",
+            "m09-crear-tabla",
+            "m10-examen",
+        ),
+    ),
 }
 
 

@@ -375,3 +375,125 @@ def test_karate_exam_in_english(
         assert question["sectionTitle"] in SECTION_TITLES_EN.values()
     # Un texto concreto del banco, para que la traducción no cambie sin querer.
     assert KARATE_EN["c11-02"].text == "When does the Background of a feature run?"
+
+
+GESTION_EXAM_URL = "/api/v1/academy/exams/gestion-equipos-qa"
+
+
+def test_gestion_exam_roles_report_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "Gestión de equipos QA (simulador)",
+            "slug": "gestion-equipos-qa-simulador",
+            "type": "course",
+            "category": "Testing",
+            "short_description": "Curso de gestión de equipos de QA.",
+            "long_description": "De QA manual a Head of QA.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "advanced",
+            "author": "ASE",
+            "academy_course_key": "gestion-equipos-qa",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(GESTION_EXAM_URL).json()
+    assert overview["config"]["total"] == 30
+    assert overview["config"]["passMark"] == 21
+    assert [c["title"] for c in overview["config"]["distribution"]] == ["QA manual", "QA Engineer", "QA Architect", "QA Lead", "QA Manager", "Head of QA"]
+
+    attempt = client.post(f"{GESTION_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5, 6}
+
+    # Once misiones de doce: aprobado, pero sin certificado hasta terminar la última.
+    for mission_id in EXAMS["gestion-equipos-qa"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="gestion-equipos-qa", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{GESTION_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert {c["key"] for c in result["chapters"]} == {"1", "2", "3", "4", "5", "6"}
+    assert result["missingMissions"] == ["m11-estrategia"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="gestion-equipos-qa", mission_id="m11-estrategia", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/gestion-equipos-qa", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-GEQ-")
+
+
+SQL_EXAM_URL = "/api/v1/academy/exams/sql-iniciacion"
+
+
+def test_sql_exam_blocks_practical_exam_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "SQL desde cero (simulador)",
+            "slug": "sql-desde-cero-simulador",
+            "type": "course",
+            "category": "Datos",
+            "short_description": "Curso de SQL.",
+            "long_description": "SQL con PostgreSQL real.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "beginner",
+            "author": "ASE",
+            "academy_course_key": "sql-iniciacion",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(SQL_EXAM_URL).json()
+    assert (overview["config"]["total"], overview["config"]["passMark"]) == (30, 21)
+    assert [c["title"] for c in overview["config"]["distribution"]] == [
+        "Consultar y filtrar",
+        "Ordenar y los huecos",
+        "Contar y agrupar",
+        "Unir tablas",
+        "Modificar y crear tablas",
+    ]
+
+    attempt = client.post(f"{SQL_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
+    # Las preguntas con consulta llevan su código.
+    assert any(q.get("code") for q in attempt["questions"])
+
+    # Todas las misiones menos el examen práctico: test aprobado, pero sin certificado.
+    for mission_id in EXAMS["sql-iniciacion"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="sql-iniciacion", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{SQL_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert {c["key"] for c in result["chapters"]} == {"1", "2", "3", "4", "5"}
+    assert result["missingMissions"] == ["m10-examen"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="sql-iniciacion", mission_id="m10-examen", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/sql-iniciacion", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-SQL-")
+

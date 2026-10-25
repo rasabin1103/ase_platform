@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { CourseDef } from '../engine/types'
 import type { ExamAttempt, ExamCertificate } from './examApi'
-import { studyMissionFor } from './studyMap'
+import { examDisclaimer, studyMissionFor, withExamCopy } from './studyMap'
 import { useAcademyLang } from '../i18n'
 
 const COPY = {
@@ -99,7 +99,8 @@ export function ExamResult({
   onClaim: () => void
   claiming: boolean
 }) {
-  const c = COPY[useAcademyLang()]
+  const lang = useAcademyLang()
+  const c = withExamCopy(COPY[lang], course.key, lang)
   const result = attempt.result
   const [filter, setFilter] = useState<'all' | 'wrong'>('wrong')
   if (!result) return null
@@ -288,7 +289,8 @@ export function CertificateBlock({
   claiming: boolean
 }) {
   const missionTitle = (id: string) => course.missions.find((m) => m.id === id)?.title ?? id
-  const c = COPY[useAcademyLang()]
+  const lang = useAcademyLang()
+  const c = withExamCopy(COPY[lang], course.key, lang)
   return (
     <section className="mt-6 rounded-ase-xl border border-ase-gold/40 bg-ase-gold/5 p-5">
       <p className="flex items-center gap-2 font-semibold text-ase-text">
@@ -338,7 +340,7 @@ export function CertificateBlock({
           ) : null}
         </div>
       )}
-      <p className="mt-3 text-caption text-ase-muted">{c.disclaimer}</p>
+      <p className="mt-3 text-caption text-ase-muted">{examDisclaimer(course.key, lang) ?? c.disclaimer}</p>
     </section>
   )
 }

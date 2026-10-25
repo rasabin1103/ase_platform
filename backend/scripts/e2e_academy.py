@@ -31,7 +31,7 @@ if _ROOT not in sys.path:
 
 from app.core.config import settings  # noqa: E402
 
-COURSES = ("testing-fundamentals", "qa-profesional", "karate-framework")
+COURSES = ("testing-fundamentals", "qa-profesional", "karate-framework", "gestion-equipos-qa", "sql-iniciacion")
 LANGS = ("es", "en")
 PASSWORD = os.environ.get("E2E_PASSWORD", "E2e-Academy!2026")
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "db", "postgres"}
@@ -91,6 +91,7 @@ def seed() -> list[dict[str, str]]:
                     short_description="Curso del simulador (E2E).",
                     long_description="Ficha creada por scripts/e2e_academy.py para los tests E2E.",
                     image_url="https://www.arcesabinengineering.com/og/ase-share.png",
+                    author="ASE Academy",
                     price=Decimal("0"),
                     currency="EUR",
                     status=CatalogItemStatus.published,

@@ -211,9 +211,16 @@ def dispatch_workflow(
             status_code=403,
         )
     if response.status_code == 422:
+        # GitHub explica la causa exacta (p. ej. «Unexpected inputs provided:
+        # [mode]» o «Provided value 'x' for input 'method' not in the list»).
+        try:
+            github_message = str(response.json().get("message") or "").strip()
+        except ValueError:
+            github_message = ""
+        detail = f" GitHub says: {github_message[:300]}" if github_message else ""
         raise GithubWorkflowError(
             "GitHub rejected the dispatch request — check that the workflow declares "
-            "'on: workflow_dispatch' and that any required inputs were provided",
+            "'on: workflow_dispatch' and that any required inputs were provided." + detail,
             status_code=422,
         )
     raise GithubWorkflowError(

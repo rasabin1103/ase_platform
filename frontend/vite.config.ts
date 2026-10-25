@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // PGlite (PostgreSQL en WebAssembly, curso de SQL) carga su .wasm y sus datos
+    // con import.meta.url: el pre-empaquetado del servidor de desarrollo lo rompe.
+    optimizeDeps: { exclude: ['@electric-sql/pglite'] },
     server: {
       host: '127.0.0.1',
       port: 5173,

@@ -7,6 +7,7 @@
  */
 
 import type { CodeLabModel } from '../karate/types'
+import type { SqlLabModel } from '../sql/types'
 
 export type ScoreKey = 'rigor' | 'communication' | 'risk' | 'efficiency'
 export type Severity = 'critical' | 'high' | 'medium' | 'low'
@@ -367,6 +368,8 @@ export interface Mission {
   reportPriority?: boolean
   /** Nombre de la herramienta «app» en el escritorio (por defecto, «Staging»). */
   appLabel?: string
+  /** Título de la wiki en el escritorio (por defecto, «Wiki · Equipo de Pagos»). */
+  wikiLabel?: string
   /** Oculta la lista de bugs del debrief (misiones sin app donde encontrarlos). */
   hideBugList?: boolean
   /**
@@ -382,6 +385,8 @@ export interface Mission {
   }
   /** Laboratorio de código (IDE de Karate, app «karate-ide»). */
   codeLab?: CodeLabModel
+  /** Consola SQL con PostgreSQL real (app «sql-console»). */
+  sqlLab?: SqlLabModel
   /**
    * Examen práctico: la misión se puntúa (retos del IDE y bugs reportados) y
    * solo cuenta como terminada si se aprueba.

@@ -83,3 +83,31 @@ def test_karate_exam_uses_its_own_blocks_and_labels():
     for key in ("qa-profesional", "testing-fundamentals"):
         drawn = draw_questions(EXAMS[key], Counter(), random.Random(2))
         assert all(BY_ID[item["id"]].chapter < 11 for item in drawn)
+
+
+def test_gestion_exam_has_one_block_per_role():
+    config = EXAMS["gestion-equipos-qa"]
+    assert config.total == 30 and config.pass_mark == 21
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(11))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({21: 5, 22: 5, 23: 5, 24: 5, 25: 5, 26: 5})
+    assert config.chapter_label(26) == "6" and config.section_label("24.2") == "4.2"
+    # Ningún otro examen saca casos de gestión.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(4))
+        assert all(BY_ID[item["id"]].chapter < 21 for item in drawn)
+
+
+def test_sql_exam_has_one_block_per_pair_of_missions():
+    config = EXAMS["sql-iniciacion"]
+    assert (config.total, config.minutes, config.pass_mark, config.certificate_prefix) == (30, 40, 21, "SQL")
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(13))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({31: 6, 32: 6, 33: 6, 34: 6, 35: 6})
+    assert config.chapter_label(35) == "5" and config.section_label("34.2") == "4.2"
+    # El examen práctico forma parte de las misiones que exige el certificado.
+    assert config.missions[-1] == "m10-examen"
+    # Ningún otro examen saca preguntas de SQL.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(6))
+        assert all(BY_ID[item["id"]].chapter < 31 for item in drawn)

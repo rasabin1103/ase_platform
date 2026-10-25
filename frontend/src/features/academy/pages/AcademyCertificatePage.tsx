@@ -3,6 +3,7 @@ import { ArrowLeft, BadgeCheck, Download, Printer } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { certificatePdfUrl, verifyCertificate } from '../exam/examApi'
 import { useAcademyLang } from '../i18n'
+import { examDisclaimer } from '../exam/studyMap'
 
 const COPY = {
   es: {
@@ -139,7 +140,7 @@ export function AcademyCertificatePage() {
                   {c.verifiable} {url}
                 </p>
                 <p className="mt-1 text-[10px] text-slate-500">
-                  {c.disclaimer}
+                  {examDisclaimer(cert.courseKey, lang) ?? c.disclaimer}
                 </p>
               </div>
             </div>

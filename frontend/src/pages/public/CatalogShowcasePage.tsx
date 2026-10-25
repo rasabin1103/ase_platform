@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { Link, useSearchParams } from 'react-router-dom'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { Eye, LayoutGrid, List as ListIcon, Search } from 'lucide-react'
 import {
   catalogShowcaseItemPath,
@@ -13,6 +13,7 @@ import { PageHero } from '../../components/public/home/PageHero'
 import { pagesV2En, pagesV2Es } from '../../i18n/pagesV2.locale'
 import { AuthenticatedImage } from '../../components/ui/AuthenticatedImage'
 import { CatalogShowcasePreviewModal } from '../../components/catalog/CatalogShowcasePreviewModal'
+import { CatalogPagination } from '../../components/catalog/CatalogPagination'
 import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -30,6 +31,8 @@ type ViewMode = 'grid' | 'list'
 
 const SORT_OPTIONS: CatalogShowcaseSort[] = ['newest', 'top_rated', 'price_asc', 'price_desc']
 const TYPE_TABS: CatalogItemType[] = ['course', 'book', 'product', 'resource']
+/** Ítems por página: 3 filas de 4 en la cuadrícula ancha. */
+const CATALOG_PAGE_SIZE = 12
 
 function formatPrice(price: string, currency: string, freeLabel: string) {
   const n = Number(price)
@@ -48,6 +51,37 @@ export function CatalogShowcasePage() {
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sort, setSort] = useState<CatalogShowcaseSort>('newest')
   const [type, setType] = useState<CatalogItemType | undefined>(undefined)
+  // La página va en la URL (?page=2): se puede compartir y el botón «atrás» la respeta.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const setPage = (next: number, replace = false) =>
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev)
+        if (next <= 1) params.delete('page')
+        else params.set('page', String(next))
+        return params
+      },
+      { replace },
+    )
+  const resultsRef = useRef<HTMLDivElement>(null)
+  const goToPage = (next: number) => {
+    setPage(next)
+    setExpandedSlug(null)
+    const top = resultsRef.current?.getBoundingClientRect().top
+    if (top != null) window.scrollTo({ top: window.scrollY + top - 160, behavior: 'smooth' })
+  }
+  // Al cambiar un filtro se vuelve a la primera página (no en la primera carga,
+  // para respetar un enlace compartido con ?page=N).
+  const firstRender = useRef(true)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    setPage(1, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, category, tagFilter, sort, type])
   const v2 = (language === 'en' ? pagesV2En : pagesV2Es).catalog
   usePageTitle(`${v2.eyebrow}: ${v2.titleBefore} ${v2.titleHighlight}`, v2.subtitle)
   // Single shared modal for the whole grid/list rather than one per card —
@@ -63,22 +97,34 @@ export function CatalogShowcasePage() {
   }, [expandedSlug])
 
   const queryKey = useMemo(
-    () => ['catalog-showcase', search, category, tagFilter, sort, type],
-    [search, category, tagFilter, sort, type],
+    () => ['catalog-showcase', search, category, tagFilter, sort, type, page],
+    [search, category, tagFilter, sort, type, page],
   )
 
   const query = useQuery({
     queryKey,
     queryFn: () =>
       listCatalogShowcaseItems({
-        limit: 48,
+        limit: CATALOG_PAGE_SIZE,
+        offset: (page - 1) * CATALOG_PAGE_SIZE,
         search: search.trim() || undefined,
         category,
         tags: tagFilter.length ? tagFilter : undefined,
         sort,
         type,
       }),
+    // Mientras llega la página nueva se sigue viendo la anterior (sin parpadeo).
+    placeholderData: keepPreviousData,
   })
+
+  // Un enlace a una página que ya no existe (p. ej. tras publicar menos ítems) lleva a la última.
+  const total = query.data?.total
+  useEffect(() => {
+    if (total == null || query.isPlaceholderData) return
+    const last = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE))
+    if (page > last) setPage(last, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, page, query.isPlaceholderData])
 
   const categoriesQuery = useQuery({
     queryKey: ['catalog-showcase-categories'],
@@ -237,7 +283,7 @@ export function CatalogShowcasePage() {
           />
         </div>
 
-        <div className="mt-6">
+        <div ref={resultsRef} className={cn('mt-6 transition-opacity', query.isPlaceholderData && 'opacity-60')} aria-busy={query.isFetching}>
           {query.isLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {[1, 2, 3, 4].map((n) => (
@@ -282,6 +328,21 @@ export function CatalogShowcasePage() {
               ))}
             </div>
           )}
+          {items.length > 0 && total != null ? (
+            <CatalogPagination
+              page={page}
+              pageSize={CATALOG_PAGE_SIZE}
+              total={total}
+              onPageChange={goToPage}
+              labels={{
+                nav: t('publicCatalogShowcase.pagination.nav'),
+                previous: t('publicCatalogShowcase.pagination.previous'),
+                next: t('publicCatalogShowcase.pagination.next'),
+                showing: t('publicCatalogShowcase.pagination.showing'),
+                page: t('publicCatalogShowcase.pagination.page'),
+              }}
+            />
+          ) : null}
         </div>
 
         {previewItem ? (

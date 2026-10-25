@@ -19,6 +19,18 @@ import { KobaltoMetricsApp } from './kobalto-metrics/KobaltoMetricsApp'
 import { KobaltoConfigApp } from './kobalto-config/KobaltoConfigApp'
 import { KobaltoToolsApp } from './kobalto-tools/KobaltoToolsApp'
 import { KarateIdeApp } from './karate-ide/KarateIdeApp'
+import { KobaltoSprintApp } from './kobalto-sprint/KobaltoSprintApp'
+import { KobaltoTeamApp } from './kobalto-team/KobaltoTeamApp'
+import { KobaltoSuiteApp } from './kobalto-suite/KobaltoSuiteApp'
+import { KobaltoPrApp } from './kobalto-pr/KobaltoPrApp'
+import { KobaltoRfcApp } from './kobalto-rfc/KobaltoRfcApp'
+import { KobaltoVendorApp } from './kobalto-vendor/KobaltoVendorApp'
+import { KobaltoOneOnOneApp } from './kobalto-oneonone/KobaltoOneOnOneApp'
+import { KobaltoHiringApp } from './kobalto-hiring/KobaltoHiringApp'
+import { KobaltoCapacityApp } from './kobalto-capacity/KobaltoCapacityApp'
+import { KobaltoPostmortemApp } from './kobalto-postmortem/KobaltoPostmortemApp'
+import { SqlConsoleApp } from './sql-console/SqlConsoleApp'
+import { KobaltoStrategyApp } from './kobalto-strategy/KobaltoStrategyApp'
 
 export type AppProps = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
 
@@ -42,6 +54,18 @@ export const APP_COMPONENTS: Record<string, ComponentType<AppProps>> = {
   'kobalto-config': KobaltoConfigApp as ComponentType<AppProps>,
   'kobalto-tools': KobaltoToolsApp as ComponentType<AppProps>,
   'karate-ide': KarateIdeApp as ComponentType<AppProps>,
+  'kobalto-sprint': KobaltoSprintApp as ComponentType<AppProps>,
+  'kobalto-team': KobaltoTeamApp as ComponentType<AppProps>,
+  'kobalto-suite': KobaltoSuiteApp as ComponentType<AppProps>,
+  'kobalto-pr': KobaltoPrApp as ComponentType<AppProps>,
+  'kobalto-rfc': KobaltoRfcApp as ComponentType<AppProps>,
+  'kobalto-vendor': KobaltoVendorApp as ComponentType<AppProps>,
+  'kobalto-oneonone': KobaltoOneOnOneApp as ComponentType<AppProps>,
+  'kobalto-hiring': KobaltoHiringApp as ComponentType<AppProps>,
+  'kobalto-capacity': KobaltoCapacityApp as ComponentType<AppProps>,
+  'kobalto-postmortem': KobaltoPostmortemApp as ComponentType<AppProps>,
+  'sql-console': SqlConsoleApp as ComponentType<AppProps>,
+  'kobalto-strategy': KobaltoStrategyApp as ComponentType<AppProps>,
 }
 
 export const DEFAULT_APP = 'kobalto-transfers'

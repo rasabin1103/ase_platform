@@ -60,6 +60,14 @@ class DimensionSelectionRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TestInputVisibleWhen(BaseModel):
+    """Muestra el campo solo si el valor del campo `key` está en `values`
+    (p. ej. mostrar «contract_b» solo cuando mode = compare)."""
+
+    key: str = Field(min_length=1, max_length=100)
+    values: list[str] = Field(min_length=1, max_length=50)
+
+
 class TestInputVariableDef(BaseModel):
     """One admin-declared workflow_dispatch input a framework's workflow
     expects (e.g. BASE_URL) — see CatalogItem.test_input_schema_json. `key`
@@ -87,6 +95,9 @@ class TestInputVariableDef(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     options: list[str] | None = Field(default=None, max_length=50)
     default: str | None = Field(default=None, max_length=2000)
+    visible_when: TestInputVisibleWhen | None = None
+    # Ayuda breve que el comprador ve al pulsar el icono (i) junto al campo.
+    info: str | None = Field(default=None, max_length=1000)
 
 
 class CatalogItemAdminBase(BaseModel):

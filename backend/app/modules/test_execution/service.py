@@ -7,16 +7,18 @@ import zipfile
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core import github_client
 from app.core.api_credentials import generate_client_id, generate_client_secret, hash_client_secret
 from app.core.config import settings
+from app.modules.test_execution import uploads
+from app.core.product_viewers import WORKFLOW_VIEWER, registered_tool_slugs, viewer_for
 from app.core.secret_encryption import DecryptionError, decrypt_value, encrypt_value
 from app.models.api_credential import ApiCredential
 from app.models.catalog_item import CatalogItem
-from app.models.enums import ApiCredentialStatus, TestRunStatus
+from app.models.enums import ApiCredentialStatus, CatalogItemStatus, TestRunStatus
 from app.models.test_execution_config import TestExecutionConfig
 from app.models.test_approved_ref import TestApprovedRef
 from app.models.test_quota_reset import TestQuotaReset
@@ -359,14 +361,30 @@ class TestExecutionService:
         # pre-filtered by `slug IN owned_slugs` the way a purchase-only
         # check could.
         owned_slugs = self.purchases.slugs_for_user(user_id)
-        stmt = select(CatalogItem).where(CatalogItem.test_workflow_file.isnot(None))
+        # Además de los productos con workflow, los de herramienta propia
+        # (core/product_viewers.py: p. ej. una API que ASE consume) también
+        # son "probables": no se ejecutan como workflow ni gastan cuota, y
+        # se ven con su propio visor en el frontend.
+        stmt = select(CatalogItem).where(
+            or_(
+                CatalogItem.test_workflow_file.isnot(None),
+                and_(
+                    CatalogItem.slug.in_(registered_tool_slugs()),
+                    CatalogItem.status == CatalogItemStatus.published,
+                ),
+            )
+        )
         items = list(self.db.execute(stmt).scalars().all())
         result = []
         for item in items:
             if not self._owns_item(item, user_id=user_id, owned_slugs=owned_slugs):
                 continue
-            included = item.test_included_runs or 0
-            used = self._used_runs(user_id=user_id, catalog_item_id=item.id)
+            # Con workflow configurado manda el ejecutor de workflow; el visor
+            # propio solo se usa para productos sin workflow.
+            viewer = WORKFLOW_VIEWER if item.test_workflow_file else viewer_for(item.slug)
+            tool_only = viewer != WORKFLOW_VIEWER
+            included = 0 if tool_only else (item.test_included_runs or 0)
+            used = 0 if tool_only else self._used_runs(user_id=user_id, catalog_item_id=item.id)
             result.append(
                 {
                     "slug": item.slug,
@@ -374,7 +392,8 @@ class TestExecutionService:
                     "includedRuns": included,
                     "usedRuns": used,
                     "remainingRuns": max(0, included - used),
-                    "inputSchema": item.test_input_schema_json or [],
+                    "inputSchema": [] if tool_only else (item.test_input_schema_json or []),
+                    "viewer": viewer,
                 }
             )
         return result
@@ -463,6 +482,8 @@ class TestExecutionService:
                     "description": field.get("description"),
                     "options": field.get("options"),
                     "default": field.get("default"),
+                    "visible_when": field.get("visible_when"),
+                    "info": field.get("info"),
                     "hasValue": has_value,
                     "value": value,
                 }
@@ -616,10 +637,20 @@ class TestExecutionService:
             if default:
                 resolved[key] = default
 
+        def _visible(f: dict) -> bool:
+            cond = f.get("visible_when")
+            if not cond:
+                return True
+            return resolved.get(cond.get("key", ""), "") in (cond.get("values") or [])
+
+        # Un campo oculto por visible_when no se exige ni se envía.
         missing = [
             f.get("key", "") for f in schema
-            if f.get("required") and not resolved.get(f.get("key", ""))
+            if _visible(f) and f.get("required") and not resolved.get(f.get("key", ""))
         ]
+        for f in schema:
+            if not _visible(f):
+                resolved.pop(f.get("key", ""), None)
         if missing:
             raise MissingVariablesError(missing)
         return resolved, scenario
@@ -667,6 +698,14 @@ class TestExecutionService:
         resolved_variables, scenario = self._resolve_variables(
             item=item, user_id=user_id, inline=variables, config_uuid=config_uuid,
         )
+
+        # Campos «file»: se comprimen y viajan dentro del propio workflow_dispatch.
+        for field in self._input_schema(item):
+            key = field.get("key", "")
+            value = resolved_variables.get(key, "")
+            if field.get("type") == "file" and value.startswith(uploads.FILE_PREFIX):
+                resolved_variables[key] = uploads.encode_file_value(value)
+        uploads.check_budget(resolved_variables)
 
         run = TestRun(
             catalog_item_id=item.id,
