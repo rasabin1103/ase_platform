@@ -1,10 +1,7 @@
 [
-  {"key":"mode","type":"choice","label":"mode","required":true,"description":"compare | validate_contract | validate_schema"},
-  {"key":"contract_a","type":"text","label":"contract_a","required":false,"description":"compare: contrato de referencia. validate_contract: contrato a usar. URL https o ruta del repo"},
+  {"key":"mode","type":"choice","label":"mode","required":true,"description":"compare | validate_schema"},
+  {"key":"contract_a","type":"text","label":"contract_a","required":false,"description":"compare: contrato de referencia. URL https o ruta del repo"},
   {"key":"contract_b","type":"text","label":"contract_b","required":false,"description":"compare: contrato candidato. URL https o ruta del repo"},
   {"key":"schema","type":"text","label":"schema","required":false,"description":"validate_schema: JSON Schema (URL https o ruta del repo)"},
-  {"key":"response","type":"text","label":"response","required":false,"description":"validate_contract / validate_schema: respuesta JSON (URL https o ruta del repo)"},
-  {"key":"path","type":"text","label":"path","required":false,"description":"validate_contract: ej. /orders/42"},
-  {"key":"method","type":"choice","label":"method","required":false,"description":"validate_contract: metodo HTTP"},
-  {"key":"status_code","type":"text","label":"status_code","required":false,"description":"validate_contract: ej. 200"}
+  {"key":"response","type":"text","label":"response","required":false,"description":"validate_schema: respuesta JSON (URL https o ruta del repo)"}
 ]

@@ -35,6 +35,10 @@ from app.models.user import User
 # as "5 purchases" on top of the subscription itself — mirrors the same fix
 # applied to the buyer-facing dashboard's "Total invertido" stat.
 _PLAN_ENTITLEMENT_SOURCE = "plan_entitlement"
+# Único origen que representa dinero cobrado: un pago de Stripe Checkout. Las
+# compras gratuitas, concedidas por un admin o incluidas en un plan NO son
+# ingresos y no deben sumarse como facturación.
+_PAID_SOURCE = "stripe_checkout"
 
 
 def _month_buckets(months: int = 6) -> list[str]:
@@ -191,7 +195,7 @@ def build_trend_comparisons(db: Session, *, now: datetime | None = None) -> dict
         db,
         time_column=CatalogPurchase.created_at,
         value_expr=func.coalesce(func.sum(CatalogItem.price), 0),
-        extra_where=CatalogPurchase.source != _PLAN_ENTITLEMENT_SOURCE,
+        extra_where=CatalogPurchase.source == _PAID_SOURCE,
         join=(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id),
         now=now,
     )
@@ -260,7 +264,7 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
     revenue_rows = db.execute(
         select(revenue_month, func.coalesce(func.sum(CatalogItem.price), 0))
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
-        .where(CatalogPurchase.created_at >= since)
+        .where(CatalogPurchase.created_at >= since, CatalogPurchase.source == _PAID_SOURCE)
         .group_by(revenue_month)
     ).all()
 
@@ -361,6 +365,7 @@ def build_admin_analytics(db: Session, *, months: int = 6) -> dict:
         select(func.coalesce(func.sum(CatalogItem.price), 0))
         .select_from(CatalogPurchase)
         .join(CatalogItem, CatalogItem.id == CatalogPurchase.catalog_item_id)
+        .where(CatalogPurchase.source == _PAID_SOURCE)
     ).scalar_one()
     if isinstance(revenue_total, Decimal):
         revenue_total = float(revenue_total)

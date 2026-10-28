@@ -21,6 +21,8 @@ export const TEXT_KEYS = new Set([
   // panel «Insertar» y cuándo se lanza un job (solo comentarios y textos; los
   // retos nunca dependen de ellos).
   'content', 'code', 'trigger',
+  // Curso de SQL: consulta inicial del editor y motivos de los encargos.
+  'starter', 'message',
 ])
 
 export function diff(es: unknown, en: unknown, path: string, textual: boolean, out: string[]) {

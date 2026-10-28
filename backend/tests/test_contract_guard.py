@@ -285,3 +285,22 @@ def test_file_value_validation():
         uploads.encode_file_value(f"file:x.json:{big}")
     with pytest.raises(uploads.UploadError):
         uploads.check_budget({"a": "x" * 70_000})
+
+
+def test_unpublished_products_are_not_runnable(db: Session, buyer: User, product: CatalogItem):
+    """Un borrador o «próximamente» con workflow no se lista ni se ejecuta."""
+    from app.modules.test_execution.service import FrameworkNotRunnableError, TestExecutionService
+
+    product.test_workflow_file = "run-tests.yml"
+    product.test_repo_url = "https://github.com/x/y.git"
+    product.test_included_runs = 3
+    svc = TestExecutionService(db)
+    for status in (CatalogItemStatus.draft, CatalogItemStatus.coming_soon):
+        product.status = status
+        db.commit()
+        assert all(r["slug"] != product.slug for r in svc.list_runnable_frameworks(user_id=buyer.id))
+        with pytest.raises(FrameworkNotRunnableError):
+            svc.trigger_run(user_id=buyer.id, slug=product.slug)
+    product.status = CatalogItemStatus.published
+    db.commit()
+    assert any(r["slug"] == product.slug for r in svc.list_runnable_frameworks(user_id=buyer.id))

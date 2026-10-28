@@ -1,12 +1,14 @@
 import { ArrowRight, Clock, Gamepad2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ACADEMY_COURSES } from '../../../features/academy/content/courseList'
+import { academyCourses } from '../../../features/academy/content/courseList'
 import { ButtonLink } from '../../ui/Button'
 import { Reveal, SectionHeading } from './Reveal'
+import { useAcademyLang } from '../../../features/academy/i18n'
 import { useHomeCopy } from './useHomeCopy'
 
 export function HomeAcademySpotlight() {
   const a = useHomeCopy().academy
+  const courses = academyCourses(useAcademyLang())
   return (
     <section className="relative isolate overflow-hidden py-24 lg:py-32">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
@@ -17,7 +19,7 @@ export function HomeAcademySpotlight() {
           <div>
             <SectionHeading eyebrow={a.eyebrow} title={a.title} subtitle={a.subtitle} align="left" />
             <Reveal delayMs={120} className="mt-10 space-y-4">
-              {ACADEMY_COURSES.map((course) => {
+              {courses.map((course) => {
                 const playable = course.missions.filter((m) => m.available).length
                 return (
                   <Link

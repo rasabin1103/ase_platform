@@ -23,8 +23,8 @@ _EN_FIELD_PAIRS = (
     ("cta_label", "cta_label_en"),
 )
 
-_ANNUAL_DISCOUNT_MIN = Decimal("0.03")  # cheapest paid plan
-_ANNUAL_DISCOUNT_MAX = Decimal("0.07")  # most expensive paid plan
+_ANNUAL_DISCOUNT_RECOMMENDED = Decimal("0.10")  # the plan flagged is_recommended
+_ANNUAL_DISCOUNT_DEFAULT = Decimal("0.07")  # every other paid plan
 
 
 class PlansService:
@@ -42,27 +42,15 @@ class PlansService:
         return status != PlanStatus.inactive
 
     def _paid_discount_ladder(self) -> dict[int, Decimal]:
-        """Every currently active plan with a real (non-custom, > 0) price,
-        ranked cheapest to priciest, gets a linearly interpolated annual
-        discount from 3% (cheapest) to 7% (most expensive) — with exactly
-        two paid plans that's simply 3% and 7%; a third paid plan added
-        later would land at 5% automatically, no manual tuning needed."""
+        """Annual discount per active paid plan (real, non-custom, > 0
+        price): 10% for the plan flagged `is_recommended` (the one the
+        pricing page pushes), 7% for every other paid plan."""
         active, _ = self.repo.list(limit=1000, offset=0, is_active=True, billing_cycle=None)
-        paid = sorted(
-            (p for p in active if p.price is not None and p.price > 0),
-            key=lambda p: p.price,
-        )
-        ladder: dict[int, Decimal] = {}
-        n = len(paid)
-        if n == 0:
-            return ladder
-        if n == 1:
-            ladder[paid[0].id] = _ANNUAL_DISCOUNT_MIN
-            return ladder
-        step = (_ANNUAL_DISCOUNT_MAX - _ANNUAL_DISCOUNT_MIN) / (n - 1)
-        for idx, p in enumerate(paid):
-            ladder[p.id] = _ANNUAL_DISCOUNT_MIN + step * idx
-        return ladder
+        return {
+            p.id: _ANNUAL_DISCOUNT_RECOMMENDED if p.is_recommended else _ANNUAL_DISCOUNT_DEFAULT
+            for p in active
+            if p.price is not None and p.price > 0
+        }
 
     def _attach_annual_price(self, plan: Plan | None, ladder: dict[int, Decimal] | None = None) -> Plan | None:
         if plan is None:

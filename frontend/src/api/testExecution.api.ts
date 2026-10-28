@@ -188,6 +188,29 @@ export type TestRunTestCounts = {
 // artifact. `params`/`body`/`responseBody`/`expectedSchema` are unknown
 // because they're whatever JSON shape the buyer's own endpoint/inputs
 // produced — display-only, never interpreted.
+export type ToolResultRow = {
+  label: string
+  value: string
+  tone: string
+  severity: string
+  title: string
+  location: string
+  detail: string
+  hint: string
+}
+
+export type ToolResult = {
+  tool: string
+  mode: string
+  verdict: 'pass' | 'warn' | 'fail' | 'error'
+  headline: string
+  explanation: string
+  metrics: ToolResultRow[]
+  findings: ToolResultRow[]
+  inputs: ToolResultRow[]
+  truncated: boolean
+}
+
 export type DynamicRequestDetail = {
   method: string
   url: string
@@ -220,6 +243,7 @@ export type TestRunSummary = {
   jobs: TestRunJob[]
   originalReportAvailable: boolean
   dynamicRequest: DynamicRequestDetail | null
+  toolResult: ToolResult | null
 }
 
 // Structured data behind the ASE-branded report view — never 404s just

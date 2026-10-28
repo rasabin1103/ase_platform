@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «RFC» del curso 4, misión 4 (Cinco squads, cinco frameworks): el mapa de
@@ -126,6 +127,109 @@ export const COMMENTS: SquadComment[] = [
   },
 ]
 
+const SQUAD_CONTEXT_EN: Record<string, string> = {
+  tarjetas: 'Stable suite since last year. Devs and QA write tests.',
+  pagos: 'The largest volume. Releases every Friday; they cannot stop.',
+  cuentas: 'A very Java team. Happy with what they have.',
+  onboarding: 'Lots of web UI testing, besides API.',
+  notificaciones: 'A Python team. Few tests, but well made.',
+}
+
+const PAINS_EN = [
+  'Nobody can reuse test data or utilities across squads.',
+  'Five report formats: Management does not know what is tested.',
+  'When someone changes squad, they have to learn another tool.',
+  'Each squad runs its tests its own way in the pipeline.',
+]
+
+const OPT_EN: Record<string, Record<string, [string, string]>> = {
+  scope: {
+    one_tool: ['A single mandatory tool for everything that gets automated.', 'Imposing one tool for everything clashes with different contexts (UI, Python, the volume of Payments) and creates rejection.'],
+    minimum: ['A common minimum standard (report format, test data, pipeline execution) and a recommended tool for new APIs.', 'It tackles the real problems (reports, data, pipeline) and leaves room for each context.'],
+    nothing: ['Let each squad carry on as they wish and publish a best-practices guide.', 'It solves none of the problems that motivated the change.'],
+  },
+  choice: {
+    mine: ['The one I use: I know it well.', "A personal preference won't convince five squads."],
+    criteria: ['With a criteria matrix agreed with the squads and a six-week pilot in two of them.', 'Explicit criteria and pilot data: the decision can be defended and reviewed.'],
+    vote: ['By vote among the squads.', 'The most popular wins, not the best fit: and whoever loses does not feel heard.'],
+  },
+  migration: {
+    big_bang: ['Everyone migrates this quarter.', 'Impossible for Payments (1,200 tests and weekly releases): it would stop delivery or they would stop testing.'],
+    incremental: ['New work follows the standard; existing work is migrated when touched, with a deadline only for what is critical.', 'Incremental migration: without stopping delivery and with the risk under control.'],
+    none: ["No migration plan: we'll see.", 'Without a plan, the standard coexists forever with the old.'],
+  },
+  governance: {
+    me: ['I approve every exception.', 'You become the bottleneck of five squads.'],
+    adr_guild: ['Exceptions documented in an ADR and reviewed once a month in the QA guild.', 'Visible decisions, with shared criteria and not dependent on one person.'],
+    no_exceptions: ['No exceptions.', 'A standard without exceptions breaks on the first case that does not fit.'],
+  },
+}
+
+const SECTION_TITLE_EN: Record<string, string> = {
+  scope: 'Scope of the standard',
+  choice: 'How the recommended tool is chosen',
+  migration: 'Migration',
+  governance: 'Exceptions and governance',
+}
+
+const COMMENT_EN: Record<string, { squad?: string; author: string; text: string; r: Record<string, [string, string]> }> = {
+  c_pagos: {
+    author: 'Héctor Bravo',
+    text: 'We have 1,200 tests in Postman and a release every Friday. If you force us to migrate now, we stop testing.',
+    r: {
+      adapt: ["Makes sense. Payments applies the report format and pipeline execution now; the 1,200 tests are migrated when touched, and I'll help you migrate the 50 critical ones this semester.", 'You listen, apply what adds value now and give concrete help for what is critical.'],
+      rule: ["It's the standard. No exceptions.", 'Without authority over the squads, imposing only gets compliance on paper.'],
+      exempt: ['Fine, Payments is outside the standard.', 'Leaving out the largest squad empties the standard.'],
+    },
+  },
+  c_notif: {
+    author: 'Notifications squad',
+    text: 'We are a Python team. Do we have to learn another tool for 140 tests that work well?',
+    r: {
+      adapt: ['The minimum (reports, data, pipeline) applies to you. If pytest meets it, we leave it as a documented exception in the ADR.', 'The standard seeks common results, not uniformity for its own sake.'],
+      rule: ['Yes: the standard is the same for everyone.', 'Forcing a change to something that works, with no clear benefit, only creates rejection.'],
+      ignore: ["(You don't respond.)", 'An unanswered comment on an RFC is a squad that disengages.'],
+    },
+  },
+  c_ui: {
+    author: 'Onboarding squad',
+    text: 'The RFC only talks about APIs. What about web UI tests?',
+    r: {
+      adapt: ['Good point: I leave it out of scope in this version, written in the RFC, and we open a separate RFC for the UI with you.', 'Making clear what is out of scope avoids misunderstandings and opens a path.'],
+      rule: ['Use the API tool for the UI too.', 'An API tool is not suited to testing web interfaces.'],
+      ignore: ["(You don't respond.)", 'With no answer, Onboarding will end up with its own “standard”.'],
+    },
+  },
+}
+
+/** Mapa de squads en el idioma pedido. */
+export function squadsFor(lang: AcademyLang = 'es'): Squad[] {
+  return lang === 'en' ? SQUADS.map((q) => ({ ...q, context: SQUAD_CONTEXT_EN[q.id] })) : SQUADS
+}
+
+export function painsFor(lang: AcademyLang = 'es'): string[] {
+  return lang === 'en' ? PAINS_EN : PAINS
+}
+
+export function sectionsFor(lang: AcademyLang = 'es'): Section[] {
+  if (lang !== 'en') return SECTIONS
+  return SECTIONS.map((s) => ({
+    ...s,
+    title: SECTION_TITLE_EN[s.id],
+    options: s.options.map((o) => ({ ...o, text: OPT_EN[s.id][o.id][0], why: OPT_EN[s.id][o.id][1] })),
+  }))
+}
+
+export function commentsFor(lang: AcademyLang = 'es'): SquadComment[] {
+  if (lang !== 'en') return COMMENTS
+  return COMMENTS.map((c) => ({
+    ...c,
+    author: COMMENT_EN[c.id].author,
+    text: COMMENT_EN[c.id].text,
+    responses: c.responses.map((o) => ({ ...o, text: COMMENT_EN[c.id].r[o.id][0], why: COMMENT_EN[c.id].r[o.id][1] })),
+  }))
+}
+
 export interface RfcState {
   choices: Partial<Record<Section['id'], string>>
   sent: boolean
@@ -143,8 +247,8 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
 
 const pick = (sectionId: Section['id'], optionId: string | undefined) => SECTIONS.find((s) => s.id === sectionId)?.options.find((o) => o.id === optionId)
 
-export function choose(state: RfcState, sectionId: Section['id'], optionId: string): { state: RfcState; event: AppEvent } {
-  if (state.sent || !pick(sectionId, optionId)) return { state, event: event('noop', 'Sin cambios.', 0) }
+export function choose(state: RfcState, sectionId: Section['id'], optionId: string, lang: AcademyLang = 'es'): { state: RfcState; event: AppEvent } {
+  if (state.sent || !pick(sectionId, optionId)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
   return { state: { ...state, choices: { ...state.choices, [sectionId]: optionId } }, event: event('choose', `RFC · ${sectionId}: ${optionId}.`, 0) }
 }
 
@@ -157,21 +261,21 @@ export function evaluateRfc(choices: RfcState['choices']) {
   }
 }
 
-export function sendRfc(state: RfcState): { state: RfcState; event: AppEvent } {
+export function sendRfc(state: RfcState, lang: AcademyLang = 'es'): { state: RfcState; event: AppEvent } {
   const r = evaluateRfc(state.choices)
-  if (state.sent || !r.complete) return { state, event: event('noop', 'Completa antes las cuatro secciones.', 0) }
+  if (state.sent || !r.complete) return { state, event: event('noop', tr(lang, 'Completa antes las cuatro secciones.', 'First complete the four sections.'), 0) }
   const flags = ['rfc.sent']
   if (r.good === SECTIONS.length) flags.push('rfc.good')
   if (r.imposed) flags.push('rfc.imposed')
   if (state.choices.governance === 'adr_guild') flags.push('governance.ok')
   if (state.choices.migration === 'incremental') flags.push('migration.ok')
-  return { state: { ...state, sent: true }, event: event('send', `RFC enviado a los cinco squads: ${r.good} de ${SECTIONS.length} secciones bien planteadas.`, 20, flags) }
+  return { state: { ...state, sent: true }, event: event('send', tr(lang, `RFC enviado a los cinco squads: ${r.good} de ${SECTIONS.length} secciones bien planteadas.`, `RFC sent to the five squads: ${r.good} of ${SECTIONS.length} sections well framed.`), 20, flags) }
 }
 
-export function respond(state: RfcState, commentId: string, responseId: string): { state: RfcState; event: AppEvent } {
+export function respond(state: RfcState, commentId: string, responseId: string, lang: AcademyLang = 'es'): { state: RfcState; event: AppEvent } {
   const c = COMMENTS.find((x) => x.id === commentId)
-  if (!state.sent || state.adr || !c?.responses.some((r) => r.id === responseId)) return { state, event: event('noop', 'Sin cambios.', 0) }
-  return { state: { ...state, responses: { ...state.responses, [commentId]: responseId } }, event: event('respond', `Respuesta a ${c.squad}.`, 5) }
+  if (!state.sent || state.adr || !c?.responses.some((r) => r.id === responseId)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
+  return { state: { ...state, responses: { ...state.responses, [commentId]: responseId } }, event: event('respond', tr(lang, `Respuesta a ${c.squad}.`, `Reply to ${c.squad}.`), 5) }
 }
 
 export function evaluateResponses(responses: Record<string, string>) {
@@ -179,12 +283,12 @@ export function evaluateResponses(responses: Record<string, string>) {
   return { complete: COMMENTS.every((c) => !!responses[c.id]), good }
 }
 
-export function publishAdr(state: RfcState): { state: RfcState; event: AppEvent } {
+export function publishAdr(state: RfcState, lang: AcademyLang = 'es'): { state: RfcState; event: AppEvent } {
   const r = evaluateResponses(state.responses)
-  if (!state.sent || state.adr || !r.complete) return { state, event: event('noop', 'Responde antes a los comentarios de los squads.', 0) }
+  if (!state.sent || state.adr || !r.complete) return { state, event: event('noop', tr(lang, 'Responde antes a los comentarios de los squads.', 'First reply to the squads’ comments.'), 0) }
   const flags = ['adr.published']
   if (state.responses.c_pagos === 'adapt' && state.choices.migration === 'incremental') flags.push('pagos.ok')
   if (state.responses.c_ui === 'adapt') flags.push('ui.scoped')
   if (r.good === COMMENTS.length && evaluateRfc(state.choices).good === SECTIONS.length) flags.push('adoption.ok')
-  return { state: { ...state, adr: true }, event: event('adr', `ADR publicado con ${r.good} de ${COMMENTS.length} comentarios incorporados con criterio.`, 15, flags) }
+  return { state: { ...state, adr: true }, event: event('adr', tr(lang, `ADR publicado con ${r.good} de ${COMMENTS.length} comentarios incorporados con criterio.`, `ADR published with ${r.good} of ${COMMENTS.length} comments incorporated with judgment.`), 15, flags) }
 }

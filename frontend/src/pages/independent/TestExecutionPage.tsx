@@ -73,7 +73,7 @@ export function TestExecutionPage() {
     // Runs are updated server-side by a polling job against GitHub Actions —
     // refetch on a similar cadence so status/progress show up without the
     // user having to manually refresh.
-    refetchInterval: 20000,
+    refetchInterval: 10000,
   })
 
   const createMut = useMutation({

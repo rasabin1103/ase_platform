@@ -168,7 +168,7 @@ class PlanRead(BaseModel):
     description_en: str | None = None
     cta_label_en: str | None = None
     # Computed, not stored: 12 * monthly price, discounted on a ladder that
-    # runs from 3% (cheapest paid plan) to 7% (most expensive paid plan) —
+    # is 10% for the recommended plan and 7% for the other paid plans —
     # see PlansService._paid_discount_ladder. None for the free plan and for
     # custom-priced plans (e.g. Enterprise) with no fixed price to discount.
     annual_price: Decimal | None = None

@@ -97,7 +97,7 @@ def _run_notification_email_job() -> None:
 
 
 def _run_test_run_polling_job() -> None:
-    """Frequent (every ~45s) job body syncing TestRun rows against GitHub
+    """Frequent (every ~20s) job body syncing TestRun rows against GitHub
     Actions — same isolated-session, never-raise pattern as the other
     sweeps, just on a much shorter interval since run status is
     user-visible and time-sensitive rather than a daily background task."""
@@ -166,8 +166,8 @@ async def lifespan(app: FastAPI):
         scheduler.add_job(
             _run_test_run_polling_job,
             "interval",
-            seconds=45,
-            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=15),
+            seconds=20,
+            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=10),
             id="test_run_polling_sweep",
         )
     if scheduler.get_jobs():

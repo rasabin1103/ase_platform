@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = "contact@arcesabinengineering.com"
     SMTP_FROM_NAME: str = "Arce Sabin Engineering"
 
+    # Optional HTTPS email API (Resend). When RESEND_API_KEY is set it is used
+    # instead of SMTP — needed on hosts that block outbound SMTP (Railway
+    # Free/Trial/Hobby). The sender uses SMTP_FROM_EMAIL / SMTP_FROM_NAME and
+    # its domain must be verified in Resend.
+    RESEND_API_KEY: str | None = None
+
     # Error monitoring — bring your own Sentry project (free tier is enough
     # to start). If SENTRY_DSN is left empty, Sentry is never initialized, so
     # local dev keeps working without an account configured.

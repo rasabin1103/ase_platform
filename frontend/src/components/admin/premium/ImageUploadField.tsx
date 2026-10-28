@@ -4,6 +4,7 @@ import { AuthenticatedImage } from '../../ui/AuthenticatedImage'
 import { ImageLightbox } from '../../ui/ImageLightbox'
 import { isApiMediaPath } from '../../../utils/mediaUrls'
 import { cn } from '../../ui/cn'
+import { useI18n } from '../../../i18n'
 
 type Props = {
   label: string
@@ -37,6 +38,7 @@ export function ImageUploadField({
   fit = 'cover',
   zoomable = false,
 }: Props) {
+  const { t } = useI18n()
   const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover'
   const inputRef = useRef<HTMLInputElement>(null)
   const [localBlob, setLocalBlob] = useState<string | null>(null)
@@ -67,6 +69,19 @@ export function ImageUploadField({
               src={localBlob}
               alt=""
               onClick={zoomable ? () => setZoomSrc(localBlob) : undefined}
+              {...(zoomable
+                ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    'aria-label': t('a11y.zoomImage') as string,
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setZoomSrc(localBlob)
+                      }
+                    },
+                  }
+                : {})}
               className={cn('h-full w-full', fitClass, zoomable && 'cursor-zoom-in')}
             />
           ) : previewSrc && isApiMediaPath(previewSrc) ? (
@@ -83,6 +98,19 @@ export function ImageUploadField({
               src={previewSrc}
               alt=""
               onClick={zoomable ? () => setZoomSrc(previewSrc) : undefined}
+              {...(zoomable
+                ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    'aria-label': t('a11y.zoomImage') as string,
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setZoomSrc(previewSrc)
+                      }
+                    },
+                  }
+                : {})}
               className={cn('h-full w-full', fitClass, zoomable && 'cursor-zoom-in')}
             />
           ) : (

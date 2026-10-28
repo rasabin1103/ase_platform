@@ -2,8 +2,9 @@ import type { ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { ArrowRight, BookOpen, FileText, Headphones, Smartphone, Tablet } from 'lucide-react'
 import { listCatalogShowcaseItems, type CatalogItemType } from '../../../api/catalogShowcase.api'
-import { ACADEMY_COURSES } from '../../../features/academy/content/courseList'
+import { academyCourses } from '../../../features/academy/content/courseList'
 import { useI18n } from '../../../i18n'
+import { useAcademyLang } from '../../../features/academy/i18n'
 import { ButtonLink } from '../../ui/Button'
 import { cn } from '../../ui/cn'
 import { FeatureGrid, FeatureSection, VisualFrame } from './IncludedShared'
@@ -114,11 +115,12 @@ export function IncludedCatalog() {
 
 export function IncludedAcademy() {
   const c = useIncludedCopy().academy
+  const courses = academyCourses(useAcademyLang())
 
   const visual = (
     <VisualFrame title={c.mapTitle}>
       <div className="space-y-7">
-        {ACADEMY_COURSES.map((course) => {
+        {courses.map((course) => {
           const playable = course.missions.filter((m) => m.available).length
           return (
             <div key={course.key}>

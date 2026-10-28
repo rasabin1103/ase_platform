@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import type { AppEvent, RunState } from '../../engine/types'
+import { missionLang, tr, type AcademyLang } from '../../i18n'
 import type { ToolProps } from '../../tools/types'
 import {
   BASELINE_GREEN,
   DECISION_LABEL,
+  decisionLabels,
+  testsFor,
   INITIAL_SUITE,
   INVESTIGATE_COST,
   TESTS,
@@ -25,25 +28,27 @@ type Tab = 'flaky' | 'report'
 const DECISIONS = Object.keys(DECISION_LABEL) as Decision[]
 
 /** Salud de la suite de regresión de Tarjetas (curso 4, misión 2). */
-export function KobaltoSuiteApp({ dispatch, state }: Props) {
+export function KobaltoSuiteApp({ dispatch, state, mission }: Props) {
+  const lang = missionLang(mission)
+  const tt = (es: string, en: string) => tr(lang, es, en)
   const app = (state.appState['kobalto-suite'] as SuiteState | undefined) ?? INITIAL_SUITE
   const [tab, setTab] = useState<Tab>('flaky')
   const send: Send = (r) => dispatch({ type: 'app', event: { ...r.event, state: r.state } })
   const locked = state.finished
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'flaky', label: 'Tests inestables' },
-    { id: 'report', label: 'Informe para los squads' },
+    { id: 'flaky', label: tt('Tests inestables', 'Flaky tests') },
+    { id: 'report', label: tt('Informe para los squads', 'Report for the squads') },
   ]
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>Pipeline de regresión · últimos 30 días</span>
+        <span>{tt('Pipeline de regresión · últimos 30 días', 'Regression pipeline · last 30 days')}</span>
         <span>
-          En verde: {app.applied ? projectedGreen(app.decisions) : BASELINE_GREEN} %{app.applied ? ' (estimado tras tus cambios)' : ''}
+          {tt('En verde', 'Green')}: {app.applied ? projectedGreen(app.decisions) : BASELINE_GREEN} %{app.applied ? tt(' (estimado tras tus cambios)', ' (estimated after your changes)') : ''}
         </span>
       </div>
       <div className="mx-auto max-w-5xl space-y-4 p-5">
-        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label="Secciones">
+        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label={tt('Secciones', 'Sections')}>
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -57,22 +62,25 @@ export function KobaltoSuiteApp({ dispatch, state }: Props) {
             </button>
           ))}
         </div>
-        {tab === 'flaky' ? <FlakyView app={app} send={send} locked={locked} /> : <ReportView app={app} send={send} locked={locked} />}
+        {tab === 'flaky' ? <FlakyView app={app} send={send} locked={locked} lang={lang} /> : <ReportView app={app} send={send} locked={locked} lang={lang} />}
       </div>
     </div>
   )
 }
 
-function FlakyView({ app, send, locked }: { app: SuiteState; send: Send; locked: boolean }) {
+function FlakyView({ app, send, locked, lang }: { app: SuiteState; send: Send; locked: boolean; lang: AcademyLang }) {
+  const tt = (es: string, en: string) => tr(lang, es, en)
+  const tests = testsFor(lang)
+  const labels = decisionLabels(lang)
   const r = evaluateDecisions(app.decisions)
   const cost = TESTS.reduce((n, t) => n + (app.decisions[t.id] ? decisionCost(t, app.decisions[t.id] as Decision) : 0), 0)
   return (
     <section className="space-y-3">
       <p className="text-sm text-slate-600">
-        Estos ocho tests provocan el 90 % de los rojos. Antes de decidir qué hacer con cada uno, investiga por qué falla ({INVESTIGATE_COST} min cada uno).
+        {tt(`Estos ocho tests provocan el 90 % de los rojos. Antes de decidir qué hacer con cada uno, investiga por qué falla (${INVESTIGATE_COST} min cada uno).`, `These eight tests cause 90 % of the reds. Before deciding what to do with each one, investigate why it fails (${INVESTIGATE_COST} min each).`)}
       </p>
       <ul className="space-y-2">
-        {TESTS.map((t) => {
+        {tests.map((t) => {
           const known = app.investigated.includes(t.id)
           const d = app.decisions[t.id] ?? ''
           return (
@@ -81,34 +89,34 @@ function FlakyView({ app, send, locked }: { app: SuiteState; send: Send; locked:
                 <span>
                   <span className="font-mono text-xs text-indigo-700">{t.id}</span> · <strong className="font-mono">{t.name}</strong>
                   <span className="block text-xs text-slate-500">
-                    Squad {t.squad} · en rojo el {t.failRate} % de las veces · {t.durationMin} min · {t.bugsFound} bugs reales detectados en un año
+                    {tt(`Squad ${t.squad} · en rojo el ${t.failRate} % de las veces · ${t.durationMin} min · ${t.bugsFound} bugs reales detectados en un año`, `Squad ${t.squad} · red ${t.failRate} % of the time · ${t.durationMin} min · ${t.bugsFound} real bugs found in a year`)}
                   </span>
                 </span>
                 {!known ? (
-                  <button type="button" disabled={locked} onClick={() => send(investigate(app, t.id))} className="rounded-lg border border-indigo-300 px-3 py-1 text-xs font-medium text-indigo-800 disabled:opacity-40">
-                    Investigar · {INVESTIGATE_COST} min
+                  <button type="button" disabled={locked} onClick={() => send(investigate(app, t.id, lang))} className="rounded-lg border border-indigo-300 px-3 py-1 text-xs font-medium text-indigo-800 disabled:opacity-40">
+                    {tt('Investigar', 'Investigate')} · {INVESTIGATE_COST} min
                   </button>
                 ) : (
                   <select
-                    aria-label={`Decisión para ${t.name}`}
+                    aria-label={tt(`Decisión para ${t.name}`, `Decision for ${t.name}`)}
                     value={d}
                     disabled={locked || app.applied}
-                    onChange={(e) => send(decide(app, t.id, e.target.value as Decision | ''))}
+                    onChange={(e) => send(decide(app, t.id, e.target.value as Decision | '', lang))}
                     className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
                   >
-                    <option value="">— Decide —</option>
+                    <option value="">{tt('— Decide —', '— Decide —')}</option>
                     {DECISIONS.map((x) => (
                       <option key={x} value={x}>
-                        {DECISION_LABEL[x]}
+                        {labels[x]}
                       </option>
                     ))}
                   </select>
                 )}
               </div>
-              {known && <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-800">Causa: {t.cause}</p>}
+              {known && <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-800">{tt('Causa: ', 'Cause: ')}{t.cause}</p>}
               {app.applied && (
                 <p className={`mt-1 text-xs font-medium ${d === t.correct ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {d === t.correct ? '✓ ' : `✗ Mejor: ${DECISION_LABEL[t.correct]}. `}
+                  {d === t.correct ? '✓ ' : `✗ ${tt('Mejor', 'Better')}: ${labels[t.correct]}. `}
                   {t.why}
                 </p>
               )}
@@ -117,30 +125,31 @@ function FlakyView({ app, send, locked }: { app: SuiteState; send: Send; locked:
         })}
       </ul>
       {!app.applied ? (
-        <button type="button" disabled={locked || !r.complete} onClick={() => send(applyDecisions(app))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
-          Aplicar las decisiones · {cost} min
+        <button type="button" disabled={locked || !r.complete} onClick={() => send(applyDecisions(app, lang))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
+          {tt('Aplicar las decisiones', 'Apply the decisions')} · {cost} min
         </button>
       ) : (
         <p className="text-sm text-slate-600">
-          Decisiones aplicadas: {r.right} de {TESTS.length} adecuadas.
+          {tt(`Decisiones aplicadas: ${r.right} de ${TESTS.length} adecuadas.`, `Decisions applied: ${r.right} of ${TESTS.length} appropriate.`)}
         </p>
       )}
     </section>
   )
 }
 
-function ReportView({ app, send, locked }: { app: SuiteState; send: Send; locked: boolean }) {
+function ReportView({ app, send, locked, lang }: { app: SuiteState; send: Send; locked: boolean; lang: AcademyLang }) {
+  const tt = (es: string, en: string) => tr(lang, es, en)
   const squads = [...new Set(TESTS.map((t) => t.squad))]
   return (
     <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
-      <h4 className="font-sans font-semibold text-slate-800">Informe de salud de la suite</h4>
+      <h4 className="font-sans font-semibold text-slate-800">{tt('Informe de salud de la suite', 'Suite health report')}</h4>
       <p className="text-sm text-slate-600">
-        Un informe para todos los squads: qué tests fallan, por qué y quién es el dueño de cada uno. Necesitas haber investigado los ocho.
+        {tt('Un informe para todos los squads: qué tests fallan, por qué y quién es el dueño de cada uno. Necesitas haber investigado los ocho.', 'A report for all squads: which tests fail, why and who owns each one. You need to have investigated all eight.')}
       </p>
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="text-slate-500">
-            <th className="py-1">Squad dueño</th>
+            <th className="py-1">{tt('Squad dueño', 'Owner squad')}</th>
             <th className="py-1">Tests</th>
           </tr>
         </thead>
@@ -161,13 +170,13 @@ function ReportView({ app, send, locked }: { app: SuiteState; send: Send; locked
         <button
           type="button"
           disabled={locked || app.investigated.length < TESTS.length}
-          onClick={() => send(publishReport(app))}
+          onClick={() => send(publishReport(app, lang))}
           className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
-          Publicar el informe para los squads · 15 min
+          {tt('Publicar el informe para los squads', 'Publish the report for the squads')} · 15 min
         </button>
       ) : (
-        <p className="text-sm text-slate-600">Informe publicado en el canal de Ingeniería.</p>
+        <p className="text-sm text-slate-600">{tt('Informe publicado en el canal de Ingeniería.', 'Report published in the Engineering channel.')}</p>
       )}
     </section>
   )

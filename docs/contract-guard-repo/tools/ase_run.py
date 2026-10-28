@@ -52,6 +52,15 @@ SETTINGS = Settings()
 MAX_BYTES = SETTINGS.max_upload_bytes
 
 
+KEYWORDS = {
+    "type", "properties", "required", "items", "enum", "const", "$ref", "allOf", "anyOf", "oneOf",
+    "not", "if", "then", "else", "format", "pattern", "minimum", "maximum", "exclusiveMinimum",
+    "exclusiveMaximum", "minLength", "maxLength", "minItems", "maxItems", "uniqueItems",
+    "additionalProperties", "patternProperties", "prefixItems", "contains", "$defs", "definitions",
+    "multipleOf", "minProperties", "maxProperties", "dependentRequired", "propertyNames",
+}
+
+
 def env(name: str) -> str:
     return (os.environ.get(name) or "").strip()
 
@@ -83,8 +92,45 @@ def write_report(title: str, data: dict, body_html: str = "") -> None:
     )
 
 
+HINTS = {
+    "missing_input": "Rellena todas las entradas obligatorias del modo elegido.",
+    "invalid_attachment": "Vuelve a adjuntar el archivo (.json, .yaml o .yml).",
+    "download_failed": "Comprueba que la URL https es publica y accesible.",
+    "invalid_source": "Usa un adjunto, una URL https o una ruta relativa del repo.",
+    "file_not_found": "Revisa la ruta dentro del repo.",
+    "upload_too_large": "Reduce el archivo (maximo 2 MiB).",
+    "invalid_schema": "Pasa el JSON Schema directamente (el objeto con type/properties), sin envoltorios.",
+    "unknown_mode": "Elige compare, validate_contract o validate_schema.",
+}
+
+
+def ase_block(mode, verdict, headline, explanation="", metrics=(), findings=(), inputs=(), truncated=False) -> dict:
+    """Bloque legible que ASE muestra como tarjeta de resultado."""
+    return {
+        "tool": "API Contract Guard",
+        "mode": mode,
+        "verdict": verdict,  # pass | warn | fail | error
+        "headline": headline,
+        "explanation": explanation,
+        "metrics": [{"label": a, "value": str(b), "tone": c} for a, b, c in metrics],
+        "findings": list(findings),
+        "inputs": [{"label": a, "value": str(b)} for a, b in inputs],
+        "truncated": truncated,
+    }
+
+
 def fail(message: str, code: str = "error") -> None:
-    write_report("Contract Guard · Error", {"error": {"code": code, "message": message}})
+    data = {
+        "error": {"code": code, "message": message},
+        "ase_result": ase_block(
+            env("CG_MODE") or "compare",
+            "error",
+            "La ejecucion no se pudo completar",
+            message,
+            findings=[{"severity": "error", "title": code, "detail": message, "hint": HINTS.get(code, "")}],
+        ),
+    }
+    write_report("Contract Guard · Error", data)
     print(f"ERROR [{code}]: {message}", file=sys.stderr)
     sys.exit(2)
 
@@ -132,7 +178,12 @@ def run_compare() -> int:
     base = parse_specification(raw_a, name_a, MAX_BYTES)
     target = parse_specification(raw_b, name_b, MAX_BYTES)
     engine = OasdiffEngine(SETTINGS.oasdiff_path, SETTINGS.comparison_timeout)
-    findings = engine.compare(base.document, target.document)
+    all_findings = engine.compare(base.document, target.document)
+    # Por defecto se informa de TODO lo estructural (operaciones, parametros, campos
+    # de la respuesta y sus tipos, y `servers`). CG_SCOPE=structure omite `servers`.
+    scope = (env("CG_SCOPE") or "all").lower()
+    ignored = [f for f in all_findings if f.category == "servers"] if scope == "structure" else []
+    findings = [f for f in all_findings if f not in ignored]
     result, summary = summarize(findings)
     report = {
         "overall_result": result,
@@ -140,8 +191,36 @@ def run_compare() -> int:
         "baseline": {"file": name_a, "content_hash": base.content_hash},
         "candidate": {"file": name_b, "content_hash": target.content_hash},
         "engine": {"name": "oasdiff", "version": engine.version, "configuration": engine.configuration},
+        "scope": scope,
+        "ignored_findings": len(ignored),
         "findings": [f.to_dict() for f in findings],
     }
+    verdict = {"breaking": "fail", "review_required": "warn", "compatible": "pass"}.get(str(result), "warn")
+    headline = {
+        "breaking": "Cambios incompatibles: la version candidata rompe a los consumidores actuales",
+        "review_required": "Hay cambios que conviene revisar antes de publicar",
+        "compatible": "Compatible: no se detectan cambios que rompan a los consumidores",
+    }.get(str(result), str(result))
+    sev_tone = {"breaking": "error", "potentially_breaking": "warning", "non_breaking": "success"}
+    report["ase_result"] = ase_block(
+        "compare",
+        verdict,
+        headline,
+        "Se comparan la estructura y los tipos de los campos de peticion/respuesta, no los textos ni los valores de ejemplo. Compatible no garantiza el comportamiento del servidor."
+        + (f" Se omitieron {len(ignored)} cambio(s) de configuracion de servidores (URLs base)." if ignored else ""),
+        metrics=[(k.replace("_", " "), v, sev_tone.get(k, "")) for k, v in summary.items() if isinstance(v, (int, str))],
+        findings=[
+            {
+                "severity": str(f.severity),
+                "title": f.description,
+                "location": f"{ {'response': 'respuesta', 'request': 'peticion', 'operation': 'operacion'}.get(f.category, f.category) } · {f.location}",
+                "detail": f.rule_id,
+                "hint": f.recommendation or "",
+            }
+            for f in findings
+        ],
+        inputs=[("Referencia", name_a), ("Candidata", name_b), ("Motor", f"oasdiff {engine.version}")],
+    )
     cls = {"breaking": "bad", "review_required": "warn", "compatible": "ok"}.get(str(result), "muted")
     rows = "".join(
         f"<tr><td>{pill(str(f.severity), SEVERITY_CLASS.get(f.severity, 'muted'))}</td>"
@@ -167,7 +246,7 @@ def run_compare() -> int:
     return 1 if summary["breaking"] else 0
 
 
-def render_validation(report: dict, title: str) -> int:
+def render_validation(report: dict, title: str, mode: str = "validate") -> int:
     valid = bool(report.get("valid"))
     rows = "".join(
         f"<tr><td>{html.escape(str(e.get('path') or '(cuerpo)'))}</td><td>{html.escape(str(e.get('rule', '')))}</td>"
@@ -177,6 +256,30 @@ def render_validation(report: dict, title: str) -> int:
     table = f"<table><tr><th>Donde</th><th>Regla</th><th>Detalle</th></tr>{rows}</table>" if rows else ""
     trunc = "<p class='muted'>Solo se muestran los primeros errores; hay mas.</p>" if report.get("truncated") else ""
     warnings = "".join(f"<li>{html.escape(str(w))}</li>" for w in report.get("warnings", []))
+    errs = report.get("errors", [])
+    report = {
+        **report,
+        "ase_result": ase_block(
+            mode,
+            "pass" if valid else "fail",
+            "La respuesta cumple el esquema" if valid else f"La respuesta NO cumple ({len(errs)} error(es))",
+            f"Alcance: {report.get('validation_scope', '')}" if report.get("validation_scope") else "",
+            metrics=[("errores", len(errs), "success" if valid else "error"), ("avisos", len(report.get("warnings", [])), "warning")],
+            findings=[
+                {
+                    "severity": "error",
+                    "title": str(e.get("message", "")),
+                    "location": str(e.get("path") or "(cuerpo)"),
+                    "detail": f"Regla: {e.get('rule', '')}",
+                    "hint": "Corrige ese campo en la respuesta o ajusta el contrato/esquema si el cambio es intencionado.",
+                }
+                for e in errs
+            ]
+            + [{"severity": "warning", "title": str(w)} for w in report.get("warnings", [])],
+            inputs=[(k, report[k]) for k in ("contract_file",) if report.get(k)],
+            truncated=bool(report.get("truncated")),
+        ),
+    }
     body = (
         f"<p>{pill('La respuesta cumple' if valid else 'La respuesta no cumple', 'ok' if valid else 'bad')}</p>"
         f"<p class='muted'>Alcance: {html.escape(str(report.get('validation_scope', '')))}</p>"
@@ -206,16 +309,28 @@ def run_validate_contract() -> int:
         SETTINGS.comparison_timeout,
     )
     report = {**report, "contract_file": name_c, "content_hash": spec.content_hash}
-    return render_validation(report, "Contract Guard · Validacion contra contrato")
+    return render_validation(report, "Contract Guard · Validacion contra contrato", "validate_contract")
 
 
 def run_validate_schema() -> int:
     name_s, raw_s = load(env("CG_SCHEMA"), "schema")
     name_r, raw_r = load(env("CG_RESPONSE"), "response")
-    report = validate_json_schema(
-        parse_json("schema", name_s, raw_s), parse_json("response", name_r, raw_r), SETTINGS.comparison_timeout
-    )
-    return render_validation(report, "Contract Guard · Validacion contra JSON Schema")
+    schema = parse_json("schema", name_s, raw_s)
+    notes: list[str] = []
+    # Error comun: envolver el esquema como {"schema": {...}}. Para JSON Schema, "schema"
+    # no es una palabra clave, asi que se ignora y CUALQUIER respuesta pasaria por valida.
+    if isinstance(schema, dict) and set(schema) == {"schema"} and isinstance(schema["schema"], dict):
+        schema = schema["schema"]
+        notes.append('El esquema venia envuelto en {"schema": ...}; se ha usado el contenido interno.')
+    if not isinstance(schema, (dict, bool)) or (isinstance(schema, dict) and not (set(schema) & KEYWORDS)):
+        fail(
+            "El archivo de esquema no contiene ninguna palabra clave de JSON Schema "
+            "(type, properties, required...). Con un esquema asi cualquier respuesta seria valida.",
+            "invalid_schema",
+        )
+    report = validate_json_schema(schema, parse_json("response", name_r, raw_r), SETTINGS.comparison_timeout)
+    report = {**report, "warnings": [*notes, *report.get("warnings", [])]}
+    return render_validation(report, "Contract Guard · Validacion contra JSON Schema", "validate_schema")
 
 
 MODES = {

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import logging
 import smtplib
 import socket
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+import httpx
 
 from app.core.config import settings
 
@@ -49,6 +52,50 @@ class _IPv4OnlySMTP(smtplib.SMTP):
         raise last_exc or OSError(f"getaddrinfo returned no IPv4 address for {host!r}")
 
 
+def _send_via_resend(
+    *,
+    to_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str | None,
+    reply_to: str | None,
+    attachments: list[tuple[str, bytes, str]] | None,
+) -> bool:
+    """Sends through Resend's HTTPS API. Never raises (same contract as
+    send_email); failures are logged with Resend's own error body."""
+    payload: dict = {
+        "from": f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_body,
+        "text": text_body or html_body,
+    }
+    if reply_to:
+        payload["reply_to"] = reply_to
+    if attachments:
+        payload["attachments"] = [
+            {"filename": name, "content": base64.b64encode(content).decode("ascii")}
+            for name, content, _mimetype in attachments
+        ]
+    try:
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
+            json=payload,
+            timeout=15.0,
+        )
+        if response.status_code >= 400:
+            logger.error(
+                "Resend rejected email to %s (subject=%r): HTTP %s %s",
+                to_email, subject, response.status_code, response.text[:500],
+            )
+            return False
+        return True
+    except Exception:
+        logger.exception("Failed to send email via Resend to %s (subject=%r)", to_email, subject)
+        return False
+
+
 def send_email(
     *,
     to_email: str,
@@ -68,6 +115,16 @@ def send_email(
     verification email couldn't be sent; the user can always request a new
     one once SMTP is configured correctly.
     """
+    if settings.RESEND_API_KEY:
+        return _send_via_resend(
+            to_email=to_email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+            reply_to=reply_to,
+            attachments=attachments,
+        )
+
     if not settings.SMTP_HOST:
         logger.warning("SMTP_HOST not configured — skipping email to %s (subject=%r)", to_email, subject)
         return False

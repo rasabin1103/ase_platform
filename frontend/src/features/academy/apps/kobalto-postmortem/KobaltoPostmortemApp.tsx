@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { AppEvent, RunState } from '../../engine/types'
+import { missionLang, tr } from '../../i18n'
 import type { ToolProps } from '../../tools/types'
-import { ACTIONS, CAUSES, INITIAL_PM, TIMELINE, evaluatePostmortem, savePostmortem, toggleAction, toggleCause, type Item, type PostmortemState } from './postmortemLogic'
+import { INITIAL_PM, actionsFor, causesFor, evaluatePostmortem, timelineFor, savePostmortem, toggleAction, toggleCause, type Item, type PostmortemState } from './postmortemLogic'
 
 type Send = (r: { state: PostmortemState; event: AppEvent }) => void
 type Props = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
@@ -10,16 +11,18 @@ type Tab = 'timeline' | 'causes' | 'actions'
 const card = 'rounded-2xl bg-white p-4 text-sm shadow-sm'
 
 /** Postmortem sin culpables del incidente de transferencias duplicadas (curso 4, misión 10). */
-export function KobaltoPostmortemApp({ dispatch, state }: Props) {
+export function KobaltoPostmortemApp({ dispatch, state, mission }: Props) {
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
   const app = (state.appState['kobalto-postmortem'] as PostmortemState | undefined) ?? INITIAL_PM
   const [tab, setTab] = useState<Tab>('timeline')
   const send: Send = (r) => dispatch({ type: 'app', event: { ...r.event, state: r.state } })
   const locked = state.finished || app.saved
   const r = evaluatePostmortem(app)
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'timeline', label: 'Cronología' },
-    { id: 'causes', label: `Causas (${app.causes.length})` },
-    { id: 'actions', label: `Acciones (${app.actions.length})` },
+    { id: 'timeline', label: t('Cronología', 'Timeline') },
+    { id: 'causes', label: `${t('Causas', 'Causes')} (${app.causes.length})` },
+    { id: 'actions', label: `${t('Acciones', 'Actions')} (${app.actions.length})` },
   ]
   const list = (items: Item[], chosen: string[], onToggle: (id: string) => void, prefix: string) => (
     <section className={`${card} space-y-2`}>
@@ -40,52 +43,52 @@ export function KobaltoPostmortemApp({ dispatch, state }: Props) {
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>INC-2031 · Transferencias duplicadas · postmortem sin culpables</span>
-        <span>{app.saved ? 'Borrador listo' : 'En análisis'}</span>
+        <span>{t('INC-2031 · Transferencias duplicadas · postmortem sin culpables', 'INC-2031 · Duplicated transfers · blameless postmortem')}</span>
+        <span>{app.saved ? t('Borrador listo', 'Draft ready') : t('En análisis', 'Under analysis')}</span>
       </div>
       <div className="mx-auto max-w-4xl space-y-4 p-5">
-        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label="Secciones">
-          {tabs.map((t) => (
+        <div className="flex flex-wrap gap-2 text-sm" role="tablist" aria-label={t('Secciones', 'Sections')}>
+          {tabs.map((x) => (
             <button
-              key={t.id}
+              key={x.id}
               type="button"
               role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className={`rounded-full px-4 py-1.5 font-medium ${tab === t.id ? 'bg-indigo-700 text-white' : 'bg-white text-slate-600'}`}
+              aria-selected={tab === x.id}
+              onClick={() => setTab(x.id)}
+              className={`rounded-full px-4 py-1.5 font-medium ${tab === x.id ? 'bg-indigo-700 text-white' : 'bg-white text-slate-600'}`}
             >
-              {t.label}
+              {x.label}
             </button>
           ))}
         </div>
         {tab === 'timeline' && (
           <ol className={`${card} space-y-3`}>
-            {TIMELINE.map((t) => (
-              <li key={t.when} className="flex gap-3">
-                <span className="w-28 shrink-0 font-mono text-xs text-slate-500">{t.when}</span>
-                <span className="text-slate-700">{t.what}</span>
+            {timelineFor(lang).map((e) => (
+              <li key={e.when} className="flex gap-3">
+                <span className="w-28 shrink-0 font-mono text-xs text-slate-500">{e.when}</span>
+                <span className="text-slate-700">{e.what}</span>
               </li>
             ))}
           </ol>
         )}
         {tab === 'causes' && (
           <>
-            <p className="text-sm text-slate-600">¿Qué permitió que pasara? Marca las causas que contribuyeron.</p>
-            {list(CAUSES, app.causes, (id) => send(toggleCause(app, id)), 'Causa')}
+            <p className="text-sm text-slate-600">{t('¿Qué permitió que pasara? Marca las causas que contribuyeron.', 'What allowed it to happen? Tick the contributing causes.')}</p>
+            {list(causesFor(lang), app.causes, (id) => send(toggleCause(app, id, lang)), t('Causa', 'Cause'))}
           </>
         )}
         {tab === 'actions' && (
           <>
-            <p className="text-sm text-slate-600">¿Qué cambia para que no vuelva a pasar? Cada acción tendrá dueño y fecha.</p>
-            {list(ACTIONS, app.actions, (id) => send(toggleAction(app, id)), 'Acción')}
+            <p className="text-sm text-slate-600">{t('¿Qué cambia para que no vuelva a pasar? Cada acción tendrá dueño y fecha.', 'What changes so it does not happen again? Each action will have an owner and a date.')}</p>
+            {list(actionsFor(lang), app.actions, (id) => send(toggleAction(app, id, lang)), t('Acción', 'Action'))}
           </>
         )}
         {!app.saved ? (
-          <button type="button" disabled={locked || !r.complete} onClick={() => send(savePostmortem(app))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
-            Guardar el borrador del postmortem · 30 min
+          <button type="button" disabled={locked || !r.complete} onClick={() => send(savePostmortem(app, lang))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
+            {t('Guardar el borrador del postmortem · 30 min', 'Save the postmortem draft · 30 min')}
           </button>
         ) : (
-          <p className="text-sm text-slate-600">Borrador guardado. Se presenta a las 14:00.</p>
+          <p className="text-sm text-slate-600">{t('Borrador guardado. Se presenta a las 14:00.', 'Draft saved. It is presented at 2:00 PM.')}</p>
         )}
       </div>
     </div>

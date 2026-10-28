@@ -124,6 +124,15 @@ export const testExecutionEn = {
     logsTitle: 'Detailed output',
     logsError: 'Could not load the detailed output for this run.',
     close: 'Close',
+    toolResult: {
+      title: 'Result',
+      findings: 'Details',
+      inputs: 'Inputs used',
+      hint: 'Suggestion',
+      none: 'No findings.',
+      truncated: 'Only the first findings are shown.',
+      verdict: { pass: 'Passed', warn: 'Review', fail: 'Failed', error: 'Error' },
+    },
     dynamicRequest: {
       title: 'Request detail',
       elapsed: 'Time',
@@ -281,6 +290,15 @@ export const testExecutionEs = {
     logsTitle: 'Salida detallada',
     logsError: 'No se pudo cargar la salida detallada de esta ejecución.',
     close: 'Cerrar',
+    toolResult: {
+      title: 'Resultado',
+      findings: 'Detalle',
+      inputs: 'Entradas usadas',
+      hint: 'Sugerencia',
+      none: 'Sin hallazgos.',
+      truncated: 'Solo se muestran los primeros hallazgos.',
+      verdict: { pass: 'Correcto', warn: 'Revisar', fail: 'Fallido', error: 'Error' },
+    },
     dynamicRequest: {
       title: 'Detalle de la petición',
       elapsed: 'Tiempo',
