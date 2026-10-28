@@ -51,7 +51,7 @@ export function AcademyCatalogPanel({
               >
                 <span className="w-5 shrink-0 text-xs font-semibold tabular-nums text-ase-muted">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate text-sm text-ase-text">{m.title}</span>
-                {m.free ? (
+                {m.free && !owned ? (
                   <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
                     {c.free}
                   </span>

@@ -24,6 +24,33 @@ export async function getAcademyCourseAccess(courseKey: string): Promise<Academy
   return data
 }
 
+/** Un curso de la serie (Ruta SQL…) con el acceso y el progreso del usuario. */
+export type AcademySeriesCourse = {
+  catalogSlug: string
+  catalogType: 'product' | 'course' | 'book' | 'resource'
+  catalogStatus: string
+  /** null si el ítem de la serie no es un curso del simulador. */
+  courseKey: string | null
+  title: string
+  titleEn: string | null
+  seriesOrder: number | null
+  price: string | number | null
+  currency: string | null
+  isFree: boolean
+  hasAccess: boolean
+  isCurrent: boolean
+  missionsStarted: number
+  missionsFinished: number
+}
+
+export type AcademySeries = { courseKey: string; seriesName: string | null; items: AcademySeriesCourse[] }
+
+/** Todos los cursos de la serie, vistos o no (vacío si el curso no está en una serie). */
+export async function getAcademyCourseSeries(courseKey: string): Promise<AcademySeries> {
+  const { data } = await apiClient.get<AcademySeries>(`/academy/courses/${encodeURIComponent(courseKey)}/series`)
+  return data
+}
+
 /** Ficha pública del ítem del catálogo que vende el curso. */
 export function catalogItemPath(access: Pick<AcademyCourseAccess, 'catalogSlug' | 'catalogType'>): string | null {
   if (!access.catalogSlug) return null

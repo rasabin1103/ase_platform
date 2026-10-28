@@ -50,20 +50,32 @@ import { m07LeftJoin } from './courses/sql-iniciacion/m07-left-join'
 import { m08Modificar } from './courses/sql-iniciacion/m08-modificar'
 import { m09CrearTabla } from './courses/sql-iniciacion/m09-crear-tabla'
 import { m10Examen as m10ExamenSql } from './courses/sql-iniciacion/m10-examen'
+import { m00Subconsultas } from './courses/sql-intermedio/m00-subconsultas'
+import { m01Cte } from './courses/sql-intermedio/m01-cte'
+import { m02FechasTextos } from './courses/sql-intermedio/m02-fechas-textos'
+import { m03Conjuntos } from './courses/sql-intermedio/m03-conjuntos'
+import { m04Informes } from './courses/sql-intermedio/m04-informes'
+import { m05Ranking } from './courses/sql-intermedio/m05-ranking'
+import { m06Tendencias } from './courses/sql-intermedio/m06-tendencias'
+import { m07Cruces } from './courses/sql-intermedio/m07-cruces'
+import { m08Calidad } from './courses/sql-intermedio/m08-calidad'
+import { m09Vistas } from './courses/sql-intermedio/m09-vistas'
+import { m10Examen as m10ExamenSqlIntermedio } from './courses/sql-intermedio/m10-examen'
 
 import { MISSIONS_EN as TF_EN } from './courses/testing-fundamentals/en'
 import { MISSIONS_EN as QAP_EN } from './courses/qa-profesional/en'
 import { MISSIONS_EN as KAR_EN } from './courses/karate-framework/en'
 import { MISSIONS_EN as SQL_EN } from './courses/sql-iniciacion/en'
 import { MISSIONS_EN as GEST_EN } from './courses/gestion-equipos-qa/en'
+import { MISSIONS_EN as SQI_EN } from './courses/sql-intermedio/en'
 
 export { ACADEMY_COURSES as COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses, getCourse, isFreeMission } from './courseList'
 
 /** Misiones jugables. Añadir una misión = importarla aquí. */
-const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas, m00HolaKarate, m01Match, m02Config, m03Payloads, m04Datos, m05Auth, m06Errores, m07Mocks, m08Pipeline, m09Framework, m10Examen, m00LaFirma, m01CuelloBotella, m02Suite, m03Junior, m04Estandar, m05Comprar, m06PrimerEquipo, m07Conversacion, m08Contratar, m09Recortes, m10Incidente, m11Estrategia, m00PrimeraConsulta, m01Filtrar, m02Ordenar, m03Nulos, m04Contar, m05Agrupar, m06Join, m07LeftJoin, m08Modificar, m09CrearTabla, m10ExamenSql]
+const MISSIONS: Mission[] = [m00PrimerDia, m01HistoriaAmbigua, m02SimuladorPrestamos, m03EstadosPago, m04Reportar, m05Release, m06Piramide, m07Incidente, m00Equipo, m01Inspeccion, m02Gherkin, m03Cobertura, m04Exploratoria, m05Plan, m06Metricas, m07Configuracion, m08Herramientas, m00HolaKarate, m01Match, m02Config, m03Payloads, m04Datos, m05Auth, m06Errores, m07Mocks, m08Pipeline, m09Framework, m10Examen, m00LaFirma, m01CuelloBotella, m02Suite, m03Junior, m04Estandar, m05Comprar, m06PrimerEquipo, m07Conversacion, m08Contratar, m09Recortes, m10Incidente, m11Estrategia, m00PrimeraConsulta, m01Filtrar, m02Ordenar, m03Nulos, m04Contar, m05Agrupar, m06Join, m07LeftJoin, m08Modificar, m09CrearTabla, m10ExamenSql, m00Subconsultas, m01Cte, m02FechasTextos, m03Conjuntos, m04Informes, m05Ranking, m06Tendencias, m07Cruces, m08Calidad, m09Vistas, m10ExamenSqlIntermedio]
 
 /** Traducciones al inglés (misma estructura e ids). */
-export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN, ...KAR_EN, ...GEST_EN, ...SQL_EN]
+export const MISSIONS_EN: Mission[] = [...TF_EN, ...QAP_EN, ...KAR_EN, ...GEST_EN, ...SQL_EN, ...SQI_EN]
 
 /** Todas las misiones en español (para tests de paridad). */
 export const MISSIONS_ES: Mission[] = MISSIONS

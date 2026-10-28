@@ -31,7 +31,7 @@ if _ROOT not in sys.path:
 
 from app.core.config import settings  # noqa: E402
 
-COURSES = ("testing-fundamentals", "qa-profesional", "karate-framework", "gestion-equipos-qa", "sql-iniciacion")
+COURSES = ("testing-fundamentals", "qa-profesional", "karate-framework", "gestion-equipos-qa", "sql-iniciacion", "sql-intermedio")
 LANGS = ("es", "en")
 PASSWORD = os.environ.get("E2E_PASSWORD", "E2e-Academy!2026")
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "db", "postgres"}

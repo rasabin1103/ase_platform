@@ -86,6 +86,11 @@ CHAPTER_TITLES: dict[int, str] = {
     33: "Contar y agrupar",
     34: "Unir tablas",
     35: "Modificar y crear tablas",
+    41: "Subconsultas y CTE",
+    42: "Fechas, textos y conjuntos",
+    43: "Informes y rankings",
+    44: "Tendencias y cruces",
+    45: "Calidad de datos y vistas",
 }
 
 CHAPTER_TITLES_EN: dict[int, str] = {
@@ -111,6 +116,11 @@ CHAPTER_TITLES_EN: dict[int, str] = {
     33: "Counting and grouping",
     34: "Joining tables",
     35: "Changing data and creating tables",
+    41: "Subqueries and CTEs",
+    42: "Dates, text and set operations",
+    43: "Reports and rankings",
+    44: "Trends and complex joins",
+    45: "Data quality and views",
 }
 
 SECTION_TITLES_EN: dict[str, str] = {
@@ -169,6 +179,16 @@ SECTION_TITLES_EN: dict[str, str] = {
     "34.2": "What is missing",
     "35.1": "Changing data carefully",
     "35.2": "Your own table",
+    "41.1": "The query inside the query",
+    "41.2": "Step by step",
+    "42.1": "Dates and text",
+    "42.2": "Combining results",
+    "43.1": "Reports in one query",
+    "43.2": "The ranking",
+    "44.1": "Trends",
+    "44.2": "Complex joins",
+    "45.1": "Data that does not add up",
+    "45.2": "Your reusable report",
 }
 
 SECTION_TITLES: dict[str, str] = {
@@ -227,4 +247,14 @@ SECTION_TITLES: dict[str, str] = {
     "34.2": "Lo que falta",
     "35.1": "Cambiar datos con cuidado",
     "35.2": "Tu propia tabla",
+    "41.1": "La consulta dentro de la consulta",
+    "41.2": "Paso a paso",
+    "42.1": "Fechas y textos",
+    "42.2": "Juntar resultados",
+    "43.1": "Informes en una consulta",
+    "43.2": "El ranking",
+    "44.1": "Tendencias",
+    "44.2": "Cruces complicados",
+    "45.1": "Datos que no cuadran",
+    "45.2": "Tu informe reutilizable",
 }

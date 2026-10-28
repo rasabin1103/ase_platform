@@ -7,7 +7,9 @@ import { karateFrameworkCourse } from './courses/karate-framework/course'
 import { karateFrameworkCourseEn } from './courses/karate-framework/en/course'
 import { gestionEquiposQaCourse } from './courses/gestion-equipos-qa/course'
 import { sqlIniciacionCourse } from './courses/sql-iniciacion/course'
+import { sqlIntermedioCourse } from './courses/sql-intermedio/course'
 import { sqlIniciacionCourseEn } from './courses/sql-iniciacion/en/course'
+import { sqlIntermedioCourseEn } from './courses/sql-intermedio/en/course'
 import { gestionEquiposQaCourseEn } from './courses/gestion-equipos-qa/en/course'
 
 /**
@@ -18,8 +20,8 @@ import { gestionEquiposQaCourseEn } from './courses/gestion-equipos-qa/en/course
  * Añadir un curso nuevo: crear su carpeta en content/courses/<clave>/,
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
-export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse, gestionEquiposQaCourse, sqlIniciacionCourse]
-export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn, gestionEquiposQaCourseEn, sqlIniciacionCourseEn]
+export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse, gestionEquiposQaCourse, sqlIniciacionCourse, sqlIntermedioCourse]
+export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn, gestionEquiposQaCourseEn, sqlIniciacionCourseEn, sqlIntermedioCourseEn]
 
 /** Cursos que aún no tienen versión en inglés (en inglés se muestran en español). */
 export const PENDING_TRANSLATION = new Set<string>([])

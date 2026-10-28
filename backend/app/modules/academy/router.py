@@ -14,6 +14,7 @@ from app.modules.academy.schemas import (
     AcademyRunListResponse,
     AcademyRunRead,
     AcademyRunWrite,
+    AcademySeriesRead,
 )
 from app.modules.academy.service import AcademyRunService, AcademyService
 from app.modules.auth.dependencies import get_current_active_user, get_current_user_optional
@@ -30,6 +31,17 @@ def read_course_access(
     """Which catalog item sells this simulator course and whether the caller
     may play its paid missions. Works anonymously (public course page)."""
     return AcademyService(db).get_access(course_key, user)
+
+
+@router.get("/courses/{course_key}/series", response_model=AcademySeriesRead)
+def read_course_series(
+    course_key: str = Path(min_length=1, max_length=80, pattern=r"^[a-z0-9-]+$"),
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+) -> AcademySeriesRead:
+    """Every course of the series this course belongs to (viewed or not), in
+    order, with the caller's access and progress. Works anonymously."""
+    return AcademyService(db).get_series(course_key, user)
 
 
 # --- Saved progress (authenticated) ----------------------------------------

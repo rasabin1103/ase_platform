@@ -9,7 +9,10 @@ import type { SqlCell, SqlResult, SqlReto } from './types'
  * que devuelve, no cómo está escrita la consulta.
  */
 
-const key = (row: SqlCell[]) => JSON.stringify(row)
+/** Los números se comparan por valor: 0, 0.0 y 0.00 son lo mismo (COALESCE(x, 0) frente a 0.00). */
+const NUMBER = /^-?\d+(\.\d+)?$/
+const norm = (cell: SqlCell) => (typeof cell === 'string' && NUMBER.test(cell) ? String(Number(cell)) : cell)
+const key = (row: SqlCell[]) => JSON.stringify(row.map(norm))
 
 /** Mismas filas (en el mismo orden si `ordered`), sin mirar los nombres de columna. */
 export function sameRows(a: SqlResult, b: SqlResult, ordered = false): boolean {

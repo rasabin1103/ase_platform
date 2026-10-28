@@ -29,10 +29,41 @@ class AcademyCourseAccessRead(BaseModel):
     currency: str | None = None
     isFree: bool = False
     authenticated: bool = False
-    # Full access to every mission: free published item (for everyone, even
-    # anonymous), purchased/plan-included, or super admin. The first mission
+    # Full access to every mission: free published item (for anyone with an
+    # account), purchased/plan-included, or super admin. The first mission
     # is always open as a demo and never needs this.
     hasAccess: bool = False
+
+
+class AcademySeriesCourseRead(BaseModel):
+    """One catalog item of the series the course belongs to (Ruta SQL…).
+    `courseKey` is None for a series item that isn't a simulator course.
+    Progress counts are 0 for anonymous callers."""
+
+    catalogSlug: str
+    catalogType: CatalogItemType
+    catalogStatus: CatalogItemStatus
+    courseKey: str | None = None
+    title: str
+    titleEn: str | None = None
+    seriesOrder: int | None = None
+    price: Decimal | None = None
+    currency: str | None = None
+    isFree: bool = False
+    hasAccess: bool = False
+    isCurrent: bool = False
+    # Missions with saved progress / finished (the frontend knows the totals).
+    missionsStarted: int = 0
+    missionsFinished: int = 0
+
+
+class AcademySeriesRead(BaseModel):
+    """Every course of the series, viewed or not, in series order. Empty
+    `items` when the course has no catalog item or the item has no series."""
+
+    courseKey: str
+    seriesName: str | None = None
+    items: list[AcademySeriesCourseRead] = Field(default_factory=list)
 
 
 # --- Saved progress ---------------------------------------------------------

@@ -1,5 +1,7 @@
 import { ArrowRight, Clock, Gamepad2, GraduationCap, Lock, Sparkles, Star, Target, Trophy, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useQueries } from '@tanstack/react-query'
+import { getAcademyCourseAccess } from '../api'
 import { ACADEMY_COURSES, LEVEL_LABEL, LEVEL_LABEL_EN, academyCourses } from '../content/courseList'
 import { PageHero } from '../../../components/public/home/PageHero'
 import { Reveal, SectionHeading } from '../../../components/public/home/Reveal'
@@ -29,6 +31,7 @@ const COPY = {
     playFirst: 'Jugar la primera misión gratis',
     stats: { missions: 'misiones jugables', courses: 'cursos', practice: 'de práctica' },
     firstFree: '1.ª misión gratis',
+    freeCourse: 'Curso gratis',
     missions: 'misiones',
     missionsAria: 'Misiones',
     soon: 'Próximamente',
@@ -56,6 +59,7 @@ const COPY = {
     playFirst: 'Play the first mission for free',
     stats: { missions: 'playable missions', courses: 'courses', practice: 'of practice' },
     firstFree: '1st mission free',
+    freeCourse: 'Free course',
     missions: 'missions',
     missionsAria: 'Missions',
     soon: 'Coming soon',
@@ -78,6 +82,19 @@ export function AcademyHomePage() {
   usePageTitle(`ASE Academy: ${c.titleBefore.toLowerCase()} ${c.titleHighlight}`, c.subtitle)
   const COURSES = academyCourses(lang)
   const levelLabel = lang === 'en' ? LEVEL_LABEL_EN : LEVEL_LABEL
+  // Cursos con precio 0: se anuncian como gratis enteros, no «1.ª misión gratis».
+  const accessQueries = useQueries({
+    queries: COURSES.map((course) => ({
+      queryKey: ['academy-course-access-public', course.key],
+      queryFn: () => getAcademyCourseAccess(course.key),
+      staleTime: 5 * 60_000,
+      retry: 1,
+    })),
+  })
+  const isFreeCourse = (i: number) => {
+    const a = accessQueries[i]?.data
+    return !!a && a.linked && a.isFree
+  }
   return (
     <div className="overflow-x-clip bg-ase-bg">
       <PageHero
@@ -131,7 +148,7 @@ export function AcademyHomePage() {
                         <GraduationCap className="h-5 w-5" aria-hidden />
                       </span>
                       <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold text-emerald-200">
-                        {c.firstFree}
+                        {isFreeCourse(ci) ? c.freeCourse : c.firstFree}
                       </span>
                     </div>
                     <p className="relative mt-5 text-[11px] font-semibold uppercase tracking-wide text-sky-300">
@@ -166,7 +183,7 @@ export function AcademyHomePage() {
                             'grid h-8 min-w-8 place-items-center rounded-lg px-2 text-[11px] font-bold',
                             !m.available
                               ? 'border border-dashed border-white/15 text-ase-muted'
-                              : i === 0
+                              : i === 0 && !isFreeCourse(ci)
                                 ? 'bg-emerald-400/20 text-emerald-200 ring-1 ring-emerald-400/40'
                                 : 'bg-ase-brand/20 text-sky-200 ring-1 ring-ase-brand/40',
                           )}

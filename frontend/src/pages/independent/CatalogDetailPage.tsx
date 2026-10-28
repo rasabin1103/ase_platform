@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Truck,
+  Gamepad2,
 } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
@@ -45,7 +46,7 @@ import { ReviewWidget } from '../../components/catalog/ReviewWidget'
 import { SeriesPanel } from '../../components/catalog/SeriesPanel'
 import { ShareButton } from '../../components/catalog/ShareButton'
 import { Badge } from '../../components/ui/Badge'
-import { Button, ButtonAnchor } from '../../components/ui/Button'
+import { Button, ButtonAnchor, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { cn } from '../../components/ui/cn'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -341,6 +342,12 @@ export function CatalogDetailPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2.5">
+              {isFree && item.academyCourseKey ? (
+                // Curso del simulador gratis: se entra directamente, sin comprar ni solicitar nada.
+                <ButtonLink to={`/academy/${item.academyCourseKey}`} leftIcon={<Gamepad2 className="h-4 w-4" strokeWidth={1.75} />}>
+                  {t('catalog.academy.play')}
+                </ButtonLink>
+              ) : null}
               {!isFree ? (
                 <Button
                   variant={item.isPurchased ? 'success' : 'primary'}
@@ -462,7 +469,8 @@ export function CatalogDetailPage() {
               />
             </div>
 
-            {!item.isPurchased ? (
+            {/* Pedir acceso o una demo no tiene sentido en un ítem gratuito: ya es de todos. */}
+            {!item.isPurchased && !isFree ? (
               <div className="mt-3 flex flex-wrap gap-2.5 border-t border-white/[0.06] pt-3">
                 <Button variant="ghost" size="sm" onClick={() => setAccessModalOpen(true)}>
                   {t('catalog.requestAccess')}

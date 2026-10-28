@@ -64,6 +64,16 @@ describe('motor y errores', () => {
     expect(sameRows(a, b, true)).toBe(false)
     expect(stripComments('SELECT 1 -- SELECT *\n/* * */')).toBe('SELECT 1 \n')
   })
+
+  it('compara los números por valor: 0, 0.0 y 0.00 son lo mismo; el texto no se toca', () => {
+    const row = (...cells: (string | null)[]) => ({ ok: true, columns: cells.map((_, i) => `c${i}`), rows: [cells], rowCount: 1, command: 'SELECT', ms: 0 })
+    expect(sameRows(row('2025-01-01', '0'), row('2025-01-01', '0.00'))).toBe(true)
+    expect(sameRows(row('9.5'), row('9.50'))).toBe(true)
+    expect(sameRows(row('9.5'), row('9.0'))).toBe(false)
+    expect(sameRows(row('007'), row('7'))).toBe(true)
+    expect(sameRows(row(' 7'), row('7'))).toBe(false)
+    expect(sameRows(row(null), row('0'))).toBe(false)
+  })
 })
 
 describe('encargos de la misión 0', () => {

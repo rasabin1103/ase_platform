@@ -2,6 +2,10 @@ import { expect, test, type Page, type Response } from '@playwright/test'
 import { ACADEMY_COURSES, PENDING_TRANSLATION } from '../src/features/academy/content/courseList'
 import { M10_SOLUTION } from '../src/features/academy/content/courses/karate-framework/m10-lab'
 import { M10_SQL_ANSWERS } from '../src/features/academy/content/courses/sql-iniciacion/m10-examen'
+import { M10_SQL_ANSWERS as M10_SQI_ANSWERS } from '../src/features/academy/content/courses/sql-intermedio/m10-examen'
+
+/** Respuestas de referencia de los exámenes prácticos de la consola SQL, por curso. */
+const SQL_EXAM_ANSWERS: Record<string, string[]> = { 'sql-iniciacion': M10_SQL_ANSWERS, 'sql-intermedio': M10_SQI_ANSWERS }
 import { E2E_PASSWORD, backendScript, emailFor } from './support'
 
 /**
@@ -35,7 +39,7 @@ const T = {
   create: /^(Crear|Create)$/,
   run: /^(Ejecutar|Run)$/,
   allRetos: /^(Retos|Challenges) 8\/8/,
-  startExam: /^(Empezar simulacro|Start mock exam|Nuevo simulacro|New mock exam|Empezar la evaluación|Nueva evaluación|Start the assessment|New assessment)/,
+  startExam: /^(Empezar simulacro|Start mock exam|Nuevo simulacro|New mock exam|Empezar la evaluación|Nueva evaluación|Start the assessment|New assessment|Empezar el test|Nuevo test|Start the test|New test)/,
   submit: /^(Entregar|Submit)$/,
   submitAndSee: /^(Entregar y ver resultado|Submit and see result)$/,
   passed: /^(Aprobado|Passed)$/,
@@ -87,14 +91,15 @@ async function solvePracticalExam(page: Page, lang: Lang) {
 }
 
 /** Examen práctico de SQL: las respuestas de referencia, una ejecución por encargo, en la consola. */
-async function solveSqlExam(page: Page) {
-  await page.getByRole('navigation').getByRole('button', { name: /^Consola SQL/ }).click()
-  await expect(page.getByText('Arrancando PostgreSQL')).toHaveCount(0, { timeout: 90_000 })
-  for (const [i, sql] of M10_SQL_ANSWERS.entries()) {
-    await page.getByLabel('Consulta SQL').fill(sql)
-    await page.getByRole('button', { name: /^Ejecutar ·/ }).click()
+async function solveSqlExam(page: Page, answers: string[], lang: Lang) {
+  const en = lang === 'en'
+  await page.getByRole('navigation').getByRole('button', { name: /^(Consola SQL|SQL console)/ }).click()
+  await expect(page.getByText(/^(Arrancando|Starting) PostgreSQL/)).toHaveCount(0, { timeout: 90_000 })
+  for (const [i, sql] of answers.entries()) {
+    await page.getByLabel(en ? 'SQL query' : 'Consulta SQL').fill(sql)
+    await page.getByRole('button', { name: /^(Ejecutar|Run) ·/ }).click()
     await closeMeetings(page)
-    await expect(page.getByText(`Encargos: ${i + 1}/${M10_SQL_ANSWERS.length}`)).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText(`${en ? 'Tasks' : 'Encargos'}: ${i + 1}/${answers.length}`)).toBeVisible({ timeout: 30_000 })
   }
 }
 
@@ -151,7 +156,7 @@ async function playMission(page: Page, course: string, missionId: string, lang: 
     const endDay = page.getByRole('button', { name: T.endDay })
     if (await endDay.count()) {
       if (missionId === 'm10-examen' && !examSolved) {
-        if (course === 'sql-iniciacion') await solveSqlExam(page)
+        if (SQL_EXAM_ANSWERS[course]) await solveSqlExam(page, SQL_EXAM_ANSWERS[course], lang)
         else await solvePracticalExam(page, lang)
         examSolved = true
       }
