@@ -189,6 +189,37 @@ EXAMS: dict[str, ExamConfig] = {
             "m10-examen",
         ),
     ),
+    "sql-intermedio": ExamConfig(
+        course_key="sql-intermedio",
+        course_title="SQL intermedio: consultas que responden preguntas de negocio",
+        course_title_en="Intermediate SQL: queries that answer business questions",
+        title="Test final de SQL intermedio",
+        title_en="Intermediate SQL final test",
+        certificate_prefix="SQI",
+        # 30 preguntas (6 por bloque), 40 min (50 con tiempo ampliado), aprobado
+        # con 21 (70 %). El certificado exige además el examen práctico (misión
+        # m10-examen), que solo cuenta como terminado si se aprueba (70/100).
+        # Ver docs/academy/sql-intermedio/PLAN.md §6.
+        total=30,
+        minutes=40,
+        extended_minutes=50,
+        pass_mark=21,
+        distribution={41: 6, 42: 6, 43: 6, 44: 6, 45: 6},
+        chapter_offset=40,
+        missions=(
+            "m00-subconsultas",
+            "m01-cte",
+            "m02-fechas-textos",
+            "m03-conjuntos",
+            "m04-informes",
+            "m05-ranking",
+            "m06-tendencias",
+            "m07-cruces",
+            "m08-calidad",
+            "m09-vistas",
+            "m10-examen",
+        ),
+    ),
 }
 
 

@@ -111,3 +111,17 @@ def test_sql_exam_has_one_block_per_pair_of_missions():
     for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa"):
         drawn = draw_questions(EXAMS[key], Counter(), random.Random(6))
         assert all(BY_ID[item["id"]].chapter < 31 for item in drawn)
+
+
+def test_sql_intermedio_exam_has_one_block_per_pair_of_missions():
+    config = EXAMS["sql-intermedio"]
+    assert (config.total, config.minutes, config.pass_mark, config.certificate_prefix) == (30, 40, 21, "SQI")
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(17))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({41: 6, 42: 6, 43: 6, 44: 6, 45: 6})
+    assert config.chapter_label(45) == "5" and config.section_label("44.2") == "4.2"
+    assert config.missions[0] == "m00-subconsultas" and config.missions[-1] == "m10-examen"
+    # Ni SQL desde cero ni ningún otro examen saca preguntas de SQL intermedio.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(8))
+        assert all(BY_ID[item["id"]].chapter < 41 for item in drawn)

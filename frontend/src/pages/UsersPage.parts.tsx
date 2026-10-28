@@ -93,6 +93,8 @@ export function UserPremiumCard({
   onImpersonate,
   onViewStats,
   onActivate,
+  onResendVerification,
+  resendBusy,
 }: {
   user: User
   t: (k: string) => string
@@ -103,6 +105,8 @@ export function UserPremiumCard({
   onImpersonate?: () => void
   onViewStats?: () => void
   onActivate?: () => void
+  onResendVerification?: () => void
+  resendBusy?: boolean
 }) {
   return (
     <Card className="group relative overflow-hidden rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft transition duration-200 hover:-translate-y-1 hover:border-ase-brand/20">
@@ -143,6 +147,11 @@ export function UserPremiumCard({
         {onActivate ? (
           <Button size="sm" onClick={onActivate}>
             {t('usersPage.actions.activate')}
+          </Button>
+        ) : null}
+        {onResendVerification && !user.email_verified_at && user.status !== 'deleted' ? (
+          <Button size="sm" variant="outline" onClick={onResendVerification} disabled={resendBusy}>
+            {resendBusy ? t('usersPage.actions.resendSending') : t('usersPage.actions.resendVerification')}
           </Button>
         ) : null}
         <Button size="sm" variant="secondary" onClick={onView}>

@@ -7,7 +7,7 @@ lleguen nunca al navegador antes de entregar el examen.
 
 from __future__ import annotations
 
-from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, gestion, karate, karate_en, sql
+from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, gestion, karate, karate_en, sql, sql_intermedio, sql_intermedio_en
 from app.modules.academy.exam_bank.model import (
     CHAPTER_TITLES,
     CHAPTER_TITLES_EN,
@@ -18,10 +18,10 @@ from app.modules.academy.exam_bank.model import (
 )
 
 # Cambiarlo cuando se modifique el banco: queda guardado en cada intento.
-BANK_VERSION = "2026.10-ctfl250+kar60en+geq60+sql60"
+BANK_VERSION = "2026.10.28-ctfl250+kar60en+geq+sql+sqien"
 
 QUESTIONS: tuple[BankQuestion, ...] = tuple(
-    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS, *gestion.QUESTIONS, *sql.QUESTIONS]
+    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS, *gestion.QUESTIONS, *sql.QUESTIONS, *sql_intermedio.QUESTIONS]
 )
 #: Primer bloque del curso de Karate (los anteriores son capítulos CTFL).
 KARATE_FIRST_CHAPTER = 11
@@ -29,12 +29,14 @@ KARATE_FIRST_CHAPTER = 11
 GESTION_FIRST_CHAPTER = 21
 #: Primer bloque del curso «SQL desde cero».
 SQL_FIRST_CHAPTER = 31
+#: Primer bloque del curso «SQL intermedio».
+SQL_INTERMEDIO_FIRST_CHAPTER = 41
 #: Bloques aún sin versión en inglés (su curso está pendiente de traducción):
 #: en inglés se muestran en español hasta que se traduzcan.
 PENDING_EN_CHAPTERS = frozenset({21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35})
 
 BY_ID: dict[str, BankQuestion] = {question.id: question for question in QUESTIONS}
-EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN}
+EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN, **sql_intermedio_en.EN}
 
 
 def validate_bank() -> list[str]:

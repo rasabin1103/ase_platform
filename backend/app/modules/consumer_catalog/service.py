@@ -869,7 +869,7 @@ class ConsumerCatalogService:
         """Items this user has actually opened, most-recent-first — see
         _record_resource_view. Used by the independent dashboard's
         "continue where you left off" section."""
-        items = self.repo.recent_items_for_user(user_id, limit=limit)
+        items = self.repo.recent_items_for_user(user_id, limit=limit, academy_statuses=CONSUMER_DETAIL_STATUSES)
         reads = self._to_reads_with_ratings(
             items,
             user_id=user_id,

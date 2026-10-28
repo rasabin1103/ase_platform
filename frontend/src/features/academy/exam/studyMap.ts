@@ -70,6 +70,19 @@ const STUDY_MAP: Record<string, Record<string, string>> = {
     '5.1': 'm08-modificar',
     '5.2': 'm09-crear-tabla',
   },
+  // Test final de SQL intermedio: bloques 41–45 en el banco, una sección por misión.
+  'sql-intermedio': {
+    '1.1': 'm00-subconsultas',
+    '1.2': 'm01-cte',
+    '2.1': 'm02-fechas-textos',
+    '2.2': 'm03-conjuntos',
+    '3.1': 'm04-informes',
+    '3.2': 'm05-ranking',
+    '4.1': 'm06-tendencias',
+    '4.2': 'm07-cruces',
+    '5.1': 'm08-calidad',
+    '5.2': 'm09-vistas',
+  },
   'testing-fundamentals': {
     '1.1': 'm00-primer-dia',
     '1.2': 'm00-primer-dia',
@@ -116,6 +129,14 @@ export const EXAM_COURSES: Record<string, { title: string; titleEn: string; labe
     disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body. All cases are original ASE Academy content.',
   },
   'sql-iniciacion': {
+    title: 'Test final',
+    titleEn: 'Final test',
+    label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
+    labelEn: 'Final assessment: a hands-on exam in the SQL console and a test (30 questions, 40 min); completion certificate',
+    disclaimer: 'Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.',
+    disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
+  },
+  'sql-intermedio': {
     title: 'Test final',
     titleEn: 'Final test',
     label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
@@ -255,3 +276,6 @@ export function withExamCopy<T extends Record<string, unknown>>(base: T, courseK
   if (override.cards && typeof base.cards === 'object' && base.cards) merged.cards = { ...(base.cards as Record<string, unknown>), ...pick(base.cards as Record<string, unknown>, override.cards) }
   return merged as T
 }
+
+// SQL intermedio usa los mismos textos que el test final de SQL desde cero.
+EXAM_COPY['sql-intermedio'] = EXAM_COPY['sql-iniciacion']

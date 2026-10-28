@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import case, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.models.academy_run import AcademyRun
@@ -15,6 +15,8 @@ from app.modules.academy.schemas import (
     AcademyRunRead,
     AcademyRunSummary,
     AcademyRunWrite,
+    AcademySeriesCourseRead,
+    AcademySeriesRead,
 )
 from app.modules.auth.dependencies import is_super_admin
 from app.modules.consumer_catalog.service import CONSUMER_DETAIL_STATUSES, ConsumerCatalogService
@@ -52,15 +54,8 @@ class AcademyService:
                 authenticated=authenticated,
                 hasAccess=bool(user and is_super_admin(self.db, user)),
             )
-        is_free = item.price is None or item.price <= 0
-        # Regla comercial: sin precio (0) y publicado → curso completo libre
-        # para todos, también sin sesión. Con precio → solo la primera misión
-        # es libre (lo decide el frontend) y el resto requiere comprarlo.
-        has_access = is_free and item.status == CatalogItemStatus.published
-        if not has_access and user is not None:
-            has_access = is_super_admin(self.db, user) or item.slug in ConsumerCatalogService(self.db).purchased_slugs(
-                user.id
-            )
+        is_free = self._is_free(item)
+        has_access = self._has_access(item, user, purchased=None)
         return AcademyCourseAccessRead(
             courseKey=key,
             linked=True,
@@ -75,6 +70,71 @@ class AcademyService:
             authenticated=authenticated,
             hasAccess=has_access,
         )
+
+    @staticmethod
+    def _is_free(item: CatalogItem) -> bool:
+        return item.price is None or item.price <= 0
+
+    def _has_access(self, item: CatalogItem, user: User | None, *, purchased: set[str] | None) -> bool:
+        # Regla comercial: sin precio (0) y publicado → curso completo gratis
+        # para quien tenga cuenta (registrarse es el «precio»). Con precio → el
+        # resto requiere comprarlo (o un plan). En los dos casos la primera
+        # misión es una demo abierta sin cuenta (lo decide el frontend).
+        if user is None:
+            return False
+        if self._is_free(item) and item.status == CatalogItemStatus.published:
+            return True
+        if is_super_admin(self.db, user):
+            return True
+        if purchased is None:
+            purchased = ConsumerCatalogService(self.db).purchased_slugs(user.id)
+        return item.slug in purchased
+
+    def get_series(self, course_key: str, user: User | None) -> AcademySeriesRead:
+        """Todos los cursos de la serie del curso (vistos o no), en orden, con
+        el acceso y el progreso del usuario en cada uno."""
+        key = course_key.strip().lower()
+        item = self.find_catalog_item(key)
+        if item is None or not item.series_name:
+            return AcademySeriesRead(courseKey=key)
+        catalog = ConsumerCatalogService(self.db)
+        siblings = catalog.repo.series_siblings(item.series_name, statuses=CONSUMER_DETAIL_STATUSES)
+        purchased = catalog.purchased_slugs(user.id) if user is not None else set()
+        progress: dict[str, tuple[int, int]] = {}
+        keys = [s.academy_course_key for s in siblings if s.academy_course_key]
+        if user is not None and keys:
+            rows = self.db.execute(
+                select(
+                    AcademyRun.course_key,
+                    func.count(AcademyRun.id),
+                    func.count(case((AcademyRun.finished.is_(True), 1))),
+                )
+                .where(AcademyRun.user_id == user.id, AcademyRun.course_key.in_(keys))
+                .group_by(AcademyRun.course_key)
+            ).all()
+            progress = {r[0]: (int(r[1]), int(r[2])) for r in rows}
+        items = []
+        for sib in siblings:
+            started, finished = progress.get(sib.academy_course_key or "", (0, 0))
+            items.append(
+                AcademySeriesCourseRead(
+                    catalogSlug=sib.slug,
+                    catalogType=sib.type,
+                    catalogStatus=sib.status,
+                    courseKey=sib.academy_course_key,
+                    title=sib.title,
+                    titleEn=sib.title_en,
+                    seriesOrder=sib.series_order,
+                    price=sib.price,
+                    currency=sib.currency,
+                    isFree=self._is_free(sib),
+                    hasAccess=self._has_access(sib, user, purchased=purchased),
+                    isCurrent=sib.id == item.id,
+                    missionsStarted=started,
+                    missionsFinished=finished,
+                )
+            )
+        return AcademySeriesRead(courseKey=key, seriesName=item.series_name, items=items)
 
 
 class AcademyRunService:

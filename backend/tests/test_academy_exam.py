@@ -497,3 +497,63 @@ def test_sql_exam_blocks_practical_exam_and_certificate(
     assert cert.status_code == 200
     assert cert.json()["code"].startswith("ASE-SQL-")
 
+
+
+SQI_EXAM_URL = "/api/v1/academy/exams/sql-intermedio"
+
+
+def test_sql_intermedio_exam_blocks_practical_exam_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "SQL intermedio",
+            "slug": "sql-intermedio",
+            "type": "course",
+            "category": "Datos",
+            "short_description": "Curso de SQL intermedio.",
+            "long_description": "Subconsultas, CTE y funciones de ventana con PostgreSQL real.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "intermediate",
+            "author": "ASE",
+            "academy_course_key": "sql-intermedio",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(SQI_EXAM_URL).json()
+    assert (overview["config"]["total"], overview["config"]["passMark"]) == (30, 21)
+    assert [c["title"] for c in overview["config"]["distribution"]] == [
+        "Subconsultas y CTE",
+        "Fechas, textos y conjuntos",
+        "Informes y rankings",
+        "Tendencias y cruces",
+        "Calidad de datos y vistas",
+    ]
+
+    attempt = client.post(f"{SQI_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
+
+    for mission_id in EXAMS["sql-intermedio"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="sql-intermedio", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{SQI_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert result["missingMissions"] == ["m10-examen"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="sql-intermedio", mission_id="m10-examen", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/sql-intermedio", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-SQI-")

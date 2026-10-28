@@ -4,6 +4,7 @@ from sqlalchemy import case, func, or_, select
 from sqlalchemy.dialects.postgresql import array as pg_array
 from sqlalchemy.orm import Session, selectinload
 
+from app.models.academy_run import AcademyRun
 from app.models.catalog_item import CatalogItem
 from app.models.catalog_item_rating import CatalogItemRating
 from app.models.enums import CatalogItemStatus, CatalogItemType
@@ -103,19 +104,56 @@ class ConsumerCatalogRepository:
             tags=tags,
         )
 
-    def recent_items_for_user(self, user_id: int, *, limit: int = 6) -> list[CatalogItem]:
+    def recent_items_for_user(
+        self,
+        user_id: int,
+        *,
+        limit: int = 6,
+        academy_statuses: tuple[CatalogItemStatus, ...] | None = None,
+    ) -> list[CatalogItem]:
         """Catalog items this user has actually opened (viewer, download, or
-        an audiobook chapter — see ConsumerCatalogService._record_resource_view),
-        newest-opened first. Powers the "continue where you left off" strip
-        on the independent dashboard."""
-        rows = self.db.execute(
-            select(CatalogItem)
+        an audiobook chapter — see ConsumerCatalogService._record_resource_view)
+        plus the ASE Academy courses they have played (their catalog item,
+        via academy_course_key, dated by the last saved mission), newest
+        first. Powers the "continue where you left off" strip on the
+        independent dashboard. Academy courses are included even when they
+        were never bought (free courses, plan access)."""
+        opened = self.db.execute(
+            select(CatalogItem, ResourceView.last_opened_at)
             .join(ResourceView, ResourceView.catalog_item_id == CatalogItem.id)
             .where(ResourceView.user_id == user_id)
             .order_by(ResourceView.last_opened_at.desc())
             .limit(limit)
-        ).scalars().all()
-        return list(rows)
+        ).all()
+        last_run = (
+            select(AcademyRun.course_key, func.max(AcademyRun.updated_at).label("last_at"))
+            .where(AcademyRun.user_id == user_id)
+            .group_by(AcademyRun.course_key)
+            .subquery()
+        )
+        stmt = select(CatalogItem, last_run.c.last_at).join(last_run, last_run.c.course_key == CatalogItem.academy_course_key)
+        if academy_statuses is not None:
+            stmt = stmt.where(CatalogItem.status.in_(academy_statuses))
+        played = self.db.execute(stmt.order_by(last_run.c.last_at.desc(), CatalogItem.id.desc())).all()
+        # Un curso puede tener varios ítems (reediciones): uno por curso.
+        seen_keys: set[str] = set()
+        academy_rows = []
+        for item, at in played:
+            if item.academy_course_key in seen_keys:
+                continue
+            seen_keys.add(item.academy_course_key)
+            academy_rows.append((item, at))
+        merged = sorted([*opened, *academy_rows], key=lambda r: r[1], reverse=True)
+        out: list[CatalogItem] = []
+        ids: set[int] = set()
+        for item, _ in merged:
+            if item.id in ids:
+                continue
+            ids.add(item.id)
+            out.append(item)
+            if len(out) >= limit:
+                break
+        return out
 
     def series_siblings(
         self, series_name: str, *, statuses: tuple[CatalogItemStatus, ...] | None = None

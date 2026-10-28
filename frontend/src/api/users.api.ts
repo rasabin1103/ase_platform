@@ -21,6 +21,15 @@ export async function deleteUser(user_uuid: string) {
   return data
 }
 
+/** Admin "resend confirmation email" for a user who has not verified yet.
+ * `sent` is false when the mail server failed (account unaffected). */
+export async function resendVerificationEmail(user_uuid: string) {
+  const { data } = await apiClient.post<{ sent: boolean; email: string }>(
+    `/users/${user_uuid}/resend-verification-email`,
+  )
+  return data
+}
+
 /** Admin "activate" action: flips status to active and starts this user's
  * personal 2FA grace period (two_factor_grace_days from now), overriding
  * the platform-wide 2FA deadline for just this account. */

@@ -1,13 +1,15 @@
-import { ArrowLeft, Award, Check, ChevronRight, CircleAlert, Lock, Play, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, Award, Check, ChevronRight, CircleAlert, Lock, Play, ShoppingCart, Trophy } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { catalogItemPath } from '../api'
 import { LEVEL_LABEL, LEVEL_LABEL_EN, getCourse } from '../content/registry'
 import { useCourseAccess } from '../useCourseAccess'
 import { CourseReviews } from '../CourseReviews'
+import { CourseSeries } from '../CourseSeries'
 import { useQuery } from '@tanstack/react-query'
 import { listAcademyRuns } from '../api'
 import { readMissionStatus, useAcademyUserKey } from '../useMissionRun'
 import { EXAM_COURSES } from '../exam/studyMap'
+import { courseProgress, lastTouched, remoteStatus } from '../courseProgress'
 import { useAcademyLang, type AcademyLang } from '../i18n'
 import { usePageTitle } from '../../../hooks/usePageTitle'
 import { TrailerPlayer } from '../../../components/catalog/TrailerPlayer'
@@ -18,7 +20,15 @@ const COPY = {
     notFound: 'Este curso no existe o todavía no está publicado.',
     allCourses: 'Ver todos los cursos',
     freeCourse: 'Curso gratuito: todas las misiones están abiertas.',
-    signInToSave: ' Inicia sesión para guardar tu progreso.',
+    freeWithAccount: 'Curso gratuito con tu cuenta: regístrate gratis para jugar todas las misiones (la primera está abierta).',
+    register: 'Crear cuenta gratis',
+    signIn: 'Iniciar sesión',
+    registerToPlay: 'Regístrate para jugarla',
+    progressTitle: 'Tu progreso',
+    progressCount: (d: number, t: number) => `${d} de ${t} misiones completadas`,
+    continueHere: 'Continúa donde lo dejaste',
+    startCourse: 'Empieza el curso',
+    completed: '¡Curso completado!',
     hasAccess: 'Tienes acceso al curso completo.',
     firstFree: 'La primera misión es gratuita. El curso completo cuesta',
     unlock: 'Desbloquear curso completo',
@@ -38,7 +48,15 @@ const COPY = {
     notFound: "This course doesn't exist or hasn't been published yet.",
     allCourses: 'See all courses',
     freeCourse: 'Free course: all missions are open.',
-    signInToSave: ' Sign in to save your progress.',
+    freeWithAccount: 'Free course with your account: sign up for free to play every mission (the first one is open).',
+    register: 'Create a free account',
+    signIn: 'Sign in',
+    registerToPlay: 'Sign up to play it',
+    progressTitle: 'Your progress',
+    progressCount: (d: number, t: number) => `${d} of ${t} missions completed`,
+    continueHere: 'Continue where you left off',
+    startCourse: 'Start the course',
+    completed: 'Course completed!',
     hasAccess: 'You have access to the full course.',
     firstFree: 'The first mission is free. The full course costs',
     unlock: 'Unlock the full course',
@@ -73,11 +91,8 @@ export function AcademyCoursePage() {
     queryFn: () => listAcademyRuns(courseKey),
     enabled: authenticated && !!course,
   })
-  const statusOf = (missionId: string): 'new' | 'in_progress' | 'finished' => {
-    const remote = runsQuery.data?.find((r) => r.missionId === missionId)
-    if (remote) return remote.finished ? 'finished' : remote.actionsCount > 0 ? 'in_progress' : 'new'
-    return readMissionStatus({ courseKey, id: missionId }, userKey)
-  }
+  const statusOf = (missionId: string): 'new' | 'in_progress' | 'finished' =>
+    remoteStatus(runsQuery.data?.find((r) => r.missionId === missionId)) ?? readMissionStatus({ courseKey, id: missionId }, userKey)
 
   if (!course) {
     return (
@@ -91,6 +106,12 @@ export function AcademyCoursePage() {
   }
 
   const buyPath = catalogItemPath(access)
+  // En un curso gratis (precio 0) no se marca ninguna misión como «gratis»: lo es todo.
+  const freeCourse = access.linked && access.isFree
+  const progress = courseProgress(course, statusOf, lastTouched(runsQuery.data))
+  const next = progress.next
+  const nextUnlocked = !!next && (next.index === 0 || access.hasAccess)
+  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
@@ -113,10 +134,21 @@ export function AcademyCoursePage() {
 
       {!isLoading && (
         <div className="mb-8 rounded-ase-lg border border-ase-border bg-ase-surface p-4 text-body-sm">
-          {access.linked && access.isFree ? (
+          {access.linked && access.isFree && !access.authenticated ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="flex items-center gap-2 text-ase-success">
+                <Check className="h-4 w-4" /> {c.freeWithAccount}
+              </p>
+              <Link to="/register" className="ml-auto inline-flex items-center gap-2 rounded-ase-md bg-ase-brand px-3 py-1.5 font-semibold text-white hover:bg-ase-brand-strong">
+                {c.register}
+              </Link>
+              <Link to={`/login?next=${encodeURIComponent(`/academy/${course.key}`)}`} className="text-ase-brand hover:underline">
+                {c.signIn}
+              </Link>
+            </div>
+          ) : access.linked && access.isFree ? (
             <p className="flex items-center gap-2 text-ase-success">
               <Check className="h-4 w-4" /> {c.freeCourse}
-              {!access.authenticated && c.signInToSave}
             </p>
           ) : access.hasAccess ? (
             <p className="flex items-center gap-2 text-ase-success">
@@ -147,6 +179,48 @@ export function AcademyCoursePage() {
         </div>
       )}
 
+      {(authenticated || progress.started > 0) && (
+        <section aria-label={c.progressTitle} className="mb-8 rounded-ase-lg border border-ase-brand/30 bg-ase-brand/5 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-caption font-semibold uppercase tracking-wide text-ase-text2">{c.progressTitle}</p>
+              <p className="text-body-sm text-ase-text">
+                {progress.complete ? (
+                  <span className="inline-flex items-center gap-1.5 text-ase-success">
+                    <Trophy className="h-4 w-4" aria-hidden /> {c.completed}
+                  </span>
+                ) : (
+                  c.progressCount(progress.done, progress.total)
+                )}
+              </p>
+            </div>
+            {next && nextUnlocked && !progress.complete ? (
+              <Link
+                to={`/academy/${course.key}/${next.id}`}
+                className="inline-flex items-center gap-2 rounded-ase-md bg-ase-brand px-3 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong"
+              >
+                <Play className="h-4 w-4" aria-hidden />
+                <span>
+                  {progress.started > 0 ? c.continueHere : c.startCourse}: {c.mission} {next.index} · {next.title}
+                </span>
+              </Link>
+            ) : null}
+          </div>
+          <div
+            className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/[0.06]"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pct}
+            aria-label={c.progressCount(progress.done, progress.total)}
+          >
+            <div className="h-full rounded-full bg-ase-brand transition-all" style={{ width: `${pct}%` }} />
+          </div>
+        </section>
+      )}
+
+      <CourseSeries courseKey={course.key} lang={lang} />
+
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {course.missions.map((m, i) => {
           const free = i === 0
@@ -162,7 +236,7 @@ export function AcademyCoursePage() {
               <div>
                 <p className="text-caption text-ase-muted">
                   {c.mission} {i}
-                  {(free || (access.linked && access.isFree)) && (
+                  {free && !freeCourse && (
                     <span className="ml-2 rounded bg-ase-success/15 px-1.5 text-ase-success">{c.free}</span>
                   )}
                 </p>
@@ -178,6 +252,10 @@ export function AcademyCoursePage() {
                   className="flex items-center justify-center gap-2 rounded-ase-md bg-ase-brand px-3 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong"
                 >
                   <Play className="h-4 w-4" /> {c.status[status]}
+                </Link>
+              ) : freeCourse ? (
+                <Link to="/register" className="flex items-center gap-2 text-caption text-ase-brand hover:underline">
+                  <Lock className="h-3.5 w-3.5" /> {c.registerToPlay}
                 </Link>
               ) : (
                 <span className="flex items-center gap-2 text-caption text-ase-muted">
