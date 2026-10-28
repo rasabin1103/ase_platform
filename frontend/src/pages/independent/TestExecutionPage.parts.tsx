@@ -14,6 +14,7 @@ import {
   triggerTestRun,
   updateFrameworkScenario,
   type DynamicRequestDetail,
+  type ToolResult,
 } from '../../api/testExecution.api'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -684,6 +685,88 @@ export function DynamicRequestCard({ detail }: { detail: DynamicRequestDetail })
   )
 }
 
+const VERDICT_BADGE: Record<ToolResult['verdict'], 'success' | 'warning' | 'error' | 'default'> = {
+  pass: 'success',
+  warn: 'warning',
+  fail: 'error',
+  error: 'error',
+}
+const TONE_CLASS: Record<string, string> = {
+  success: 'text-emerald-300',
+  error: 'text-ase-error',
+  warning: 'text-amber-300',
+}
+
+/** Tool-agnostic human-readable verdict (`ase_result` block written by a
+ * product's workflow script): headline, key numbers, findings with hints. */
+export function ToolResultCard({ result }: { result: ToolResult }) {
+  const { t } = useI18n()
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-ase-text">
+          {t('testExecution.report.toolResult.title')}
+          {result.tool ? ` · ${result.tool}` : ''}
+        </h3>
+        <Badge variant={VERDICT_BADGE[result.verdict]}>{t(`testExecution.report.toolResult.verdict.${result.verdict}`) as string}</Badge>
+      </div>
+      <p className="text-base font-medium text-ase-text">{result.headline}</p>
+      {result.explanation ? <p className="mt-1 text-xs text-ase-muted">{result.explanation}</p> : null}
+
+      {result.metrics.length > 0 ? (
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {result.metrics.map((m, i) => (
+            <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
+              <div className={`text-2xl font-bold ${TONE_CLASS[m.tone] ?? 'text-ase-text'}`}>{m.value}</div>
+              <div className="text-[10px] uppercase tracking-wide text-ase-muted">{m.label}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {result.findings.length > 0 ? (
+        <div className="mt-4">
+          <div className="mb-2 text-[11px] uppercase tracking-wide text-ase-muted">
+            {t('testExecution.report.toolResult.findings')}
+          </div>
+          <ul className="space-y-2">
+            {result.findings.map((f, i) => (
+              <li key={i} className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  {f.severity ? (
+                    <Badge variant={f.severity === 'breaking' || f.severity === 'error' ? 'error' : f.severity === 'success' || f.severity === 'non_breaking' ? 'success' : 'warning'}>
+                      {f.severity.replace(/_/g, ' ')}
+                    </Badge>
+                  ) : null}
+                  <span className="font-medium text-ase-text">{f.title}</span>
+                </div>
+                {f.location ? <div className="mt-1 font-mono text-ase-text2">{f.location}</div> : null}
+                {f.detail ? <div className="mt-1 text-ase-muted">{f.detail}</div> : null}
+                {f.hint ? (
+                  <div className="mt-1 text-cyan-300/90">
+                    {t('testExecution.report.toolResult.hint')}: {f.hint}
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {result.truncated ? (
+            <p className="mt-2 text-xs text-ase-muted">{t('testExecution.report.toolResult.truncated')}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {result.inputs.length > 0 ? (
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {result.inputs.map((x, i) => (
+            <MiniStat key={i} label={x.label} value={x.value} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function CountTile({
   label,
   value,
@@ -798,7 +881,9 @@ export function RunReportModal({ runUuid, onClose }: RunReportModalProps) {
               </div>
             </div>
 
-            {s.testSummary ? (
+            {s.toolResult ? <ToolResultCard result={s.toolResult} /> : null}
+
+            {s.toolResult ? null : s.testSummary ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {s.testSummary.passed != null ? (
                   <CountTile

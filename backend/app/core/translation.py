@@ -83,7 +83,9 @@ def translate_es_to_en(text: str | None) -> str | None:
                 "source_lang": "ES",
                 "target_lang": "EN-US",
             },
-            timeout=8.0,
+            # Long marketing copy (a course's "About this item" is ~3 KB of
+            # markdown) needs more than the 8 s that suits a short title.
+            timeout=8.0 if len(text) < 1000 else 30.0,
         )
         response.raise_for_status()
         data = response.json()

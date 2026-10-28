@@ -1,4 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite'
+import type { AcademyLang } from '../i18n'
 import { pendingTransaction, runSql } from './engine'
 import type { SqlCell, SqlResult, SqlReto } from './types'
 
@@ -35,13 +36,13 @@ export function stripComments(sql: string): string {
 }
 
 /** Comprueba un encargo con el resultado de una ejecución del alumno. */
-export async function checkReto(db: PGlite, reto: SqlReto, result: SqlResult, sql: string, expected?: Map<string, SqlResult>): Promise<RetoVerdict> {
+export async function checkReto(db: PGlite, reto: SqlReto, result: SqlResult, sql: string, expected?: Map<string, SqlResult>, lang: AcademyLang = 'es'): Promise<RetoVerdict> {
   if (!result.ok) return { id: reto.id, done: false }
   const clean = stripComments(sql)
   for (const f of reto.forbid ?? []) if (f.pattern.test(clean)) return { id: reto.id, done: false, reason: f.message }
   for (const r of reto.requires ?? []) if (!r.pattern.test(clean)) return { id: reto.id, done: false, reason: r.message }
   if (reto.state) {
-    if (await pendingTransaction(db)) return { id: reto.id, done: false, reason: 'Tienes una transacción abierta: confírmala con COMMIT o deshazla con ROLLBACK.' }
+    if (await pendingTransaction(db)) return { id: reto.id, done: false, reason: lang === 'en' ? 'You have an open transaction: confirm it with COMMIT or undo it with ROLLBACK.' : 'Tienes una transacción abierta: confírmala con COMMIT o deshazla con ROLLBACK.' }
     for (const v of reto.state) {
       const r = await runSql(db, v.query)
       if (!r.ok || JSON.stringify(r.rows) !== JSON.stringify(v.rows)) return { id: reto.id, done: false }

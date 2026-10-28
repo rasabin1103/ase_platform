@@ -58,6 +58,18 @@ export function NewsUpdatesCard() {
                 <p className="text-sm font-semibold text-ase-text">{n.title}</p>
                 {n.body ? <p className="mt-0.5 text-sm text-ase-text2 line-clamp-2">{n.body}</p> : null}
                 <p className="mt-1 text-[11px] text-ase-muted">{new Date(n.created_at).toLocaleDateString()}</p>
+                {!n.is_read ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      markReadMutation.mutate(n.id)
+                    }}
+                    className="mt-1 text-[11px] font-medium text-ase-brand underline underline-offset-2 hover:text-ase-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-ase-brand"
+                  >
+                    {t('independentDashboard.news.markRead')}
+                  </button>
+                ) : null}
               </div>
             </li>
           ))}

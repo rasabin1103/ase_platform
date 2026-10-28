@@ -9,13 +9,15 @@
  *    use a cache-first strategy — filenames are content-hashed, so a cache
  *    hit is always correct, and it's what makes repeat loads feel instant.
  *  - Navigation requests (full-page loads) use network-first with a cached
- *    app-shell (`/index.html`) fallback, so a stale connection or briefly
+ *    app-shell (`/app-shell.html`) fallback, so a stale connection or briefly
  *    offline tab still opens the shell instead of the browser's offline page.
  *  - Old cache versions are purged on activate.
  */
 
-const CACHE_VERSION = 'ase-cache-v1'
-const APP_SHELL_URL = '/index.html'
+const CACHE_VERSION = 'ase-cache-v2'
+// Plantilla genérica de la SPA (la generan vite build + scripts/prerender-seo.mjs).
+// /index.html es ya la portada con su contenido propio, no sirve de fallback.
+const APP_SHELL_URL = '/app-shell.html'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

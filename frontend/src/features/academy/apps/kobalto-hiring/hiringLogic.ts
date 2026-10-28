@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «Contratación» del curso 4, misión 8 (Contratar): perfil según las
@@ -132,6 +133,71 @@ export const CANDIDATES: Candidate[] = [
 ]
 export const VACANCIES = 3
 
+const NEEDS_EN = [
+  'Nobody in the area knows how to do performance testing, and next year the Daily Banking campaigns arrive.',
+  'API automation is not in the pipeline in three of the six squads.',
+  'There are four junior QAs and the leads have no time to mentor them.',
+  'QAs have to explain risks to the business and sometimes they are not understood.',
+  'The current process takes seven weeks: last month two candidates were lost.',
+]
+
+const REQ_EN: Record<string, [string, string]> = {
+  api_ci: ['Automates API tests and integrates them into the pipeline', 'It covers the automation gap in three squads.'],
+  perf: ['Can do performance testing (at least one of the three vacancies)', 'Nobody in the area can and the campaigns are coming.'],
+  comm: ['Explains risks to the business clearly', 'It is a real gap in the area.'],
+  mentor: ['Wants to mentor junior QAs', 'There are four juniors and the leads cannot cope.'],
+  degree: ['Engineering degree mandatory', 'It does not predict performance and excludes valid profiles.'],
+  years: ['Ten years of experience minimum', 'It inflates the profile and leaves out people who already do the job.'],
+  tool: ['Knows exactly our tool', 'It is learned in weeks: it is not an entry criterion.'],
+  fit: ['That they “fit” the team', 'Undefined, “fit” ends up meaning “is like us”: it is the door to bias.'],
+}
+
+const STEPS_EN: Record<string, { title: string; o: Record<string, [string, string]> }> = {
+  format: {
+    title: 'Interview format',
+    o: {
+      structured: ['Structured: the same questions for everyone, a realistic exercise (review and extend an API suite) and a scorecard with the profile criteria and a scale from 1 to 4. Each interviewer scores separately before the discussion.', 'It compares everyone against the same thing and reduces first-impression bias.'],
+      chat: ['Free conversation: each interviewer asks whatever they like and the decision is made on impression.', 'Each one measures something different: the best-liked wins.'],
+      puzzles: ['Logic and algorithm puzzles on a whiteboard.', 'They do not resemble the work they will do.'],
+    },
+  },
+  process: {
+    title: 'Process',
+    o: {
+      fast: ['Two interviews in the same week (technical with the exercise and with the team), answer within 48 hours.', 'Fast and enough: candidates are not lost.'],
+      long: ['Five rounds, with someone from each area.', 'Seven weeks again: the good ones accept another offer.'],
+      wait: ['Wait until you have twenty candidates and interview them all at once.', 'The first ones leave while you wait.'],
+    },
+  },
+}
+
+const CRITERIA_EN: Record<CriterionId, string> = { api_ci: 'API and pipeline', perf: 'Performance', comm: 'Explaining risks', mentor: 'Mentoring juniors' }
+
+const CAND_EN: Record<string, Pick<Candidate, 'background' | 'impression' | 'evidence'>> = {
+  marcos: { background: '8 years in consulting. Worked with Raúl at his previous company.', impression: 'Recommended by the CTO. A very good conversation, the whole panel left in a good mood.', evidence: 'In the exercise he did not manage to run the suite in the pipeline; he admitted not having automated in the last three years. He explained a business risk very well.' },
+  ana: { background: '5 years of QA at an insurer.', impression: 'A bit dry in the interview with the team.', evidence: 'She extended the suite and integrated it into the pipeline within the exercise time. She mentors two juniors at her current company.' },
+  javier: { background: '6 years; the last two, performance testing at an e-commerce company.', impression: 'He struggles to speak in public.', evidence: 'He designed a reasonable load test for the transfers API and explained how to interpret the results.' },
+  rocio: { background: 'No university degree. 3 years in customer service and 2 as QA after a bootcamp.', impression: 'Nervous at first. “Not the usual profile”.', evidence: 'She solved the API exercise well. She explained a risk from the customer’s point of view better than anyone. She already mentors a junior.' },
+  luis: { background: '12 years, engineer, knows our tool.', impression: 'Meets everything in the old job ad.', evidence: "His exercise tests did not check the response. He was dismissive toward the junior interviewer on the panel." },
+}
+
+export function needsFor(lang: AcademyLang = 'es'): string[] {
+  return lang === 'en' ? NEEDS_EN : NEEDS
+}
+export function requirementsFor(lang: AcademyLang = 'es'): Item[] {
+  return lang === 'en' ? REQUIREMENTS.map((r) => ({ ...r, text: REQ_EN[r.id][0], why: REQ_EN[r.id][1] })) : REQUIREMENTS
+}
+export function stepsFor(lang: AcademyLang = 'es'): Step[] {
+  if (lang !== 'en') return STEPS
+  return STEPS.map((st) => ({ ...st, title: STEPS_EN[st.id].title, options: st.options.map((o) => ({ ...o, text: STEPS_EN[st.id].o[o.id][0], why: STEPS_EN[st.id].o[o.id][1] })) }))
+}
+export function criteriaFor(lang: AcademyLang = 'es'): { id: CriterionId; label: string }[] {
+  return lang === 'en' ? CRITERIA.map((c) => ({ ...c, label: CRITERIA_EN[c.id] })) : CRITERIA
+}
+export function candidatesFor(lang: AcademyLang = 'es'): Candidate[] {
+  return lang === 'en' ? CANDIDATES.map((c) => ({ ...c, ...CAND_EN[c.id] })) : CANDIDATES
+}
+
 export interface HiringState {
   requirements: string[]
   steps: Partial<Record<Step['id'], string>>
@@ -149,15 +215,15 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
 }
 const noop = (state: HiringState, summary = 'Sin cambios.') => ({ state, event: event('noop', summary, 0) })
 
-export function toggleRequirement(state: HiringState, id: string): { state: HiringState; event: AppEvent } {
-  if (state.profileSaved || !REQUIREMENTS.some((r) => r.id === id)) return noop(state)
+export function toggleRequirement(state: HiringState, id: string, lang: AcademyLang = 'es'): { state: HiringState; event: AppEvent } {
+  if (state.profileSaved || !REQUIREMENTS.some((r) => r.id === id)) return noop(state, tr(lang, 'Sin cambios.', 'No changes.'))
   const requirements = state.requirements.includes(id) ? state.requirements.filter((r) => r !== id) : [...state.requirements, id]
-  return { state: { ...state, requirements }, event: event('requirement', `Perfil: ${requirements.length} requisitos.`, 0) }
+  return { state: { ...state, requirements }, event: event('requirement', tr(lang, `Perfil: ${requirements.length} requisitos.`, `Profile: ${requirements.length} requirements.`), 0) }
 }
 
-export function chooseStep(state: HiringState, stepId: Step['id'], optionId: string): { state: HiringState; event: AppEvent } {
-  if (state.profileSaved || !STEPS.find((s) => s.id === stepId)?.options.some((o) => o.id === optionId)) return noop(state)
-  return { state: { ...state, steps: { ...state.steps, [stepId]: optionId } }, event: event('step', `Proceso · ${stepId}: ${optionId}.`, 0) }
+export function chooseStep(state: HiringState, stepId: Step['id'], optionId: string, lang: AcademyLang = 'es'): { state: HiringState; event: AppEvent } {
+  if (state.profileSaved || !STEPS.find((s) => s.id === stepId)?.options.some((o) => o.id === optionId)) return noop(state, tr(lang, 'Sin cambios.', 'No changes.'))
+  return { state: { ...state, steps: { ...state.steps, [stepId]: optionId } }, event: event('step', tr(lang, `Proceso · ${stepId}: ${optionId}.`, `Process · ${stepId}: ${optionId}.`), 0) }
 }
 
 export function evaluateProfile(state: HiringState) {
@@ -167,18 +233,18 @@ export function evaluateProfile(state: HiringState) {
   return { complete: chosen.length >= 2 && steps.every(Boolean), profileOk, ready: profileOk && steps.every((o) => o?.good) }
 }
 
-export function saveProfile(state: HiringState): { state: HiringState; event: AppEvent } {
+export function saveProfile(state: HiringState, lang: AcademyLang = 'es'): { state: HiringState; event: AppEvent } {
   const r = evaluateProfile(state)
-  if (state.profileSaved || !r.complete) return noop(state, 'Elige los requisitos, el formato y el proceso.')
+  if (state.profileSaved || !r.complete) return noop(state, tr(lang, 'Elige los requisitos, el formato y el proceso.', 'Choose the requirements, the format and the process.'))
   const flags = ['profile.saved']
   if (r.profileOk) flags.push('profile.ok')
   if (state.steps.format === 'structured') flags.push('interview.structured')
   if (r.ready) flags.push('process.ready')
-  return { state: { ...state, profileSaved: true }, event: event('profile', 'Perfil y proceso publicados para el panel.', 10, flags) }
+  return { state: { ...state, profileSaved: true }, event: event('profile', tr(lang, 'Perfil y proceso publicados para el panel.', 'Profile and process published for the panel.'), 10, flags) }
 }
 
-export function decide(state: HiringState, candidateId: string, decision: Decision | ''): { state: HiringState; event: AppEvent } {
-  if (state.decided || !CANDIDATES.some((c) => c.id === candidateId)) return noop(state)
+export function decide(state: HiringState, candidateId: string, decision: Decision | '', lang: AcademyLang = 'es'): { state: HiringState; event: AppEvent } {
+  if (state.decided || !CANDIDATES.some((c) => c.id === candidateId)) return noop(state, tr(lang, 'Sin cambios.', 'No changes.'))
   return { state: { ...state, decisions: { ...state.decisions, [candidateId]: decision } }, event: event('decide', `${candidateId}: ${decision || '—'}.`, 0) }
 }
 
@@ -191,12 +257,12 @@ export function evaluateDecisions(decisions: HiringState['decisions']) {
   }
 }
 
-export function submitDecisions(state: HiringState): { state: HiringState; event: AppEvent } {
+export function submitDecisions(state: HiringState, lang: AcademyLang = 'es'): { state: HiringState; event: AppEvent } {
   const r = evaluateDecisions(state.decisions)
   if (state.decided || !state.profileSaved || !r.complete || r.hires === 0 || r.hires > VACANCIES)
-    return noop(state, `Publica antes el perfil y decide sobre todos (como mucho ${VACANCIES} contrataciones).`)
+    return noop(state, tr(lang, `Publica antes el perfil y decide sobre todos (como mucho ${VACANCIES} contrataciones).`, `First publish the profile and decide on everyone (at most ${VACANCIES} hires).`))
   const flags = ['hiring.decided']
   if (r.right === CANDIDATES.length) flags.push('hiring.ok')
   for (const c of CANDIDATES) flags.push(`${state.decisions[c.id] === 'hire' ? 'hire' : 'reject'}.${c.id}`)
-  return { state: { ...state, decided: true }, event: event('decide_all', `Decisión del panel enviada: ${r.hires} contrataciones.`, 15, flags) }
+  return { state: { ...state, decided: true }, event: event('decide_all', tr(lang, `Decisión del panel enviada: ${r.hires} contrataciones.`, `Panel decision sent: ${r.hires} hires.`), 15, flags) }
 }

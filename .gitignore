@@ -63,3 +63,12 @@ ase_backend/schema_dump.sql
 
 # Cleanup safety backup
 _cleanup_backup_*
+
+# Local tooling & scratch (not part of the product)
+.agents/
+.codex/
+.cursor/
+.impeccable/
+_inc/
+_to_delete/
+_videos/

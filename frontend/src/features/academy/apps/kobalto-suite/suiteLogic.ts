@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «Suite» del curso 4, misión 2 (La suite que nadie mira): los ocho tests
@@ -45,6 +46,35 @@ export const DECISION_LABEL: Record<Decision, string> = {
   leave: 'Dejarlo como está',
 }
 
+const DECISION_LABEL_EN: Record<Decision, string> = {
+  fix: 'Fix the test',
+  quarantine: 'Quarantine (out of the pipeline, with ticket and owner)',
+  delete: 'Delete the test',
+  report_bug: 'Report a bug to the squad',
+  leave: 'Leave it as it is',
+}
+
+const TEST_EN: Record<string, Pick<FlakyTest, 'cause' | 'why'>> = {
+  T1: { cause: 'It uses fixed waits (a 2 s sleep). When staging is slow, the button is not there yet and the test fails.', why: 'The test fails, not the product: fix it by waiting for the condition instead of a fixed time. It catches real bugs, so it is worth it.' },
+  T2: { cause: 'Reviewing the failures, the product lets the limit be exceeded when two payments arrive at the same time. The test is not failing: the app is, now and then.', why: "It is not a flaky test: it is a real intermittent bug (race condition). Silencing or retrying it would hide it." },
+  T3: { cause: "It depends on the SMS provider's sandbox, which goes down often.", why: 'An external dependency must not bring down the pipeline: simulate the provider and keep a real check separately, off the critical path.' },
+  T4: { cause: 'It shares the test account with another test that deletes it when it finishes. If they run at the same time, it fails.', why: 'Shared test data: each test creates and cleans up its own data.' },
+  T5: { cause: 'It looks for a banner of a promotion that was withdrawn six months ago.', why: 'It tests a feature that no longer exists: delete it.' },
+  T6: { cause: 'It fails when run between 00:00 and 01:00: it compares the date in local time with the server date in UTC.', why: 'Test failure caused by the time zone: fix it by fixing the date and zone in the test.' },
+  T7: { cause: 'The identity verification service in staging sometimes takes more than 10 minutes. Fixing it properly (a double of the service) takes a week.', why: 'Very valuable and expensive to fix now: out of the blocking pipeline but running every night, with a ticket, an owner and a date.' },
+  T8: { cause: 'It repeats what three other, faster tests already cover and has found no bug in a year.', why: 'Duplicate and worthless: it costs time and noise, so delete it.' },
+}
+
+/** Tests en el idioma pedido (mismos ids y números). */
+export function testsFor(lang: AcademyLang = 'es'): FlakyTest[] {
+  return lang === 'en' ? TESTS.map((t) => ({ ...t, ...TEST_EN[t.id] })) : TESTS
+}
+
+/** Etiquetas de decisión en el idioma pedido. */
+export function decisionLabels(lang: AcademyLang = 'es'): Record<Decision, string> {
+  return lang === 'en' ? DECISION_LABEL_EN : DECISION_LABEL
+}
+
 /** Coste en minutos de aplicar una decisión. */
 export function decisionCost(t: FlakyTest, d: Decision): number {
   if (d === 'fix') return t.fixCost || 60
@@ -71,18 +101,18 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
   return { app: APP, action, summary, technical: `suite.${action}`, status: 'ok', bugs: [], cost, flags }
 }
 
-export function investigate(state: SuiteState, id: string): { state: SuiteState; event: AppEvent } {
-  const t = TESTS.find((x) => x.id === id)
-  if (!t || state.investigated.includes(id)) return { state, event: event('noop', 'Ya investigado.', 0) }
+export function investigate(state: SuiteState, id: string, lang: AcademyLang = 'es'): { state: SuiteState; event: AppEvent } {
+  const t = testsFor(lang).find((x) => x.id === id)
+  if (!t || state.investigated.includes(id)) return { state, event: event('noop', tr(lang, 'Ya investigado.', 'Already investigated.'), 0) }
   const investigated = [...state.investigated, id]
   const flags = [`suite.inv.${id}`]
   if (investigated.length >= 6) flags.push('suite.analyzed')
   return { state: { ...state, investigated }, event: event('investigate', `${t.name}: ${t.cause}`, INVESTIGATE_COST, flags) }
 }
 
-export function decide(state: SuiteState, id: string, d: Decision | ''): { state: SuiteState; event: AppEvent } {
-  if (state.applied || !state.investigated.includes(id)) return { state, event: event('noop', 'Investiga antes el test.', 0) }
-  return { state: { ...state, decisions: { ...state.decisions, [id]: d } }, event: event('decide', `${id}: ${d ? DECISION_LABEL[d] : '—'}.`, 0) }
+export function decide(state: SuiteState, id: string, d: Decision | '', lang: AcademyLang = 'es'): { state: SuiteState; event: AppEvent } {
+  if (state.applied || !state.investigated.includes(id)) return { state, event: event('noop', tr(lang, 'Investiga antes el test.', 'Investigate the test first.'), 0) }
+  return { state: { ...state, decisions: { ...state.decisions, [id]: d } }, event: event('decide', `${id}: ${d ? decisionLabels(lang)[d] : '—'}.`, 0) }
 }
 
 /** % estimado de ejecuciones en verde del pipeline si se aplican las decisiones. */
@@ -109,9 +139,9 @@ export function evaluateDecisions(decisions: Record<string, Decision | ''>) {
   }
 }
 
-export function applyDecisions(state: SuiteState): { state: SuiteState; event: AppEvent } {
+export function applyDecisions(state: SuiteState, lang: AcademyLang = 'es'): { state: SuiteState; event: AppEvent } {
   const r = evaluateDecisions(state.decisions)
-  if (state.applied || !r.complete) return { state, event: event('noop', 'Decide antes qué hacer con los ocho tests.', 0) }
+  if (state.applied || !r.complete) return { state, event: event('noop', tr(lang, 'Decide antes qué hacer con los ocho tests.', 'First decide what to do with the eight tests.'), 0) }
   const cost = TESTS.reduce((n, t) => n + decisionCost(t, state.decisions[t.id] as Decision), 0)
   const flags = ['suite.applied']
   if (r.right === TESTS.length) flags.push('suite.ok')
@@ -121,11 +151,11 @@ export function applyDecisions(state: SuiteState): { state: SuiteState; event: A
   if (state.decisions.T7 === 'quarantine') flags.push('suite.quarantine_ok')
   return {
     state: { ...state, applied: true },
-    event: event('apply', `Decisiones aplicadas: ${r.right} de ${TESTS.length} adecuadas. Pipeline estimado en verde: ${projectedGreen(state.decisions)} %.`, cost, flags),
+    event: event('apply', tr(lang, `Decisiones aplicadas: ${r.right} de ${TESTS.length} adecuadas. Pipeline estimado en verde: ${projectedGreen(state.decisions)} %.`, `Decisions applied: ${r.right} of ${TESTS.length} appropriate. Estimated green pipeline: ${projectedGreen(state.decisions)} %.`), cost, flags),
   }
 }
 
-export function publishReport(state: SuiteState): { state: SuiteState; event: AppEvent } {
-  if (state.reported || state.investigated.length < TESTS.length) return { state, event: event('noop', 'Investiga antes los ocho tests.', 0) }
-  return { state: { ...state, reported: true }, event: event('report', 'Informe de salud de la suite publicado: causa, decisión y squad dueño de cada test.', 15, ['report.published']) }
+export function publishReport(state: SuiteState, lang: AcademyLang = 'es'): { state: SuiteState; event: AppEvent } {
+  if (state.reported || state.investigated.length < TESTS.length) return { state, event: event('noop', tr(lang, 'Investiga antes los ocho tests.', 'First investigate the eight tests.'), 0) }
+  return { state: { ...state, reported: true }, event: event('report', tr(lang, 'Informe de salud de la suite publicado: causa, decisión y squad dueño de cada test.', 'Suite health report published: cause, decision and owner squad for each test.'), 15, ['report.published']) }
 }

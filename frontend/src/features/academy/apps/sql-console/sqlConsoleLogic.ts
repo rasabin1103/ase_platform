@@ -1,4 +1,5 @@
 import { evaluate } from '../../engine/engine'
+import { missionLang } from '../../i18n'
 import type { AppEvent, Mission, RunState } from '../../engine/types'
 import type { RetoVerdict } from '../../sql/check'
 import type { SqlConsoleState, SqlResult } from '../../sql/types'
@@ -34,8 +35,10 @@ export function runEvent(mission: Mission, state: RunState, sql: string, result:
   const saved: SqlResult = { ...result, rows: result.rows.slice(0, SAVED_ROWS) }
   const next: SqlConsoleState = { sql, runs: prev.runs + 1, last: { sql, result: saved, at: state.clock } }
   const fresh = done.filter((id) => !state.flags[`reto.${id}`])
+  const en = missionLang(mission) === 'en'
+  const rowsWord = en ? (result.columns.length ? 'rows' : 'rows affected') : result.columns.length ? 'filas' : 'filas afectadas'
   const summary = result.ok
-    ? `${result.command || 'SQL'}: ${result.rowCount} ${result.columns.length ? 'filas' : 'filas afectadas'}${fresh.length ? ` · encargo cumplido` : ''}`
+    ? `${result.command || 'SQL'}: ${result.rowCount} ${rowsWord}${fresh.length ? (en ? ' · task done' : ' · encargo cumplido') : ''}`
     : `Error: ${result.error?.message ?? ''}`
   return {
     state: next,
@@ -62,8 +65,8 @@ export function restoreEvent(mission: Mission, state: RunState): { state: SqlCon
     event: {
       app: SQL_APP,
       action: 'restore',
-      summary: 'Base de datos restaurada a los datos de partida',
-      technical: '[sql] restore → base de datos recreada',
+      summary: missionLang(mission) === 'en' ? 'Database restored to the starting data' : 'Base de datos restaurada a los datos de partida',
+      technical: missionLang(mission) === 'en' ? '[sql] restore → database recreated' : '[sql] restore → base de datos recreada',
       status: 'ok',
       bugs: [],
       cost: mission.sqlLab?.restoreCost ?? 5,

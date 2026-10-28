@@ -7,7 +7,7 @@ import zipfile
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core import github_client
@@ -365,14 +365,14 @@ class TestExecutionService:
         # (core/product_viewers.py: p. ej. una API que ASE consume) también
         # son "probables": no se ejecutan como workflow ni gastan cuota, y
         # se ven con su propio visor en el frontend.
+        # Solo productos PUBLICADOS: un borrador o un «próximamente» no se
+        # puede probar aunque tenga workflow configurado.
         stmt = select(CatalogItem).where(
+            CatalogItem.status == CatalogItemStatus.published,
             or_(
                 CatalogItem.test_workflow_file.isnot(None),
-                and_(
-                    CatalogItem.slug.in_(registered_tool_slugs()),
-                    CatalogItem.status == CatalogItemStatus.published,
-                ),
-            )
+                CatalogItem.slug.in_(registered_tool_slugs()),
+            ),
         )
         items = list(self.db.execute(stmt).scalars().all())
         result = []
@@ -681,6 +681,10 @@ class TestExecutionService:
         scenario flagged is_default is used (see _resolve_variables)."""
         item = self._get_runnable_item(slug)
 
+        if item.status != CatalogItemStatus.published:
+            # Coherente con list_runnable_frameworks: no se ejecuta lo no publicado.
+            raise FrameworkNotRunnableError()
+
         if not self._owns_item(item, user_id=user_id):
             raise NotEntitledError()
 
@@ -815,7 +819,84 @@ class TestExecutionService:
         except zipfile.BadZipFile:
             raise ReportNotFoundError()
 
-    def _get_dynamic_request_detail(self, *, run: TestRun, item: CatalogItem | None) -> dict | None:
+    def _get_request_result_json(self, *, run: TestRun, item: CatalogItem | None) -> dict | None:
+        """Downloads and parses the run's `request-result` artifact (JSON), or
+        None if it doesn't exist / can't be read. Shared by the dynamic
+        request card and the tool-agnostic `toolResult` block."""
+        if run.github_run_id is None or item is None or not item.test_repo_url:
+            return None
+        token = settings.GITHUB_ACCESS_TOKEN or ""
+        try:
+            artifacts = github_client.list_workflow_run_artifacts(
+                repo_url=item.test_repo_url, token=token, run_id=run.github_run_id,
+            )
+        except github_client.GithubWorkflowError:
+            return None
+        artifact = next(
+            (
+                a for a in artifacts
+                if not a.get("expired")
+                and ("request-result" in str(a.get("name", "")).lower()
+                     or "request_result" in str(a.get("name", "")).lower())
+            ),
+            None,
+        )
+        if artifact is None:
+            return None
+        try:
+            zip_bytes = github_client.download_artifact_zip(
+                repo_url=item.test_repo_url, token=token, artifact_id=artifact["id"],
+            )
+            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+                json_names = [n for n in zf.namelist() if n.lower().endswith(".json")]
+                if not json_names:
+                    return None
+                with zf.open(json_names[0]) as f:
+                    raw = json.loads(f.read().decode("utf-8", errors="replace"))
+        except (github_client.GithubWorkflowError, zipfile.BadZipFile, ValueError):
+            return None
+        return raw if isinstance(raw, dict) else None
+
+    @staticmethod
+    def _tool_result_from_raw(raw: dict | None) -> dict | None:
+        """Normalises the optional `ase_result` block a product's workflow
+        script writes into request_result.json (see docs/contract-guard-repo/
+        tools/ase_run.py). Defensive: any malformed part is dropped."""
+        block = (raw or {}).get("ase_result")
+        if not isinstance(block, dict):
+            return None
+
+        def _s(v: object, limit: int = 2000) -> str:
+            return str(v)[:limit] if v is not None else ""
+
+        def _rows(key: str, fields: tuple[str, ...], cap: int) -> list[dict]:
+            rows = block.get(key)
+            if not isinstance(rows, list):
+                return []
+            return [
+                {f: _s(r.get(f)) for f in fields}
+                for r in rows[:cap]
+                if isinstance(r, dict)
+            ]
+
+        verdict = _s(block.get("verdict")).lower()
+        if verdict not in {"pass", "warn", "fail", "error"}:
+            verdict = "warn"
+        return {
+            "tool": _s(block.get("tool"), 120),
+            "mode": _s(block.get("mode"), 120),
+            "verdict": verdict,
+            "headline": _s(block.get("headline"), 400),
+            "explanation": _s(block.get("explanation"), 1000),
+            "metrics": _rows("metrics", ("label", "value", "tone"), 12),
+            "findings": _rows("findings", ("severity", "title", "location", "detail", "hint"), 200),
+            "inputs": _rows("inputs", ("label", "value"), 12),
+            "truncated": bool(block.get("truncated")),
+        }
+
+    def _get_dynamic_request_detail(
+        self, *, run: TestRun, item: CatalogItem | None, raw: dict | None = None,
+    ) -> dict | None:
         """Best-effort read of the buyer's `request_result.json` artifact
         (written by their test_dynamic_request.py — see the workflow this
         platform dispatches) — the structured method/url/status/body detail
@@ -826,51 +907,9 @@ class TestExecutionService:
         an older framework repo that doesn't produce one, an expired
         artifact — this is always an addition to the summary, never
         something callers should treat as required."""
-        if run.github_run_id is None or item is None or not item.test_repo_url:
-            return None
-
-        token = settings.GITHUB_ACCESS_TOKEN or ""
-        try:
-            artifacts = github_client.list_workflow_run_artifacts(
-                repo_url=item.test_repo_url, token=token, run_id=run.github_run_id,
-            )
-        except github_client.GithubWorkflowError:
-            return None
-
-        candidates = [a for a in artifacts if not a.get("expired")]
-        # Unlike get_run_report_html, this deliberately does NOT fall back to
-        # "the first artifact" when nothing matches — misreporting the html
-        # report (or some unrelated artifact) as request/response detail
-        # would be worse than just showing nothing.
-        artifact = next(
-            (
-                a for a in candidates
-                if "request-result" in str(a.get("name", "")).lower()
-                or "request_result" in str(a.get("name", "")).lower()
-            ),
-            None,
-        )
-        if artifact is None:
-            return None
-
-        try:
-            zip_bytes = github_client.download_artifact_zip(
-                repo_url=item.test_repo_url, token=token, artifact_id=artifact["id"],
-            )
-        except github_client.GithubWorkflowError:
-            return None
-
-        try:
-            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-                json_names = [n for n in zf.namelist() if n.lower().endswith(".json")]
-                if not json_names:
-                    return None
-                with zf.open(json_names[0]) as f:
-                    raw = json.loads(f.read().decode("utf-8", errors="replace"))
-        except (zipfile.BadZipFile, ValueError):
-            return None
-
-        if not isinstance(raw, dict):
+        if raw is None:
+            raw = self._get_request_result_json(run=run, item=item)
+        if raw is None or not isinstance(raw.get("request"), dict) or not isinstance(raw.get("response"), dict):
             return None
         req = raw.get("request") or {}
         resp = raw.get("response") or {}
@@ -979,7 +1018,15 @@ class TestExecutionService:
         except ReportNotFoundError:
             html_report = None
         test_summary = _extract_test_summary(html_report) if html_report else None
-        dynamic_request = self._get_dynamic_request_detail(run=run, item=item)
+        raw_result = self._get_request_result_json(run=run, item=item)
+        tool_result = self._tool_result_from_raw(raw_result)
+        dynamic_request = None
+        if raw_result is not None and isinstance(raw_result.get("request"), dict) and isinstance(raw_result.get("response"), dict):
+            dynamic_request = self._get_dynamic_request_detail(run=run, item=item, raw=raw_result)
+        if tool_result is not None:
+            # A tool-specific result replaces the pytest-style counters, which
+            # would be meaningless (or empty) for this kind of run.
+            test_summary = None
 
         duration_seconds: int | None = None
         if run.started_at is not None:
@@ -1002,6 +1049,7 @@ class TestExecutionService:
             "jobs": jobs,
             "originalReportAvailable": html_report is not None,
             "dynamicRequest": dynamic_request,
+            "toolResult": tool_result,
         }
 
     def list_runs(

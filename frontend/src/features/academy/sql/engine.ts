@@ -1,4 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite'
+import type { AcademyLang } from '../i18n'
 import type { SqlCell, SqlResult } from './types'
 
 /**
@@ -63,9 +64,34 @@ const ERRORS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^function (.*) does not exist$/, (m) => `La función ${m[1]} no existe (o sus argumentos no son del tipo correcto).`],
 ]
 
-/** Traduce los errores más comunes de PostgreSQL al español (conserva el original). */
-export function translateError(message: string): string {
-  for (const [re, fn] of ERRORS) {
+/** Same rules, in English (the original PostgreSQL text is always kept next to it). */
+const ERRORS_EN: [RegExp, (m: RegExpMatchArray) => string][] = [
+  [/^syntax error at or near "(.*)"$/, (m) => `Syntax error near “${m[1]}”.`],
+  [/^syntax error at end of input$/, () => 'The query is incomplete: something is missing at the end.'],
+  [/^relation "(.*)" does not exist$/, (m) => `The table “${m[1]}” does not exist. Check the name in the explorer.`],
+  [/^column "(.*)" does not exist$/, (m) => `The column “${m[1]}” does not exist. If it is text, it goes in single quotes: '${m[1]}'.`],
+  [/^column (.*) does not exist$/, (m) => `The column ${m[1]} does not exist.`],
+  [/^missing FROM-clause entry for table "(.*)"$/, (m) => `You use “${m[1]}” but that table is not in the FROM.`],
+  [/^column "(.*)" must appear in the GROUP BY clause or be used in an aggregate function$/, (m) => `The column “${m[1]}” must be in the GROUP BY or inside an aggregate function.`],
+  [/^aggregate functions are not allowed in WHERE$/, () => 'COUNT, SUM and the other aggregates cannot be used in WHERE: WHERE filters rows before grouping. To filter groups, use HAVING.'],
+  [/^column reference "(.*)" is ambiguous$/, (m) => `The column “${m[1]}” exists in several tables: say which one (table.${m[1]}).`],
+  [/^unterminated quoted string at or near "(.*)"$/, () => 'A single quote is not closed.'],
+  [/^cannot execute (\w+) in a read-only transaction$/, (m) => `The replica is read-only: you cannot run ${m[1]} here.`],
+  [/^invalid input syntax for type (\w+): "(.*)"$/, (m) => `“${m[2]}” is not a valid ${m[1]} value.`],
+  [/^operator does not exist: (.*)$/, (m) => `Those types cannot be compared or combined (${m[1]}).`],
+  [/^current transaction is aborted, commands ignored until end of transaction block$/, () => 'The transaction failed and is aborted: run ROLLBACK to leave it.'],
+  [/^there is no transaction in progress$/, () => 'There is no open transaction (a BEGIN is missing).'],
+  [/^division by zero$/, () => 'Division by zero.'],
+  [/^null value in column "(.*)" of relation "(.*)" violates not-null constraint$/, (m) => `The column “${m[1]}” of “${m[2]}” does not accept empty values (NOT NULL).`],
+  [/^duplicate key value violates unique constraint "(.*)"$/, (m) => `That value already exists and must be unique (${m[1]}).`],
+  [/^insert or update on table "(.*)" violates foreign key constraint "(.*)"$/, (m) => `The value does not exist in the related table (foreign key ${m[2]} of “${m[1]}”).`],
+  [/^new row for relation "(.*)" violates check constraint "(.*)"$/, (m) => `The row breaks the rule ${m[2]} of “${m[1]}”.`],
+  [/^function (.*) does not exist$/, (m) => `The function ${m[1]} does not exist (or its arguments are not of the right type).`],
+]
+
+/** Traduce los errores más comunes de PostgreSQL al idioma de la misión (conserva el original). */
+export function translateError(message: string, lang: AcademyLang = 'es'): string {
+  for (const [re, fn] of lang === 'en' ? ERRORS_EN : ERRORS) {
     const m = message.match(re)
     if (m) return fn(m)
   }
@@ -75,10 +101,10 @@ export function translateError(message: string): string {
 const COMMAND = /^\s*(?:--[^\n]*\n\s*)*(\w+)/
 
 /** Ejecuta el SQL del alumno y devuelve la última sentencia con filas (o la última). */
-export async function runSql(db: PGlite, sql: string): Promise<SqlResult> {
+export async function runSql(db: PGlite, sql: string, lang: AcademyLang = 'es'): Promise<SqlResult> {
   const t0 = performance.now()
   const command = (sql.match(COMMAND)?.[1] ?? '').toUpperCase()
-  if (!sql.trim()) return { ok: false, columns: [], rows: [], rowCount: 0, command, ms: 0, error: { message: 'Escribe una consulta antes de ejecutar.', original: 'empty query' } }
+  if (!sql.trim()) return { ok: false, columns: [], rows: [], rowCount: 0, command, ms: 0, error: { message: lang === 'en' ? 'Write a query before running.' : 'Escribe una consulta antes de ejecutar.', original: 'empty query' } }
   try {
     // Filas como arrays: dos columnas pueden llamarse igual (p. ej. dos count).
     const results = await db.exec(sql, { rowMode: 'array' })
@@ -101,7 +127,7 @@ export async function runSql(db: PGlite, sql: string): Promise<SqlResult> {
     const err = e as { message?: string; position?: string | number }
     const original = err.message ?? String(e)
     const position = err.position !== undefined ? Number(err.position) : undefined
-    return { ok: false, columns: [], rows: [], rowCount: 0, command, ms: Math.round(performance.now() - t0), error: { message: translateError(original), original, position } }
+    return { ok: false, columns: [], rows: [], rowCount: 0, command, ms: Math.round(performance.now() - t0), error: { message: translateError(original, lang), original, position } }
   }
 }
 

@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «Capacidad» del curso 4, misión 9 (Recortes): plan de capacidad para
@@ -44,6 +45,34 @@ export const LEVERS: Lever[] = [
   { id: 'training', title: 'Eliminar formación y conferencias', saving: 40, impact: 'Ahorro pequeño; el equipo lo valora mucho.', kind: 'morale', why: 'Poco ahorro y mucho daño a la moral y a la retención.' },
 ]
 
+const AREA_EN = [
+  '3 QA Leads and 18 QAs. Annual budget: 2,000 k€.',
+  'What is critical: payments and cards (customer money and the regulator).',
+  'Two departures are planned this year (a retirement and a transfer), not yet replaced.',
+  'Manual regression of the internal back-office occupies three people.',
+  'You have two test management tools that do the same thing.',
+  'Javier, hired six months ago, leads performance; the campaigns start in three months.',
+]
+
+const LEVERS_EN: Record<string, Pick<Lever, 'title' | 'impact' | 'why'>> = {
+  vacancies: { title: 'Do not replace the two planned departures', impact: 'Two fewer people, without firing anyone. Their work has to be redistributed.', why: 'Savings without layoffs: the cost is less margin, and you can see it coming.' },
+  outsource_low: { title: 'Outsource the manual regression of the internal back-office', impact: 'Low risk. The three people move to payments and cards.', why: 'You outsource the low-risk work and people move to what is critical.' },
+  scope_low: { title: 'Stop manually testing low-risk internal apps', impact: 'Low risk that the business must accept, in writing.', why: 'Reduce scope where risk is low, if the business accepts it.' },
+  tools: { title: 'Keep a single test management tool', impact: 'One-month migration; no impact on coverage.', why: 'Clean savings: duplication with no value.' },
+  automate: { title: 'Automate the manual regression of cards (investment this year)', impact: 'Net savings in the first year; it grows in the following ones. A senior person in the area would lead it.', why: 'It saves and also gives a challenge to key people.' },
+  outsource_payments: { title: 'Also outsource payments regression', impact: 'The vendor does not know the domain or the anti-fraud.', why: 'What is critical, in the hands of someone who does not know the domain: if it fails, it costs more than the savings.' },
+  seniors: { title: 'Let go of the three most expensive senior QAs', impact: 'They are the ones who know the most about payments and cards.', why: 'You lose the knowledge on which the critical risk depends.' },
+  perf: { title: "Close performance (Javier's position)", impact: 'The campaigns start in three months with nobody who can do load testing.', why: 'Just hired for a need that arrives in three months.' },
+  training: { title: 'Eliminate training and conferences', impact: 'Small savings; the team values it a lot.', why: 'Little savings and a lot of damage to morale and retention.' },
+}
+
+export function areaFor(lang: AcademyLang = 'es'): string[] {
+  return lang === 'en' ? AREA_EN : AREA
+}
+export function leversFor(lang: AcademyLang = 'es'): Lever[] {
+  return lang === 'en' ? LEVERS.map((l) => ({ ...l, ...LEVERS_EN[l.id] })) : LEVERS
+}
+
 export interface CapacityState {
   levers: string[]
   saved: boolean
@@ -57,10 +86,10 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
   return { app: APP, action, summary, technical: `capacity.${action}`, status: 'ok', bugs: [], cost, flags }
 }
 
-export function toggleLever(state: CapacityState, id: string): { state: CapacityState; event: AppEvent } {
-  if (state.saved || !LEVERS.some((l) => l.id === id)) return { state, event: event('noop', 'Sin cambios.', 0) }
+export function toggleLever(state: CapacityState, id: string, lang: AcademyLang = 'es'): { state: CapacityState; event: AppEvent } {
+  if (state.saved || !LEVERS.some((l) => l.id === id)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
   const levers = state.levers.includes(id) ? state.levers.filter((l) => l !== id) : [...state.levers, id]
-  return { state: { ...state, levers }, event: event('lever', `Plan: ${levers.length} palancas.`, 0) }
+  return { state: { ...state, levers }, event: event('lever', tr(lang, `Plan: ${levers.length} palancas.`, `Plan: ${levers.length} levers.`), 0) }
 }
 
 export function evaluatePlan(levers: string[]) {
@@ -75,8 +104,8 @@ export function evaluatePlan(levers: string[]) {
   }
 }
 
-export function savePlan(state: CapacityState): { state: CapacityState; event: AppEvent } {
-  if (state.saved || state.levers.length === 0) return { state, event: event('noop', 'Elige antes las palancas.', 0) }
+export function savePlan(state: CapacityState, lang: AcademyLang = 'es'): { state: CapacityState; event: AppEvent } {
+  if (state.saved || state.levers.length === 0) return { state, event: event('noop', tr(lang, 'Elige antes las palancas.', 'First choose the levers.'), 0) }
   const r = evaluatePlan(state.levers)
   const flags = ['plan.saved']
   if (r.target) flags.push('plan.target')
@@ -85,5 +114,5 @@ export function savePlan(state: CapacityState): { state: CapacityState; event: A
   if (r.morale) flags.push('plan.morale')
   if (state.levers.includes('scope_low')) flags.push('plan.scope')
   if (r.target && r.critical && r.keyPeople && r.morale) flags.push('plan.ok')
-  return { state: { ...state, saved: true }, event: event('save', `Plan de capacidad enviado a Laura: ahorro de ${r.saving} k€ de ${TARGET} k€.`, 20, flags) }
+  return { state: { ...state, saved: true }, event: event('save', tr(lang, `Plan de capacidad enviado a Laura: ahorro de ${r.saving} k€ de ${TARGET} k€.`, `Capacity plan sent to Laura: savings of ${r.saving} k€ of ${TARGET} k€.`), 20, flags) }
 }

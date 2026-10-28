@@ -24,8 +24,8 @@
       "destination": "https://aseplatform-production.up.railway.app/api/v1/public/blog/:slug/preview"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/(about|academy|admin|app|blog|booking|catalog|contact|dashboard|favorites|forgot-password|job-postings|login|my-books|my-courses|my-library|my-products|my-purchases|my-resources|newsletter|notifications|onboarding|organization|platform|preferencias|pricing|privacy-policy|profile|redeem|redeem-code|register|requests|reset-password|select-organization|services|story|terms-of-service|test-execution|users|verify-email)(/.*)?",
+      "destination": "/app-shell.html"
     }
   ]
 }

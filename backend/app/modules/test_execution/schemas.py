@@ -228,6 +228,33 @@ class DynamicRequestDetailRead(BaseModel):
     schemaError: str | None = None
 
 
+class ToolResultRowRead(BaseModel):
+    label: str = ""
+    value: str = ""
+    tone: str = ""
+    severity: str = ""
+    title: str = ""
+    location: str = ""
+    detail: str = ""
+    hint: str = ""
+
+
+class ToolResultRead(BaseModel):
+    """Tool-agnostic, human-readable verdict a product's workflow script
+    writes under `ase_result` in request_result.json: what was checked, the
+    outcome, key numbers and a findings table with hints."""
+
+    tool: str = ""
+    mode: str = ""
+    verdict: str = "warn"  # pass | warn | fail | error
+    headline: str = ""
+    explanation: str = ""
+    metrics: list[ToolResultRowRead] = []
+    findings: list[ToolResultRowRead] = []
+    inputs: list[ToolResultRowRead] = []
+    truncated: bool = False
+
+
 class TestRunSummaryRead(BaseModel):
     """Structured data behind the ASE-branded report view — built entirely
     from GitHub's Jobs API plus a best-effort scrape of the raw artifact,
@@ -251,6 +278,7 @@ class TestRunSummaryRead(BaseModel):
     jobs: list[TestRunJobRead] = []
     originalReportAvailable: bool = False
     dynamicRequest: DynamicRequestDetailRead | None = None
+    toolResult: ToolResultRead | None = None
 
 
 class AdminResetQuotaRequest(BaseModel):

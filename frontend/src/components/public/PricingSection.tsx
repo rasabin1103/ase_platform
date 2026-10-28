@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { changePlan, createCheckoutSession, type ChangePlanResult } from '../../api/billing.api'
@@ -12,7 +12,7 @@ import { useAuth } from '../../hooks/useAuth'
 import type { Plan, PlanCatalogItem } from '../../types/plan.types'
 import { JsonLd, SITE_URL } from '../seo/JsonLd'
 import { BRAND_IMAGES, SELLER, digitalOfferDetails, priceValidUntil } from '../seo/merchant'
-import { ChevronDown, Download, Percent, Award, Sparkles } from 'lucide-react'
+import { ChevronDown, Download, Percent, Award, Sparkles, MousePointer2 } from 'lucide-react'
 import {
   catalogPlansForBilling,
   localizedPlanText,
@@ -209,7 +209,7 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
       : null
 
   return (
-    <section className={cn('relative isolate overflow-hidden', !hideIntro && 'border-t border-white/5')}>
+    <section className={cn('relative isolate overflow-x-clip', !hideIntro && 'border-t border-white/5')}>
       {/* Same glow language as the admin application map — a faint brand
        * radial behind the pricing grid, the section most likely to close a
        * deal, so it carries the premium finish too. */}
@@ -384,22 +384,20 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
               const isChangingToThisPlan = changePlanMutation.isPending && changePlanMutation.variables === plan.id
 
               return (
-                <Card
+                <PlanCardShell
                   key={plan.id}
-                  interactive
-                  style={{ animationDelay: `${Math.min(planIndex, 6) * 80}ms` }}
-                  className={cn(
-                    // flex-col + each section below carries a fixed min-height (badge
-                    // slot, description, price row) so name/description length never
-                    // shifts where the price or button land — every card in the grid
-                    // reads at the same height for the same section, regardless of
-                    // how short or long that plan's own copy is.
-                    'relative flex animate-fade-in-up flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface/90 p-7 shadow-soft transition duration-300 ease-out hover:-translate-y-1',
-                    tone === 'pro' &&
-                      'border-ase-gold/45 bg-ase-gold/[0.04] shadow-[0_0_70px_-28px_rgba(232,179,104,0.7)] ring-1 ring-ase-gold/25 hover:shadow-glow-gold',
-                    tone === 'premium' && 'border-white/15 hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]',
-                    tone !== 'pro' && tone !== 'premium' && 'hover:border-ase-brand/35 hover:shadow-glow-cyan',
-                  )}
+                  delayMs={Math.min(planIndex, 6) * 80}
+                  tone={tone}
+                  details={
+                    featureGroups.length > 0 ? (
+                      <>
+                        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ase-brand">
+                          {t('pricing.includedTitle')}
+                        </div>
+                        <PlanFeatureGroups groups={featureGroups} t={t} language={language} openAll />
+                      </>
+                    ) : null
+                  }
                 >
                   <div className="flex min-h-[64px] items-start justify-between gap-3">
                     <div>
@@ -502,31 +500,19 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
                   </div>
 
                   {featureGroups.length > 0 ? (
-                    <div className="mt-6 space-y-2">
-                      {featureGroups.map((group, groupIndex) =>
-                        group.kind === 'flat' ? (
-                          <ul key="flat" className="space-y-3">
-                            {group.items.map((f) => (
-                              <li key={f} className="flex gap-3 text-sm text-ase-text2">
-                                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
-                                <span>{f}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <PlanIncludedGroup
-                            key={group.type}
-                            type={group.type}
-                            items={group.items}
-                            defaultOpen={groupIndex === 0}
-                            t={t}
-                            language={language}
-                          />
-                        ),
-                      )}
-                    </div>
+                    <>
+                      {/* Pointer devices: details float in on hover (see PlanCardShell).
+                       * Touch devices have no hover, so the groups stay inline. */}
+                      <div className="mt-6 hidden items-center gap-2 text-xs text-ase-text2/80 [@media(hover:hover)]:flex">
+                        <MousePointer2 className="h-3.5 w-3.5 text-ase-brand" aria-hidden="true" />
+                        {t('pricing.hoverHint')}
+                      </div>
+                      <div className="mt-6 [@media(hover:hover)]:hidden">
+                        <PlanFeatureGroups groups={featureGroups} t={t} language={language} />
+                      </div>
+                    </>
                   ) : null}
-                </Card>
+                </PlanCardShell>
               )
             })}
           </div>
@@ -557,6 +543,122 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
         ) : null}
       </div>
     </section>
+  )
+}
+
+type FeatureGroups = ReturnType<typeof planFeatureGroups>
+
+function PlanFeatureGroups({
+  groups,
+  t,
+  language,
+  openAll,
+}: {
+  groups: FeatureGroups
+  t: (key: string) => unknown
+  language: 'en' | 'es'
+  openAll?: boolean
+}) {
+  return (
+    <div className="space-y-2">
+      {groups.map((group, groupIndex) =>
+        group.kind === 'flat' ? (
+          <ul key="flat" className="space-y-3">
+            {group.items.map((f) => (
+              <li key={f} className="flex gap-3 text-sm text-ase-text2">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ase-brand/80" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <PlanIncludedGroup
+            key={group.type}
+            type={group.type}
+            items={group.items}
+            defaultOpen={openAll || groupIndex === 0}
+            t={t}
+            language={language}
+          />
+        ),
+      )}
+    </div>
+  )
+}
+
+/** Plan card chrome: lifts and scales on hover/focus, a soft spotlight
+ * follows the cursor, and (pointer devices only) a floating panel opens
+ * below with everything the plan includes — so cards stay compact and
+ * equal-height at rest but reveal full detail on demand. The panel is an
+ * absolute overlay, so hovering never shifts the page layout. */
+function PlanCardShell({
+  children,
+  details,
+  tone,
+  delayMs,
+}: {
+  children: ReactNode
+  details: ReactNode
+  tone: TierTone
+  delayMs: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const spot =
+    tone === 'pro' ? 'rgba(240,180,41,0.16)' : tone === 'premium' ? 'rgba(255,255,255,0.10)' : 'rgba(34,211,238,0.15)'
+
+  return (
+    <div
+      ref={ref}
+      style={{ animationDelay: `${delayMs}ms` }}
+      onMouseMove={(e) => {
+        const el = ref.current
+        if (!el) return
+        const r = el.getBoundingClientRect()
+        el.style.setProperty('--mx', `${e.clientX - r.left}px`)
+        el.style.setProperty('--my', `${e.clientY - r.top}px`)
+      }}
+      className={cn(
+        'group/plan relative z-0 flex animate-fade-in-up flex-col rounded-3xl border border-white/10 bg-ase-surface/90 p-7 shadow-soft',
+        'transition duration-300 ease-out motion-reduce:transition-none',
+        'hover:z-20 hover:-translate-y-1.5 hover:scale-[1.025] focus-within:z-20 focus-within:-translate-y-1.5 focus-within:scale-[1.025] motion-reduce:hover:scale-100 motion-reduce:focus-within:scale-100',
+        tone === 'pro' &&
+          'border-ase-gold/45 bg-ase-gold/[0.04] shadow-[0_0_70px_-28px_rgba(232,179,104,0.7)] ring-1 ring-ase-gold/25 hover:shadow-glow-gold',
+        tone === 'premium' && 'border-white/15 hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]',
+        tone !== 'pro' && tone !== 'premium' && 'hover:border-ase-brand/40 hover:shadow-glow-cyan',
+      )}
+    >
+      {/* Clipped decoration layer: spotlight + top accent line. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+        <div
+          className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/plan:opacity-100"
+          style={{ background: `radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), ${spot}, transparent 65%)` }}
+        />
+        <div
+          className={cn(
+            'absolute inset-x-6 top-0 h-px opacity-60 transition-opacity duration-300 group-hover/plan:opacity-100',
+            tone === 'pro'
+              ? 'bg-gradient-to-r from-transparent via-ase-gold to-transparent'
+              : 'bg-gradient-to-r from-transparent via-ase-brand to-transparent',
+          )}
+        />
+      </div>
+
+      <div className="relative flex flex-1 flex-col">{children}</div>
+
+      {details ? (
+        <div
+          className={cn(
+            'absolute inset-x-0 top-full z-30 mt-2 hidden rounded-2xl border border-white/15 bg-ase-surface p-5 shadow-[0_24px_60px_rgba(0,0,0,0.6)]',
+            'invisible translate-y-2 opacity-0 transition duration-300 ease-out',
+            'group-hover/plan:visible group-hover/plan:translate-y-0 group-hover/plan:opacity-100',
+            'group-focus-within/plan:visible group-focus-within/plan:translate-y-0 group-focus-within/plan:opacity-100',
+            '[@media(hover:hover)]:block',
+          )}
+        >
+          {details}
+        </div>
+      ) : null}
+    </div>
   )
 }
 

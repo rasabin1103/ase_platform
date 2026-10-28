@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «Sprint» del curso 4, misión 1 (El cuello de botella): tablero del
@@ -63,6 +64,38 @@ export const AGREEMENTS: Agreement[] = [
 ]
 export const MAX_AGREEMENTS = 3
 
+const STORY_EN: Record<string, Pick<Story, 'title' | 'impact' | 'change' | 'finding'>> = {
+  'KOB-432': { title: 'Temporary card block from the app', impact: 'A customer could not block a stolen card.', change: 'New screen and service.', finding: 'Tested on day 4.' },
+  'KOB-437': { title: 'Export transactions to CSV', impact: 'A file with the wrong format.', change: 'Export only.', finding: 'Tested on day 3.' },
+  'KOB-431': { title: 'Virtual card payment at online merchants', impact: 'Wrong charges to customers: real money and complaints.', change: 'New integration with the payment gateway.', finding: "It works; a payment rejected by the gateway does not show the customer the reason (minor bug, reported)." },
+  'KOB-433': { title: 'Configurable daily spending limit', impact: 'A customer could spend above their limit: fraud and losses.', change: 'New calculation logic over concurrent payments.', finding: 'Serious bug! Two simultaneous payments exceed the daily limit. Reported as critical.' },
+  'KOB-434': { title: 'Transaction history with filters', impact: 'A filter that does not show some transaction.', change: 'New filters over an existing query.', finding: 'No issues.' },
+  'KOB-435': { title: 'Push notification for every payment (mandatory by regulation)', impact: 'Regulatory non-compliance: the regulator requires notifying every payment.', change: 'New notifications service.', finding: 'Notifications for dollar payments do not arrive. Reported as high.' },
+  'KOB-436': { title: 'Card alias', impact: 'An alias that is not saved.', change: 'A text field.', finding: 'No issues.' },
+  'KOB-438': { title: 'Card color', impact: 'A color that does not look right.', change: 'UI only.', finding: 'No issues.' },
+}
+
+const AGREEMENT_EN: Record<string, Pick<Agreement, 'text' | 'why'>> = {
+  hire: { text: 'Ask management for another QA for the squad.', why: 'Without changing the flow, another QA only lengthens the queue. And headcount is not decided by the team in a retro.' },
+  ac_first: { text: 'QA reviews the acceptance criteria of each story before development starts.', why: 'Defects are found earlier and QA prepares the tests while it is developed (shift-left).' },
+  happy_path: { text: 'To make the close, QA tests only the happy path of each story.', why: 'It hides the problem and shifts the risk to production.' },
+  wip: { text: 'Work-in-progress limit: if there are 2 stories in “Ready for QA”, nobody starts another; whoever is free helps test.', why: 'It makes the team finish stories instead of starting them and spreads the testing.' },
+  extend: { text: 'Extend the sprint by two days so QA can finish.', why: 'It turns the sprint into a mini-waterfall: development and then QA. The queue stays the same.' },
+  small: { text: 'Split big stories so they reach QA throughout the sprint, not all at the end.', why: 'Small batches: work flows and defects appear early.' },
+  weekend: { text: 'QA works the weekend before each close.', why: 'Unsustainable pace: the problem comes back next sprint, and you are more tired.' },
+  pair: { text: "Each dev tests their story with QA's cases (in pairs) before moving it to “Ready for QA”.", why: 'Quality belongs to the team: fewer back-and-forths and a shorter queue.' },
+}
+
+/** Historias del tablero en el idioma pedido (mismos ids y números). */
+export function storiesFor(lang: AcademyLang = 'es'): Story[] {
+  return lang === 'en' ? STORIES.map((s) => ({ ...s, ...STORY_EN[s.id] })) : STORIES
+}
+
+/** Acuerdos de la retro en el idioma pedido. */
+export function agreementsFor(lang: AcademyLang = 'es'): Agreement[] {
+  return lang === 'en' ? AGREEMENTS.map((a) => ({ ...a, ...AGREEMENT_EN[a.id] })) : AGREEMENTS
+}
+
 export interface FlowFacts {
   lateEntries: number
   total: number
@@ -106,29 +139,29 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
   return { app: APP, action, summary, technical: `sprint.${action}`, status: 'ok', bugs: [], cost, flags }
 }
 
-export function analyzeFlow(state: SprintState): { state: SprintState; event: AppEvent } {
-  if (state.analyzed) return { state, event: event('noop', 'El flujo ya está analizado.', 0) }
+export function analyzeFlow(state: SprintState, lang: AcademyLang = 'es'): { state: SprintState; event: AppEvent } {
+  if (state.analyzed) return { state, event: event('noop', tr(lang, 'El flujo ya está analizado.', 'The flow is already analyzed.'), 0) }
   const f = flowFacts()
   return {
     state: { ...state, analyzed: true },
-    event: event('analyze', `Análisis del flujo: ${f.lateEntries} de ${f.total} historias llegaron a QA los días 8–9; ${f.acReviewed} de ${f.total} con criterios revisados antes de desarrollar.`, 20, ['flow.analyzed']),
+    event: event('analyze', tr(lang, `Análisis del flujo: ${f.lateEntries} de ${f.total} historias llegaron a QA los días 8–9; ${f.acReviewed} de ${f.total} con criterios revisados antes de desarrollar.`, `Flow analysis: ${f.lateEntries} of ${f.total} stories reached QA on days 8–9; ${f.acReviewed} of ${f.total} had criteria reviewed before development.`), 20, ['flow.analyzed']),
   }
 }
 
-export function togglePlan(state: SprintState, storyId: string): { state: SprintState; event: AppEvent } {
-  if (state.tested || !QUEUE.includes(storyId)) return { state, event: event('noop', 'Sin cambios.', 0) }
+export function togglePlan(state: SprintState, storyId: string, lang: AcademyLang = 'es'): { state: SprintState; event: AppEvent } {
+  if (state.tested || !QUEUE.includes(storyId)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
   const has = state.plan.includes(storyId)
-  if (!has && state.plan.length >= DAY_CAPACITY) return { state, event: event('noop', `Hoy solo te da tiempo a ${DAY_CAPACITY} historias.`, 0) }
+  if (!has && state.plan.length >= DAY_CAPACITY) return { state, event: event('noop', tr(lang, `Hoy solo te da tiempo a ${DAY_CAPACITY} historias.`, `Today you only have time for ${DAY_CAPACITY} stories.`), 0) }
   const plan = has ? state.plan.filter((id) => id !== storyId) : [...state.plan, storyId]
-  return { state: { ...state, plan }, event: event('plan', `Plan del día: ${plan.join(', ') || '—'}.`, 0) }
+  return { state: { ...state, plan }, event: event('plan', tr(lang, `Plan del día: ${plan.join(', ') || '—'}.`, `Plan for the day: ${plan.join(', ') || '—'}.`), 0) }
 }
 
 export function isRiskPlan(plan: string[]): boolean {
   return plan.length === RISK_TOP.length && RISK_TOP.every((id) => plan.includes(id))
 }
 
-export function testPlan(state: SprintState): { state: SprintState; event: AppEvent } {
-  if (state.tested || state.plan.length === 0) return { state, event: event('noop', 'Elige antes qué historias pruebas hoy.', 0) }
+export function testPlan(state: SprintState, lang: AcademyLang = 'es'): { state: SprintState; event: AppEvent } {
+  if (state.tested || state.plan.length === 0) return { state, event: event('noop', tr(lang, 'Elige antes qué historias pruebas hoy.', 'First choose which stories you test today.'), 0) }
   const flags = ['test.done']
   if (isRiskPlan(state.plan)) flags.push('test.risk')
   if (state.plan.includes('KOB-433')) flags.push('test.limits')
@@ -136,16 +169,16 @@ export function testPlan(state: SprintState): { state: SprintState; event: AppEv
   if (state.plan.includes('KOB-438')) flags.push('test.color')
   return {
     state: { ...state, tested: true },
-    event: event('test', `Probadas hoy: ${state.plan.join(', ')}.`, 180, flags),
+    event: event('test', tr(lang, `Probadas hoy: ${state.plan.join(', ')}.`, `Tested today: ${state.plan.join(', ')}.`), 180, flags),
   }
 }
 
-export function toggleAgreement(state: SprintState, id: string): { state: SprintState; event: AppEvent } {
-  if (state.proposed || !AGREEMENTS.some((a) => a.id === id)) return { state, event: event('noop', 'Sin cambios.', 0) }
+export function toggleAgreement(state: SprintState, id: string, lang: AcademyLang = 'es'): { state: SprintState; event: AppEvent } {
+  if (state.proposed || !AGREEMENTS.some((a) => a.id === id)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
   const has = state.agreements.includes(id)
-  if (!has && state.agreements.length >= MAX_AGREEMENTS) return { state, event: event('noop', `Como mucho ${MAX_AGREEMENTS} acuerdos: los equipos no cambian diez cosas a la vez.`, 0) }
+  if (!has && state.agreements.length >= MAX_AGREEMENTS) return { state, event: event('noop', tr(lang, `Como mucho ${MAX_AGREEMENTS} acuerdos: los equipos no cambian diez cosas a la vez.`, `At most ${MAX_AGREEMENTS} agreements: teams don't change ten things at once.`), 0) }
   const agreements = has ? state.agreements.filter((a) => a !== id) : [...state.agreements, id]
-  return { state: { ...state, agreements }, event: event('agreement', `Propuestas para la retro: ${agreements.length}.`, 0) }
+  return { state: { ...state, agreements }, event: event('agreement', tr(lang, `Propuestas para la retro: ${agreements.length}.`, `Proposals for the retro: ${agreements.length}.`), 0) }
 }
 
 export function proposalQuality(agreements: string[]): { good: number; bad: number } {
@@ -153,14 +186,14 @@ export function proposalQuality(agreements: string[]): { good: number; bad: numb
   return { good: chosen.filter((a) => a.good).length, bad: chosen.filter((a) => !a.good).length }
 }
 
-export function propose(state: SprintState): { state: SprintState; event: AppEvent } {
-  if (state.proposed || state.agreements.length === 0) return { state, event: event('noop', 'Elige antes tus propuestas.', 0) }
+export function propose(state: SprintState, lang: AcademyLang = 'es'): { state: SprintState; event: AppEvent } {
+  if (state.proposed || state.agreements.length === 0) return { state, event: event('noop', tr(lang, 'Elige antes tus propuestas.', 'First choose your proposals.'), 0) }
   const q = proposalQuality(state.agreements)
   const flags = ['retro.proposal']
   if (q.good === MAX_AGREEMENTS) flags.push('retro.good')
   if (q.bad > 0) flags.push('retro.bad')
   return {
     state: { ...state, proposed: true },
-    event: event('propose', `Propuestas preparadas para la retro: ${q.good} sobre el flujo del equipo, ${q.bad} que no atacan la causa.`, 15, flags),
+    event: event('propose', tr(lang, `Propuestas preparadas para la retro: ${q.good} sobre el flujo del equipo, ${q.bad} que no atacan la causa.`, `Proposals prepared for the retro: ${q.good} about the team flow, ${q.bad} that don't tackle the cause.`), 15, flags),
   }
 }

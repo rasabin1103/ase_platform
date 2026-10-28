@@ -76,9 +76,14 @@ class CatalogAdminService:
             if override is not None:
                 setattr(item, en_field, override)
                 continue
-            if not changed_es.get(es_field, False):
-                continue
             es_value = getattr(item, es_field, None)
+            # An English mirror that is empty or identical to the Spanish is a
+            # failed/skipped translation (key missing or expired at the time):
+            # retry it on the next save even if the Spanish text didn't change.
+            en_value = getattr(item, en_field, None)
+            untranslated = bool(es_value) and (not en_value or en_value.strip() == es_value.strip())
+            if not changed_es.get(es_field, False) and not untranslated:
+                continue
             translated = translate_es_to_en(es_value)
             setattr(item, en_field, translated if translated is not None else es_value)
 

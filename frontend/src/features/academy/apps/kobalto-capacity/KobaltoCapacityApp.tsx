@@ -1,14 +1,17 @@
 import type { AppEvent, RunState } from '../../engine/types'
+import { missionLang, tr, type AcademyLang } from '../../i18n'
 import type { ToolProps } from '../../tools/types'
-import { AREA, BUDGET, INITIAL_CAPACITY, LEVERS, TARGET, evaluatePlan, savePlan, toggleLever, type CapacityState } from './capacityLogic'
+import { BUDGET, INITIAL_CAPACITY, TARGET, areaFor, evaluatePlan, leversFor, savePlan, toggleLever, type CapacityState } from './capacityLogic'
 
 type Send = (r: { state: CapacityState; event: AppEvent }) => void
 type Props = ToolProps & { stateRef: React.RefObject<RunState>; initialForm?: Record<string, string> }
 
-const k = (n: number) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} k€`
+const k = (n: number, lang: AcademyLang = 'es') => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, lang === 'en' ? ',' : '.')} k€`
 
 /** Plan de capacidad con un 20 % menos de presupuesto (curso 4, misión 9). */
-export function KobaltoCapacityApp({ dispatch, state }: Props) {
+export function KobaltoCapacityApp({ dispatch, state, mission }: Props) {
+  const lang = missionLang(mission)
+  const t = (es: string, en: string) => tr(lang, es, en)
   const app = (state.appState['kobalto-capacity'] as CapacityState | undefined) ?? INITIAL_CAPACITY
   const send: Send = (r) => dispatch({ type: 'app', event: { ...r.event, state: r.state } })
   const locked = state.finished || app.saved
@@ -17,25 +20,25 @@ export function KobaltoCapacityApp({ dispatch, state }: Props) {
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-slate-100 text-slate-900">
       <div className="flex items-center justify-between bg-slate-900 px-4 py-1 font-mono text-[11px] text-amber-300">
-        <span>Plan de capacidad 2027 · QA Banca diaria</span>
-        <span>{app.saved ? 'Enviado a Laura' : 'Borrador'}</span>
+        <span>{t('Plan de capacidad 2027 · QA Banca diaria', '2027 capacity plan · Daily Banking QA')}</span>
+        <span>{app.saved ? t('Enviado a Laura', 'Sent to Laura') : t('Borrador', 'Draft')}</span>
       </div>
       <div className="mx-auto max-w-5xl space-y-4 p-5">
         <section className="rounded-2xl bg-white p-4 text-sm shadow-sm">
-          <h4 className="font-sans font-semibold text-slate-800">Tu área hoy</h4>
+          <h4 className="font-sans font-semibold text-slate-800">{t('Tu área hoy', 'Your area today')}</h4>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
-            {AREA.map((a) => (
+            {areaFor(lang).map((a) => (
               <li key={a}>{a}</li>
             ))}
           </ul>
         </section>
 
-        <section className="rounded-2xl bg-white p-4 text-sm shadow-sm" aria-label="Ahorro">
+        <section className="rounded-2xl bg-white p-4 text-sm shadow-sm" aria-label={t('Ahorro', 'Savings')}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="font-sans font-semibold text-slate-800">
-              Ahorro: {k(r.saving)} de {k(TARGET)}
+              {t('Ahorro', 'Savings')}: {k(r.saving, lang)} {t('de', 'of')} {k(TARGET, lang)}
             </span>
-            <span className="text-xs text-slate-500">20 % de {k(BUDGET)}</span>
+            <span className="text-xs text-slate-500">20 % {t('de', 'of')} {k(BUDGET, lang)}</span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-slate-200">
             <div className={`h-2 rounded-full ${r.target ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${pct}%` }} />
@@ -43,15 +46,15 @@ export function KobaltoCapacityApp({ dispatch, state }: Props) {
         </section>
 
         <section className="space-y-2">
-          {LEVERS.map((l) => {
+          {leversFor(lang).map((l) => {
             const on = app.levers.includes(l.id)
             return (
               <label key={l.id} className={`flex items-start gap-3 rounded-2xl border bg-white p-4 text-sm shadow-sm ${on ? 'border-indigo-400 ring-1 ring-indigo-200' : 'border-transparent'}`}>
-                <input type="checkbox" className="mt-1" checked={on} disabled={locked} onChange={() => send(toggleLever(app, l.id))} aria-label={`Palanca: ${l.title}`} />
+                <input type="checkbox" className="mt-1" checked={on} disabled={locked} onChange={() => send(toggleLever(app, l.id, lang))} aria-label={t(`Palanca: ${l.title}`, `Lever: ${l.title}`)} />
                 <span className="flex-1">
                   <span className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium text-slate-900">{l.title}</span>
-                    <span className="font-mono text-slate-700">−{k(l.saving)}</span>
+                    <span className="font-mono text-slate-700">−{k(l.saving, lang)}</span>
                   </span>
                   <span className="mt-1 block text-slate-600">{l.impact}</span>
                   {app.saved && on && <span className={`mt-1 block text-xs font-medium ${l.kind === 'good' ? 'text-emerald-700' : 'text-rose-700'}`}>{(l.kind === 'good' ? '✓ ' : '✗ ') + l.why}</span>}
@@ -62,11 +65,11 @@ export function KobaltoCapacityApp({ dispatch, state }: Props) {
         </section>
 
         {!app.saved ? (
-          <button type="button" disabled={locked || app.levers.length === 0} onClick={() => send(savePlan(app))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
-            Enviar el plan de capacidad a Laura · 20 min
+          <button type="button" disabled={locked || app.levers.length === 0} onClick={() => send(savePlan(app, lang))} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
+            {t('Enviar el plan de capacidad a Laura · 20 min', 'Send the capacity plan to Laura · 20 min')}
           </button>
         ) : (
-          <p className="text-sm text-slate-600">Plan enviado. Laura lo llevará al comité.</p>
+          <p className="text-sm text-slate-600">{t('Plan enviado. Laura lo llevará al comité.', 'Plan sent. Laura will take it to the committee.')}</p>
         )}
       </div>
     </div>

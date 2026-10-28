@@ -1,4 +1,5 @@
 import type { AppEvent } from '../../engine/types'
+import { tr, type AcademyLang } from '../../i18n'
 
 /**
  * App «Equipo» del curso 4, misión 6 (Tu primer equipo): perfiles del equipo
@@ -70,6 +71,46 @@ export const TOPICS: Topic[] = [
 ]
 export const MAX_TOPICS = 4
 
+const MEMBER_EN: Record<string, Pick<Member, 'role' | 'strengths' | 'growth' | 'now'>> = {
+  hector: { role: 'QA · Payments · 5 years at Kobalto', strengths: 'The one who knows the most about payments and anti-fraud on the team. Rigorous.', growth: 'Wants to be listened to more in release decisions.', now: 'Testing instant transfers. Has seen something odd in the anti-fraud.' },
+  sergio: { role: 'QA Automation · your former colleague', strengths: 'The best automator on the team; built the Cards suite.', growth: 'Was applying for the QA Lead position that was given to you. Wants a visible technical challenge.', now: 'No big task assigned this sprint.' },
+  lucia: { role: 'Junior QA · 1 year', strengths: 'Meticulous with test cases. Learns fast.', growth: 'Needs to gain confidence with her own work of controlled risk.', now: 'Insecure since the production error last month.' },
+  nerea: { role: 'QA · Payments · 3 years', strengths: 'Reliable and autonomous; likes technical problems.', growth: 'Wants to learn performance testing.', now: 'Has free capacity this sprint.' },
+  pablo: { role: 'QA · Cards · 4 years', strengths: 'Knows Cards inside out.', growth: 'Wants to stop firefighting.', now: 'Supports three Cards squads at once. Stretched very thin.' },
+}
+
+const TASK_EN: Record<string, Pick<Task, 'title' | 'detail' | 'why'>> = {
+  t1: { title: 'Instant transfers release testing', detail: 'Critical: ships on Thursday, customer money and anti-fraud.', why: "The most critical work goes to whoever knows the domain best and is already testing it. Not the junior, and you don't take it yourself: your job is to enable the team to do it." },
+  t2: { title: 'Automate payments regression', detail: 'Technical project of several weeks, visible to all Engineering.', why: 'A visible technical challenge for the best automator, who also wanted to grow.' },
+  t3: { title: 'Test the new savings screen', detail: 'Low risk: information, no money moves.', why: 'Her own work with controlled risk: she gains confidence without putting the business at stake.' },
+  t4: { title: 'First performance tests of the payments API', detail: 'Exploratory: nobody on the team has done it yet.', why: 'She has capacity, autonomy and wants to learn performance: growth aligned with what the team needs.' },
+  t5: { title: 'Review acceptance criteria for Cards', detail: 'What he already does in his squads, now before development.', why: "It is his turf and adds no new front: he is at capacity." },
+}
+
+const TOPIC_EN: Record<string, [string, string]> = {
+  elephant: ['Talk openly about the fact that he also applied for the position and how he feels.', 'Naming it removes tension: ignoring it lets it grow.'],
+  boss: ["Make it clear from the start that you are now his boss and that you expect him to accept it.", 'Imposing hierarchy breaks the trust you already had.'],
+  growth: ['Ask him what he wants to do this year and where he wants to grow.', "The 1:1 is his space: start with his goals."],
+  feedback: ['Ask him how he prefers to receive feedback from you.', 'Agreeing on how you will give each other feedback avoids misunderstandings.'],
+  others: ['Ask him what he thinks of Héctor and Lucía.', 'Asking for opinions about colleagues in the first 1:1 opens the door to gossip.'],
+  status: ['Go over the status of all his tasks.', 'That is a follow-up meeting, not a 1:1.'],
+  needs: ['Ask him what he needs from you as Lead.', 'Your job now is to help him do his.'],
+  nothing: ['Tell him nothing is going to change between you.', 'It does change: pretending otherwise confuses both of you.'],
+}
+
+export function membersFor(lang: AcademyLang = 'es'): Member[] {
+  return lang === 'en' ? MEMBERS.map((m) => ({ ...m, ...MEMBER_EN[m.id] })) : MEMBERS
+}
+export function tasksFor(lang: AcademyLang = 'es'): Task[] {
+  return lang === 'en' ? TASKS.map((t) => ({ ...t, ...TASK_EN[t.id] })) : TASKS
+}
+export function peopleFor(lang: AcademyLang = 'es'): { id: PersonId; label: string }[] {
+  return lang === 'en' ? PEOPLE.map((p) => (p.id === 'yo' ? { ...p, label: 'Me (I do it)' } : p)) : PEOPLE
+}
+export function topicsFor(lang: AcademyLang = 'es'): Topic[] {
+  return lang === 'en' ? TOPICS.map((t) => ({ ...t, text: TOPIC_EN[t.id][0], why: TOPIC_EN[t.id][1] })) : TOPICS
+}
+
 export interface TeamState {
   assignments: Record<string, PersonId | ''>
   assigned: boolean
@@ -85,9 +126,9 @@ function event(action: string, summary: string, cost: number, flags: string[] = 
   return { app: APP, action, summary, technical: `team.${action}`, status: 'ok', bugs: [], cost, flags }
 }
 
-export function assign(state: TeamState, taskId: string, person: PersonId | ''): { state: TeamState; event: AppEvent } {
-  if (state.assigned || !TASKS.some((t) => t.id === taskId)) return { state, event: event('noop', 'Sin cambios.', 0) }
-  return { state: { ...state, assignments: { ...state.assignments, [taskId]: person } }, event: event('assign', `Reparto: ${taskId} → ${person || '—'}.`, 0) }
+export function assign(state: TeamState, taskId: string, person: PersonId | '', lang: AcademyLang = 'es'): { state: TeamState; event: AppEvent } {
+  if (state.assigned || !TASKS.some((t) => t.id === taskId)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
+  return { state: { ...state, assignments: { ...state.assignments, [taskId]: person } }, event: event('assign', tr(lang, `Reparto: ${taskId} → ${person || '—'}.`, `Allocation: ${taskId} → ${person || '—'}.`), 0) }
 }
 
 export function evaluateAssignments(assignments: Record<string, PersonId | ''>) {
@@ -101,9 +142,9 @@ export function evaluateAssignments(assignments: Record<string, PersonId | ''>) 
   }
 }
 
-export function confirmAssignments(state: TeamState): { state: TeamState; event: AppEvent } {
+export function confirmAssignments(state: TeamState, lang: AcademyLang = 'es'): { state: TeamState; event: AppEvent } {
   const r = evaluateAssignments(state.assignments)
-  if (state.assigned || !r.complete) return { state, event: event('noop', 'Asigna antes todas las tareas.', 0) }
+  if (state.assigned || !r.complete) return { state, event: event('noop', tr(lang, 'Asigna antes todas las tareas.', 'First assign all the tasks.'), 0) }
   const flags = ['assign.submitted']
   if (r.right === TASKS.length) flags.push('assign.ok')
   if (r.self) flags.push('assign.self')
@@ -112,15 +153,15 @@ export function confirmAssignments(state: TeamState): { state: TeamState; event:
   if (state.assignments.t1 === 'hector') flags.push('assign.hector')
   if (state.assignments.t2 === 'sergio') flags.push('assign.sergio')
   if (state.assignments.t3 === 'lucia') flags.push('assign.lucia')
-  return { state: { ...state, assigned: true }, event: event('confirm', `Reparto del sprint confirmado: ${r.right} de ${TASKS.length} tareas a la persona más adecuada.`, 15, flags) }
+  return { state: { ...state, assigned: true }, event: event('confirm', tr(lang, `Reparto del sprint confirmado: ${r.right} de ${TASKS.length} tareas a la persona más adecuada.`, `Sprint allocation confirmed: ${r.right} of ${TASKS.length} tasks to the most suitable person.`), 15, flags) }
 }
 
-export function toggleTopic(state: TeamState, id: string): { state: TeamState; event: AppEvent } {
-  if (state.prepared || !TOPICS.some((t) => t.id === id)) return { state, event: event('noop', 'Sin cambios.', 0) }
+export function toggleTopic(state: TeamState, id: string, lang: AcademyLang = 'es'): { state: TeamState; event: AppEvent } {
+  if (state.prepared || !TOPICS.some((t) => t.id === id)) return { state, event: event('noop', tr(lang, 'Sin cambios.', 'No changes.'), 0) }
   const has = state.topics.includes(id)
-  if (!has && state.topics.length >= MAX_TOPICS) return { state, event: event('noop', `Como mucho ${MAX_TOPICS} temas: es media hora.`, 0) }
+  if (!has && state.topics.length >= MAX_TOPICS) return { state, event: event('noop', tr(lang, `Como mucho ${MAX_TOPICS} temas: es media hora.`, `At most ${MAX_TOPICS} topics: it's half an hour.`), 0) }
   const topics = has ? state.topics.filter((t) => t !== id) : [...state.topics, id]
-  return { state: { ...state, topics }, event: event('topic', `Preparación del 1:1: ${topics.length} temas.`, 0) }
+  return { state: { ...state, topics }, event: event('topic', tr(lang, `Preparación del 1:1: ${topics.length} temas.`, `1:1 preparation: ${topics.length} topics.`), 0) }
 }
 
 export function topicQuality(topics: string[]) {
@@ -128,11 +169,11 @@ export function topicQuality(topics: string[]) {
   return { good: chosen.filter((t) => t.good).length, bad: chosen.filter((t) => !t.good).length }
 }
 
-export function prepareOneOnOne(state: TeamState): { state: TeamState; event: AppEvent } {
-  if (state.prepared || state.topics.length === 0) return { state, event: event('noop', 'Elige antes los temas.', 0) }
+export function prepareOneOnOne(state: TeamState, lang: AcademyLang = 'es'): { state: TeamState; event: AppEvent } {
+  if (state.prepared || state.topics.length === 0) return { state, event: event('noop', tr(lang, 'Elige antes los temas.', 'First choose the topics.'), 0) }
   const q = topicQuality(state.topics)
   const flags = ['one2one.prepped']
   if (q.good >= 3 && q.bad === 0) flags.push('one2one.ready')
   if (state.topics.includes('elephant')) flags.push('one2one.elephant')
-  return { state: { ...state, prepared: true }, event: event('prepare', `1:1 con Sergio preparado: ${q.good} temas adecuados, ${q.bad} a evitar.`, 10, flags) }
+  return { state: { ...state, prepared: true }, event: event('prepare', tr(lang, `1:1 con Sergio preparado: ${q.good} temas adecuados, ${q.bad} a evitar.`, `1:1 with Sergio prepared: ${q.good} suitable topics, ${q.bad} to avoid.`), 10, flags) }
 }
