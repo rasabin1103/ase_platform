@@ -6,7 +6,15 @@ import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { getMemberCatalogStats, type MemberCatalogStat } from '../api/orgCatalog.api'
-import { activateUser, createUser, deleteUser, impersonateUser, listUsers, updateUser } from '../api/users.api'
+import {
+  activateUser,
+  createUser,
+  deleteUser,
+  impersonateUser,
+  listUsers,
+  resendVerificationEmail,
+  updateUser,
+} from '../api/users.api'
 import { UserStatsModal } from '../components/admin/UserStatsModal'
 import { AdminEyebrow, AdminHeroHalo } from '../components/admin/premium/PremiumHero'
 import { ADMIN_HERO_SECTION, ADMIN_HERO_SUBTITLE, ADMIN_HERO_TITLE } from '../components/admin/premium/adminHeroStyles'
@@ -44,6 +52,7 @@ export function UsersPage() {
   const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [confirmImpersonate, setConfirmImpersonate] = useState<User | null>(null)
   const [activateFor, setActivateFor] = useState<User | null>(null)
+  const [resendFeedback, setResendFeedback] = useState<{ ok: boolean; text: string } | null>(null)
   const [activateDays, setActivateDays] = useState(30)
   const [statsForUser, setStatsForUser] = useState<User | null>(null)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
@@ -195,6 +204,16 @@ export function UsersPage() {
     },
   })
 
+  const resendMutation = useMutation({
+    mutationFn: (user: User) => resendVerificationEmail(user.uuid),
+    onSuccess: (result) => {
+      const key = result.sent ? 'usersPage.actions.resendOk' : 'usersPage.actions.resendFailed'
+      setResendFeedback({ ok: result.sent, text: String(t(key)).replace('{{email}}', result.email) })
+    },
+    onError: () => setResendFeedback({ ok: false, text: t('usersPage.actions.resendError') as string }),
+  })
+  const resendingUuid = resendMutation.isPending ? resendMutation.variables?.uuid : undefined
+
   const impersonateMutation = useMutation({
     mutationFn: (user_uuid: string) => impersonateUser(user_uuid),
     onSuccess: async (data) => {
@@ -283,6 +302,19 @@ export function UsersPage() {
         <PremiumUserMetric label={t('usersPage.stats.suspended.label') as string} hint={t('usersPage.stats.suspended.hint') as string} value={suspendedCount} icon="○" accent="from-amber-300 to-orange-500" />
       </div>
 
+      {resendFeedback ? (
+        <div
+          role="status"
+          className={
+            resendFeedback.ok
+              ? 'rounded-2xl border border-emerald-300/25 bg-emerald-300/5 px-5 py-3 text-sm text-emerald-200'
+              : 'rounded-2xl border border-ase-error/25 bg-ase-error/5 px-5 py-3 text-sm text-ase-error'
+          }
+        >
+          {resendFeedback.text}
+        </div>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
           <Card className="rounded-3xl border-white/10 bg-ase-surface p-5 shadow-soft">
@@ -345,6 +377,11 @@ export function UsersPage() {
                   onDelete={() => setConfirmDelete(u)}
                   onImpersonate={isSuperAdmin && u.uuid !== currentUser?.uuid ? () => setConfirmImpersonate(u) : undefined}
                   onViewStats={isSuperAdmin ? () => setStatsForUser(u) : undefined}
+                  onResendVerification={() => {
+                    setResendFeedback(null)
+                    resendMutation.mutate(u)
+                  }}
+                  resendBusy={resendingUuid === u.uuid}
                   onActivate={
                     u.status !== 'active'
                       ? () => {
@@ -405,6 +442,21 @@ export function UsersPage() {
                               }}
                             >
                               {t('usersPage.actions.activate')}
+                            </Button>
+                          ) : null}
+                          {!u.email_verified_at && u.status !== 'deleted' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={resendingUuid === u.uuid}
+                              onClick={() => {
+                                setResendFeedback(null)
+                                resendMutation.mutate(u)
+                              }}
+                            >
+                              {resendingUuid === u.uuid
+                                ? t('usersPage.actions.resendSending')
+                                : t('usersPage.actions.resendVerification')}
                             </Button>
                           ) : null}
                           <Button

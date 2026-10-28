@@ -19,12 +19,15 @@ from app.modules.auth.tokens_repository import UserTokensRepository
 EMAIL_VERIFICATION_TOKEN_MINUTES = 60 * 2
 
 
-def issue_and_send_verification_email(db: Session, user: User) -> None:
+def issue_and_send_verification_email(db: Session, user: User) -> bool:
     """Mints a fresh email-verification token and emails the confirmation
     link. Best-effort — send_email() never raises, so a broken/unconfigured
     SMTP server never blocks whatever created the account (self-registration
     or an admin creating the user directly); the account can always request
     a new link via POST /auth/email-verification/resend once mail is fixed.
+
+    Returns whether the mail server accepted the message (the admin "resend"
+    action in the users panel reports it).
 
     Used by both AuthService.register (self-signup) and
     UsersService.create_user (admin-created accounts) — an admin creating a
@@ -46,4 +49,4 @@ def issue_and_send_verification_email(db: Session, user: User) -> None:
         verify_url, expires_in_hours=EMAIL_VERIFICATION_TOKEN_MINUTES // 60, language=language,
     )
     subject = "Confirm your email — Arce Sabin Engineering" if language == "en" else "Confirma tu correo — Arce Sabin Engineering"
-    send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)
+    return send_email(to_email=user.email, subject=subject, html_body=html, text_body=text)

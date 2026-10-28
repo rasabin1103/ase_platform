@@ -139,6 +139,17 @@ class UsersService:
         self.db.refresh(user)
         return user
 
+    def resend_verification_email(self, user_uuid: UUID) -> tuple[User, bool]:
+        """Admin action: issue a fresh confirmation link and email it to an
+        account that has not verified its address yet."""
+        user = self.get_user(user_uuid)
+        if user.status == UserStatus.deleted:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is deleted")
+        if user.email_verified_at is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified")
+        sent = issue_and_send_verification_email(self.db, user)
+        return user, sent
+
     def soft_delete_user(self, user_uuid: UUID) -> User:
         user = self.get_user(user_uuid)
         user.status = UserStatus.deleted

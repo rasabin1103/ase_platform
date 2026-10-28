@@ -141,3 +141,12 @@ class UserStatsRead(BaseModel):
     test_runs_by_conclusion: CatalogTestRunConclusionCounts
     test_runs_recent: list[UserTestRunRecentRead] = []
 
+
+
+class ResendVerificationResult(BaseModel):
+    """Outcome of an admin "resend confirmation email" action. `sent` is
+    False when the mail server rejected/failed the message (details are in
+    the server log); the account and its token are unaffected either way."""
+
+    sent: bool
+    email: str

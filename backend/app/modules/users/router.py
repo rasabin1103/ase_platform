@@ -21,6 +21,7 @@ from app.modules.auth.security import create_impersonation_token, IMPERSONATION_
 from app.modules.users.repository import UsersRepository
 from app.modules.users.schemas import (
     ImpersonationTokenRead,
+    ResendVerificationResult,
     UserActivateRequest,
     UserCreate,
     UserListResponse,
@@ -160,6 +161,36 @@ def activate_user(
         metadata={"two_factor_grace_days": payload.two_factor_grace_days},
     )
     return activated
+
+
+@router.post(
+    "/{user_uuid}/resend-verification-email",
+    response_model=ResendVerificationResult,
+    dependencies=[Depends(require_permission("users.update"))],
+)
+def resend_verification_email(
+    user_uuid: UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    svc: UsersService = Depends(get_users_service),
+):
+    """Re-sends the confirmation email to a user who has not verified their
+    address. Same tenant-scoping as PATCH/activate: an org admin can only do
+    this for members of their own organization."""
+    if not is_platform_admin(db, current_user):
+        org = require_tenant_context(request, db, current_user)
+        svc.get_user_for_organization(user_uuid, organization_id=org.id)
+    user, sent = svc.resend_verification_email(user_uuid)
+    record_audit_log(
+        db,
+        actor_user_id=current_user.id,
+        action="user.resend_verification",
+        entity_type="user",
+        entity_id=str(user.id),
+        metadata={"email": user.email, "sent": sent},
+    )
+    return ResendVerificationResult(sent=sent, email=user.email)
 
 
 @router.post(
