@@ -34,9 +34,9 @@ export function RatingSummary({
   const { t } = useI18n()
   if (average == null || count <= 0) return null
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs text-ase-muted', className)}>
-      <StaticStars rating={average} />
-      <span>
+    <div className={cn('flex items-center gap-1.5 whitespace-nowrap text-xs text-ase-muted', className)}>
+      <StaticStars rating={average} className="shrink-0" />
+      <span className="whitespace-nowrap">
         <span className="font-semibold text-ase-text2">{average.toFixed(1)}</span>{' '}
         {(count === 1 ? t('catalog.review.countOne') : t('catalog.review.count')).replace('{{count}}', String(count))}
       </span>

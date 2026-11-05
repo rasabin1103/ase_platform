@@ -113,68 +113,93 @@ export function IncludedCatalog() {
 
 /* ─────────────────────────── Academy ─────────────────────────── */
 
+const COURSE_ACCENTS = ['#4C7DFF', '#A78BFA', '#22D3EE', '#FB7185', '#F5B454', '#F472B6', '#60A5FA']
+
 export function IncludedAcademy() {
   const c = useIncludedCopy().academy
   const courses = academyCourses(useAcademyLang())
 
+  const totalMissions = courses.reduce((n, course) => n + course.missions.length, 0)
+
   const visual = (
-    <VisualFrame title={c.mapTitle}>
-      <div className="space-y-7">
-        {courses.map((course) => {
+    <VisualFrame
+      title={c.mapTitle}
+      badge={
+        <span className="text-[11px] font-semibold text-ase-muted">
+          {courses.length} {c.courses} · {totalMissions} {c.missions}
+        </span>
+      }
+    >
+      <p className="mb-4 text-xs leading-relaxed text-ase-muted">{c.mapHelp}</p>
+      <ul className="space-y-2.5">
+        {courses.map((course, index) => {
           const playable = course.missions.filter((m) => m.available).length
+          const accent = COURSE_ACCENTS[index % COURSE_ACCENTS.length]
+          const [name, ...rest] = course.title.split(':')
+          const subtitle = rest.join(':').trim()
           return (
-            <div key={course.key}>
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="truncate text-sm font-semibold text-ase-text">{course.title}</p>
-                <span className="shrink-0 text-xs text-ase-muted">
-                  {playable}/{course.missions.length} {c.missions}
-                </span>
+            <li
+              key={course.key}
+              className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 pl-5 transition duration-200 hover:border-white/20 hover:bg-white/[0.05]"
+            >
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 w-1"
+                style={{ background: `linear-gradient(180deg, ${accent}, ${accent}55)` }}
+              />
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-snug text-ase-text">{name}</p>
+                  {subtitle ? <p className="mt-0.5 text-xs leading-snug text-ase-muted">{subtitle}</p> : null}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                    {c.free}
+                  </span>
+                  <span className="text-[11px] tabular-nums text-ase-muted">
+                    {playable}/{course.missions.length} {c.missions}
+                  </span>
+                </div>
               </div>
-              <ol className="mt-8 flex items-center" aria-label={course.title}>
+              <ol className="mt-3.5 flex gap-1" aria-label={course.title}>
                 {course.missions.map((m, i) => (
-                  <li key={m.id} className="flex flex-1 items-center last:flex-none">
+                  <li key={m.id} className="min-w-0 flex-1" title={`${i} · ${m.title}`}>
                     <span
-                      title={m.title}
                       className={cn(
-                        'relative grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold',
+                        'block h-1.5 rounded-full transition-all duration-200 group-hover:h-2',
+                        !m.available && 'border border-dashed border-white/25 bg-transparent',
+                      )}
+                      style={
                         m.available
-                          ? 'ase-gradient-brand text-white shadow-brand'
-                          : 'border border-dashed border-white/20 text-ase-muted',
-                      )}
-                    >
-                      {i}
-                      {i === 0 && (
-                        <span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400/15 px-1.5 text-[9px] font-semibold uppercase text-emerald-300">
-                          {c.free}
-                        </span>
-                      )}
-                      <span className="sr-only">
-                        {m.title} · {m.available ? c.available : c.soon}
-                      </span>
+                          ? {
+                              background: i === 0 ? '#34D399' : accent,
+                              opacity: i === 0 ? 1 : 0.9,
+                              boxShadow: `0 0 10px ${i === 0 ? '#34D39955' : `${accent}55`}`,
+                            }
+                          : undefined
+                      }
+                    />
+                    <span className="sr-only">
+                      {m.title} · {m.available ? c.available : c.soon}
                     </span>
-                    {i < course.missions.length - 1 && (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'mx-1 h-0.5 flex-1 rounded-full',
-                          m.available && course.missions[i + 1].available ? 'bg-ase-brand/70' : 'bg-white/10',
-                        )}
-                      />
-                    )}
                   </li>
                 ))}
               </ol>
-            </div>
+            </li>
           )
         })}
-      </div>
-      <div className="mt-7 flex gap-5 border-t border-white/[0.07] pt-5 text-xs text-ase-muted">
+      </ul>
+      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[0.07] pt-4 text-xs text-ase-muted">
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full ase-gradient-brand" aria-hidden />
-          {c.available}
+          <span className="h-1.5 w-5 rounded-full bg-emerald-400" aria-hidden />
+          {c.legendFree}
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full border border-dashed border-white/30" aria-hidden />
+          <span className="h-1.5 w-5 rounded-full ase-gradient-brand" aria-hidden />
+          {c.legendAvailable}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-5 rounded-full border border-dashed border-white/30" aria-hidden />
           {c.soon}
         </span>
       </div>

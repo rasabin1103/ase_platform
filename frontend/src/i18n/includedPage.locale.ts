@@ -61,6 +61,11 @@ export const includedPageEs = {
     soon: 'Próximamente',
     free: 'Gratis',
     missions: 'misiones',
+    courses: 'cursos',
+    mapHelp:
+      'Cada tarjeta es un curso y cada barra, una misión, en orden. La primera de cada curso es gratis para que lo pruebes.',
+    legendFree: 'Misión gratuita',
+    legendAvailable: 'Misión disponible',
     features: [
       { title: 'Decisiones con consecuencias', text: 'El simulador recuerda lo que hiciste y lo que dejaste pasar.' },
       { title: 'Debrief con estrellas', text: 'Rigor, comunicación, gestión del tiempo y visión de riesgo.' },
@@ -271,6 +276,11 @@ export const includedPageEn: typeof includedPageEs = {
     soon: 'Coming soon',
     free: 'Free',
     missions: 'missions',
+    courses: 'courses',
+    mapHelp:
+      'Each card is a course and each bar is a mission, in order. The first mission of every course is free so you can try it.',
+    legendFree: 'Free mission',
+    legendAvailable: 'Available mission',
     features: [
       { title: 'Decisions with consequences', text: 'The simulator remembers what you did and what you let slip.' },
       { title: 'Star-rated debrief', text: 'Rigor, communication, time management and risk awareness.' },

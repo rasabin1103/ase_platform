@@ -58,7 +58,7 @@ export function CatalogItemCard({
   const shortDescription = localizedCatalogText(language, item.shortDescription, item.shortDescriptionEn)
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden rounded-3xl border-white/10 bg-ase-surface/80 p-0 hover:border-ase-brand/40" interactive>
+    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-white/10 bg-ase-surface/80 p-0 hover:border-ase-brand/40" interactive>
       <div className={cn('relative overflow-hidden bg-ase-bg2', imageAspectClass ?? catalogImageAspectClass(item.type))}>
         <AuthenticatedImage
           src={item.imageUrl}
@@ -93,15 +93,15 @@ export function CatalogItemCard({
           <Heart className="h-4 w-4" strokeWidth={1.75} fill={item.isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-2.5 p-5">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">{item.category}</p>
-          <h3 className="mt-1 font-display text-lg font-semibold leading-snug text-ase-text line-clamp-2">{title}</h3>
-          <p className="mt-1.5 text-sm text-ase-muted line-clamp-2">{shortDescription}</p>
+          <h3 className="mt-1 font-display text-base font-semibold leading-snug text-ase-text">{title}</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-ase-muted">{shortDescription}</p>
           <RatingSummary average={item.averageRating} count={item.reviewCount} className="mt-1.5" />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-display text-xl font-semibold text-ase-text">
+        <p className="font-display text-lg font-semibold text-ase-text">
           {item.discountedPrice != null ? (
             <span className="flex items-baseline gap-1.5">
               <span className="text-sm font-normal text-ase-text-muted line-through">
@@ -135,7 +135,7 @@ export function CatalogItemCard({
         {item.type === 'course' && item.academyCourseKey && (item.isPurchased || isFree) ? (
           <AcademyCourseProgress courseKey={item.academyCourseKey} language={language} />
         ) : null}
-        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
+        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
           <ButtonLink to={detailPath} size="sm" variant="primary">
             {t('catalog.viewDetail')}
           </ButtonLink>
