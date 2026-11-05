@@ -3,9 +3,10 @@ import { ACADEMY_COURSES, PENDING_TRANSLATION } from '../src/features/academy/co
 import { M10_SOLUTION } from '../src/features/academy/content/courses/karate-framework/m10-lab'
 import { M10_SQL_ANSWERS } from '../src/features/academy/content/courses/sql-iniciacion/m10-examen'
 import { M10_SQL_ANSWERS as M10_SQI_ANSWERS } from '../src/features/academy/content/courses/sql-intermedio/m10-examen'
+import { M10_SQL_ANSWERS as M10_SQA_ANSWERS } from '../src/features/academy/content/courses/sql-avanzado/m10-examen'
 
 /** Respuestas de referencia de los exámenes prácticos de la consola SQL, por curso. */
-const SQL_EXAM_ANSWERS: Record<string, string[]> = { 'sql-iniciacion': M10_SQL_ANSWERS, 'sql-intermedio': M10_SQI_ANSWERS }
+const SQL_EXAM_ANSWERS: Record<string, string[]> = { 'sql-iniciacion': M10_SQL_ANSWERS, 'sql-intermedio': M10_SQI_ANSWERS, 'sql-avanzado': M10_SQA_ANSWERS }
 import { E2E_PASSWORD, backendScript, emailFor } from './support'
 
 /**

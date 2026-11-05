@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { refreshTokens } from '../../api/auth.api'
-import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from '../../auth/auth.store'
+import { flagSessionExpired, getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from '../../auth/auth.store'
 import { getJwtExpiryMs } from '../../utils/jwt'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
@@ -47,6 +47,7 @@ export function SessionExpiryModal() {
   const doLogout = useCallback(() => {
     if (loggedOutRef.current) return
     loggedOutRef.current = true
+    flagSessionExpired()
     logout()
     navigate('/login', { replace: true })
   }, [logout, navigate])

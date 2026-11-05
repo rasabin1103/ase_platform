@@ -19,12 +19,13 @@ const COPY = {
     network: 'No se pudo conectar con el servidor. Comprueba tu conexión a internet e inténtalo de nuevo.',
     timeout: 'El servidor está tardando demasiado en responder. Inténtalo de nuevo en unos segundos.',
     server: 'Ha ocurrido un error en el servidor. Ya lo hemos registrado — inténtalo de nuevo en unos minutos.',
-    unauthorized: 'Tu sesión no es válida o ha caducado. Inicia sesión de nuevo.',
+    unauthorized: 'Se ha cerrado la sesión por inactividad. Inicia sesión de nuevo para continuar.',
     forbidden: 'No tienes permiso para realizar esta acción.',
     notFound: 'No se ha encontrado lo que buscabas.',
     tooMany: 'Demasiadas solicitudes seguidas. Espera un momento e inténtalo de nuevo.',
     generic: 'Algo no ha salido como esperábamos. Inténtalo de nuevo.',
     toastTitle: 'Algo ha fallado',
+    sessionTitle: 'Sesión cerrada',
     modalNetworkTitle: 'Sin conexión con el servidor',
     modalServerTitle: 'Error del servidor',
     modalClose: 'Entendido',
@@ -33,12 +34,13 @@ const COPY = {
     network: 'Could not reach the server. Check your internet connection and try again.',
     timeout: 'The server is taking too long to respond. Please try again in a moment.',
     server: "A server error occurred. We've already logged it — please try again in a few minutes.",
-    unauthorized: 'Your session is invalid or has expired. Please sign in again.',
+    unauthorized: 'Your session was closed due to inactivity. Please sign in again to continue.',
     forbidden: 'You do not have permission to do that.',
     notFound: 'We could not find what you were looking for.',
     tooMany: 'Too many requests in a row. Please wait a moment and try again.',
     generic: "Something didn't go as expected. Please try again.",
     toastTitle: 'Something went wrong',
+    sessionTitle: 'Signed out',
     modalNetworkTitle: 'Cannot reach the server',
     modalServerTitle: 'Server error',
     modalClose: 'Got it',
@@ -100,7 +102,9 @@ export function getErrorInfo(error: unknown): ErrorInfo {
       return { title: copy.modalServerTitle, message: copy.server, severity: 'modal', status }
     }
     if (status === 401) {
-      return { title: copy.toastTitle, message: detail ?? copy.unauthorized, severity: 'toast', status }
+      // Con mensaje propio del servidor (p. ej. contraseña incorrecta) se respeta; sin él, la sesión caducó.
+      if (detail) return { title: copy.toastTitle, message: detail, severity: 'toast', status }
+      return { title: copy.sessionTitle, message: copy.unauthorized, severity: 'toast', status }
     }
     if (status === 403) {
       return { title: copy.toastTitle, message: detail ?? copy.forbidden, severity: 'toast', status }

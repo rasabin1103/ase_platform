@@ -3,10 +3,10 @@ import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Clock } from 'lucide-react'
 import { z } from 'zod'
 import { login, verifyLoginTwoFactor } from '../api/auth.api'
-import { getAccessToken } from '../auth/auth.store'
+import { consumeSessionExpired, getAccessToken } from '../auth/auth.store'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import axios from 'axios'
@@ -29,6 +29,8 @@ export function LoginPage() {
   const auth = useAuth()
   const [searchParams] = useSearchParams()
   const justRegistered = searchParams.get('registered') === '1'
+  // Se lee una sola vez al montar: la marca se borra al consumirla.
+  const [sessionExpired] = useState(consumeSessionExpired)
   // Vuelve a donde quería ir el usuario (?next= o la ruta protegida que le
   // trajo aquí); solo rutas internas, nunca una URL externa.
   const location = useLocation()
@@ -157,6 +159,16 @@ export function LoginPage() {
               <div className="text-lg font-bold text-ase-text">{t('auth.login.formTitle')}</div>
               <div className="mt-1 text-sm text-ase-text2">{t('auth.login.formSubtitle')}</div>
             </div>
+
+            {sessionExpired ? (
+              <div role="status" className="mb-4 flex items-start gap-3 rounded-lg border border-amber-300/25 bg-amber-300/10 p-3">
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" strokeWidth={1.75} />
+                <div>
+                  <div className="text-sm font-semibold text-amber-100">{t('auth.login.sessionExpiredTitle')}</div>
+                  <div className="mt-0.5 text-sm text-amber-100/80">{t('auth.login.sessionExpiredBody')}</div>
+                </div>
+              </div>
+            ) : null}
 
             {justRegistered ? (
               <div className="mb-4 flex items-start gap-3 rounded-lg border border-emerald-300/25 bg-emerald-300/10 p-3">

@@ -63,6 +63,17 @@ from app.models.job_posting import JobPosting
 from app.models.ai_analysis_usage_event import AiAnalysisUsageEvent
 from app.models.notification_preference import NotificationPreference
 from app.models.contract_guard_project import ContractGuardProject
+from app.models.freelance import (
+    FreelanceCashSettings,
+    FreelanceClient,
+    FreelanceExpense,
+    FreelanceInvoice,
+    FreelanceProfile,
+    FreelanceRecurringRule,
+    FreelanceTimesheet,
+    FreelanceWealthEntry,
+    FreelanceWealthPlan,
+)
 from app.models.job_posting_semantic_analysis import JobPostingSemanticAnalysis
 
 __all__ = [
@@ -133,5 +144,14 @@ __all__ = [
     "ConsultingSlot",
     "ResourceView",
     "UserPreferencesProfile",
+    "FreelanceCashSettings",
+    "FreelanceClient",
+    "FreelanceExpense",
+    "FreelanceInvoice",
+    "FreelanceProfile",
+    "FreelanceRecurringRule",
+    "FreelanceTimesheet",
+    "FreelanceWealthEntry",
+    "FreelanceWealthPlan",
 ]
 

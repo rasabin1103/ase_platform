@@ -79,8 +79,3 @@ export const DYNAMIC_RESULT_BADGE: Record<string, 'default' | 'info' | 'success'
   FAILED: 'error',
   REPORTED: 'info',
 }
-
-export type RunReportModalProps = {
-  runUuid: string
-  onClose: () => void
-}

@@ -59,6 +59,16 @@ export const SHELLS = [
     links: [['/pricing', 'Comparar planes'], ['/catalog', 'Ver el catálogo'], ['/academy', 'Academy']],
   },
   {
+    path: '/consulting',
+    title: 'Servicios de consultoría QA y frameworks de automatización | Arce Sabin Engineering',
+    description:
+      'Estrategia de QA, arquitectura de calidad, frameworks de automatización y CI/CD con quality gates. Explora cada servicio capa a capa y cuéntanos tu proyecto.',
+    h1: 'Calidad de software, capa a capa',
+    intro:
+      'Consultoría y frameworks de QA: estrategia y auditoría, arquitectura de calidad, frameworks de automatización y CI/CD con quality gates.',
+    links: [['/contact', 'Contacto'], ['/services', 'Qué incluye ASE'], ['/pricing', 'Planes']],
+  },
+  {
     path: '/platform',
     title: 'La plataforma ASE | Arquitectura, roles y automatización',
     description:

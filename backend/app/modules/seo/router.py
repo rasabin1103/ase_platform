@@ -33,6 +33,7 @@ router = APIRouter(include_in_schema=False)
 STATIC_PAGES: list[tuple[str, str, str]] = [
     ("/", "weekly", "1.0"),
     ("/services", "monthly", "0.9"),
+    ("/consulting", "monthly", "0.9"),
     ("/platform", "monthly", "0.8"),
     ("/pricing", "weekly", "0.9"),
     ("/catalog", "daily", "0.9"),

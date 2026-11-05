@@ -557,3 +557,63 @@ def test_sql_intermedio_exam_blocks_practical_exam_and_certificate(
     cert = client.post("/api/v1/academy/certificates/sql-intermedio", headers=independent_headers)
     assert cert.status_code == 200
     assert cert.json()["code"].startswith("ASE-SQI-")
+
+
+SQA_EXAM_URL = "/api/v1/academy/exams/sql-avanzado"
+
+
+def test_sql_avanzado_exam_blocks_practical_exam_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "SQL avanzado",
+            "slug": "sql-avanzado",
+            "type": "course",
+            "category": "Datos",
+            "short_description": "Curso de SQL avanzado.",
+            "long_description": "Recursivas, JSON, reglas, triggers e índices con PostgreSQL real.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "advanced",
+            "author": "ASE",
+            "academy_course_key": "sql-avanzado",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(SQA_EXAM_URL).json()
+    assert (overview["config"]["total"], overview["config"]["passMark"]) == (30, 21)
+    assert [c["title"] for c in overview["config"]["distribution"]] == [
+        "Jerarquías y ventanas",
+        "Rachas, percentiles y subtotales",
+        "JSON y cambios de datos",
+        "Reglas, funciones y triggers",
+        "Índices y rendimiento",
+    ]
+
+    attempt = client.post(f"{SQA_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
+
+    for mission_id in EXAMS["sql-avanzado"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="sql-avanzado", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{SQA_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert result["missingMissions"] == ["m10-examen"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="sql-avanzado", mission_id="m10-examen", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/sql-avanzado", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-SQA-")

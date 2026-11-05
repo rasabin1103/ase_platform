@@ -3,7 +3,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -387,6 +387,27 @@ def get_my_run_report(
     except ReportNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No report available for this run")
     return HTMLResponse(content=html)
+
+
+@router.get("/runs/{run_uuid}/pdf")
+def get_my_run_pdf(
+    run_uuid: UUID,
+    user: User = Depends(get_current_user),
+    svc: TestExecutionService = Depends(get_service),
+):
+    """PDF generado por el workflow del producto (artefacto `result-pdf`),
+    servido por ASE para mostrarlo en pantalla sin exponer GitHub."""
+    try:
+        pdf = svc.get_run_pdf(user_id=user.id, run_uuid=run_uuid)
+    except RunNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
+    except ReportNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No PDF available for this run")
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="report.pdf"', "Cache-Control": "no-store"},
+    )
 
 
 @router.get("/runs/{run_uuid}/logs", response_class=PlainTextResponse)

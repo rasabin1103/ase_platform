@@ -83,6 +83,19 @@ const STUDY_MAP: Record<string, Record<string, string>> = {
     '5.1': 'm08-calidad',
     '5.2': 'm09-vistas',
   },
+  // Test final de SQL avanzado: bloques 51–55 en el banco, una sección por misión.
+  'sql-avanzado': {
+    '1.1': 'm00-jerarquias',
+    '1.2': 'm01-ventanas',
+    '2.1': 'm02-rachas',
+    '2.2': 'm03-subtotales',
+    '3.1': 'm04-json',
+    '3.2': 'm05-modificar',
+    '4.1': 'm06-reglas',
+    '4.2': 'm07-funciones',
+    '5.1': 'm08-indices',
+    '5.2': 'm09-rendimiento',
+  },
   'testing-fundamentals': {
     '1.1': 'm00-primer-dia',
     '1.2': 'm00-primer-dia',
@@ -137,6 +150,14 @@ export const EXAM_COURSES: Record<string, { title: string; titleEn: string; labe
     disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
   },
   'sql-intermedio': {
+    title: 'Test final',
+    titleEn: 'Final test',
+    label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
+    labelEn: 'Final assessment: a hands-on exam in the SQL console and a test (30 questions, 40 min); completion certificate',
+    disclaimer: 'Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.',
+    disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
+  },
+  'sql-avanzado': {
     title: 'Test final',
     titleEn: 'Final test',
     label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
@@ -279,3 +300,4 @@ export function withExamCopy<T extends Record<string, unknown>>(base: T, courseK
 
 // SQL intermedio usa los mismos textos que el test final de SQL desde cero.
 EXAM_COPY['sql-intermedio'] = EXAM_COPY['sql-iniciacion']
+EXAM_COPY['sql-avanzado'] = EXAM_COPY['sql-iniciacion']
