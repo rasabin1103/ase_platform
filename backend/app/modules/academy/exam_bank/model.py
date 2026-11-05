@@ -91,6 +91,12 @@ CHAPTER_TITLES: dict[int, str] = {
     43: "Informes y rankings",
     44: "Tendencias y cruces",
     45: "Calidad de datos y vistas",
+    # Curso «SQL avanzado» (bloques 51–55; se muestran como 1–5).
+    51: "Jerarquías y ventanas",
+    52: "Rachas, percentiles y subtotales",
+    53: "JSON y cambios de datos",
+    54: "Reglas, funciones y triggers",
+    55: "Índices y rendimiento",
 }
 
 CHAPTER_TITLES_EN: dict[int, str] = {
@@ -121,6 +127,11 @@ CHAPTER_TITLES_EN: dict[int, str] = {
     43: "Reports and rankings",
     44: "Trends and complex joins",
     45: "Data quality and views",
+    51: "Hierarchies and windows",
+    52: "Streaks, percentiles and subtotals",
+    53: "JSON and changing data",
+    54: "Rules, functions and triggers",
+    55: "Indexes and performance",
 }
 
 SECTION_TITLES_EN: dict[str, str] = {
@@ -189,6 +200,16 @@ SECTION_TITLES_EN: dict[str, str] = {
     "44.2": "Complex joins",
     "45.1": "Data that does not add up",
     "45.2": "Your reusable report",
+    "51.1": "Who reports to whom",
+    "51.2": "Windows in depth",
+    "52.1": "Streaks and percentiles",
+    "52.2": "Totals and subtotals",
+    "53.1": "JSON and arrays",
+    "53.2": "Changing data carefully",
+    "54.1": "Rules in the database",
+    "54.2": "Functions and triggers",
+    "55.1": "Indexes and plans",
+    "55.2": "Performance",
 }
 
 SECTION_TITLES: dict[str, str] = {
@@ -257,4 +278,14 @@ SECTION_TITLES: dict[str, str] = {
     "44.2": "Cruces complicados",
     "45.1": "Datos que no cuadran",
     "45.2": "Tu informe reutilizable",
+    "51.1": "Quién depende de quién",
+    "51.2": "Ventanas a fondo",
+    "52.1": "Rachas y percentiles",
+    "52.2": "Totales y subtotales",
+    "53.1": "JSON y arrays",
+    "53.2": "Modificar con cabeza",
+    "54.1": "Reglas en la base de datos",
+    "54.2": "Funciones y triggers",
+    "55.1": "Índices y planes",
+    "55.2": "Rendimiento",
 }

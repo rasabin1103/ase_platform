@@ -1,13 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronUp, FileUp, Info, Pencil, PlayCircle, PlusCircle, Star, Trash2, X } from 'lucide-react'
+import { ChevronDown, FileUp, Info, Pencil, PlayCircle, PlusCircle, Star, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import {
   createFrameworkScenario,
   deleteFrameworkScenario,
   getFrameworkScenario,
-  getTestRunLogs,
-  getTestRunReport,
-  getTestRunSummary,
   listApprovedRefs,
   listFrameworkScenarios,
   setDefaultFrameworkScenario,
@@ -20,22 +17,14 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
-import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { useI18n } from '../../i18n'
 import { parseApiError } from '../../utils/apiError'
 import {
-  CONCLUSION_BADGE,
   DYNAMIC_RESULT_BADGE,
-  fmtDate,
-  fmtDuration,
-  ghTone,
-  ghToneTextClass,
   isValidJson,
-  STATUS_BADGE,
   type FrameworkRunPanelProps,
-  type RunReportModalProps,
 } from './TestExecutionPage.utils'
 
 export function ProgressBar({ percent }: { percent: number }) {
@@ -142,7 +131,7 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
   const attachFile = async (key: string, file: File | undefined) => {
     if (!file) return
     setUploadError((prev) => ({ ...prev, [key]: '' }))
-    if (!/\.(json|ya?ml)$/i.test(file.name)) {
+    if (!/\.(json|ya?ml|csv|xlsx)$/i.test(file.name)) {
       setUploadError((prev) => ({ ...prev, [key]: t('testExecution.config.fileBadType') as string }))
       return
     }
@@ -471,7 +460,7 @@ export function FrameworkRunPanel({ framework, onTriggered }: FrameworkRunPanelP
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="file"
-                      accept=".json,.yaml,.yml,application/json"
+                      accept=".json,.yaml,.yml,.csv,.xlsx,application/json"
                       className="sr-only"
                       id={`file-${v.key}`}
                       onChange={(e) => {
@@ -685,82 +674,140 @@ export function DynamicRequestCard({ detail }: { detail: DynamicRequestDetail })
   )
 }
 
-const VERDICT_BADGE: Record<ToolResult['verdict'], 'success' | 'warning' | 'error' | 'default'> = {
-  pass: 'success',
-  warn: 'warning',
-  fail: 'error',
-  error: 'error',
+const TONE_TOP: Record<string, string> = {
+  success: 'from-emerald-400/70',
+  error: 'from-rose-400/70',
+  warning: 'from-amber-400/70',
 }
 const TONE_CLASS: Record<string, string> = {
   success: 'text-emerald-300',
-  error: 'text-ase-error',
+  error: 'text-rose-300',
   warning: 'text-amber-300',
 }
 
-/** Tool-agnostic human-readable verdict (`ase_result` block written by a
- * product's workflow script): headline, key numbers, findings with hints. */
+function severityTone(sev: string): 'error' | 'success' | 'warning' {
+  if (sev === 'breaking' || sev === 'error') return 'error'
+  if (sev === 'success' || sev === 'non_breaking') return 'success'
+  return 'warning'
+}
+const SEVERITY_BAR = { error: 'bg-rose-400', success: 'bg-emerald-400', warning: 'bg-amber-400' }
+
+/** Resultado legible de un producto (bloque `ase_result` que escribe su
+ * workflow): métricas clave y hallazgos filtrables por gravedad, cada uno
+ * desplegable con su detalle y sugerencia. El veredicto y el titular los
+ * muestra el banner de RunResultPanel. */
 export function ToolResultCard({ result }: { result: ToolResult }) {
   const { t } = useI18n()
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-ase-text">
-          {t('testExecution.report.toolResult.title')}
-          {result.tool ? ` · ${result.tool}` : ''}
-        </h3>
-        <Badge variant={VERDICT_BADGE[result.verdict]}>{t(`testExecution.report.toolResult.verdict.${result.verdict}`) as string}</Badge>
-      </div>
-      <p className="text-base font-medium text-ase-text">{result.headline}</p>
-      {result.explanation ? <p className="mt-1 text-xs text-ase-muted">{result.explanation}</p> : null}
+  const [filter, setFilter] = useState('all')
+  const sevOf = (f: { severity: string }) => f.severity || 'info'
+  const counts = result.findings.reduce<Record<string, number>>((acc, f) => {
+    acc[sevOf(f)] = (acc[sevOf(f)] ?? 0) + 1
+    return acc
+  }, {})
+  const shown = filter === 'all' ? result.findings : result.findings.filter((f) => sevOf(f) === filter)
 
+  return (
+    <div className="space-y-4">
       {result.metrics.length > 0 ? (
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {result.metrics.map((m, i) => (
-            <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
-              <div className={`text-2xl font-bold ${TONE_CLASS[m.tone] ?? 'text-ase-text'}`}>{m.value}</div>
-              <div className="text-[10px] uppercase tracking-wide text-ase-muted">{m.label}</div>
+            <div key={i} className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <span
+                aria-hidden
+                className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r to-transparent ${TONE_TOP[m.tone] ?? 'from-white/30'}`}
+              />
+              <div className={`text-3xl font-semibold tabular-nums ${TONE_CLASS[m.tone] ?? 'text-ase-text'}`}>{m.value}</div>
+              <div className="mt-1 text-[11px] uppercase tracking-wide text-ase-muted">{m.label}</div>
             </div>
           ))}
         </div>
       ) : null}
 
       {result.findings.length > 0 ? (
-        <div className="mt-4">
-          <div className="mb-2 text-[11px] uppercase tracking-wide text-ase-muted">
-            {t('testExecution.report.toolResult.findings')}
+        <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-ase-text">{t('testExecution.report.toolResult.findings')}</h3>
+            {Object.keys(counts).length > 1 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {['all', ...Object.keys(counts)].map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setFilter(k)}
+                    aria-pressed={filter === k}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                      filter === k
+                        ? 'border-ase-primary bg-ase-primary/15 text-ase-text'
+                        : 'border-white/10 text-ase-text2 hover:border-white/25'
+                    }`}
+                  >
+                    {k === 'all' ? t('testExecution.workspace.filterAll') : k.replace(/_/g, ' ')}
+                    <span className="ml-1 text-ase-muted">{k === 'all' ? result.findings.length : counts[k]}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           <ul className="space-y-2">
-            {result.findings.map((f, i) => (
-              <li key={i} className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
-                <div className="flex flex-wrap items-center gap-2">
-                  {f.severity ? (
-                    <Badge variant={f.severity === 'breaking' || f.severity === 'error' ? 'error' : f.severity === 'success' || f.severity === 'non_breaking' ? 'success' : 'warning'}>
-                      {f.severity.replace(/_/g, ' ')}
-                    </Badge>
-                  ) : null}
-                  <span className="font-medium text-ase-text">{f.title}</span>
-                </div>
-                {f.location ? <div className="mt-1 font-mono text-ase-text2">{f.location}</div> : null}
-                {f.detail ? <div className="mt-1 text-ase-muted">{f.detail}</div> : null}
-                {f.hint ? (
-                  <div className="mt-1 text-cyan-300/90">
-                    {t('testExecution.report.toolResult.hint')}: {f.hint}
-                  </div>
-                ) : null}
-              </li>
-            ))}
+            {shown.map((f, i) => {
+              const tone = severityTone(sevOf(f))
+              const hasMore = Boolean(f.detail || f.hint)
+              return (
+                <li key={i} className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                  <details className="group">
+                    <summary
+                      className={`flex items-start gap-3 p-3 ${hasMore ? 'cursor-pointer' : 'list-none'} marker:content-none`}
+                    >
+                      <span aria-hidden className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${SEVERITY_BAR[tone]}`} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          {f.severity ? <Badge variant={tone}>{f.severity.replace(/_/g, ' ')}</Badge> : null}
+                          <span className="text-sm font-medium text-ase-text">{f.title}</span>
+                        </span>
+                        {f.location ? (
+                          <span className="mt-1 block truncate font-mono text-xs text-ase-text2">{f.location}</span>
+                        ) : null}
+                      </span>
+                      {hasMore ? (
+                        <ChevronDown
+                          className="mt-1 h-4 w-4 shrink-0 text-ase-muted transition group-open:rotate-180"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      ) : null}
+                    </summary>
+                    {hasMore ? (
+                      <div className="space-y-2 border-t border-white/[0.07] px-4 py-3 text-xs">
+                        {f.detail ? <p className="text-ase-text2">{f.detail}</p> : null}
+                        {f.hint ? (
+                          <p className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-2 text-cyan-200">
+                            <span className="font-semibold">{t('testExecution.report.toolResult.hint')}: </span>
+                            {f.hint}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </details>
+                </li>
+              )
+            })}
           </ul>
           {result.truncated ? (
             <p className="mt-2 text-xs text-ase-muted">{t('testExecution.report.toolResult.truncated')}</p>
           ) : null}
-        </div>
+        </section>
       ) : null}
 
       {result.inputs.length > 0 ? (
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {result.inputs.map((x, i) => (
-            <MiniStat key={i} label={x.label} value={x.value} />
-          ))}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="mb-2 text-[11px] uppercase tracking-wide text-ase-muted">
+            {t('testExecution.report.toolResult.inputs')}
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {result.inputs.map((x, i) => (
+              <MiniStat key={i} label={x.label} value={x.value} />
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
@@ -782,210 +829,5 @@ export function CountTile({
       <div className={`text-2xl font-bold ${toneClass}`}>{value}</div>
       <div className="text-[10px] uppercase tracking-wide text-ase-muted">{label}</div>
     </div>
-  )
-}
-
-/** ASE-branded report view — built from GitHub's own Jobs API plus a
- * best-effort pass/fail scrape (see the backend's get_run_summary), rather
- * than just dumping the raw pytest-html artifact in an iframe. A secondary
- * "view original report" button still opens that raw artifact in a new
- * tab (same authenticated-fetch-then-blob-URL pattern as before) for full
- * tool-specific detail — this view is a branded summary, not a replacement
- * for it. */
-export function RunReportModal({ runUuid, onClose }: RunReportModalProps) {
-  const { t } = useI18n()
-  const summaryQuery = useQuery({
-    queryKey: ['test-execution-run-summary', runUuid],
-    queryFn: () => getTestRunSummary(runUuid),
-    // The report can still be filling in (job not started, artifact not
-    // uploaded yet) while the modal is open — keep it reasonably fresh
-    // without being as aggressive as the run-history table's poll.
-    refetchInterval: 15000,
-  })
-  const [originalBusy, setOriginalBusy] = useState(false)
-  const [originalError, setOriginalError] = useState<string | null>(null)
-
-  // Detailed output (raw job console log) is fetched lazily, only once the
-  // buyer expands it — it can be sizeable, and most of the time the
-  // summary/report above is all anyone needs.
-  const [logsOpen, setLogsOpen] = useState(false)
-  const logsQuery = useQuery({
-    queryKey: ['test-execution-run-logs', runUuid],
-    queryFn: () => getTestRunLogs(runUuid),
-    enabled: logsOpen,
-  })
-
-  const openOriginal = async () => {
-    setOriginalError(null)
-    const win = window.open('', '_blank')
-    setOriginalBusy(true)
-    try {
-      const html = await getTestRunReport(runUuid)
-      const blob = new Blob([html], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      if (win) win.location.href = url
-      else window.open(url, '_blank')
-    } catch (err) {
-      win?.close()
-      setOriginalError(parseApiError(err, t('testExecution.report.originalError') as string).message)
-    } finally {
-      setOriginalBusy(false)
-    }
-  }
-
-  const s = summaryQuery.data
-
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={t('testExecution.report.title')}
-      footer={
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
-          <Button variant="secondary" onClick={openOriginal} disabled={originalBusy || !s?.originalReportAvailable}>
-            {originalBusy ? t('testExecution.runs.reportLoading') : t('testExecution.report.viewOriginal')}
-          </Button>
-          <Button onClick={onClose}>{t('testExecution.report.close')}</Button>
-        </div>
-      }
-    >
-      <div className="space-y-5">
-        {summaryQuery.isLoading ? (
-          <Skeleton className="h-40 rounded-2xl" />
-        ) : summaryQuery.isError ? (
-          <EmptyState title={t('private.common.couldNotLoad')} description={t('testExecution.loadError')} />
-        ) : s ? (
-          <>
-            <div className="rounded-2xl border border-cyan-300/20 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-cyan-300/80">
-                    ASE · {t('testExecution.report.badge')}
-                  </div>
-                  <div className="text-lg font-semibold text-ase-text">{s.frameworkTitle}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={STATUS_BADGE[s.status]}>{t(`testExecution.status.${s.status}`)}</Badge>
-                  {s.conclusion ? (
-                    <Badge variant={CONCLUSION_BADGE[s.conclusion]}>
-                      {t(`testExecution.conclusion.${s.conclusion}`)}
-                    </Badge>
-                  ) : null}
-                </div>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <MiniStat label={t('testExecution.report.started') as string} value={fmtDate(s.startedAt)} />
-                <MiniStat label={t('testExecution.report.completed') as string} value={fmtDate(s.completedAt)} />
-                <MiniStat label={t('testExecution.report.duration') as string} value={fmtDuration(s.durationSeconds)} />
-                <MiniStat label={t('testExecution.report.created') as string} value={fmtDate(s.createdAt)} />
-              </div>
-            </div>
-
-            {s.toolResult ? <ToolResultCard result={s.toolResult} /> : null}
-
-            {s.toolResult ? null : s.testSummary ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {s.testSummary.passed != null ? (
-                  <CountTile
-                    label={t('testExecution.report.passed') as string}
-                    value={s.testSummary.passed}
-                    tone="success"
-                  />
-                ) : null}
-                {s.testSummary.failed != null ? (
-                  <CountTile
-                    label={t('testExecution.report.failed') as string}
-                    value={s.testSummary.failed}
-                    tone="error"
-                  />
-                ) : null}
-                {s.testSummary.skipped != null ? (
-                  <CountTile
-                    label={t('testExecution.report.skipped') as string}
-                    value={s.testSummary.skipped}
-                    tone="warning"
-                  />
-                ) : null}
-                {s.testSummary.error != null ? (
-                  <CountTile
-                    label={t('testExecution.report.errors') as string}
-                    value={s.testSummary.error}
-                    tone="error"
-                  />
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-ase-muted">{t('testExecution.report.noSummary')}</p>
-            )}
-
-            {s.dynamicRequest ? <DynamicRequestCard detail={s.dynamicRequest} /> : null}
-
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-ase-text">{t('testExecution.report.jobs')}</h3>
-              {s.jobs.length === 0 ? (
-                <p className="text-sm text-ase-muted">{t('testExecution.report.noJobsYet')}</p>
-              ) : (
-                <div className="space-y-3">
-                  {s.jobs.map((job, i) => (
-                    <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-ase-text">{job.name}</span>
-                        <Badge variant={ghTone(job.status, job.conclusion)}>
-                          {job.conclusion ?? job.status ?? '—'}
-                        </Badge>
-                      </div>
-                      <ul className="space-y-1">
-                        {job.steps.map((step, si) => (
-                          <li key={si} className="flex items-center justify-between gap-2 text-xs text-ase-text2">
-                            <span className="truncate">{step.name}</span>
-                            <span className={ghToneTextClass(step.status, step.conclusion)}>
-                              {step.conclusion ?? step.status ?? '—'}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 text-left"
-                onClick={() => setLogsOpen((v) => !v)}
-              >
-                <h3 className="text-sm font-semibold text-ase-text">{t('testExecution.report.logsTitle')}</h3>
-                {logsOpen ? (
-                  <ChevronUp className="h-4 w-4 shrink-0 text-ase-muted" strokeWidth={1.75} />
-                ) : (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-ase-muted" strokeWidth={1.75} />
-                )}
-              </button>
-              {logsOpen ? (
-                <div className="mt-2">
-                  {logsQuery.isLoading ? (
-                    <Skeleton className="h-32 rounded-2xl" />
-                  ) : logsQuery.isError ? (
-                    <p className="text-sm text-ase-muted">{t('testExecution.report.logsError')}</p>
-                  ) : (
-                    <pre className="max-h-96 overflow-auto rounded-xl border border-white/10 bg-black/40 p-3 text-[11px] leading-snug text-ase-text2">
-                      {logsQuery.data}
-                    </pre>
-                  )}
-                </div>
-              ) : null}
-            </div>
-
-            {originalError ? (
-              <div className="rounded-lg border border-ase-error/30 bg-ase-error/10 p-3 text-sm text-ase-error">
-                {originalError}
-              </div>
-            ) : null}
-          </>
-        ) : null}
-      </div>
-    </Modal>
   )
 }

@@ -56,6 +56,7 @@ class RunnableFrameworkRead(BaseModel):
 
     slug: str
     title: str
+    titleEn: str | None = None
     includedRuns: int
     usedRuns: int
     remainingRuns: int
@@ -253,6 +254,8 @@ class ToolResultRead(BaseModel):
     findings: list[ToolResultRowRead] = []
     inputs: list[ToolResultRowRead] = []
     truncated: bool = False
+    # El workflow subió un PDF (artefacto `result-pdf`) que ASE muestra en pantalla.
+    hasPdf: bool = False
 
 
 class TestRunSummaryRead(BaseModel):
@@ -265,6 +268,7 @@ class TestRunSummaryRead(BaseModel):
 
     runUuid: UUID
     frameworkTitle: str
+    frameworkTitleEn: str | None = None
     status: TestRunStatus
     conclusion: TestRunConclusion | None = None
     progressPercent: int | None = None
@@ -277,6 +281,8 @@ class TestRunSummaryRead(BaseModel):
     testSummary: TestRunTestCountsRead | None = None
     jobs: list[TestRunJobRead] = []
     originalReportAvailable: bool = False
+    # El run subió un PDF (`result-pdf`) que ASE muestra en pantalla.
+    pdfAvailable: bool = False
     dynamicRequest: DynamicRequestDetailRead | None = None
     toolResult: ToolResultRead | None = None
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from app.modules.academy.exam_bank import BY_ID, QUESTIONS, validate_bank
+from app.modules.academy.exam_bank import BY_ID, EN, QUESTIONS, validate_bank
 from app.modules.academy.exam_config import EXAMS
 from app.modules.academy.exam_service import distinct_exams, draw_questions, pool_for
 
@@ -125,3 +125,22 @@ def test_sql_intermedio_exam_has_one_block_per_pair_of_missions():
     for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion"):
         drawn = draw_questions(EXAMS[key], Counter(), random.Random(8))
         assert all(BY_ID[item["id"]].chapter < 41 for item in drawn)
+
+
+def test_sql_avanzado_exam_has_one_block_per_pair_of_missions():
+    config = EXAMS["sql-avanzado"]
+    assert (config.total, config.minutes, config.pass_mark, config.certificate_prefix) == (30, 40, 21, "SQA")
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(19))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({51: 6, 52: 6, 53: 6, 54: 6, 55: 6})
+    assert config.chapter_label(55) == "5" and config.section_label("54.2") == "4.2"
+    assert config.missions[0] == "m00-jerarquias" and config.missions[-1] == "m10-examen"
+    # Doce preguntas por bloque, seis por sección, y todas traducidas.
+    sqa = [question for question in QUESTIONS if question.chapter >= 51]
+    assert len(sqa) == 60
+    assert Counter(question.section for question in sqa) == Counter({f"{b}.{s}": 6 for b in range(51, 56) for s in (1, 2)})
+    assert all(question.id in EN for question in sqa)
+    # Ningún otro examen saca preguntas de SQL avanzado.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion", "sql-intermedio"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(9))
+        assert all(BY_ID[item["id"]].chapter < 51 for item in drawn)

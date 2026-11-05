@@ -12,6 +12,28 @@ const IMPERSONATOR_REFRESH_TOKEN_KEY = 'ase.impersonator_refresh_token'
 // navigating to another page and returning before hitting "Guardar".
 const PROFILE_LINKS_DRAFT_KEY = 'ase.profile_links_draft'
 
+const SESSION_EXPIRED_KEY = 'ase.session_expired'
+
+/** Marca que la sesión se cerró por inactividad, para avisarlo amablemente en /login. */
+export function flagSessionExpired() {
+  try {
+    sessionStorage.setItem(SESSION_EXPIRED_KEY, '1')
+  } catch {
+    // Sin sessionStorage no hay aviso; el cierre de sesión se hace igual.
+  }
+}
+
+/** Devuelve true una sola vez si la sesión caducó, y borra la marca. */
+export function consumeSessionExpired(): boolean {
+  try {
+    const flagged = sessionStorage.getItem(SESSION_EXPIRED_KEY) === '1'
+    sessionStorage.removeItem(SESSION_EXPIRED_KEY)
+    return flagged
+  } catch {
+    return false
+  }
+}
+
 export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY)
 }

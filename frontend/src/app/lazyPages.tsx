@@ -14,7 +14,10 @@ export const HomePage = lazy(() => import('../pages/public/HomePage').then((m) =
 export const AboutPage = lazy(() => import('../pages/public/AboutPage').then((m) => ({ default: m.AboutPage })))
 export const ContactPage = lazy(() => import('../pages/public/ContactPage').then((m) => ({ default: m.ContactPage })))
 export const ServicesPage = lazy(() => import('../pages/public/ServicesPage').then((m) => ({ default: m.ServicesPage })))
-export const PlatformPage = lazy(() => import('../pages/public/PlatformPage').then((m) => ({ default: m.PlatformPage })))
+export const ConsultingPage = lazy(() =>
+  import('../pages/public/ConsultingPage').then((m) => ({ default: m.ConsultingPage })),
+)
+export const PlatformPage =lazy(() => import('../pages/public/PlatformPage').then((m) => ({ default: m.PlatformPage })))
 export const StoryPage = lazy(() => import('../pages/public/StoryPage').then((m) => ({ default: m.StoryPage })))
 export const PricingPage = lazy(() => import('../pages/public/PricingPage').then((m) => ({ default: m.PricingPage })))
 export const PublicRedeemCodePage = lazy(() =>
@@ -86,6 +89,9 @@ export const NotificationsPage = lazy(() =>
 export const ProfilePage = lazy(() => import('../pages/independent/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 export const RedeemCodePage = lazy(() =>
   import('../pages/independent/RedeemCodePage').then((m) => ({ default: m.RedeemCodePage })),
+)
+export const FreelancePage = lazy(() =>
+  import('../pages/freelance/FreelancePage').then((m) => ({ default: m.FreelancePage })),
 )
 export const TestExecutionPage = lazy(() =>
   import('../pages/independent/TestExecutionPage').then((m) => ({ default: m.TestExecutionPage })),

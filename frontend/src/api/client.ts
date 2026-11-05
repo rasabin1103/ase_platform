@@ -1,5 +1,6 @@
 import axios from 'axios'
-import { getAccessToken, getActiveOrganizationUuid } from '../auth/auth.store'
+import { clearTokens, flagSessionExpired, getAccessToken, getActiveOrganizationUuid } from '../auth/auth.store'
+import { getJwtExpiryMs } from '../utils/jwt'
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -35,3 +36,25 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+
+// Si una petición autenticada devuelve 401 y el token ya caducó (pestaña
+// olvidada abierta), la sesión se cierra por inactividad: se limpia y se lleva
+// a /login con un aviso claro. Un 401 con token vigente (p. ej. un código 2FA
+// erróneo) NO cierra la sesión.
+let redirectingToLogin = false
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && !redirectingToLogin) {
+      const token = getAccessToken()
+      const expiry = token ? getJwtExpiryMs(token) : null
+      if (token && expiry !== null && expiry <= Date.now() && window.location.pathname !== '/login') {
+        redirectingToLogin = true
+        flagSessionExpired()
+        clearTokens()
+        window.location.assign('/login')
+      }
+    }
+    return Promise.reject(error)
+  },
+)

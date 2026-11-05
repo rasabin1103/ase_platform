@@ -14,6 +14,7 @@ import { creatorApplicationEn, creatorApplicationEs } from './creatorApplication
 import { adminBlogEn, adminBlogEs, blogPageEn, blogPageEs } from './blog.locale'
 import { notificationsPageEn, notificationsPageEs } from './notificationsPage.locale'
 import { contractGuardEn, contractGuardEs } from './contractGuard.locale'
+import { freelanceEn, freelanceEs } from './freelance.locale'
 import { adminJobPostingsEn, adminJobPostingsEs, jobPostingsPageEn, jobPostingsPageEs } from './jobPostings.locale'
 import { pricingAdminEn, pricingAdminEs, pricingEngineEn, pricingEngineEs } from './pricingAdmin.locale'
 /** Private `/booking` + `/admin/booking` copy (EN + ES). Merged as root keys `bookingPage`/`adminBookingPage`. */
@@ -85,6 +86,7 @@ export const translations = {
     nav: {
       home: 'Home',
       whatsIncluded: "What's included",
+      consulting: 'Services',
       platform: 'Platform',
       plans: 'Plans',
       blog: 'Blog',
@@ -167,6 +169,7 @@ export const translations = {
     jobPostingsPage: jobPostingsPageEn,
     notificationsPage: notificationsPageEn,
     contractGuard: contractGuardEn,
+    freelance: freelanceEn,
     adminPurchases: adminPurchasesEn,
     adminAuditLog: adminAuditLogEn,
     adminBookRedemptions: adminBookRedemptionsEn,
@@ -671,6 +674,8 @@ plans: {
         lockedError: 'Too many failed attempts. Account temporarily locked — try again in {{minutes}} min.',
         lockedErrorGeneric: 'Too many failed attempts. Account temporarily locked — try again later.',
         invalidCredentials: 'Invalid credentials.',
+        sessionExpiredTitle: 'Your session was closed due to inactivity',
+        sessionExpiredBody: 'For your security, we signed you out after a period without activity. Sign in again to continue.',
         connectionError: 'We could not reach the server. Check your connection and try again in a few minutes.',
         httpError: 'Login error (HTTP {{status}}).',
         genericError: 'Login error.',
@@ -1027,6 +1032,17 @@ plans: {
         orgCatalog: 'Organization catalog',
         orgGrant: 'Send product',
         orgMembers: 'Members',
+        freelanceItems: {
+          summary: 'Summary',
+          invoices: 'Invoices',
+          clients: 'Clients',
+          expenses: 'Expenses',
+          dashboard: 'Monthly',
+          calendar: 'Calendar',
+          simulator: 'Rate simulator',
+          wealth: 'Savings',
+          settings: 'Settings',
+        },
         groups: {
           command: 'Command Center',
           operations: 'Operations',
@@ -1036,6 +1052,7 @@ plans: {
           catalogs: 'Catalogs',
           library: 'My library',
           tools: 'Services & tools',
+          freelance: 'Freelance management',
           career: 'Career',
           admin: 'Administration',
           content: 'Content',
@@ -1088,6 +1105,7 @@ plans: {
     nav: {
       home: 'Inicio',
       whatsIncluded: 'Qué incluye',
+      consulting: 'Servicios',
       platform: 'Plataforma',
       plans: 'Planes',
       blog: 'Blog',
@@ -1170,6 +1188,7 @@ plans: {
     jobPostingsPage: jobPostingsPageEs,
     notificationsPage: notificationsPageEs,
     contractGuard: contractGuardEs,
+    freelance: freelanceEs,
     adminPurchases: adminPurchasesEs,
     adminAuditLog: adminAuditLogEs,
     adminBookRedemptions: adminBookRedemptionsEs,
@@ -1673,6 +1692,8 @@ plans: {
         lockedError: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo en {{minutes}} min.',
         lockedErrorGeneric: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente — inténtalo de nuevo más tarde.',
         invalidCredentials: 'Credenciales inválidas.',
+        sessionExpiredTitle: 'Se ha cerrado la sesión por inactividad',
+        sessionExpiredBody: 'Por tu seguridad, hemos cerrado tu sesión tras un tiempo sin actividad. Inicia sesión de nuevo para continuar.',
         connectionError: 'No hemos podido conectar con el servidor. Revisa tu conexión e inténtalo de nuevo en unos minutos.',
         httpError: 'Error al iniciar sesión (HTTP {{status}}).',
         genericError: 'Error al iniciar sesión.',
@@ -2029,6 +2050,17 @@ plans: {
         orgCatalog: 'Catálogo de la organización',
         orgGrant: 'Enviar producto',
         orgMembers: 'Miembros',
+        freelanceItems: {
+          summary: 'Resumen',
+          invoices: 'Facturas',
+          clients: 'Clientes',
+          expenses: 'Gastos',
+          dashboard: 'Mensual',
+          calendar: 'Calendario',
+          simulator: 'Simulador de tarifas',
+          wealth: 'Ahorro',
+          settings: 'Ajustes',
+        },
         groups: {
           command: 'Centro de mando',
           operations: 'Operaciones',
@@ -2038,6 +2070,7 @@ plans: {
           catalogs: 'Catálogos',
           library: 'Mi biblioteca',
           tools: 'Servicios y herramientas',
+          freelance: 'Gestión de autónomo',
           career: 'Carrera',
           admin: 'Administración',
           content: 'Contenido',

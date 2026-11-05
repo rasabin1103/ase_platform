@@ -18,6 +18,11 @@ export async function openDb(setup: string, readOnly: boolean): Promise<PGlite> 
   const asText = (v: string) => v
   const db = await PGlite.create({ parsers: { 1082: asText, 1083: asText, 1114: asText, 1184: asText, 1700: asText } })
   await db.exec(setup)
+  // PGlite no tiene statement_timeout: este límite corta una consulta recursiva sin fin (un ciclo) en un segundo o dos.
+  await db.exec("SET temp_file_limit = '8MB'")
+  // La pila de WebAssembly es más pequeña que la que PostgreSQL cree tener: con el valor por defecto, un
+  // trigger que se dispara a sí mismo rompe la base de datos en vez de dar «stack depth limit exceeded».
+  await db.exec("SET max_stack_depth = '256kB'")
   if (readOnly) await db.exec('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY')
   return db
 }
@@ -41,6 +46,9 @@ export function cell(v: unknown): SqlCell {
 }
 
 const ERRORS: [RegExp, (m: RegExpMatchArray) => string][] = [
+  [/^invalid input syntax for type json$/, () => 'Ese texto no es JSON válido. Si comparas con -> (que devuelve jsonb), el otro lado tiene que ser JSON (\'"ios"\'); para comparar con un texto normal, saca el valor con ->>.'],
+  [/^function round\(double precision, integer\) does not exist$/, () => 'ROUND(x, decimales) no acepta double precision (lo que devuelven PERCENTILE_CONT, PERCENT_RANK…): convierte antes, ROUND(x::numeric, 2).'],
+  [/^operator does not exist: jsonb = text$/, () => '-> devuelve jsonb y lo comparas con un texto: usa ->> para sacar el valor como texto.'],
   [/^syntax error at or near "(.*)"$/, (m) => `Error de sintaxis cerca de «${m[1]}».`],
   [/^syntax error at end of input$/, () => 'La consulta está incompleta: falta algo al final.'],
   [/^relation "(.*)" does not exist$/, (m) => `La tabla «${m[1]}» no existe. Revisa el nombre en el explorador.`],
@@ -65,6 +73,19 @@ const ERRORS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^aggregate function calls cannot be nested$/, () => 'No se puede meter un agregado dentro de otro (AVG(COUNT(*))): calcula el primero en una subconsulta del FROM y el segundo fuera.'],
   [/^more than one row returned by a subquery used as an expression$/, () => 'La subconsulta devuelve más de una fila y aquí solo cabe un valor: usa IN, o un agregado (MAX, COUNT…) para quedarte con uno.'],
   [/^division by zero$/, () => 'División entre cero.'],
+  [/^temporary file size exceeds "temp_file_limit"/, () => 'La consulta ha generado demasiadas filas intermedias y se ha detenido. Si es recursiva, probablemente no termina nunca: ¿hay un ciclo en los datos? Guarda la ruta y no vuelvas a un nodo ya visitado, o limita la profundidad.'],
+  [/^infinite recursion detected in rules for relation "(.*)"$/, (m) => `Recursión infinita en «${m[1]}».`],
+  [/^stack depth limit exceeded$/, () => 'Se ha superado la profundidad máxima de llamadas: probablemente un trigger que se dispara a sí mismo (o una función que se llama sin fin).'],
+  [/^control reached end of trigger procedure without RETURN$/, () => 'La función del trigger termina sin RETURN: un trigger BEFORE tiene que devolver NEW (o NULL para descartar la fila); uno AFTER, NEW o NULL.'],
+  [/^check constraint "(.*)" of relation "(.*)" is violated by some row$/, (m) => `No se puede añadir la regla ${m[1]}: hay filas de «${m[2]}» que ya la incumplen. Corrige (o revisa) esos datos antes.`],
+  [/^could not create unique index "(.*)"$/, (m) => `No se puede crear el índice único ${m[1]}: hay valores repetidos en los datos. Encuéntralos y resuélvelos antes.`],
+  [/^update or delete on table "(.*)" violates foreign key constraint "(.*)" on table "(.*)"$/, (m) => `No se puede borrar o cambiar esa fila de «${m[1]}»: hay filas en «${m[3]}» que dependen de ella (clave foránea ${m[2]}).`],
+  [/^cannot insert a non-DEFAULT value into column "(.*)"$/, (m) => `La columna «${m[1]}» es calculada (GENERATED): no se le puede dar valor, se calcula sola.`],
+  [/^ON CONFLICT DO UPDATE command cannot affect row a second time$/, () => 'ON CONFLICT DO UPDATE intentaría actualizar la misma fila dos veces: hay claves repetidas en los datos que insertas.'],
+  [/^MERGE command cannot affect row a second time$/, () => 'MERGE intentaría cambiar la misma fila dos veces: hay claves repetidas en la tabla de origen.'],
+  [/^there is no unique or exclusion constraint matching the ON CONFLICT specification$/, () => 'ON CONFLICT necesita una clave primaria o un índice único sobre esas columnas.'],
+  [/^recursive query "(.*)" column (\d+) has type (.*) in non-recursive term but type (.*) overall$/, (m) => `En la consulta recursiva «${m[1]}», la columna ${m[2]} es de tipo ${m[3]} en la parte inicial y ${m[4]} en la recursiva: convierte la inicial (por ejemplo, ::text o ::varchar).`],
+  [/^cannot change materialized view "(.*)"$/, (m) => `«${m[1]}» es una vista materializada: no se modifica a mano, se recalcula con REFRESH MATERIALIZED VIEW.`],
   [/^null value in column "(.*)" of relation "(.*)" violates not-null constraint$/, (m) => `La columna «${m[1]}» de «${m[2]}» no admite valores vacíos (NOT NULL).`],
   [/^duplicate key value violates unique constraint "(.*)"$/, (m) => `Ese valor ya existe y debe ser único (${m[1]}).`],
   [/^insert or update on table "(.*)" violates foreign key constraint "(.*)"$/, (m) => `El valor no existe en la tabla relacionada (clave foránea ${m[2]} de «${m[1]}»).`],
@@ -74,6 +95,9 @@ const ERRORS: [RegExp, (m: RegExpMatchArray) => string][] = [
 
 /** Same rules, in English (the original PostgreSQL text is always kept next to it). */
 const ERRORS_EN: [RegExp, (m: RegExpMatchArray) => string][] = [
+  [/^invalid input syntax for type json$/, () => 'That text is not valid JSON. If you compare with -> (which returns jsonb), the other side has to be JSON (\'"ios"\'); to compare with plain text, get the value with ->>.'],
+  [/^function round\(double precision, integer\) does not exist$/, () => 'ROUND(x, decimals) does not accept double precision (what PERCENTILE_CONT, PERCENT_RANK… return): cast first, ROUND(x::numeric, 2).'],
+  [/^operator does not exist: jsonb = text$/, () => '-> returns jsonb and you are comparing it with text: use ->> to get the value as text.'],
   [/^syntax error at or near "(.*)"$/, (m) => `Syntax error near “${m[1]}”.`],
   [/^syntax error at end of input$/, () => 'The query is incomplete: something is missing at the end.'],
   [/^relation "(.*)" does not exist$/, (m) => `The table “${m[1]}” does not exist. Check the name in the explorer.`],
@@ -98,6 +122,19 @@ const ERRORS_EN: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^aggregate function calls cannot be nested$/, () => 'An aggregate cannot go inside another one (AVG(COUNT(*))): compute the first in a subquery in the FROM and the second outside.'],
   [/^more than one row returned by a subquery used as an expression$/, () => 'The subquery returns more than one row and only one value fits here: use IN, or an aggregate (MAX, COUNT…) to keep just one.'],
   [/^division by zero$/, () => 'Division by zero.'],
+  [/^temporary file size exceeds "temp_file_limit"/, () => 'The query generated too many intermediate rows and was stopped. If it is recursive, it probably never ends: is there a cycle in the data? Keep the path and do not go back to a node you already visited, or limit the depth.'],
+  [/^infinite recursion detected in rules for relation "(.*)"$/, (m) => `Infinite recursion in “${m[1]}”.`],
+  [/^stack depth limit exceeded$/, () => 'The maximum call depth was exceeded: probably a trigger that fires itself (or a function that calls itself endlessly).'],
+  [/^control reached end of trigger procedure without RETURN$/, () => 'The trigger function ends without RETURN: a BEFORE trigger has to return NEW (or NULL to discard the row); an AFTER one, NEW or NULL.'],
+  [/^check constraint "(.*)" of relation "(.*)" is violated by some row$/, (m) => `The rule ${m[1]} can't be added: some rows of “${m[2]}” already break it. Fix (or review) that data first.`],
+  [/^could not create unique index "(.*)"$/, (m) => `The unique index ${m[1]} can't be created: there are repeated values in the data. Find them and resolve them first.`],
+  [/^update or delete on table "(.*)" violates foreign key constraint "(.*)" on table "(.*)"$/, (m) => `That row of “${m[1]}” can't be deleted or changed: rows in “${m[3]}” depend on it (foreign key ${m[2]}).`],
+  [/^cannot insert a non-DEFAULT value into column "(.*)"$/, (m) => `The column “${m[1]}” is calculated (GENERATED): it can't be given a value, it calculates itself.`],
+  [/^ON CONFLICT DO UPDATE command cannot affect row a second time$/, () => 'ON CONFLICT DO UPDATE would update the same row twice: there are repeated keys in the data you are inserting.'],
+  [/^MERGE command cannot affect row a second time$/, () => 'MERGE would change the same row twice: there are repeated keys in the source table.'],
+  [/^there is no unique or exclusion constraint matching the ON CONFLICT specification$/, () => 'ON CONFLICT needs a primary key or a unique index on those columns.'],
+  [/^recursive query "(.*)" column (\d+) has type (.*) in non-recursive term but type (.*) overall$/, (m) => `In the recursive query “${m[1]}”, column ${m[2]} is of type ${m[3]} in the initial part and ${m[4]} in the recursive one: cast the initial one (for example, ::text or ::varchar).`],
+  [/^cannot change materialized view "(.*)"$/, (m) => `“${m[1]}” is a materialized view: it is not modified by hand, it is recalculated with REFRESH MATERIALIZED VIEW.`],
   [/^null value in column "(.*)" of relation "(.*)" violates not-null constraint$/, (m) => `The column “${m[1]}” of “${m[2]}” does not accept empty values (NOT NULL).`],
   [/^duplicate key value violates unique constraint "(.*)"$/, (m) => `That value already exists and must be unique (${m[1]}).`],
   [/^insert or update on table "(.*)" violates foreign key constraint "(.*)"$/, (m) => `The value does not exist in the related table (foreign key ${m[2]} of “${m[1]}”).`],
@@ -114,6 +151,14 @@ export function translateError(message: string, lang: AcademyLang = 'es'): strin
   return message
 }
 
+/**
+ * Arrays (text[], integer[], numeric[]…) y JSON tal cual los escribe
+ * PostgreSQL ({a,b} y {"a": 1}): así se ve la diferencia entre -> (jsonb, con
+ * comillas) y ->> (texto). Va en cada consulta porque PGlite registra sus
+ * propios parsers de arrays al arrancar, por encima de los de PGlite.create.
+ */
+const RAW_TEXT = Object.fromEntries([114, 3802, 1007, 1009, 1015, 1016, 1021, 1022, 1182, 1231, 199, 3807].map((oid) => [oid, (v: string) => v]))
+
 const COMMAND = /^\s*(?:--[^\n]*\n\s*)*(\w+)/
 
 /** Ejecuta el SQL del alumno y devuelve la última sentencia con filas (o la última). */
@@ -123,7 +168,7 @@ export async function runSql(db: PGlite, sql: string, lang: AcademyLang = 'es'):
   if (!sql.trim()) return { ok: false, columns: [], rows: [], rowCount: 0, command, ms: 0, error: { message: lang === 'en' ? 'Write a query before running.' : 'Escribe una consulta antes de ejecutar.', original: 'empty query' } }
   try {
     // Filas como arrays: dos columnas pueden llamarse igual (p. ej. dos count).
-    const results = await db.exec(sql, { rowMode: 'array' })
+    const results = await db.exec(sql, { rowMode: 'array', parsers: RAW_TEXT })
     const withRows = [...results].reverse().find((r) => r.fields.length > 0)
     const last = withRows ?? results[results.length - 1]
     const columns = last ? last.fields.map((f) => f.name) : []

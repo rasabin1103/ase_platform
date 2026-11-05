@@ -32,6 +32,7 @@ export type TestInputVariableDef = {
 export type RunnableFramework = {
   slug: string
   title: string
+  titleEn?: string | null
   includedRuns: number
   usedRuns: number
   remainingRuns: number
@@ -158,6 +159,13 @@ export async function getTestRunReport(runUuid: string) {
   return data
 }
 
+// PDF que genera el workflow del producto (p. ej. ReportFlow), como Blob: una
+// petición autenticada, igual que el informe HTML.
+export async function getTestRunPdf(runUuid: string) {
+  const { data } = await apiClient.get<Blob>(`/test-execution/runs/${runUuid}/pdf`, { responseType: 'blob' })
+  return data
+}
+
 export type TestRunStep = {
   name: string
   status: string | null
@@ -209,6 +217,8 @@ export type ToolResult = {
   findings: ToolResultRow[]
   inputs: ToolResultRow[]
   truncated: boolean
+  /** El workflow subió un PDF que se muestra en pantalla. */
+  hasPdf?: boolean
 }
 
 export type DynamicRequestDetail = {
@@ -230,6 +240,7 @@ export type DynamicRequestDetail = {
 export type TestRunSummary = {
   runUuid: string
   frameworkTitle: string
+  frameworkTitleEn?: string | null
   status: TestRunStatus
   conclusion: TestRunConclusion | null
   progressPercent: number | null
@@ -242,6 +253,7 @@ export type TestRunSummary = {
   testSummary: TestRunTestCounts | null
   jobs: TestRunJob[]
   originalReportAvailable: boolean
+  pdfAvailable?: boolean
   dynamicRequest: DynamicRequestDetail | null
   toolResult: ToolResult | null
 }

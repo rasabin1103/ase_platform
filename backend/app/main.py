@@ -42,6 +42,19 @@ def _run_account_lifecycle_sweep_job() -> None:
         db.close()
 
 
+def _run_freelance_recurring_job() -> None:
+    """Genera los gastos recurrentes vencidos del módulo de autónomo (idempotente)."""
+    from app.modules.freelance.service import run_recurring_sweep
+
+    db = SessionLocal()
+    try:
+        logger.info("Freelance recurring sweep: %s expenses created", run_recurring_sweep(db))
+    except Exception:
+        logger.exception("Freelance recurring sweep failed")
+    finally:
+        db.close()
+
+
 def _run_anniversary_sweep_job() -> None:
     """Daily job body for the 6-month tenure thank-you sweep — same
     isolated-session, never-raise pattern as the account lifecycle sweep."""
@@ -137,6 +150,13 @@ async def lifespan(app: FastAPI):
             next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2),
             id="anniversary_sweep",
         )
+    scheduler.add_job(
+        _run_freelance_recurring_job,
+        "interval",
+        hours=24,
+        next_run_time=datetime.now(timezone.utc) + timedelta(minutes=5),
+        id="freelance_recurring_sweep",
+    )
     scheduler.add_job(
         _run_notification_email_job,
         "interval",
@@ -240,6 +260,8 @@ from app.modules.public_catalog.router import router as public_catalog_router
 from app.modules.catalog_showcase.router import router as catalog_showcase_router
 from app.modules.notifications.router import router as notifications_router
 from app.modules.contract_guard.router import router as contract_guard_router
+from app.modules.freelance.router import freelance_error_handler, router as freelance_router
+from app.modules.freelance.service import FreelanceError
 from app.modules.suggestions.router import router as suggestions_router
 from app.modules.book_redemption.router import router as book_redemption_router
 from app.modules.admin_account_lifecycle.router import router as admin_account_lifecycle_router
@@ -295,6 +317,7 @@ def create_app() -> FastAPI:
     app.include_router(catalog_categories_router)
     app.include_router(notifications_router)
     app.include_router(contract_guard_router)
+    app.include_router(freelance_router)
     app.include_router(suggestions_router)
     app.include_router(book_redemption_router)
     app.include_router(admin_data_reset_router)
@@ -339,6 +362,7 @@ app = create_app()
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(FreelanceError, freelance_error_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 

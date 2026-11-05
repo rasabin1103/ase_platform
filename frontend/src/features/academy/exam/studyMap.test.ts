@@ -50,4 +50,13 @@ describe('test final de SQL', () => {
     expect([c.retry, c.byChapter, c.cards.distribution]).toEqual(['Nuevo test', 'Por bloque', 'Reparto por bloque'])
     expect(examDisclaimer('sql-iniciacion', 'es')).toMatch(/No es una certificación oficial/)
   })
+
+  it('SQL intermedio y avanzado: cada sección lleva a una misión de su curso y comparten los textos', () => {
+    for (const key of ['sql-intermedio', 'sql-avanzado']) {
+      const missions = getCourse(key)!.missions.map((m) => m.id)
+      for (const s of ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '4.1', '4.2', '5.1', '5.2']) expect(missions).toContain(studyMissionFor(key, s))
+      expect(withExamCopy({ retry: 'x' }, key, 'es').retry).toBe('Nuevo test')
+      expect(examDisclaimer(key, 'en')).toMatch(/not an official certification/)
+    }
+  })
 })

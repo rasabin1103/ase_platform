@@ -220,6 +220,37 @@ EXAMS: dict[str, ExamConfig] = {
             "m10-examen",
         ),
     ),
+    "sql-avanzado": ExamConfig(
+        course_key="sql-avanzado",
+        course_title="SQL avanzado: PostgreSQL a fondo",
+        course_title_en="Advanced SQL: PostgreSQL in depth",
+        title="Test final de SQL avanzado",
+        title_en="Advanced SQL final test",
+        certificate_prefix="SQA",
+        # 30 preguntas (6 por bloque), 40 min (50 con tiempo ampliado), aprobado
+        # con 21 (70 %). El certificado exige además el examen práctico (misión
+        # m10-examen), que solo cuenta como terminado si se aprueba (70/100).
+        # Ver docs/academy/sql-avanzado/PLAN.md.
+        total=30,
+        minutes=40,
+        extended_minutes=50,
+        pass_mark=21,
+        distribution={51: 6, 52: 6, 53: 6, 54: 6, 55: 6},
+        chapter_offset=50,
+        missions=(
+            "m00-jerarquias",
+            "m01-ventanas",
+            "m02-rachas",
+            "m03-subtotales",
+            "m04-json",
+            "m05-modificar",
+            "m06-reglas",
+            "m07-funciones",
+            "m08-indices",
+            "m09-rendimiento",
+            "m10-examen",
+        ),
+    ),
 }
 
 

@@ -17,7 +17,7 @@ import re
 from urllib.parse import quote, unquote
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
-ALLOWED_EXTENSIONS = (".json", ".yaml", ".yml")
+ALLOWED_EXTENSIONS = (".json", ".yaml", ".yml", ".csv", ".xlsx")
 FILE_PREFIX = "file:"
 ENCODED_PREFIX = "gz64:"
 # Límite de GitHub: 65 535 caracteres en total entre todas las entradas.
@@ -45,7 +45,7 @@ def encode_file_value(value: str) -> str:
         raise UploadError("invalid_file", "The attached file is not valid") from exc
     name = _safe_filename(unquote(name))
     if not name.lower().endswith(ALLOWED_EXTENSIONS):
-        raise UploadError("unsupported_format", "Only .json, .yaml and .yml files are accepted")
+        raise UploadError("unsupported_format", "Only .json, .yaml, .yml, .csv and .xlsx files are accepted")
     try:
         raw = base64.b64decode(b64, validate=True)
     except (binascii.Error, ValueError) as exc:

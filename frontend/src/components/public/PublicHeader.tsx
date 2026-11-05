@@ -7,7 +7,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 
 const navLinkBase =
-  'text-sm font-medium text-ase-text2 transition-colors duration-200 hover:text-ase-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-md px-2 py-1.5'
+  'whitespace-nowrap text-sm font-medium text-ase-text2 transition-colors duration-200 hover:text-ase-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ase-bg rounded-md px-2 py-1.5'
 
 const navLinkActive = 'text-ase-text bg-white/[0.04] border border-white/10'
 
@@ -21,6 +21,7 @@ export function PublicHeader() {
     () => [
       { to: '/', label: t('nav.home') as string },
       { to: '/services', label: t('nav.whatsIncluded') as string },
+      { to: '/consulting', label: t('nav.consulting') as string },
       { to: '/platform', label: t('nav.platform') as string },
       { to: '/catalog', label: t('publicCatalogShowcase.nav') as string },
       { to: '/pricing', label: t('nav.plans') as string },
@@ -45,7 +46,7 @@ export function PublicHeader() {
           <BrandLogo variant="dark" size="sm" showText className="opacity-95" />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 navfit:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 navfit:flex">
           {items.map((it) => (
             <NavLink key={it.to} to={it.to} className={({ isActive }) => cn(navLinkBase, isActive && navLinkActive)}>
               {it.label}
@@ -79,11 +80,11 @@ export function PublicHeader() {
             </div>
             {auth.isAuthenticated ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-ase-text2">
+                <span className="hidden items-center whitespace-nowrap rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-ase-text2 min-[1760px]:inline-flex">
                   <span className="mr-2 h-1.5 w-1.5 rounded-full bg-ase-success/80 shadow-[0_0_18px_rgba(34,197,94,0.12)]" />
                   {t('session.loggedIn')}
                 </span>
-                <span className="hidden max-w-[220px] truncate text-sm text-ase-text2 lg:inline">
+                <span className="hidden max-w-[220px] truncate text-sm text-ase-text2 min-[1760px]:inline">
                   {auth.currentUser?.display_name ?? auth.currentUser?.email}
                 </span>
                 <ButtonLink to="/dashboard" size="sm">

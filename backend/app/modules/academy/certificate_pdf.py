@@ -51,6 +51,7 @@ _DISCLAIMERS = {
     "gestion-equipos-qa": _NOT_OFFICIAL,
     "sql-iniciacion": _NOT_OFFICIAL,
     "sql-intermedio": _NOT_OFFICIAL,
+    "sql-avanzado": _NOT_OFFICIAL,
 }
 
 _INK = (15, 23, 42)

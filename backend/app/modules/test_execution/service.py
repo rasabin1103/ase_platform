@@ -389,6 +389,7 @@ class TestExecutionService:
                 {
                     "slug": item.slug,
                     "title": item.title,
+                    "titleEn": item.title_en,
                     "includedRuns": included,
                     "usedRuns": used,
                     "remainingRuns": max(0, included - used),
@@ -819,6 +820,58 @@ class TestExecutionService:
         except zipfile.BadZipFile:
             raise ReportNotFoundError()
 
+    def _run_has_pdf(self, *, run: TestRun, item: CatalogItem | None) -> bool:
+        """¿El run subió el artefacto `result-pdf`? Una sola consulta a GitHub,
+        y solo cuando el run ya terminó. Cualquier fallo cuenta como «no»."""
+        if run.status != "completed" or run.github_run_id is None or item is None or not item.test_repo_url:
+            return False
+        try:
+            artifacts = github_client.list_workflow_run_artifacts(
+                repo_url=item.test_repo_url, token=settings.GITHUB_ACCESS_TOKEN or "", run_id=run.github_run_id,
+            )
+        except github_client.GithubWorkflowError:
+            return False
+        return any(not a.get("expired") and str(a.get("name", "")).lower() == "result-pdf" for a in artifacts)
+
+    def get_run_pdf(self, *, user_id: int, run_uuid: UUID) -> bytes:
+        """PDF que el workflow del producto subió como artefacto `result-pdf`
+        (p. ej. ReportFlow). Mismo patrón que el informe HTML: se descarga con
+        el token del servidor y solo se entregan los bytes."""
+        run = self._get_own_run(user_id=user_id, run_uuid=run_uuid)
+        if run.github_run_id is None:
+            raise ReportNotFoundError()
+        item = self.db.get(CatalogItem, run.catalog_item_id)
+        if item is None or not item.test_repo_url:
+            raise ReportNotFoundError()
+        token = settings.GITHUB_ACCESS_TOKEN or ""
+        try:
+            artifacts = github_client.list_workflow_run_artifacts(
+                repo_url=item.test_repo_url, token=token, run_id=run.github_run_id,
+            )
+            artifact = next(
+                (a for a in artifacts if not a.get("expired") and str(a.get("name", "")).lower() == "result-pdf"),
+                None,
+            )
+            if artifact is None:
+                raise ReportNotFoundError()
+            zip_bytes = github_client.download_artifact_zip(
+                repo_url=item.test_repo_url, token=token, artifact_id=artifact["id"],
+            )
+        except github_client.GithubWorkflowError:
+            raise ReportNotFoundError()
+        try:
+            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+                names = [n for n in zf.namelist() if n.lower().endswith(".pdf")]
+                if not names:
+                    raise ReportNotFoundError()
+                with zf.open(names[0]) as f:
+                    data = f.read(25 * 1024 * 1024 + 1)
+        except zipfile.BadZipFile:
+            raise ReportNotFoundError()
+        if not data.startswith(b"%PDF"):
+            raise ReportNotFoundError()
+        return data
+
     def _get_request_result_json(self, *, run: TestRun, item: CatalogItem | None) -> dict | None:
         """Downloads and parses the run's `request-result` artifact (JSON), or
         None if it doesn't exist / can't be read. Shared by the dynamic
@@ -892,6 +945,7 @@ class TestExecutionService:
             "findings": _rows("findings", ("severity", "title", "location", "detail", "hint"), 200),
             "inputs": _rows("inputs", ("label", "value"), 12),
             "truncated": bool(block.get("truncated")),
+            "hasPdf": bool(block.get("pdf")),
         }
 
     def _get_dynamic_request_detail(
@@ -1036,6 +1090,7 @@ class TestExecutionService:
         return {
             "runUuid": run.uuid,
             "frameworkTitle": item.title if item is not None else "",
+            "frameworkTitleEn": item.title_en if item is not None else None,
             "status": run.status,
             "conclusion": run.conclusion,
             "progressPercent": run.progress_percent,
@@ -1050,6 +1105,7 @@ class TestExecutionService:
             "originalReportAvailable": html_report is not None,
             "dynamicRequest": dynamic_request,
             "toolResult": tool_result,
+            "pdfAvailable": self._run_has_pdf(run=run, item=item),
         }
 
     def list_runs(
