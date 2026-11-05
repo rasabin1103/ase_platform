@@ -263,9 +263,9 @@ export function AcademyHomePage() {
       {/* Cierre */}
       <section className="mx-auto max-w-[1400px] px-5 pb-28 sm:px-8">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[2rem] p-px">
+          <div className="relative overflow-hidden rounded-[2rem] p-[2px]">
             <div aria-hidden className="absolute inset-0 ase-gradient-brand opacity-80" />
-            <div className="relative rounded-[calc(2rem-1px)] bg-ase-bg px-6 py-14 text-center sm:px-12">
+            <div className="relative rounded-[calc(2rem-2px)] bg-ase-bg px-6 py-14 text-center sm:px-12">
               <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold leading-tight text-ase-text sm:text-4xl">
                 {c.ctaTitle}
               </h2>

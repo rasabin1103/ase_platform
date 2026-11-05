@@ -74,9 +74,9 @@ export function HomeFinalCta() {
   return (
     <section className="mx-auto max-w-[1400px] px-5 pb-28 pt-8 sm:px-8">
       <Reveal>
-        <div className="relative overflow-hidden rounded-[2rem] p-px">
+        <div className="relative overflow-hidden rounded-[2rem] p-[2px]">
           <div aria-hidden className="absolute inset-0 ase-gradient-brand opacity-80" />
-          <div className="relative overflow-hidden rounded-[calc(2rem-1px)] bg-ase-bg px-6 py-16 text-center sm:px-12 sm:py-20">
+          <div className="relative overflow-hidden rounded-[calc(2rem-2px)] bg-ase-bg px-6 py-16 text-center sm:px-12 sm:py-20">
             <div
               aria-hidden
               className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[40rem] -translate-x-1/2 rounded-full bg-ase-brand/25 blur-[100px]"
