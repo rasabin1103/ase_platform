@@ -251,6 +251,66 @@ EXAMS: dict[str, ExamConfig] = {
             "m10-examen",
         ),
     ),
+    "sql-qa": ExamConfig(
+        course_key="sql-qa",
+        course_title="SQL para QA: probar con la base de datos",
+        course_title_en="SQL for QA: testing with the database",
+        title="Test final de SQL para QA",
+        title_en="SQL for QA final test",
+        certificate_prefix="SQQ",
+        # 30 preguntas (6 por bloque), 40 min (50 con tiempo ampliado), aprobado
+        # con 21 (70 %). El certificado exige además el examen práctico (misión
+        # m10-examen), que solo cuenta como terminado si se aprueba (70/100).
+        # Ver docs/academy/sql-qa/PLAN.md.
+        total=30,
+        minutes=40,
+        extended_minutes=50,
+        pass_mark=21,
+        distribution={61: 6, 62: 6, 63: 6, 64: 6, 65: 6},
+        chapter_offset=60,
+        missions=(
+            "m00-lo-que-hizo",
+            "m01-bordes",
+            "m02-datos-prueba",
+            "m03-cero-filas",
+            "m04-conciliar",
+            "m05-migracion",
+            "m06-informe",
+            "m07-estados",
+            "m08-reglas",
+            "m09-rendimiento",
+            "m10-examen",
+        ),
+    ),
+    "python-desde-cero": ExamConfig(
+        course_key="python-desde-cero",
+        course_title="Python desde cero",
+        course_title_en="Python from scratch",
+        title="Test final de Python desde cero",
+        title_en="Python from scratch final test",
+        certificate_prefix="PYB",
+        # 20 preguntas (5 por bloque), 30 min (40 con tiempo ampliado), aprobado
+        # con 14 (70 %). El certificado exige además el examen práctico (módulo
+        # m09-proyecto-final), que solo cuenta como terminado si se aprueba
+        # (70/100). Ver docs/academy/python-desde-cero/PLAN.md.
+        total=20,
+        minutes=30,
+        extended_minutes=40,
+        pass_mark=14,
+        distribution={71: 5, 72: 5, 73: 5, 74: 5},
+        chapter_offset=70,
+        missions=(
+            "m01-primer-programa",
+            "m02-decidir",
+            "m03-repetir",
+            "m04-colecciones",
+            "m05-funciones",
+            "m06-textos-errores",
+            "m07-ficheros",
+            "m08-ordenar-codigo",
+            "m09-proyecto-final",
+        ),
+    ),
 }
 
 

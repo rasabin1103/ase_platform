@@ -136,7 +136,7 @@ def test_sql_avanzado_exam_has_one_block_per_pair_of_missions():
     assert config.chapter_label(55) == "5" and config.section_label("54.2") == "4.2"
     assert config.missions[0] == "m00-jerarquias" and config.missions[-1] == "m10-examen"
     # Doce preguntas por bloque, seis por sección, y todas traducidas.
-    sqa = [question for question in QUESTIONS if question.chapter >= 51]
+    sqa = [question for question in QUESTIONS if 51 <= question.chapter < 61]
     assert len(sqa) == 60
     assert Counter(question.section for question in sqa) == Counter({f"{b}.{s}": 6 for b in range(51, 56) for s in (1, 2)})
     assert all(question.id in EN for question in sqa)
@@ -144,3 +144,41 @@ def test_sql_avanzado_exam_has_one_block_per_pair_of_missions():
     for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion", "sql-intermedio"):
         drawn = draw_questions(EXAMS[key], Counter(), random.Random(9))
         assert all(BY_ID[item["id"]].chapter < 51 for item in drawn)
+
+
+def test_sql_qa_exam_has_one_block_per_pair_of_missions():
+    config = EXAMS["sql-qa"]
+    assert (config.total, config.minutes, config.pass_mark, config.certificate_prefix) == (30, 40, 21, "SQQ")
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(23))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({61: 6, 62: 6, 63: 6, 64: 6, 65: 6})
+    assert config.chapter_label(65) == "5" and config.section_label("64.2") == "4.2"
+    assert config.missions[0] == "m00-lo-que-hizo" and config.missions[-1] == "m10-examen"
+    # Doce preguntas por bloque, seis por sección, y todas traducidas.
+    sqq = [question for question in QUESTIONS if 61 <= question.chapter < 71]
+    assert len(sqq) == 60
+    assert Counter(question.section for question in sqq) == Counter({f"{b}.{s}": 6 for b in range(61, 66) for s in (1, 2)})
+    assert all(question.id in EN for question in sqq)
+    # Ningún otro examen saca preguntas de SQL para QA.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion", "sql-intermedio", "sql-avanzado"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(10))
+        assert all(BY_ID[item["id"]].chapter < 61 for item in drawn)
+
+
+def test_python_desde_cero_exam_has_one_block_per_pair_of_modules():
+    config = EXAMS["python-desde-cero"]
+    assert (config.total, config.minutes, config.pass_mark, config.certificate_prefix) == (20, 30, 14, "PYB")
+    assert distinct_exams(config) >= 2
+    drawn = draw_questions(config, Counter(), random.Random(29))
+    assert Counter(BY_ID[item["id"]].chapter for item in drawn) == Counter({71: 5, 72: 5, 73: 5, 74: 5})
+    assert config.chapter_label(74) == "4" and config.section_label("73.2") == "3.2"
+    assert config.missions[0] == "m01-primer-programa" and config.missions[-1] == "m09-proyecto-final"
+    # Diez preguntas por bloque, cinco por sección, y todas traducidas.
+    pyb = [question for question in QUESTIONS if 71 <= question.chapter < 81]
+    assert len(pyb) == 40
+    assert Counter(question.section for question in pyb) == Counter({f"{b}.{s}": 5 for b in range(71, 75) for s in (1, 2)})
+    assert all(question.id in EN for question in pyb)
+    # Ningún otro examen saca preguntas de Python.
+    for key in ("qa-profesional", "testing-fundamentals", "karate-framework", "gestion-equipos-qa", "sql-iniciacion", "sql-intermedio", "sql-avanzado", "sql-qa"):
+        drawn = draw_questions(EXAMS[key], Counter(), random.Random(11))
+        assert all(BY_ID[item["id"]].chapter < 71 for item in drawn)

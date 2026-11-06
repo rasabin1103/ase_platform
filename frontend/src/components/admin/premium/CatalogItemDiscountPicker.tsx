@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { CatalogItemAdmin } from '../../../api/catalogAdmin.api'
 import type { PlanCatalogItemDiscountInput } from '../../../types/plan.types'
 import { Input } from '../../ui/Input'
 import { Badge } from '../../ui/Badge'
 import { useI18n } from '../../../i18n'
+import { CatalogPickerFilters } from './CatalogPickerFilters'
+import { useCatalogPickerFilters } from './useCatalogPickerFilters'
 
 type Props = {
   items: CatalogItemAdmin[]
@@ -22,16 +24,10 @@ type Props = {
  * discount_percent value. */
 export function CatalogItemDiscountPicker({ items, excludedIds, value, onChange }: Props) {
   const { t } = useI18n()
-  const [search, setSearch] = useState('')
-
   const excluded = useMemo(() => new Set(excludedIds), [excludedIds])
   const eligible = useMemo(() => items.filter((item) => !excluded.has(item.id)), [items, excluded])
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return eligible
-    return eligible.filter((item) => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q))
-  }, [eligible, search])
+  const { filters, setFilters, categories, filtered, active, reset } = useCatalogPickerFilters(eligible)
 
   const byId = useMemo(() => new Map(value.map((d) => [d.catalog_item_id, d])), [value])
 
@@ -49,11 +45,7 @@ export function CatalogItemDiscountPicker({ items, excludedIds, value, onChange 
 
   return (
     <div className="space-y-2">
-      <Input
-        placeholder={t('plansPage.create.placeholders.catalogSearch') as string}
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <CatalogPickerFilters filters={filters} categories={categories} active={active} onChange={setFilters} onReset={reset} />
       <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-2">
         {filtered.length === 0 ? (
           <p className="p-2 text-xs text-ase-muted">{t('plansPage.create.helpers.noCatalogItems')}</p>

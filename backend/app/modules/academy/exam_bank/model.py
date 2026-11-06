@@ -97,6 +97,17 @@ CHAPTER_TITLES: dict[int, str] = {
     53: "JSON y cambios de datos",
     54: "Reglas, funciones y triggers",
     55: "Índices y rendimiento",
+    # Curso «SQL para QA» (bloques 61–65; se muestran como 1–5).
+    61: "Lo que hizo la app y los bordes",
+    62: "Datos de prueba y consultas a cero",
+    63: "Conciliaciones y migraciones",
+    64: "Informes y estados",
+    65: "Reglas y rendimiento",
+    # Curso «Python desde cero» (bloques 71–74; se muestran como 1–4).
+    71: "Primeros programas y decisiones",
+    72: "Bucles y colecciones",
+    73: "Funciones, textos y errores",
+    74: "Ficheros, librerías y módulos",
 }
 
 CHAPTER_TITLES_EN: dict[int, str] = {
@@ -132,6 +143,15 @@ CHAPTER_TITLES_EN: dict[int, str] = {
     53: "JSON and changing data",
     54: "Rules, functions and triggers",
     55: "Indexes and performance",
+    61: "What the app did and the edges",
+    62: "Test data and zero-row queries",
+    63: "Reconciliations and migrations",
+    64: "Reports and states",
+    65: "Rules and performance",
+    71: "First programs and decisions",
+    72: "Loops and collections",
+    73: "Functions, text and errors",
+    74: "Files, libraries and modules",
 }
 
 SECTION_TITLES_EN: dict[str, str] = {
@@ -210,6 +230,24 @@ SECTION_TITLES_EN: dict[str, str] = {
     "54.2": "Functions and triggers",
     "55.1": "Indexes and plans",
     "55.2": "Performance",
+    "61.1": "What the app did",
+    "61.2": "The edges",
+    "62.1": "Test data",
+    "62.2": "Queries that must return zero",
+    "63.1": "Reconciling two sources",
+    "63.2": "Validating a migration",
+    "64.1": "Testing a report",
+    "64.2": "States and transitions",
+    "65.1": "Testing the database's rules",
+    "65.2": "Performance regressions",
+    "71.1": "Your first program",
+    "71.2": "Making decisions",
+    "72.1": "Repeating",
+    "72.2": "Collections",
+    "73.1": "Functions",
+    "73.2": "Text and errors",
+    "74.1": "Files",
+    "74.2": "Organising your code",
 }
 
 SECTION_TITLES: dict[str, str] = {
@@ -288,4 +326,22 @@ SECTION_TITLES: dict[str, str] = {
     "54.2": "Funciones y triggers",
     "55.1": "Índices y planes",
     "55.2": "Rendimiento",
+    "61.1": "Lo que hizo la app",
+    "61.2": "Los bordes",
+    "62.1": "Datos de prueba",
+    "62.2": "Consultas que deben dar cero",
+    "63.1": "Conciliar dos fuentes",
+    "63.2": "Validar una migración",
+    "64.1": "Probar un informe",
+    "64.2": "Estados y transiciones",
+    "65.1": "Probar las reglas de la base de datos",
+    "65.2": "Regresiones de rendimiento",
+    "71.1": "Tu primer programa",
+    "71.2": "Decidir",
+    "72.1": "Repetir",
+    "72.2": "Colecciones",
+    "73.1": "Funciones",
+    "73.2": "Textos y errores",
+    "74.1": "Ficheros",
+    "74.2": "Ordenar tu código",
 }

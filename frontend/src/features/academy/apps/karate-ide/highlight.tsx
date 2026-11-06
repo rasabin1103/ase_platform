@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { highlightSql } from '../../sql/highlightSql'
+import { highlightPython } from '../../learn/python/highlightPy'
 
 /**
  * Resaltado de sintaxis ligero para .feature (Karate) y .js/.json.
@@ -92,6 +93,7 @@ export function highlightExpr(text: string, keyBase: string): ReactNode[] {
 /** Resalta un fichero completo y devuelve una lista de nodos por línea. */
 export function highlightFile(path: string, content: string): ReactNode[] {
   if (path.endsWith('.sql')) return highlightSql(content)
+  if (path.endsWith('.py')) return highlightPython(content)
   const lines = content.split('\n')
   if (!path.endsWith('.feature')) return lines.map((l, i) => <>{highlightExpr(l, `l${i}`)}</>)
   let inDoc = false

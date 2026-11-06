@@ -7,7 +7,7 @@ lleguen nunca al navegador antes de entregar el examen.
 
 from __future__ import annotations
 
-from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, gestion, karate, karate_en, sql, sql_avanzado, sql_avanzado_en, sql_intermedio, sql_intermedio_en
+from app.modules.academy.exam_bank import ch1, ch1_en, ch2, ch2_en, ch3, ch3_en, ch4, ch4_en, ch5, ch5_en, ch6, ch6_en, gestion, karate, karate_en, sql, sql_avanzado, sql_avanzado_en, sql_intermedio, sql_intermedio_en, sql_qa, sql_qa_en, python_desde_cero, python_desde_cero_en
 from app.modules.academy.exam_bank.model import (
     CHAPTER_TITLES,
     CHAPTER_TITLES_EN,
@@ -18,10 +18,10 @@ from app.modules.academy.exam_bank.model import (
 )
 
 # Cambiarlo cuando se modifique el banco: queda guardado en cada intento.
-BANK_VERSION = "2026.11.04-ctfl250+kar60en+geq+sql3+en"
+BANK_VERSION = "2026.11.06-ctfl250+kar60en+geq+sql4+py1"
 
 QUESTIONS: tuple[BankQuestion, ...] = tuple(
-    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS, *gestion.QUESTIONS, *sql.QUESTIONS, *sql_intermedio.QUESTIONS, *sql_avanzado.QUESTIONS]
+    [*ch1.QUESTIONS, *ch2.QUESTIONS, *ch3.QUESTIONS, *ch4.QUESTIONS, *ch5.QUESTIONS, *ch6.QUESTIONS, *karate.QUESTIONS, *gestion.QUESTIONS, *sql.QUESTIONS, *sql_intermedio.QUESTIONS, *sql_avanzado.QUESTIONS, *sql_qa.QUESTIONS, *python_desde_cero.QUESTIONS]
 )
 #: Primer bloque del curso de Karate (los anteriores son capítulos CTFL).
 KARATE_FIRST_CHAPTER = 11
@@ -33,12 +33,16 @@ SQL_FIRST_CHAPTER = 31
 SQL_INTERMEDIO_FIRST_CHAPTER = 41
 #: Primer bloque del curso «SQL avanzado».
 SQL_AVANZADO_FIRST_CHAPTER = 51
+#: Primer bloque del curso «SQL para QA».
+SQL_QA_FIRST_CHAPTER = 61
+#: Primer bloque del curso «Python desde cero».
+PYTHON_FIRST_CHAPTER = 71
 #: Bloques aún sin versión en inglés (su curso está pendiente de traducción):
 #: en inglés se muestran en español hasta que se traduzcan.
 PENDING_EN_CHAPTERS = frozenset({21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35})
 
 BY_ID: dict[str, BankQuestion] = {question.id: question for question in QUESTIONS}
-EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN, **sql_intermedio_en.EN, **sql_avanzado_en.EN}
+EN: dict[str, BankText] = {**ch1_en.EN, **ch2_en.EN, **ch3_en.EN, **ch4_en.EN, **ch5_en.EN, **ch6_en.EN, **karate_en.EN, **sql_intermedio_en.EN, **sql_avanzado_en.EN, **sql_qa_en.EN, **python_desde_cero_en.EN}
 
 
 def validate_bank() -> list[str]:

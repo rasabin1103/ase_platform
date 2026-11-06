@@ -12,7 +12,11 @@ import { sqlAvanzadoCourse } from './courses/sql-avanzado/course'
 import { sqlIniciacionCourseEn } from './courses/sql-iniciacion/en/course'
 import { sqlIntermedioCourseEn } from './courses/sql-intermedio/en/course'
 import { sqlAvanzadoCourseEn } from './courses/sql-avanzado/en/course'
+import { sqlQaCourse } from './courses/sql-qa/course'
+import { sqlQaCourseEn } from './courses/sql-qa/en/course'
 import { gestionEquiposQaCourseEn } from './courses/gestion-equipos-qa/en/course'
+import { pythonDesdeCeroCourse } from './courses/python-desde-cero/course'
+import { pythonDesdeCeroCourseEn } from './courses/python-desde-cero/en/course'
 
 /**
  * Lista ligera de cursos del simulador (sin el contenido de las misiones).
@@ -22,8 +26,8 @@ import { gestionEquiposQaCourseEn } from './courses/gestion-equipos-qa/en/course
  * Añadir un curso nuevo: crear su carpeta en content/courses/<clave>/,
  * añadir su CourseDef aquí y sus misiones en registry.ts.
  */
-export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse, gestionEquiposQaCourse, sqlIniciacionCourse, sqlIntermedioCourse, sqlAvanzadoCourse]
-export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn, gestionEquiposQaCourseEn, sqlIniciacionCourseEn, sqlIntermedioCourseEn, sqlAvanzadoCourseEn]
+export const ACADEMY_COURSES: CourseDef[] = [testingFundamentalsCourse, qaProfesionalCourse, karateFrameworkCourse, gestionEquiposQaCourse, sqlIniciacionCourse, sqlIntermedioCourse, sqlAvanzadoCourse, sqlQaCourse, pythonDesdeCeroCourse]
+export const ACADEMY_COURSES_EN: CourseDef[] = [testingFundamentalsCourseEn, qaProfesionalCourseEn, karateFrameworkCourseEn, gestionEquiposQaCourseEn, sqlIniciacionCourseEn, sqlIntermedioCourseEn, sqlAvanzadoCourseEn, sqlQaCourseEn, pythonDesdeCeroCourseEn]
 
 /** Cursos que aún no tienen versión en inglés (en inglés se muestran en español). */
 export const PENDING_TRANSLATION = new Set<string>([])

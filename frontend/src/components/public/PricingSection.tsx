@@ -208,8 +208,10 @@ export function PricingSection({ compact, hideIntro }: { compact?: boolean; hide
         }
       : null
 
+  // z-10: el panel flotante «Incluido» de cada plan sobresale por debajo; sin esto, los bloques
+  // siguientes (Reveal, con su propio contexto de apilado) se pintaban por encima.
   return (
-    <section className={cn('relative isolate overflow-x-clip', !hideIntro && 'border-t border-white/5')}>
+    <section className={cn('relative isolate z-10 overflow-x-clip', !hideIntro && 'border-t border-white/5')}>
       {/* Same glow language as the admin application map — a faint brand
        * radial behind the pricing grid, the section most likely to close a
        * deal, so it carries the premium finish too. */}

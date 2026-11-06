@@ -31,7 +31,7 @@ function inline(text: string): ReactNode[] {
   )
 }
 
-/** Markdown mínimo: párrafos, `## títulos`, listas `- `, **negrita**, `código` y bloques ``` de código. */
+/** Markdown mínimo: párrafos, `## títulos`, listas `- `, tablas `| a | b |`, **negrita**, `código` y bloques ``` de código. */
 export function RichText({ text, className = '' }: { text: string; className?: string }) {
   const blocks: ReactNode[] = []
   let list: string[] = []
@@ -47,6 +47,54 @@ export function RichText({ text, className = '' }: { text: string; className?: s
       list = []
     }
   }
+  let table: string[] = []
+  const flushTable = () => {
+    if (!table.length) return
+    // Las barras dentro de `código` no separan celdas (p. ej. `a || b`).
+    const cells = (row: string) => {
+      const out: string[] = []
+      let cur = ''
+      let inCode = false
+      for (const ch of row.trim().replace(/^\|/, '').replace(/\|$/, '')) {
+        if (ch === '`') inCode = !inCode
+        if (ch === '|' && !inCode) {
+          out.push(cur.trim())
+          cur = ''
+        } else cur += ch
+      }
+      out.push(cur.trim())
+      return out
+    }
+    const rows = table.filter((r) => !/^\|[\s:|-]+\|$/.test(r)).map(cells)
+    const [head, ...body] = rows
+    blocks.push(
+      <div key={`t${blocks.length}`} className="overflow-x-auto">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr>
+              {head.map((c, i) => (
+                <th key={i} className="border-b border-ase-border px-2 py-1 font-semibold text-ase-text">
+                  {inline(c)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {body.map((r, i) => (
+              <tr key={i}>
+                {r.map((c, j) => (
+                  <td key={j} className="border-b border-ase-border/60 px-2 py-1 align-top">
+                    {inline(c)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>,
+    )
+    table = []
+  }
   let code: string[] | null = null
   for (const raw of text.split('\n')) {
     const line = raw.trimEnd()
@@ -60,6 +108,7 @@ export function RichText({ text, className = '' }: { text: string; className?: s
         code = null
       } else {
         flush()
+        flushTable()
         code = []
       }
       continue
@@ -72,7 +121,13 @@ export function RichText({ text, className = '' }: { text: string; className?: s
       list.push(line.slice(2))
       continue
     }
+    if (line.trimStart().startsWith('|')) {
+      flush()
+      table.push(line.trim())
+      continue
+    }
     flush()
+    flushTable()
     if (!line.trim()) continue
     if (line.startsWith('## '))
       blocks.push(
@@ -83,6 +138,7 @@ export function RichText({ text, className = '' }: { text: string; className?: s
     else blocks.push(<p key={blocks.length}>{inline(line)}</p>)
   }
   flush()
+  flushTable()
   return <div className={`space-y-2 text-body-sm leading-relaxed text-ase-text2 ${className}`}>{blocks}</div>
 }
 

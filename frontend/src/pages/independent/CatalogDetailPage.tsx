@@ -78,6 +78,9 @@ export function CatalogDetailPage() {
   const qc = useQueryClient()
   const [accessModalOpen, setAccessModalOpen] = useState(false)
   const [demoModalOpen, setDemoModalOpen] = useState(false)
+  // Pila de documentos abiertos desde enlaces relativos del README ('' = principal).
+  const [fileStack, setFileStack] = useState<string[]>([])
+  const currentFile = fileStack[fileStack.length - 1] ?? ''
   // The catalog list's "Vista previa" card button links here with
   // ?preview=1 (see CatalogItemCard/CatalogPremiumCard) instead of
   // duplicating the whole ownership-aware viewer in the card itself — the
@@ -182,8 +185,8 @@ export function CatalogDetailPage() {
   })
 
   const contentQuery = useQuery({
-    queryKey: ['consumer-catalog', slug, 'resource-content'],
-    queryFn: () => getResourceContent(slug!),
+    queryKey: ['consumer-catalog', slug, 'resource-content', currentFile],
+    queryFn: () => getResourceContent(slug!, currentFile || undefined),
     enabled: Boolean(slug) && viewerOpen && canViewResource,
   })
 
@@ -547,6 +550,7 @@ export function CatalogDetailPage() {
           onClose={() => {
             setViewerOpen(false)
             setViewerMaximized(false)
+            setFileStack([])
           }}
           title={
             // items-start + break-all (not truncate): a long repo path
@@ -556,6 +560,18 @@ export function CatalogDetailPage() {
             // never moves or shrinks regardless of how many lines the path
             // takes.
             <div className="flex min-w-0 items-start gap-2">
+              {fileStack.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setFileStack((s) => s.slice(0, -1))}
+                  aria-label={t('catalog.resource.back') as string}
+                  title={t('catalog.resource.back') as string}
+                  className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-ase-brand hover:bg-ase-brand/10"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  {t('catalog.resource.back')}
+                </button>
+              ) : null}
               <span className="min-w-0 break-all">
                 {`${t('catalog.resource.modalTitle')} · ${contentQuery.data?.path ?? title}`}
               </span>
@@ -661,6 +677,8 @@ export function CatalogDetailPage() {
                   path={contentQuery.data.path}
                   content={contentQuery.data.content}
                   maximized={viewerMaximized}
+                  currentFile={currentFile}
+                  onOpenLinkedFile={(rel) => setFileStack((s) => [...s, rel])}
                 />
               ) : (
                 <EmptyState

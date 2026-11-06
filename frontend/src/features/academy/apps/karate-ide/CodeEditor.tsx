@@ -72,6 +72,8 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
     },
   }))
 
+  const isPy = path.endsWith('.py')
+  const unit = isPy ? '    ' : '  '
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -86,18 +88,18 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
       const lineStart = value.lastIndexOf('\n', s - 1) + 1
       if (e.shiftKey) {
         const ls = value.slice(lineStart)
-        const n = /^ {1,2}/.exec(ls)?.[0].length ?? 0
+        const n = (isPy ? /^ {1,4}/ : /^ {1,2}/).exec(ls)?.[0].length ?? 0
         if (n) replaceRange(lineStart, lineStart + n, '', Math.max(lineStart, s - n))
         return
       }
       if (s !== en && value.slice(s, en).includes('\n')) {
         // Sangrar varias líneas.
         const block = value.slice(lineStart, en)
-        const indented = block.replace(/^/gm, '  ')
+        const indented = block.replace(/^/gm, unit)
         replaceRange(lineStart, en, indented, lineStart + indented.length)
         return
       }
-      replaceRange(s, en, '  ', s + 2)
+      replaceRange(s, en, unit, s + unit.length)
       return
     }
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -106,7 +108,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
       const current = value.slice(lineStart, s)
       let indent = /^\s*/.exec(current)?.[0] ?? ''
       const t = current.trim()
-      if (/^(Feature|Background|Scenario|Scenario Outline|Examples):/.test(t) || /[{[]$/.test(t)) indent += '  '
+      if (isPy ? /:$/.test(t) : /^(Feature|Background|Scenario|Scenario Outline|Examples):/.test(t) || /[{[]$/.test(t)) indent += unit
       replaceRange(s, en, '\n' + indent, s + 1 + indent.length)
       return
     }
@@ -116,7 +118,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
       const lineEndIdx = value.indexOf('\n', en)
       const lineEnd = lineEndIdx < 0 ? value.length : lineEndIdx
       const block = value.slice(lineStart, lineEnd)
-      const mark = path.endsWith('.feature') ? '#' : '//'
+      const mark = path.endsWith('.feature') || isPy ? '#' : '//'
       const allCommented = block.split('\n').every((l) => l.trim() === '' || l.trimStart().startsWith(mark))
       const next = block
         .split('\n')
@@ -165,7 +167,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
             autoCorrect="off"
             wrap="off"
             className="absolute inset-0 m-0 resize-none overflow-hidden whitespace-pre border-0 bg-transparent font-mono text-[13px] text-transparent caret-amber-300 outline-none selection:bg-sky-400/30"
-            style={{ padding: `${PAD}px ${PAD}px`, lineHeight: `${LINE_H}px`, minWidth: `calc(${longest}ch + ${PAD * 2}px)`, height, tabSize: 2 }}
+            style={{ padding: `${PAD}px ${PAD}px`, lineHeight: `${LINE_H}px`, minWidth: `calc(${longest}ch + ${PAD * 2}px)`, height, tabSize: isPy ? 4 : 2 }}
           />
         </div>
       </div>

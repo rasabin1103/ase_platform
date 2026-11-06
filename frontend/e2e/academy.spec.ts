@@ -4,10 +4,12 @@ import { M10_SOLUTION } from '../src/features/academy/content/courses/karate-fra
 import { M10_SQL_ANSWERS } from '../src/features/academy/content/courses/sql-iniciacion/m10-examen'
 import { M10_SQL_ANSWERS as M10_SQI_ANSWERS } from '../src/features/academy/content/courses/sql-intermedio/m10-examen'
 import { M10_SQL_ANSWERS as M10_SQA_ANSWERS } from '../src/features/academy/content/courses/sql-avanzado/m10-examen'
+import { M10_SQL_ANSWERS as M10_SQQ_ANSWERS } from '../src/features/academy/content/courses/sql-qa/m10-examen'
 
 /** Respuestas de referencia de los exámenes prácticos de la consola SQL, por curso. */
-const SQL_EXAM_ANSWERS: Record<string, string[]> = { 'sql-iniciacion': M10_SQL_ANSWERS, 'sql-intermedio': M10_SQI_ANSWERS, 'sql-avanzado': M10_SQA_ANSWERS }
+const SQL_EXAM_ANSWERS: Record<string, string[]> = { 'sql-iniciacion': M10_SQL_ANSWERS, 'sql-intermedio': M10_SQI_ANSWERS, 'sql-avanzado': M10_SQA_ANSWERS, 'sql-qa': M10_SQQ_ANSWERS }
 import { E2E_PASSWORD, backendScript, emailFor } from './support'
+import { getModule } from '../src/features/academy/learn/registry'
 
 /**
  * ASE Academy de principio a fin, en el navegador, como un alumno: cada curso
@@ -44,6 +46,8 @@ const T = {
   submit: /^(Entregar|Submit)$/,
   submitAndSee: /^(Entregar y ver resultado|Submit and see result)$/,
   passed: /^(Aprobado|Passed)$/,
+  check: /^(Comprobar|Check)$/,
+  exercisePassed: /^(¡Correcto! Ejercicio superado\.|Correct! Exercise passed\.)/,
   viewCert: /^(Ver certificado|View certificate)$/,
 }
 
@@ -178,12 +182,43 @@ async function playMission(page: Page, course: string, missionId: string, lang: 
   throw new Error(`${course}/${missionId} (${lang}): la misión se quedó atascada antes del debrief`)
 }
 
+/** Un módulo de un curso instructivo: cada «¿qué imprime?» y cada ejercicio con su solución. */
+async function playModule(page: Page, course: string, moduleId: string, lang: Lang) {
+  const module = getModule(course, moduleId, lang)!
+  let savedFinished = 0
+  const onResponse = (r: Response) => {
+    if (r.ok() && r.request().method() === 'PUT' && r.url().includes(`/academy/runs/${course}/${moduleId}`) && (r.request().postDataJSON() as { finished?: boolean } | null)?.finished === true)
+      savedFinished++
+  }
+  page.on('response', onResponse)
+  await page.goto(`/academy/${course}/${moduleId}`)
+  await dismissOverlays(page)
+  const nav = page.getByRole('navigation', { name: lang === 'en' ? 'Lessons' : 'Lecciones' })
+  for (const lesson of module.lessons) {
+    await nav.getByRole('button', { name: new RegExp(lesson.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).click()
+    await expect(page.getByTestId('lesson-title')).toHaveText(lesson.title)
+    for (const b of lesson.blocks) {
+      if (b.kind === 'predict') {
+        await page.locator(`[data-block="${b.id}"] button`).nth(b.correct).click()
+      } else if (b.kind === 'exercise') {
+        const block = page.locator(`[data-block="${b.id}"]`)
+        await block.locator('textarea').first().fill(b.solution)
+        await block.getByRole('button', { name: T.check }).click()
+        await expect(block.getByTestId('grade')).toContainText(T.exercisePassed, { timeout: 90_000 })
+      }
+    }
+  }
+  await expect(page.getByTestId('module-done')).toBeVisible()
+  await expect.poll(() => savedFinished, { message: `${course}/${moduleId}: no se guardó el módulo terminado`, timeout: 30_000 }).toBeGreaterThan(0)
+  page.off('response', onResponse)
+}
+
 async function passFinalExam(page: Page, course: string, email: string, missions: number) {
   await page.goto(`/academy/${course}/simulacro`)
   await dismissOverlays(page)
   await expect(
     page.getByText(
-      new RegExp(`(Misiones terminadas: ${missions} de ${missions}|Missions completed: ${missions} of ${missions})`),
+      new RegExp(`((Misiones terminadas|Módulos completados): ${missions} de ${missions}|(Missions|Modules) completed: ${missions} of ${missions})`),
     ),
   ).toBeVisible()
   await page.getByRole('button', { name: T.startExam }).click()
@@ -219,7 +254,8 @@ for (const course of FINISHED_COURSES) {
       await dismissOverlays(page)
 
       for (const m of course.missions) {
-        await test.step(`misión ${m.id}`, () => playMission(page, course.key, m.id, lang))
+        if (course.format === 'lessons') await test.step(`módulo ${m.id}`, () => playModule(page, course.key, m.id, lang))
+        else await test.step(`misión ${m.id}`, () => playMission(page, course.key, m.id, lang))
       }
 
       await test.step('evaluación final', () => passFinalExam(page, course.key, email, course.missions.length))

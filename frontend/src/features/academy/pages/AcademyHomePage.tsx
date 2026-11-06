@@ -33,6 +33,7 @@ const COPY = {
     firstFree: '1.ª misión gratis',
     freeCourse: 'Curso gratis',
     missions: 'misiones',
+    modules: 'módulos',
     missionsAria: 'Misiones',
     soon: 'Próximamente',
     viewCourse: 'Ver curso',
@@ -61,6 +62,7 @@ const COPY = {
     firstFree: '1st mission free',
     freeCourse: 'Free course',
     missions: 'missions',
+    modules: 'modules',
     missionsAria: 'Missions',
     soon: 'Coming soon',
     viewCourse: 'View course',
@@ -169,7 +171,7 @@ export function AcademyHomePage() {
                         <Clock className="h-3.5 w-3.5" aria-hidden /> ~{course.estimatedHours} h
                       </span>
                       <span className="inline-flex items-center gap-1.5">
-                        <Gamepad2 className="h-3.5 w-3.5" aria-hidden /> {playable}/{course.missions.length} {c.missions}
+                        <Gamepad2 className="h-3.5 w-3.5" aria-hidden /> {playable}/{course.missions.length} {course.format === 'lessons' ? c.modules : c.missions}
                       </span>
                     </div>
 
@@ -188,7 +190,7 @@ export function AcademyHomePage() {
                                 : 'bg-ase-brand/20 text-sky-200 ring-1 ring-ase-brand/40',
                           )}
                         >
-                          {m.available ? i : <Lock className="h-3 w-3" aria-label={c.soon} />}
+                          {m.available ? (course.format === 'lessons' ? i + 1 : i) : <Lock className="h-3 w-3" aria-label={c.soon} />}
                         </li>
                       ))}
                     </ol>
@@ -263,9 +265,9 @@ export function AcademyHomePage() {
       {/* Cierre */}
       <section className="mx-auto max-w-[1400px] px-5 pb-28 sm:px-8">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[2rem] p-[2px]">
+          <div className="relative overflow-hidden rounded-[2rem] p-px">
             <div aria-hidden className="absolute inset-0 ase-gradient-brand opacity-80" />
-            <div className="relative rounded-[calc(2rem-2px)] bg-ase-bg px-6 py-14 text-center sm:px-12">
+            <div className="relative rounded-[calc(2rem-1px)] bg-ase-bg px-6 py-14 text-center sm:px-12">
               <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold leading-tight text-ase-text sm:text-4xl">
                 {c.ctaTitle}
               </h2>

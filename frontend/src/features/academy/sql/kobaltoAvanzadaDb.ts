@@ -230,7 +230,7 @@ CREATE INDEX idx_mov_fecha ON movimientos (fecha);
 `
 
 /** Funciones de apoyo para comprobar encargos (esquema «qa», oculto en el explorador). */
-const QA_SQL = `
+export const QA_SQL = `
 CREATE FUNCTION qa.plan(consulta text) RETURNS text LANGUAGE plpgsql AS $plan$
 DECLARE r record; salida text := '';
 BEGIN

@@ -96,6 +96,30 @@ const STUDY_MAP: Record<string, Record<string, string>> = {
     '5.1': 'm08-indices',
     '5.2': 'm09-rendimiento',
   },
+  // Test final de SQL para QA: bloques 61–65 en el banco, una sección por misión.
+  'sql-qa': {
+    '1.1': 'm00-lo-que-hizo',
+    '1.2': 'm01-bordes',
+    '2.1': 'm02-datos-prueba',
+    '2.2': 'm03-cero-filas',
+    '3.1': 'm04-conciliar',
+    '3.2': 'm05-migracion',
+    '4.1': 'm06-informe',
+    '4.2': 'm07-estados',
+    '5.1': 'm08-reglas',
+    '5.2': 'm09-rendimiento',
+  },
+  // Test final de Python desde cero: bloques 71–74 en el banco, una sección por módulo.
+  'python-desde-cero': {
+    '1.1': 'm01-primer-programa',
+    '1.2': 'm02-decidir',
+    '2.1': 'm03-repetir',
+    '2.2': 'm04-colecciones',
+    '3.1': 'm05-funciones',
+    '3.2': 'm06-textos-errores',
+    '4.1': 'm07-ficheros',
+    '4.2': 'm08-ordenar-codigo',
+  },
   'testing-fundamentals': {
     '1.1': 'm00-primer-dia',
     '1.2': 'm00-primer-dia',
@@ -162,6 +186,22 @@ export const EXAM_COURSES: Record<string, { title: string; titleEn: string; labe
     titleEn: 'Final test',
     label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
     labelEn: 'Final assessment: a hands-on exam in the SQL console and a test (30 questions, 40 min); completion certificate',
+    disclaimer: 'Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.',
+    disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
+  },
+  'sql-qa': {
+    title: 'Test final',
+    titleEn: 'Final test',
+    label: 'Evaluación final: examen práctico en la consola SQL y test (30 preguntas, 40 min); certificado de finalización',
+    labelEn: 'Final assessment: a hands-on exam in the SQL console and a test (30 questions, 40 min); completion certificate',
+    disclaimer: 'Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.',
+    disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
+  },
+  'python-desde-cero': {
+    title: 'Test final',
+    titleEn: 'Final test',
+    label: 'Evaluación final: examen práctico con ejercicios de Python y test (20 preguntas, 30 min); certificado de finalización',
+    labelEn: 'Final assessment: a hands-on exam with Python exercises and a test (20 questions, 30 min); completion certificate',
     disclaimer: 'Certificado de finalización de ASE Academy. No es una certificación oficial de ninguna entidad.',
     disclaimerEn: 'ASE Academy certificate of completion. It is not an official certification from any body.',
   },
@@ -301,3 +341,29 @@ export function withExamCopy<T extends Record<string, unknown>>(base: T, courseK
 // SQL intermedio usa los mismos textos que el test final de SQL desde cero.
 EXAM_COPY['sql-intermedio'] = EXAM_COPY['sql-iniciacion']
 EXAM_COPY['sql-avanzado'] = EXAM_COPY['sql-iniciacion']
+EXAM_COPY['sql-qa'] = EXAM_COPY['sql-iniciacion']
+EXAM_COPY['python-desde-cero'] = {
+  es: {
+    ...EXAM_COPY['sql-iniciacion'].es,
+    intro:
+      'Preguntas sobre código Python: qué imprime un programa, qué falla en él o qué hace una instrucción. Cinco por bloque del curso, tiempo limitado y corrección al entregar, con un informe por bloque y el módulo que repasar. El certificado exige también aprobar el examen práctico (el último módulo).',
+    howTo: 'Se obtiene al aprobar el test, aprobar el examen práctico y completar todos los módulos del curso.',
+    eligible: 'Has aprobado y completado todos los módulos.',
+    missing: (n: number) => `te faltan ${n} ${n === 1 ? 'módulo' : 'módulos'}.`,
+    allDone: 'Ya has completado todos los módulos.',
+    // El número que llega es la posición en el curso (0, 1…); los módulos empiezan en 1.
+    reviewIn: (n: number, title: string) => `Repásalo en el módulo ${n + 1} · ${title}`,
+    cards: { ...EXAM_COPY['sql-iniciacion'].es.cards, finished: (d: number, t: number) => `Módulos completados: ${d} de ${t}` },
+  },
+  en: {
+    ...EXAM_COPY['sql-iniciacion'].en,
+    intro:
+      'Questions about Python code: what a program prints, what is wrong with it or what an instruction does. Five per course block, a time limit and scoring on submission, plus a per-block report and the module to review. The certificate also requires passing the hands-on exam (the last module).',
+    howTo: 'You earn it by passing the test and the hands-on exam and completing every module of the course.',
+    eligible: "You've passed and completed every module.",
+    missing: (n: number) => `you have ${n} ${n === 1 ? 'module' : 'modules'} left.`,
+    allDone: "You've already completed every module.",
+    reviewIn: (n: number, title: string) => `Review in module ${n + 1} · ${title}`,
+    cards: { ...EXAM_COPY['sql-iniciacion'].en.cards, finished: (d: number, t: number) => `Modules completed: ${d} of ${t}` },
+  },
+}

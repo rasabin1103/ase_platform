@@ -51,12 +51,19 @@ describe('test final de SQL', () => {
     expect(examDisclaimer('sql-iniciacion', 'es')).toMatch(/No es una certificación oficial/)
   })
 
-  it('SQL intermedio y avanzado: cada sección lleva a una misión de su curso y comparten los textos', () => {
-    for (const key of ['sql-intermedio', 'sql-avanzado']) {
+  it('SQL intermedio, avanzado y para QA: cada sección lleva a una misión de su curso y comparten los textos', () => {
+    for (const key of ['sql-intermedio', 'sql-avanzado', 'sql-qa']) {
       const missions = getCourse(key)!.missions.map((m) => m.id)
       for (const s of ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '4.1', '4.2', '5.1', '5.2']) expect(missions).toContain(studyMissionFor(key, s))
       expect(withExamCopy({ retry: 'x' }, key, 'es').retry).toBe('Nuevo test')
       expect(examDisclaimer(key, 'en')).toMatch(/not an official certification/)
     }
+  })
+
+  it('Python desde cero: cada sección lleva a un módulo del curso', () => {
+    const modules = getCourse('python-desde-cero')!.missions.map((m) => m.id)
+    for (const s of ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '4.1', '4.2']) expect(modules).toContain(studyMissionFor('python-desde-cero', s))
+    expect(withExamCopy({ retry: 'x' }, 'python-desde-cero', 'es').retry).toBe('Nuevo test')
+    expect(examDisclaimer('python-desde-cero', 'en')).toMatch(/not an official certification/)
   })
 })
