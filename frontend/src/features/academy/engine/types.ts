@@ -415,6 +415,11 @@ export interface CourseDef {
   description: string
   estimatedHours: number
   /**
+   * Formato del curso: 'missions' (simulación, por defecto) o 'lessons'
+   * (instructivo: módulos con lecciones, ver learn/types.ts).
+   */
+  format?: 'missions' | 'lessons'
+  /**
    * Regla comercial (no se configura aquí): si el ítem del catálogo es
    * gratuito, todo el curso es libre; si tiene precio, solo la primera misión
    * es libre y el resto requiere comprarlo. Ver isFreeMission().

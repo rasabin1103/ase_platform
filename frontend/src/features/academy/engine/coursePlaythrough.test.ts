@@ -66,7 +66,8 @@ function playMission(mission: Mission): { state: RunState; actions: Action[] } {
 
 // Cursos en construcción: solo sus misiones disponibles y, hasta que se
 // traduzcan, solo en español.
-for (const course of ACADEMY_COURSES) {
+// Los cursos instructivos (lecciones) se prueban en learn/content.test.ts.
+for (const course of ACADEMY_COURSES.filter((c) => c.format !== 'lessons')) {
   const langs = PENDING_TRANSLATION.has(course.key) ? (['es'] as const) : (['es', 'en'] as const)
   for (const lang of langs) {
     describe(`${course.key} (${lang}): curso completo`, () => {

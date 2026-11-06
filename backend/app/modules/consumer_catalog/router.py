@@ -221,12 +221,17 @@ def get_catalog_item(slug: str, user: User = Depends(get_current_user), svc: Con
     response_model=ResourceContentRead,
     dependencies=[Depends(require_personal_permission("purchases.manage_own"))],
 )
-def get_resource_content(slug: str, user: User = Depends(get_current_user), svc: ConsumerCatalogService = Depends(get_service)):
+def get_resource_content(
+    slug: str,
+    file: str | None = Query(None, max_length=300, description="Another .md inside the item's folder (a link from its README)"),
+    user: User = Depends(get_current_user),
+    svc: ConsumerCatalogService = Depends(get_service),
+):
     """Read-only in-platform viewer. Full content requires owning this item
     (directly or via an active plan); a non-owner still gets a 403 unless
     the folder has a preview*.pdf, in which case that's served instead
     (see ConsumerCatalogService.get_resource_content)."""
-    return svc.get_resource_content(slug, user_id=user.id)
+    return svc.get_resource_content(slug, user_id=user.id, file=file)
 
 
 @router.get(

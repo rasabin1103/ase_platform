@@ -83,6 +83,12 @@ export const plansPageEn = {
       unlimited: 'Unlimited',
       everyMonths: 'e.g. 3',
     },
+    filters: {
+      type: 'Type', allTypes: 'All types', category: 'Category', allCategories: 'All categories',
+      level: 'Level', allLevels: 'All levels', clear: 'Clear filters',
+      types: { course: 'Courses', book: 'Books', product: 'Products', resource: 'Resources' },
+      levels: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' },
+    },
     helpers: {
       customPrice: 'Custom',
       addFeature: 'Add benefit',
@@ -241,6 +247,12 @@ export const plansPageEs = {
       ctaLabelEn: 'Se traduce automáticamente si lo dejas vacío',
       unlimited: 'Ilimitado',
       everyMonths: 'ej. 3',
+    },
+    filters: {
+      type: 'Tipo', allTypes: 'Todos los tipos', category: 'Categoría', allCategories: 'Todas las categorías',
+      level: 'Nivel', allLevels: 'Todos los niveles', clear: 'Limpiar filtros',
+      types: { course: 'Cursos', book: 'Libros', product: 'Productos', resource: 'Recursos' },
+      levels: { beginner: 'Básico', intermediate: 'Intermedio', advanced: 'Avanzado' },
     },
     helpers: {
       customPrice: 'Custom',

@@ -13,6 +13,7 @@ import {
   useSavedScrollPosition,
   useTextSearch,
 } from './documentViewerTools'
+import { isRelativeMarkdownLink, resolveRelativeMarkdownPath } from './markdownLinks'
 
 // Matches any of the checkmark glyphs admins actually paste (✓ U+2713, ✔
 // U+2714, ✅ U+2705, ☑ U+2611), each optionally followed by the emoji
@@ -135,10 +136,73 @@ const MARKDOWN_COMPONENTS: Components = {
  * same MARKDOWN_COMPONENTS styling so a **bold** word or a list looks
  * identical everywhere in the catalog, regardless of which admin field it
  * came from. */
-export function MarkdownContent({ content }: { content: string }) {
+export function MarkdownContent({
+  content,
+  onOpenLinkedFile,
+  currentFile = '',
+}: {
+  content: string
+  /** Si se pasa, los enlaces relativos a otros .md se abren dentro del visor (recibe la ruta relativa
+   * a la raíz del recurso). Sin ella, esos enlaces se muestran como texto en vez de un enlace roto. */
+  onOpenLinkedFile?: (relativePath: string) => void
+  /** Ruta del documento actual relativa a la raíz del recurso ('' = el README principal). */
+  currentFile?: string
+}) {
   const normalized = useMemo(() => normalizeChecklistText(content), [content])
+  const components = useMemo<Components>(
+    () => ({
+      ...MARKDOWN_COMPONENTS,
+      a: ({ className, href, children, ...props }) => {
+        if (href && href.startsWith('#')) {
+          return (
+            <a
+              href={href}
+              className={cn('text-ase-brand underline underline-offset-2 hover:text-ase-brand/80', className)}
+              onClick={(e) => {
+                e.preventDefault()
+                const id = decodeURIComponent(href.slice(1))
+                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+              {...props}
+            >
+              {children}
+            </a>
+          )
+        }
+        if (isRelativeMarkdownLink(href)) {
+          const target = resolveRelativeMarkdownPath(currentFile, href as string)
+          if (!onOpenLinkedFile || !target) return <span className="text-ase-text2">{children}</span>
+          return (
+            <a
+              href={href}
+              className={cn('text-ase-brand underline underline-offset-2 hover:text-ase-brand/80', className)}
+              onClick={(e) => {
+                e.preventDefault()
+                onOpenLinkedFile(target)
+              }}
+              {...props}
+            >
+              {children}
+            </a>
+          )
+        }
+        return (
+          <a
+            href={href}
+            className={cn('text-ase-brand underline underline-offset-2 hover:text-ase-brand/80', className)}
+            target="_blank"
+            rel="noreferrer"
+            {...props}
+          >
+            {children}
+          </a>
+        )
+      },
+    }),
+    [onOpenLinkedFile, currentFile],
+  )
   return (
-    <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+    <Markdown remarkPlugins={[remarkGfm]} components={components}>
       {normalized}
     </Markdown>
   )
@@ -148,9 +212,13 @@ export function MarkdownViewer({
   path,
   content,
   maximized,
+  onOpenLinkedFile,
+  currentFile,
 }: {
   path: string
   content: string
+  onOpenLinkedFile?: (relativePath: string) => void
+  currentFile?: string
   /** True while the parent Modal is toggled to fill the viewport — swaps
    * the inner scroll area to a taller cap so the extra room actually gets
    * used instead of leaving dead space around a still-70vh-capped box. */
@@ -229,7 +297,7 @@ export function MarkdownViewer({
           ref={contentRef}
           className={cn('flex-1 overflow-y-auto bg-black/20 px-6 py-5', maximized ? 'max-h-[80vh]' : 'max-h-[68vh]')}
         >
-          <MarkdownContent content={content} />
+          <MarkdownContent content={content} onOpenLinkedFile={onOpenLinkedFile} currentFile={currentFile} />
         </div>
       </div>
     </div>

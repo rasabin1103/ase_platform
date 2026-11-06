@@ -617,3 +617,122 @@ def test_sql_avanzado_exam_blocks_practical_exam_and_certificate(
     cert = client.post("/api/v1/academy/certificates/sql-avanzado", headers=independent_headers)
     assert cert.status_code == 200
     assert cert.json()["code"].startswith("ASE-SQA-")
+
+
+SQQ_EXAM_URL = "/api/v1/academy/exams/sql-qa"
+
+
+def test_sql_qa_exam_blocks_practical_exam_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "SQL para QA",
+            "slug": "sql-qa",
+            "type": "course",
+            "category": "Datos",
+            "short_description": "Curso de SQL para QA.",
+            "long_description": "Probar con la base de datos: conciliaciones, migraciones, informes, reglas y rendimiento.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "advanced",
+            "author": "ASE",
+            "academy_course_key": "sql-qa",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(SQQ_EXAM_URL).json()
+    assert (overview["config"]["total"], overview["config"]["passMark"]) == (30, 21)
+    assert [c["title"] for c in overview["config"]["distribution"]] == [
+        "Lo que hizo la app y los bordes",
+        "Datos de prueba y consultas a cero",
+        "Conciliaciones y migraciones",
+        "Informes y estados",
+        "Reglas y rendimiento",
+    ]
+
+    attempt = client.post(f"{SQQ_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 30
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4, 5}
+
+    for mission_id in EXAMS["sql-qa"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="sql-qa", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{SQQ_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert result["missingMissions"] == ["m10-examen"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="sql-qa", mission_id="m10-examen", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/sql-qa", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-SQQ-")
+
+
+PYB_EXAM_URL = "/api/v1/academy/exams/python-desde-cero"
+
+
+def test_python_desde_cero_exam_blocks_practical_exam_and_certificate(
+    client: TestClient,
+    db: Session,
+    super_admin_headers: dict[str, str],
+    independent_user: User,
+    independent_headers: dict[str, str],
+):
+    resp = client.post(
+        CATALOG_URL,
+        json={
+            "title": "Python desde cero",
+            "slug": "python-desde-cero",
+            "type": "course",
+            "category": "Datos",
+            "short_description": "Curso de Python desde cero.",
+            "long_description": "Aprende Python con lecciones cortas, ejemplos ejecutables y ejercicios que se corrigen solos.",
+            "image_url": "https://images.example.com/cover.jpg",
+            "price": 0,
+            "currency": "EUR",
+            "status": "published",
+            "level": "beginner",
+            "author": "ASE",
+            "academy_course_key": "python-desde-cero",
+        },
+        headers=super_admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    overview = client.get(PYB_EXAM_URL).json()
+    assert (overview["config"]["total"], overview["config"]["passMark"]) == (20, 14)
+    assert [c["title"] for c in overview["config"]["distribution"]] == [
+        "Primeros programas y decisiones",
+        "Bucles y colecciones",
+        "Funciones, textos y errores",
+        "Ficheros, librerías y módulos",
+    ]
+
+    attempt = client.post(f"{PYB_EXAM_URL}/attempts", json={}, headers=independent_headers).json()
+    assert len(attempt["questions"]) == 20
+    assert {q["chapter"] for q in attempt["questions"]} == {1, 2, 3, 4}
+
+    for mission_id in EXAMS["python-desde-cero"].missions[:-1]:
+        db.add(AcademyRun(user_id=independent_user.id, course_key="python-desde-cero", mission_id=mission_id, seed=1, actions_json=[], finished=True))
+    db.commit()
+    result = client.post(
+        f"{PYB_EXAM_URL}/attempts/{attempt['id']}/submit", json={"answers": _correct_answers(db, attempt["id"])}, headers=independent_headers
+    ).json()["result"]
+    assert result["passed"] is True
+    assert result["missingMissions"] == ["m09-proyecto-final"]
+
+    db.add(AcademyRun(user_id=independent_user.id, course_key="python-desde-cero", mission_id="m09-proyecto-final", seed=1, actions_json=[], finished=True))
+    db.commit()
+    cert = client.post("/api/v1/academy/certificates/python-desde-cero", headers=independent_headers)
+    assert cert.status_code == 200
+    assert cert.json()["code"].startswith("ASE-PYB-")

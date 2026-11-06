@@ -994,7 +994,7 @@ class ConsumerCatalogService:
                 return entry
         return None
 
-    def get_resource_content(self, slug: str, *, user_id: int) -> ResourceContentRead:
+    def get_resource_content(self, slug: str, *, user_id: int, file: str | None = None) -> ResourceContentRead:
         """Read-only in-platform viewer for the item's repo_path folder.
 
         Books (type == 'book') use the folder-per-format convention: their
@@ -1029,8 +1029,11 @@ class ConsumerCatalogService:
         item = self._require_resource_item(slug)
         is_book = item.type == CatalogItemType.book
         owns = self._owns_resource(item, user_id=user_id)
-        if owns:
+        if owns and file is None:
             self._record_resource_view(item, user_id=user_id)
+
+        if file is not None:
+            return self._linked_markdown_content(item, file=file, owns=owns, is_book=is_book)
 
         if is_book:
             if not owns:
@@ -1097,6 +1100,29 @@ class ConsumerCatalogService:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No viewable file was found in this item's configured folder",
         )
+
+    def _linked_markdown_content(self, item: CatalogItem, *, file: str, owns: bool, is_book: bool) -> ResourceContentRead:
+        """Another .md inside the resource's own folder, reached from a link in
+        its README (e.g. ``fases/01-intro.md``). Owner-only — a preview never
+        opens more than the single sample — and strictly confined to the item's
+        folder: only relative paths, no ``..`` segments, only Markdown files."""
+        if not owns or is_book:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must own this item (directly or via your plan) to access its content",
+            )
+        raw = file.strip().replace("\\", "/")
+        parts = [part for part in raw.split("/") if part not in ("", ".")]
+        if (
+            not parts
+            or len(raw) > 300
+            or raw.startswith("/")
+            or any(part == ".." or part.startswith(".") for part in parts)
+            or not parts[-1].lower().endswith((".md", ".markdown"))
+        ):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
+        entry = {"path": f"{item.repo_path.strip().rstrip('/')}/{'/'.join(parts)}", "name": parts[-1], "type": "file"}
+        return self._text_resource_content(item, entry=entry, kind="markdown")
 
     def get_public_preview_content(self, item: CatalogItem) -> ResourceContentRead:
         """The "muestra" a completely anonymous visitor can see — no

@@ -165,8 +165,11 @@ export type ResourceContent = {
   isPreview: boolean
 }
 
-export async function getResourceContent(slug: string) {
-  const { data } = await apiClient.get<ResourceContent>(`/consumer-catalog/${slug}/resource-content`)
+/** `file`: otro .md de la carpeta del recurso (un enlace relativo del README), p. ej. `fases/01.md`. */
+export async function getResourceContent(slug: string, file?: string) {
+  const { data } = await apiClient.get<ResourceContent>(`/consumer-catalog/${slug}/resource-content`, {
+    params: file ? { file } : undefined,
+  })
   return data
 }
 

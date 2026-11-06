@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
-import { Eye, LayoutGrid, List as ListIcon, Search } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Download, Eye, GraduationCap, LayoutGrid, List as ListIcon, Package, Search } from 'lucide-react'
 import {
   catalogShowcaseItemPath,
   listCatalogShowcaseCategories,
@@ -48,9 +48,31 @@ export function CatalogShowcasePage() {
   const [category, setCategory] = useState<string | undefined>(undefined)
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sort, setSort] = useState<CatalogShowcaseSort>('newest')
-  const [type, setType] = useState<CatalogItemType | undefined>(undefined)
   // La página va en la URL (?page=2): se puede compartir y el botón «atrás» la respeta.
   const [searchParams, setSearchParams] = useSearchParams()
+  // `?v=` indica que ya se entró a una categoría (o a «todo»); sin él se ve la portada de categorías.
+  const viewParam = searchParams.get('v')
+  // El tipo sale de la URL: así «atrás/adelante» del navegador mantiene la vista coherente.
+  const type: CatalogItemType | undefined = TYPE_TABS.includes(viewParam as CatalogItemType)
+    ? (viewParam as CatalogItemType)
+    : undefined
+  const showHub = !searchParams.has('v') && !searchParams.has('page')
+  const enter = (ty: CatalogItemType | undefined) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev)
+      params.set('v', ty ?? 'all')
+      params.delete('page')
+      return params
+    })
+  }
+  const backToHub = () => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev)
+      params.delete('v')
+      params.delete('page')
+      return params
+    })
+  }
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const setPage = (next: number, replace = false) =>
     setSearchParams(
@@ -150,7 +172,8 @@ export function CatalogShowcasePage() {
         align="left"
         compact
       >
-        {/* Pestañas por tipo con recuento real */}
+        {/* Pestañas por tipo con recuento real: solo en «ver todo el catálogo»; dentro de una categoría no hacen falta. */}
+        {!showHub && !type ? (
         <div role="tablist" aria-label={v2.eyebrow} className="flex flex-wrap gap-2">
           {[undefined, ...TYPE_TABS].map((ty, i) => {
             const active = type === ty
@@ -162,7 +185,7 @@ export function CatalogShowcasePage() {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setType(ty)}
+                onClick={() => enter(ty)}
                 className={cn(
                   'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ase-brand',
                   active
@@ -185,9 +208,27 @@ export function CatalogShowcasePage() {
             )
           })}
         </div>
+        ) : null}
       </PageHero>
 
+      {showHub ? (
+        <CatalogHub
+          counts={Object.fromEntries(TYPE_TABS.map((ty, i) => [ty, countFor(i)]))}
+          total={totalCount}
+          t={t}
+          onSelect={(ty) => enter(ty)}
+          onViewAll={() => enter(undefined)}
+        />
+      ) : (
       <div className="mx-auto w-full max-w-[1400px] px-5 pb-24 sm:px-8">
+        <button
+          type="button"
+          onClick={backToHub}
+          className="mb-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-sky-300 outline-none hover:text-sky-200 focus-visible:ring-2 focus-visible:ring-ase-brand"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          {t('publicCatalogShowcase.hub.back')}
+        </button>
         <div className="sticky top-16 z-20 -mx-2 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-ase-bg/95 p-2.5 shadow-[0_20px_40px_-25px_rgba(0,0,0,0.9)]">
           <label className="relative w-full max-w-md flex-1">
             <span className="sr-only">{v2.searchLabel}</span>
@@ -337,6 +378,7 @@ export function CatalogShowcasePage() {
           />
         ) : null}
       </div>
+      )}
     </div>
   )
 }
@@ -447,5 +489,85 @@ function ShowcaseListRow({ item, language, t, onPreview }: CardProps) {
         </div>
       </div>
     </Card>
+  )
+}
+
+const HUB_STYLE: Record<CatalogItemType, { icon: typeof BookOpen; color: string }> = {
+  course: { icon: GraduationCap, color: '#4C7DFF' },
+  book: { icon: BookOpen, color: '#A78BFA' },
+  product: { icon: Package, color: '#22D3EE' },
+  resource: { icon: Download, color: '#F5B454' },
+}
+
+/** Portada del catálogo: una tarjeta por categoría con su recuento real y una descripción corta. */
+function CatalogHub({
+  counts,
+  total,
+  t,
+  onSelect,
+  onViewAll,
+}: {
+  counts: Record<string, number | undefined>
+  total: number | undefined
+  t: <T = string>(key: string) => T
+  onSelect: (type: CatalogItemType) => void
+  onViewAll: () => void
+}) {
+  return (
+    <div className="mx-auto w-full max-w-[1400px] px-5 pb-24 sm:px-8">
+      <div className="mb-6">
+        <h2 className="font-display text-2xl font-semibold text-ase-text">{t('publicCatalogShowcase.hub.title')}</h2>
+        <p className="mt-1 text-sm text-ase-muted">{t('publicCatalogShowcase.hub.subtitle')}</p>
+      </div>
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {TYPE_TABS.map((ty) => {
+          const count = counts[ty]
+          if (count === 0) return null
+          const { icon: Icon, color } = HUB_STYLE[ty]
+          return (
+            <li key={ty}>
+              <button
+                type="button"
+                onClick={() => onSelect(ty)}
+                className="group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-ase-surface p-6 text-left outline-none transition duration-200 hover:-translate-y-1 hover:border-white/25 focus-visible:ring-2 focus-visible:ring-ase-brand motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-20 blur-2xl transition group-hover:opacity-40"
+                  style={{ backgroundColor: color }}
+                />
+                <span
+                  className="grid h-12 w-12 place-items-center rounded-xl border border-white/10"
+                  style={{ backgroundColor: `${color}22`, color }}
+                >
+                  <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+                </span>
+                <span className="mt-5 flex items-baseline justify-between gap-3">
+                  <span className="font-display text-xl font-semibold text-ase-text">
+                    {t(`publicCatalogShowcase.hub.${ty}.title`)}
+                  </span>
+                  {count != null ? (
+                    <span className="whitespace-nowrap text-xs font-semibold tabular-nums" style={{ color }}>
+                      {String(t(count === 1 ? 'publicCatalogShowcase.hub.available_one' : 'publicCatalogShowcase.hub.available_other')).replace('{{count}}', String(count))}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="mt-2 text-sm leading-relaxed text-ase-muted">{t(`publicCatalogShowcase.hub.${ty}.desc`)}</span>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ase-text2 group-hover:text-ase-text">
+                  {t('publicCatalogShowcase.hub.explore')}
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="mt-8 flex justify-center">
+        <Button variant="secondary" size="lg" onClick={onViewAll} rightIcon={<ArrowRight className="h-4 w-4" aria-hidden />}>
+          {t('publicCatalogShowcase.hub.viewAll')}
+          {total != null ? ` (${total})` : ''}
+        </Button>
+      </div>
+    </div>
   )
 }

@@ -26,6 +26,13 @@ const COPY = {
     registerToPlay: 'Regístrate para jugarla',
     progressTitle: 'Tu progreso',
     progressCount: (d: number, t: number) => `${d} de ${t} misiones completadas`,
+    progressCountModules: (d: number, t: number) => `${d} de ${t} módulos completados`,
+    module: 'Módulo',
+    finalProject: 'Proyecto final',
+    review: 'Repasar',
+    freeCourseModules: 'Curso gratuito: todos los módulos están abiertos.',
+    freeWithAccountModules: 'Curso gratuito con tu cuenta: regístrate gratis para hacer todos los módulos (el primero está abierto).',
+    registerToDo: 'Regístrate para hacerlo',
     continueHere: 'Continúa donde lo dejaste',
     startCourse: 'Empieza el curso',
     completed: '¡Curso completado!',
@@ -54,6 +61,13 @@ const COPY = {
     registerToPlay: 'Sign up to play it',
     progressTitle: 'Your progress',
     progressCount: (d: number, t: number) => `${d} of ${t} missions completed`,
+    progressCountModules: (d: number, t: number) => `${d} of ${t} modules completed`,
+    module: 'Module',
+    finalProject: 'Final project',
+    review: 'Review',
+    freeCourseModules: 'Free course: every module is open.',
+    freeWithAccountModules: 'Free course with your account: sign up for free to do every module (the first one is open).',
+    registerToDo: 'Sign up to do it',
     continueHere: 'Continue where you left off',
     startCourse: 'Start the course',
     completed: 'Course completed!',
@@ -112,6 +126,10 @@ export function AcademyCoursePage() {
   const next = progress.next
   const nextUnlocked = !!next && (next.index === 0 || access.hasAccess)
   const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
+  const lessons = course.format === 'lessons'
+  // En los cursos instructivos: «Módulo 1…8» y el último es el proyecto final.
+  const unitLabel = (i: number) => (lessons ? (i === course.missions.length - 1 ? c.finalProject : `${c.module} ${i + 1}`) : `${c.mission} ${i}`)
+  const countLabel = lessons ? c.progressCountModules : c.progressCount
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
@@ -137,7 +155,7 @@ export function AcademyCoursePage() {
           {access.linked && access.isFree && !access.authenticated ? (
             <div className="flex flex-wrap items-center gap-3">
               <p className="flex items-center gap-2 text-ase-success">
-                <Check className="h-4 w-4" /> {c.freeWithAccount}
+                <Check className="h-4 w-4" /> {lessons ? c.freeWithAccountModules : c.freeWithAccount}
               </p>
               <Link to="/register" className="ml-auto inline-flex items-center gap-2 rounded-ase-md bg-ase-brand px-3 py-1.5 font-semibold text-white hover:bg-ase-brand-strong">
                 {c.register}
@@ -148,7 +166,7 @@ export function AcademyCoursePage() {
             </div>
           ) : access.linked && access.isFree ? (
             <p className="flex items-center gap-2 text-ase-success">
-              <Check className="h-4 w-4" /> {c.freeCourse}
+              <Check className="h-4 w-4" /> {lessons ? c.freeCourseModules : c.freeCourse}
             </p>
           ) : access.hasAccess ? (
             <p className="flex items-center gap-2 text-ase-success">
@@ -190,7 +208,7 @@ export function AcademyCoursePage() {
                     <Trophy className="h-4 w-4" aria-hidden /> {c.completed}
                   </span>
                 ) : (
-                  c.progressCount(progress.done, progress.total)
+                  countLabel(progress.done, progress.total)
                 )}
               </p>
             </div>
@@ -201,7 +219,7 @@ export function AcademyCoursePage() {
               >
                 <Play className="h-4 w-4" aria-hidden />
                 <span>
-                  {progress.started > 0 ? c.continueHere : c.startCourse}: {c.mission} {next.index} · {next.title}
+                  {progress.started > 0 ? c.continueHere : c.startCourse}: {unitLabel(next.index)} · {next.title}
                 </span>
               </Link>
             ) : null}
@@ -212,7 +230,7 @@ export function AcademyCoursePage() {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={pct}
-            aria-label={c.progressCount(progress.done, progress.total)}
+            aria-label={countLabel(progress.done, progress.total)}
           >
             <div className="h-full rounded-full bg-ase-brand transition-all" style={{ width: `${pct}%` }} />
           </div>
@@ -235,7 +253,7 @@ export function AcademyCoursePage() {
             >
               <div>
                 <p className="text-caption text-ase-muted">
-                  {c.mission} {i}
+                  {unitLabel(i)}
                   {free && !freeCourse && (
                     <span className="ml-2 rounded bg-ase-success/15 px-1.5 text-ase-success">{c.free}</span>
                   )}
@@ -251,11 +269,11 @@ export function AcademyCoursePage() {
                   to={`/academy/${course.key}/${m.id}`}
                   className="flex items-center justify-center gap-2 rounded-ase-md bg-ase-brand px-3 py-2 text-body-sm font-semibold text-white hover:bg-ase-brand-strong"
                 >
-                  <Play className="h-4 w-4" /> {c.status[status]}
+                  <Play className="h-4 w-4" /> {lessons && status === 'finished' ? c.review : c.status[status]}
                 </Link>
               ) : freeCourse ? (
                 <Link to="/register" className="flex items-center gap-2 text-caption text-ase-brand hover:underline">
-                  <Lock className="h-3.5 w-3.5" /> {c.registerToPlay}
+                  <Lock className="h-3.5 w-3.5" /> {lessons ? c.registerToDo : c.registerToPlay}
                 </Link>
               ) : (
                 <span className="flex items-center gap-2 text-caption text-ase-muted">
